@@ -5,8 +5,15 @@ export async function POST(request: NextRequest) {
   try {
     console.log('🔍 API Upload - Inizio richiesta POST');
     
+    // Verifica variabili d'ambiente
+    console.log('🔍 Verifica variabili d\'ambiente...');
+    console.log('🔍 BLOB_READ_WRITE_TOKEN presente:', !!process.env.BLOB_READ_WRITE_TOKEN);
+    
     const formData = await request.formData();
+    console.log('🔍 FormData ricevuto');
+    
     const file = formData.get('file') as File;
+    console.log('🔍 File estratto:', file ? { name: file.name, size: file.size, type: file.type } : 'null');
 
     if (!file) {
       return NextResponse.json(
@@ -35,14 +42,20 @@ export async function POST(request: NextRequest) {
     const blobName = `imports/${fileId}_${file.name}`;
 
     console.log('📁 File ricevuto:', { filename: file.name, size: file.size, fileId });
+    console.log('📁 Tentativo upload su Blob Storage con nome:', blobName);
 
     // Carica il file su Vercel Blob Storage
-    const blob = await put(blobName, file, {
-      access: 'public',
-      addRandomSuffix: false
-    });
-
-    console.log('✅ File caricato su Blob Storage:', blob.url);
+    let blob;
+    try {
+      blob = await put(blobName, file, {
+        access: 'public',
+        addRandomSuffix: false
+      });
+      console.log('✅ File caricato su Blob Storage:', blob.url);
+    } catch (blobError) {
+      console.error('❌ Errore durante upload su Blob Storage:', blobError);
+      throw blobError;
+    }
 
     return NextResponse.json({
       success: true,
