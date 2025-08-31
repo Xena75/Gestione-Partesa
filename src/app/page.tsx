@@ -165,12 +165,40 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Card Supporto */}
+          {/* Card Importazione */}
           <div className="col-lg-6 col-xl-4">
             <div className="card h-100 shadow-sm border-0">
               <div className="card-body p-4">
                 <div className="d-flex align-items-center mb-3">
                   <div className="bg-info bg-opacity-10 rounded-circle p-3 me-3">
+                    <span className="fs-1">📤</span>
+                  </div>
+                  <div>
+                    <h3 className="card-title mb-1">Importazione</h3>
+                    <p className="text-muted mb-0">File Excel</p>
+                  </div>
+                </div>
+                <p className="card-text text-muted">
+                  Importa file giornalieri Excel per aggiungere dati viaggi PoD al database.
+                </p>
+                <div className="d-flex flex-wrap gap-2 mb-3">
+                  <span className="badge bg-info">Drag & Drop</span>
+                  <span className="badge bg-success">Excel</span>
+                  <span className="badge bg-warning">Mapping</span>
+                </div>
+                <Link href="/import" className="btn btn-info w-100">
+                  Inizia Importazione →
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Card Supporto */}
+          <div className="col-lg-6 col-xl-4">
+            <div className="card h-100 shadow-sm border-0">
+              <div className="card-body p-4">
+                <div className="d-flex align-items-center mb-3">
+                  <div className="bg-secondary bg-opacity-10 rounded-circle p-3 me-3">
                     <span className="fs-1">🛠️</span>
                   </div>
                   <div>
@@ -182,10 +210,10 @@ export default function DashboardPage() {
                   Informazioni tecniche, configurazione e supporto per l&apos;utilizzo dell&apos;applicazione.
                 </p>
                 <div className="d-flex flex-wrap gap-2 mb-3">
-                  <span className="badge bg-info">Configurazione</span>
-                  <span className="badge bg-secondary">Supporto</span>
+                  <span className="badge bg-secondary">Configurazione</span>
+                  <span className="badge bg-info">Supporto</span>
                 </div>
-                <Link href="/funzionalita" className="btn btn-info w-100">
+                <Link href="/funzionalita" className="btn btn-secondary w-100">
                   Visualizza Supporto →
                 </Link>
               </div>
