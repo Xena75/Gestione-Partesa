@@ -96,7 +96,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <p className="card-text text-muted">
-                  Documentazione completa dell'applicazione, workflow di sviluppo e caratteristiche tecniche.
+                  Documentazione completa dell&apos;applicazione, workflow di sviluppo e caratteristiche tecniche.
                 </p>
                 <div className="d-flex flex-wrap gap-2 mb-3">
                   <span className="badge bg-warning">Documentazione</span>
@@ -179,7 +179,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <p className="card-text text-muted">
-                  Informazioni tecniche, configurazione e supporto per l'utilizzo dell'applicazione.
+                  Informazioni tecniche, configurazione e supporto per l&apos;utilizzo dell&apos;applicazione.
                 </p>
                 <div className="d-flex flex-wrap gap-2 mb-3">
                   <span className="badge bg-info">Configurazione</span>
