@@ -4,7 +4,7 @@ import Link from 'next/link';
 export default function FunzionalitaPage() {
   return (
     <div>
-      <h1>✨ Funzionalità dell'Applicazione</h1>
+      <h1>✨ Funzionalità dell&apos;Applicazione</h1>
       
       <div className="row mt-4">
         <div className="col-md-6">
@@ -128,7 +128,7 @@ export default function FunzionalitaPage() {
               <h3>📝 Workflow per Nuove Pagine/Funzionalità</h3>
             </div>
             <div className="card-body">
-              <p className="text-muted">Questa sezione serve come promemoria per i passaggi da seguire quando si aggiunge una nuova funzionalità all'app.</p>
+              <p className="text-muted">Questa sezione serve come promemoria per i passaggi da seguire quando si aggiunge una nuova funzionalità all&apos;app.</p>
               
               <div className="row">
                 <div className="col-md-4">
@@ -136,7 +136,7 @@ export default function FunzionalitaPage() {
                   <ul>
                     <li><strong>Definisci il Tipo:</strong> Crea un nuovo type in un file data-....ts per descrivere la struttura dei dati</li>
                     <li><strong>Scrivi le Funzioni:</strong> Crea le funzioni async che interrogano il database</li>
-                    <li><strong>Importa la connessione:</strong> Usa la connessione corretta (es. import pool from './db-prodotti')</li>
+                    <li><strong>Importa la connessione:</strong> Usa la connessione corretta (es. import pool from &apos;./db-prodotti&apos;)</li>
                     <li><strong>Scrivi le query SQL:</strong> SELECT, INSERT, UPDATE, DELETE</li>
                     <li><strong>Sicurezza:</strong> Usa sempre i prepared statements (?)</li>
                   </ul>

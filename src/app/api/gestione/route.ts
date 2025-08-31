@@ -9,7 +9,7 @@ export async function GET(request: Request) {
   try {
     const data = await getFattureData(page);
     return NextResponse.json(data);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ message: 'Errore nel recupero dati' }, { status: 500 });
   }
 }
