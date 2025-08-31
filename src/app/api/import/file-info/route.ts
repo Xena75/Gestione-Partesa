@@ -14,15 +14,24 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    console.log('🔍 File Info - Richiesta per fileId:', fileId);
+
     // Ottieni il file dalla memoria
     const fileData = getFileFromStorage(fileId);
     
     if (!fileData) {
+      console.log('❌ File non trovato in memoria per fileId:', fileId);
       return NextResponse.json(
-        { error: 'File non trovato in memoria' },
+        { 
+          error: 'File non trovato in memoria. Il file potrebbe essere scaduto o non essere stato caricato correttamente.',
+          fileId,
+          suggestion: 'Ricarica il file e riprova.'
+        },
         { status: 404 }
       );
     }
+
+    console.log('✅ File trovato in memoria:', fileData.filename);
 
     const { buffer, filename } = fileData;
 
@@ -44,6 +53,8 @@ export async function GET(request: NextRequest) {
     // Conta le righe di dati (escludendo l'intestazione)
     const dataRows = range.e.r;
 
+    console.log('✅ Informazioni file recuperate:', { filename, headers: headers.length, dataRows });
+
     return NextResponse.json({
       success: true,
       fileId,
@@ -54,7 +65,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Errore durante il recupero informazioni file:', error);
+    console.error('❌ Errore durante il recupero informazioni file:', error);
     return NextResponse.json(
       { error: 'Errore interno del server durante il recupero delle informazioni del file' },
       { status: 500 }
