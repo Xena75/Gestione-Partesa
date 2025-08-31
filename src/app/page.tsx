@@ -10,7 +10,6 @@ export default async function HomePage() {
       <table className="table table-striped">
         <thead>
           <tr>
-            {/* Colonne aggiornate */}
             <th>Deposito</th>
             <th>Data e Ora Inizio</th>
           </tr>
@@ -18,9 +17,9 @@ export default async function HomePage() {
         <tbody>
           {viaggi.map((viaggio) => (
             <tr key={viaggio.id}>
-              {/* Dati aggiornati */}
               <td>{viaggio.deposito}</td>
-              <td>{viaggio.dataOraInizioViaggio}</td>
+              {/* ECCO LA CORREZIONE: La data viene trasformata in testo */}
+              <td>{new Date(viaggio.dataOraInizioViaggio).toLocaleString('it-IT')}</td>
             </tr>
           ))}
         </tbody>
