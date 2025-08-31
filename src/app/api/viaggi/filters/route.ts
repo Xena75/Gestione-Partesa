@@ -5,7 +5,7 @@ export async function GET() {
   try {
     const filterOptions = await getFilterOptions();
     return NextResponse.json(filterOptions);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ message: 'Errore nel recupero opzioni filtri' }, { status: 500 });
   }
 }

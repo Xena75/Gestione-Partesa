@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   try {
     const stats = await getViaggiStats(page);
     return NextResponse.json(stats);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ message: 'Errore nel recupero statistiche' }, { status: 500 });
   }
 }

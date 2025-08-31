@@ -1,5 +1,5 @@
 // src/app/api/viaggi/route.ts
-import { getViaggiData, getViaggiFiltrati, getViaggiStats, createViaggioData } from '@/lib/data-viaggi';
+import { getViaggiData, getViaggiFiltrati, createViaggioData } from '@/lib/data-viaggi';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       const data = await getViaggiData(page, 20, sortBy, sortOrder);
       return NextResponse.json(data);
     }
-  } catch (error) {
+  } catch {
     return NextResponse.json({ message: 'Errore nel recupero dati' }, { status: 500 });
   }
 }
@@ -43,8 +43,7 @@ export async function POST(request: NextRequest) {
     const viaggioData = await request.json();
     await createViaggioData(viaggioData);
     return NextResponse.json({ message: 'Viaggio creato con successo' });
-  } catch (error) {
-    console.error('Errore API POST:', error);
+  } catch {
     return NextResponse.json({ message: 'Errore durante la creazione' }, { status: 500 });
   }
 }

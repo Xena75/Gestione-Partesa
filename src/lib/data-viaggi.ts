@@ -223,7 +223,7 @@ export async function getViaggiFiltrati(
     
     // Costruiamo la query WHERE dinamicamente
     const whereConditions: string[] = [];
-    const queryParams: any[] = [];
+    const queryParams: (string | number)[] = [];
     
     if (filters.dataDa) {
       whereConditions.push('data_viaggio >= ?');

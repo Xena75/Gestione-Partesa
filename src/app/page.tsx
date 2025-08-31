@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { Viaggio } from "@/lib/data-viaggi";
 import DeleteButton from "@/components/DeleteButton";
@@ -8,7 +8,7 @@ import FiltriViaggi from "@/components/FiltriViaggi";
 import SortableHeader from "@/components/SortableHeader";
 import Link from 'next/link';
 
-export default function HomePage() {
+function HomePageContent() {
   const searchParams = useSearchParams();
   const page = searchParams.get('page');
   const currentPage = Number(page) || 1;
@@ -67,7 +67,7 @@ export default function HomePage() {
     return <div>Errore nel caricamento dei dati.</div>;
   }
 
-  const { viaggi, totalPages, totalRecords } = data;
+  const { viaggi, totalPages } = data;
 
   return (
     <div className="vh-100 d-flex flex-column p-4">
@@ -198,5 +198,13 @@ export default function HomePage() {
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div>Caricamento...</div>}>
+      <HomePageContent />
+    </Suspense>
   );
 }
