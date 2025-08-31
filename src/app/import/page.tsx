@@ -4,11 +4,14 @@ import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import UploadZone from '@/components/UploadZone';
+import SavedMappingsModal from '@/components/SavedMappingsModal';
 
 export default function ImportPage() {
   const router = useRouter();
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [showMappingsModal, setShowMappingsModal] = useState(false);
+  const [currentFileInfo, setCurrentFileInfo] = useState<{fileId: string, filename: string} | null>(null);
 
   const handleFileUpload = useCallback(async (file: File) => {
     setIsUploading(true);
@@ -31,8 +34,15 @@ export default function ImportPage() {
 
       const result = await response.json();
       
-      // Reindirizza alla pagina di mapping con i dati del file
-      router.push(`/import/mapping?fileId=${result.fileId}&filename=${encodeURIComponent(file.name)}`);
+      // Salva le informazioni del file caricato
+      setUploadedFile(file);
+      setCurrentFileInfo({
+        fileId: result.fileId,
+        filename: file.name
+      });
+      
+      // File caricato con successo, l'utente decide cosa fare
+      console.log('File caricato:', file.name, 'File ID:', result.fileId);
       
     } catch (error) {
       console.error('Errore upload:', error);
@@ -77,47 +87,56 @@ export default function ImportPage() {
                   </p>
                 </div>
 
-                {/* Zona Upload */}
-                <UploadZone 
-                  onFileUpload={handleFileUpload}
-                  isUploading={isUploading}
-                  uploadedFile={uploadedFile}
-                />
+                                 {/* Zona Upload */}
+                 <UploadZone 
+                   onFileUpload={handleFileUpload}
+                   isUploading={isUploading}
+                   uploadedFile={uploadedFile}
+                 />
 
-                {/* Informazioni */}
-                <div className="mt-4">
-                  <div className="alert alert-info">
-                    <h6 className="alert-heading">ℹ️ Informazioni Importazione</h6>
-                    <ul className="mb-0">
-                      <li>Formati supportati: <strong>.xlsx</strong></li>
-                      <li>Dimensione massima: <strong>10 MB</strong></li>
-                      <li>Il file verrà analizzato automaticamente per il mapping delle colonne</li>
-                      <li>Potrai configurare la mappatura prima dell&apos;importazione</li>
-                    </ul>
-                  </div>
-                </div>
+                 {/* Azioni dopo il caricamento */}
+                 {currentFileInfo && !isUploading && (
+                   <div className="mt-4">
+                     <div className="alert alert-success">
+                       <h6 className="alert-heading">✅ File caricato con successo!</h6>
+                       <p className="mb-3">
+                         <strong>File:</strong> {currentFileInfo.filename}<br/>
+                         <strong>File ID:</strong> {currentFileInfo.fileId}
+                       </p>
+                       <div className="d-flex gap-2 flex-wrap">
+                         <button 
+                           className="btn btn-primary"
+                           onClick={() => setShowMappingsModal(true)}
+                         >
+                           💾 Usa Mapping Salvato
+                         </button>
+                         <button 
+                           className="btn btn-outline-primary"
+                           onClick={() => router.push(`/import/mapping?fileId=${currentFileInfo.fileId}&filename=${encodeURIComponent(currentFileInfo.filename)}`)}
+                         >
+                           📝 Crea Nuovo Mapping
+                         </button>
+                       </div>
+                     </div>
+                   </div>
+                 )}
+
+                 {/* Informazioni */}
+                 <div className="mt-4">
+                   <div className="alert alert-info">
+                     <h6 className="alert-heading">ℹ️ Informazioni Importazione</h6>
+                     <ul className="mb-0">
+                       <li>Formati supportati: <strong>.xlsx</strong></li>
+                       <li>Dimensione massima: <strong>10 MB</strong></li>
+                       <li>Il file verrà analizzato automaticamente per il mapping delle colonne</li>
+                       <li>Potrai configurare la mappatura prima dell&apos;importazione</li>
+                     </ul>
+                   </div>
+                 </div>
               </div>
             </div>
 
-            {/* Card Mapping Salvati */}
-            <div className="card shadow-sm border-0 mt-4">
-              <div className="card-header bg-light">
-                <h5 className="mb-0">💾 Mapping Salvati</h5>
-              </div>
-              <div className="card-body">
-                <p className="text-muted mb-3">
-                  Configurazioni di mapping riutilizzabili per importazioni future
-                </p>
-                <div className="d-flex gap-2">
-                  <button className="btn btn-outline-primary btn-sm" disabled>
-                    Carica Mapping Salvati
-                  </button>
-                  <button className="btn btn-outline-secondary btn-sm" disabled>
-                    Gestisci Template
-                  </button>
-                </div>
-              </div>
-            </div>
+            
 
             {/* Card Importazioni Recenti */}
             <div className="card shadow-sm border-0 mt-4">
@@ -132,10 +151,20 @@ export default function ImportPage() {
                   Visualizza Storico
                 </Link>
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+                         </div>
+           </div>
+         </div>
+       </div>
+       
+       {/* Modal per i mapping salvati */}
+       {currentFileInfo && (
+         <SavedMappingsModal
+           isOpen={showMappingsModal}
+           onClose={() => setShowMappingsModal(false)}
+           fileId={currentFileInfo.fileId}
+           filename={currentFileInfo.filename}
+         />
+       )}
+     </div>
+   );
+ }

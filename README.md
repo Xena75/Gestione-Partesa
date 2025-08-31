@@ -1,176 +1,277 @@
-# �� Gestione Partesa
+# Gestione Partesa - Sistema di Gestione Logistica
 
-Sistema completo per la gestione di viaggi e logistica, sviluppato con tecnologie moderne e architettura scalabile.
+Un'applicazione web moderna per la gestione completa della logistica aziendale, sviluppata con Next.js 15, TypeScript e MySQL.
 
-## 🚀 Caratteristiche Principali
+## 🚀 Funzionalità Principali
 
-### ✨ Dashboard Intelligente
-- **Interfaccia moderna** con card interattive e effetti hover
-- **Navigazione intuitiva** verso tutte le sezioni dell'applicazione
-- **Design responsive** ottimizzato per tutti i dispositivi
-- **Statistiche in tempo reale** con accesso rapido ai dati
+### 📊 Dashboard Interattiva
+- **Dashboard principale** con card interattive per navigazione rapida
+- **Statistiche in tempo reale** per viaggi e gestione logistica
+- **Navigazione intuitiva** tra le diverse sezioni dell'applicazione
 
-### 🚚 Gestione Viaggi - Monitoraggio Completo
-- **CRUD completo**: Create, Read, Update, Delete per tutti i viaggi
-- **Filtri avanzati**: Data, deposito, nominativo, numero viaggio, targa
-- **Ordinamento dinamico**: Su tutte le colonne principali (Viaggio, Deposito, Data Inizio/Fine, Targa)
-- **Paginazione intelligente**: Gestione efficiente di grandi dataset
-- **Statistiche real-time**: Record totali, pagine totali, record per pagina
-- **19 colonne dettagliate**: Informazioni complete su ogni viaggio
-- **URL bookmarkable**: Filtri e ordinamento persistono negli URL
+### 🚛 Gestione Viaggi
+- **CRUD completo** per i viaggi (Creazione, Lettura, Aggiornamento, Eliminazione)
+- **Visualizzazione avanzata** con 19 colonne complete dalla tabella `travels`
+- **Filtri avanzati** per data, magazzino, trasportatore, e altri criteri
+- **Ordinamento dinamico** su tutte le colonne principali
+- **Paginazione ottimizzata** per grandi dataset
+- **Statistiche in tempo reale** (totale record, record per pagina, pagine totali)
 
-### 📦 Gestione Logistica - Delivery
-- **Dati fatturazione**: Visualizzazione completa dei dati `fatt_delivery`
-- **Paginazione avanzata**: Performance ottimizzate per grandi dataset
-- **Indici database**: Ottimizzazioni per query veloci
-- **5 colonne principali**: Ragione sociale, viaggio, data movimento, compenso
+### 📦 Gestione Logistica
+- **Visualizzazione dati** dalla tabella `fatt_delivery`
+- **Paginazione server-side** per performance ottimali
+- **Indici database** per query veloci
+- **Filtri e ordinamento** avanzati
 
-### 🛠️ Caratteristiche Tecniche Avanzate
-- **TypeScript**: Type safety completo per tutto il codice
-- **Next.js 15**: App Router con Server e Client Components
-- **React 19**: Hooks moderni e Suspense boundaries
-- **Bootstrap 5**: UI responsive e componenti professionali
-- **MySQL/MariaDB**: Database relazionale con connessioni ottimizzate
-- **RESTful APIs**: Endpoint strutturati per tutte le operazioni
-- **Environment Variables**: Configurazione sicura per database
+### 📤 Sistema di Importazione Excel Avanzato
+- **Upload drag & drop** di file Excel (.xlsx, .xls)
+- **Mapping colonne intelligente** con auto-mapping
+- **Configurazioni salvabili** per importazioni ricorrenti
+- **Importazione in background** con progresso in tempo reale
+- **Gestione errori robusta** con logging dettagliato
+- **Campi calcolati automatici**:
+  - `Ore_Pod`: Calcolo automatico ore di POD
+  - `Data`: Estrazione data da Data Inizio
+  - `Mese`: Mese estratto da Data Inizio
+  - `Giorno`: Giorno della settimana
+  - `Sett`: Settimana dell'anno
+  - `Trimestre`: Trimestre calcolato
+- **Conversione date Excel** automatica (formato numerico Excel → MySQL datetime)
+- **Storico importazioni** con dettagli completi
+- **Gestione sessioni** per tracciabilità
 
-## 📋 Workflow per Nuove Funzionalità
+### 📈 Storico e Monitoraggio
+- **Storico importazioni** con filtri avanzati
+- **Dettagli completi** per ogni sessione di importazione
+- **Statistiche importazione** (righe totali, importate, errori, durata)
+- **Gestione errori** con messaggi dettagliati
 
-### 1. Livello Dati (src/lib)
-- **Definisci il Tipo**: Crea un nuovo type per descrivere la struttura dei dati
-- **Scrivi le Funzioni**: Funzioni async per interrogare il database
-- **Usa Prepared Statements**: Per sicurezza e performance
+## 🛠️ Tecnologie Utilizzate
 
-### 2. Livello API (src/app/api)
-- **Crea endpoint RESTful**: GET, POST, PUT, DELETE
-- **Gestisci errori**: Response appropriati per ogni situazione
-- **Validazione**: Controlli sui dati in input
+### Frontend
+- **Next.js 15** con App Router
+- **TypeScript** per type safety
+- **Bootstrap 5** per UI responsive
+- **React Hooks** per state management
+- **Client Components** per interattività
 
-### 3. Livello UI (src/app e src/components)
-- **Server Components**: Per rendering lato server
-- **Client Components**: Per interattività e stato
-- **Suspense**: Per gestire loading states
+### Backend
+- **Next.js API Routes** per API RESTful
+- **MySQL/MariaDB** come database
+- **mysql2/promise** per connessioni asincrone
+- **xlsx** per elaborazione file Excel
+- **Connection pooling** per performance ottimali
 
-## 🚀 Installazione
+### Database
+- **Indici ottimizzati** per query veloci
+- **Gestione transazioni** per integrità dati
+- **Timeout configurabili** per operazioni lunghe
+- **Gestione errori** robusta
 
-### Prerequisiti
-- Node.js 18+ 
-- MySQL/MariaDB
-- npm o yarn
+## 📋 Requisiti di Sistema
 
-### Setup
-```bash
-# Clona il repository
-git clone [repository-url]
-cd gestione-partesa
-
-# Installa le dipendenze
-npm install
-
-# Configura le variabili d'ambiente
-cp .env.example .env.local
-# Modifica .env.local con le tue credenziali database
-
-# Avvia il server di sviluppo
-npm run dev
-```
+### Software
+- **Node.js** 18+ 
+- **MySQL/MariaDB** 5.7+
+- **npm** o **yarn**
 
 ### Configurazione Database
-Crea un file `.env.local` con:
+```sql
+-- Database principale per viaggi
+CREATE DATABASE viaggi_db;
+USE viaggi_db;
+
+-- Tabella viaggi con tutti i campi
+CREATE TABLE travels (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  -- ... altri 18 campi
+);
+
+-- Tabella per importazioni POD
+CREATE TABLE viaggi_pod (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  -- ... campi importazione
+  session_id VARCHAR(255),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabella configurazioni mapping
+CREATE TABLE import_mappings (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(255),
+  mapping_data JSON,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Database gestione logistica
+CREATE DATABASE gestionelogistica;
+USE gestionelogistica;
+
+-- Tabella fatture delivery
+CREATE TABLE fatt_delivery (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  -- ... campi gestione logistica
+);
+
+-- Indici per performance
+CREATE INDEX idx_data_mov_merce ON fatt_delivery(data_mov_merce);
+CREATE INDEX idx_session_id ON viaggi_pod(session_id);
+```
+
+## 🚀 Installazione e Setup
+
+### 1. Clonazione Repository
+```bash
+git clone <repository-url>
+cd gestione-partesa
+```
+
+### 2. Installazione Dipendenze
+```bash
+npm install
+```
+
+### 3. Configurazione Ambiente
+Crea il file `.env.local` nella root del progetto:
 ```env
 # Database Viaggi
-DB_VIAGGI_HOST=localhost
-DB_VIAGGI_USER=your_user
-DB_VIAGGI_PASSWORD=your_password
-DB_VIAGGI_DATABASE=your_database
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=viaggi_db
+DB_PORT=3306
 
 # Database Gestione Logistica
-DB_GESTIONE_HOST=localhost
-DB_GESTIONE_USER=your_user
-DB_GESTIONE_PASSWORD=your_password
-DB_GESTIONE_DATABASE=gestionelogistica
+GESTIONE_DB_HOST=localhost
+GESTIONE_DB_USER=root
+GESTIONE_DB_PASSWORD=
+GESTIONE_DB_NAME=gestionelogistica
+GESTIONE_DB_PORT=3306
+```
+
+### 4. Setup Database
+```bash
+# Esegui gli script SQL per creare database e tabelle
+# (vedi sezione Configurazione Database sopra)
+```
+
+### 5. Avvio Applicazione
+```bash
+# Sviluppo
+npm run dev
+
+# Produzione
+npm run build
+npm start
 ```
 
 ## 📁 Struttura del Progetto
 
 ```
-src/
-├── app/                    # Next.js App Router
-│   ├── api/               # API endpoints
-│   │   ├── viaggi/        # API per gestione viaggi
-│   │   └── gestione/      # API per gestione logistica
-│   ├── viaggi/            # Pagine gestione viaggi
-│   ├── gestione/          # Pagine gestione logistica
-│   ├── funzionalita/      # Documentazione
-│   └── layout.tsx         # Layout principale
-├── components/            # Componenti React riutilizzabili
-├── lib/                   # Logica di business e database
-└── globals.css           # Stili globali
+gestione-partesa/
+├── src/
+│   ├── app/
+│   │   ├── api/                    # API Routes
+│   │   │   ├── viaggi/            # API Viaggi
+│   │   │   ├── gestione/          # API Gestione Logistica
+│   │   │   └── import/            # API Importazione Excel
+│   │   ├── viaggi/                # Pagine Viaggi
+│   │   ├── gestione/              # Pagine Gestione Logistica
+│   │   ├── import/                # Pagine Importazione
+│   │   └── funzionalita/          # Documentazione
+│   ├── components/                # Componenti React
+│   └── lib/                       # Logica Database
+├── uploads/                       # File Excel temporanei
+├── public/                        # Asset statici
+└── package.json
 ```
 
-## 🔧 Script Disponibili
+## 🔧 Funzionalità Avanzate
 
-```bash
-npm run dev          # Avvia server di sviluppo
-npm run build        # Build per produzione
-npm run start        # Avvia server di produzione
-npm run lint         # Controllo qualità codice
-```
+### Sistema di Importazione Excel
+1. **Upload File**: Drag & drop o selezione file
+2. **Mapping Colonne**: Interfaccia intuitiva per mappare colonne Excel → Database
+3. **Configurazioni Salvabili**: Salva mapping per uso futuro
+4. **Importazione Background**: Processo asincrono con progresso real-time
+5. **Gestione Errori**: Logging dettagliato e recovery automatico
+6. **Campi Calcolati**: Calcolo automatico di campi derivati
+7. **Storico Completo**: Tracciabilità di tutte le importazioni
 
-## 🎯 Funzionalità Implementate
+### Performance e Ottimizzazioni
+- **Connection Pooling**: Gestione efficiente connessioni database
+- **Indici Database**: Query ottimizzate per grandi dataset
+- **Paginazione Server-side**: Caricamento efficiente dati
+- **Timeout Configurabili**: Prevenzione blocchi server
+- **Gestione Memoria**: Pulizia automatica file temporanei
 
-### ✅ Completate
-- [x] Dashboard principale con navigazione
-- [x] CRUD completo per viaggi
-- [x] Filtri avanzati e ordinamento
-- [x] Paginazione intelligente
-- [x] Statistiche in tempo reale
-- [x] Gestione logistica con paginazione
-- [x] Ottimizzazioni database
-- [x] UI responsive e moderna
-- [x] TypeScript completo
-- [x] Documentazione funzionalità
+## 📊 Monitoraggio e Logging
 
-### 🚧 In Sviluppo
-- [ ] Statistiche avanzate con grafici
-- [ ] Report personalizzabili
-- [ ] Export dati
-- [ ] Notifiche in tempo reale
+### Logging Applicazione
+- **Console Logging**: Tracciamento dettagliato operazioni
+- **Error Logging**: Gestione errori con stack trace
+- **Performance Logging**: Monitoraggio tempi di esecuzione
+
+### Monitoraggio Database
+- **Query Performance**: Monitoraggio query lente
+- **Connection Status**: Stato connessioni database
+- **Error Tracking**: Tracciamento errori database
 
 ## 🔒 Sicurezza
 
-- **Prepared Statements**: Previene SQL injection
-- **Environment Variables**: Credenziali sicure
-- **Type Safety**: TypeScript per prevenire errori
-- **Input Validation**: Controlli sui dati utente
+### Validazione Input
+- **TypeScript**: Type safety per tutti i dati
+- **Input Validation**: Validazione server-side
+- **SQL Injection Prevention**: Prepared statements
 
-## 📱 Responsive Design
-
-- **Mobile First**: Ottimizzato per dispositivi mobili
-- **Tablet**: Layout adattivo per tablet
-- **Desktop**: Interfaccia completa per desktop
-- **Touch Friendly**: Interazioni ottimizzate per touch
+### Gestione File
+- **File Type Validation**: Controllo tipi file Excel
+- **Size Limits**: Limiti dimensione file
+- **Temporary Storage**: Gestione sicura file temporanei
 
 ## 🚀 Deployment
 
 ### Vercel (Raccomandato)
 ```bash
-npm run build
-# Deploy su Vercel con configurazione automatica
+# Installazione Vercel CLI
+npm i -g vercel
+
+# Deploy
+vercel
 ```
 
 ### Altri Provider
-- Configura le variabili d'ambiente
-- Build con `npm run build`
-- Avvia con `npm run start`
+- **Netlify**: Compatibile con Next.js
+- **Railway**: Deploy semplice con database integrato
+- **DigitalOcean**: App Platform per deployment completo
 
-## 🤝 Contribuire
+## 📝 Changelog
 
-1. Fork il progetto
-2. Crea un branch per la feature (`git checkout -b feature/AmazingFeature`)
-3. Commit le modifiche (`git commit -m 'Add some AmazingFeature'`)
-4. Push al branch (`git push origin feature/AmazingFeature`)
-5. Apri una Pull Request
+### v2.0.0 - Sistema Importazione Completo
+- ✅ Sistema importazione Excel avanzato
+- ✅ Mapping colonne configurabile
+- ✅ Campi calcolati automatici
+- ✅ Conversione date Excel
+- ✅ Storico importazioni
+- ✅ Gestione errori robusta
+
+### v1.5.0 - Gestione Logistica
+- ✅ Integrazione database gestionelogistica
+- ✅ Paginazione ottimizzata
+- ✅ Indici database
+
+### v1.0.0 - Base System
+- ✅ CRUD Viaggi completo
+- ✅ Dashboard interattiva
+- ✅ Filtri e ordinamento
+- ✅ Paginazione
+
+## 🤝 Contributi
+
+1. Fork del repository
+2. Creazione branch feature (`git checkout -b feature/nuova-funzionalita`)
+3. Commit modifiche (`git commit -am 'Aggiunta nuova funzionalità'`)
+4. Push branch (`git push origin feature/nuova-funzionalita`)
+5. Creazione Pull Request
 
 ## 📄 Licenza
 
@@ -179,10 +280,10 @@ Questo progetto è sotto licenza MIT. Vedi il file `LICENSE` per dettagli.
 ## 📞 Supporto
 
 Per supporto tecnico o domande:
-- Controlla la documentazione in `/funzionalita`
-- Verifica la configurazione database
-- Controlla i log del server
+- **Email**: support@gestione-partesa.com
+- **Documentazione**: `/funzionalita` nell'applicazione
+- **Issues**: GitHub Issues del repository
 
 ---
 
-**Sviluppato con ❤️ usando Next.js 15, React 19, TypeScript e Bootstrap 5**
+**Sviluppato con ❤️ per la gestione logistica aziendale**

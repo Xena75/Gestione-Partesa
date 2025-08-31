@@ -37,6 +37,16 @@ const SPECIAL_VALUES = [
   { key: 'skip', label: 'Ignora Colonna', description: 'Non importare questa colonna' }
 ];
 
+// Campi che possono essere calcolati automaticamente
+const CALCULATED_FIELDS = [
+  { key: 'Ore_Pod', label: 'Ore_Pod', description: 'Calcolato da Data Fine - Data Inizio' },
+  { key: 'Data', label: 'Data', description: 'Estratto da Data Inizio' },
+  { key: 'Mese', label: 'Mese', description: 'Estratto da Data Inizio' },
+  { key: 'Giorno', label: 'Giorno', description: 'Estratto da Data Inizio' },
+  { key: 'Sett', label: 'Settimana', description: 'Calcolato da Data Inizio' },
+  { key: 'Trimestre', label: 'Trimestre', description: 'Calcolato da Data Inizio' }
+];
+
 export default function MappingInterface({ headers, onMappingComplete }: MappingInterfaceProps) {
   const [mapping, setMapping] = useState<Record<string, string>>({});
   const [suggestions, setSuggestions] = useState<Record<string, string[]>>({});
@@ -173,6 +183,9 @@ export default function MappingInterface({ headers, onMappingComplete }: Mapping
       return;
     }
 
+    console.log('📋 Mapping finale:', mapping);
+    console.log('ℹ️ I campi calcolati (Ore_Pod, Data, Mese, Giorno, Sett, Trimestre) verranno calcolati automaticamente dal sistema');
+    
     onMappingComplete(mapping);
   };
 
@@ -306,6 +319,32 @@ export default function MappingInterface({ headers, onMappingComplete }: Mapping
                 ))}
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Informazioni Campi Calcolati */}
+      <div className="card shadow-sm border-0 mt-4">
+        <div className="card-header bg-light">
+          <h5 className="mb-0">ℹ️ Campi Calcolati Automaticamente</h5>
+        </div>
+        <div className="card-body">
+          <p className="text-muted mb-3">
+            I seguenti campi verranno calcolati automaticamente dal sistema durante l&apos;importazione:
+          </p>
+          <div className="row">
+            {CALCULATED_FIELDS.map(field => (
+              <div key={field.key} className="col-md-6 col-lg-4 mb-3">
+                <div className="d-flex align-items-start">
+                  <span className="badge bg-info me-2 mt-1">🔄</span>
+                  <div>
+                    <strong>{field.label}</strong>
+                    <br />
+                    <small className="text-muted">{field.description}</small>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

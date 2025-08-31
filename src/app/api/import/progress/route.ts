@@ -1,20 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// Importa la Map del progresso dall'endpoint execute
-// In produzione, questo dovrebbe essere in un database o Redis
-const importProgress = new Map<string, {
-  progress: number;
-  currentStep: string;
-  completed: boolean;
-  result?: {
-    success: boolean;
-    totalRows: number;
-    importedRows: number;
-    errors: string[];
-    sessionId: string;
-    duration: number;
-  };
-}>();
+import { importProgress } from '@/lib/import-progress';
 
 export async function GET(request: NextRequest) {
   try {
@@ -28,13 +13,24 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Simula il progresso per il testing
-    // In produzione, questo dovrebbe leggere da database/Redis
-    const progress = importProgress.get(fileId) || {
-      progress: 0,
-      currentStep: 'Inizializzazione...',
-      completed: false
-    };
+    const progress = importProgress.get(fileId);
+    
+    if (!progress) {
+      return NextResponse.json(
+        { error: 'Progresso non trovato' },
+        { status: 404 }
+      );
+    }
+
+    console.log(`📊 API Progress ${fileId}:`, {
+      progress: progress.progress,
+      step: progress.currentStep,
+      completed: progress.completed,
+      hasResult: !!progress.result
+    });
+
+    // Debug: mostra tutti i fileId nella Map
+    console.log('📋 Tutti i fileId nella Map:', Array.from(importProgress.keys()));
 
     return NextResponse.json(progress);
 

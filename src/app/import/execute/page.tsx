@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense, useCallback } from 'react';
+import { useState, useEffect, Suspense, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import ImportProgress from '@/components/ImportProgress';
@@ -22,11 +22,19 @@ function ExecutePageContent() {
   const [currentStep, setCurrentStep] = useState('');
   const [result, setResult] = useState<ImportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const isImportingRef = useRef(false);
 
   const fileId = searchParams.get('fileId');
   const mappingParam = searchParams.get('mapping');
 
   const startImport = useCallback(async () => {
+    // Protezione contro importazioni multiple usando ref per evitare loop
+    if (isImportingRef.current) {
+      console.log('⚠️ Importazione già in corso, ignoro richiesta...');
+      return;
+    }
+
+    isImportingRef.current = true;
     setIsImporting(true);
     setProgress(0);
     setCurrentStep('Inizializzazione...');
@@ -48,6 +56,55 @@ function ExecutePageContent() {
         })
       });
 
+             if (response.status === 409) {
+         const errorData = await response.json();
+         if (errorData.inProgress) {
+           console.log('ℹ️ Importazione già in corso, continuo il polling...');
+           // Continua con il polling per monitorare l'importazione esistente
+           const pollProgress = async () => {
+             try {
+               const progressResponse = await fetch(`/api/import/progress?fileId=${fileId}`);
+               
+               if (progressResponse.status === 404) {
+                 // Progresso non trovato, probabilmente l'importazione è completata
+                 console.log('ℹ️ Progresso non trovato, importazione probabilmente completata');
+                 setIsImporting(false);
+                 isImportingRef.current = false;
+                 return;
+               }
+               
+               if (progressResponse.ok) {
+                 const progressData = await progressResponse.json();
+                 setProgress(progressData.progress);
+                 setCurrentStep(progressData.currentStep);
+                 
+                 if (progressData.completed) {
+                   setResult(progressData.result);
+                   setIsImporting(false);
+                   isImportingRef.current = false;
+                   return;
+                 }
+               } else {
+                 // Altri errori HTTP
+                 console.error('Errore nel polling:', progressResponse.status);
+                 setIsImporting(false);
+                 isImportingRef.current = false;
+                 return;
+               }
+               
+               // Continua il polling solo se non è completato
+               setTimeout(pollProgress, 1000);
+             } catch (error) {
+               console.error('Errore nel polling:', error);
+               setIsImporting(false);
+               isImportingRef.current = false;
+             }
+           };
+           pollProgress();
+           return;
+         }
+       }
+
       if (!response.ok) {
         throw new Error('Errore durante l\'importazione');
       }
@@ -57,21 +114,43 @@ function ExecutePageContent() {
 
       // Polling per il progresso
       const pollProgress = async () => {
-        const progressResponse = await fetch(`/api/import/progress?fileId=${fileId}`);
-        if (progressResponse.ok) {
-          const progressData = await progressResponse.json();
-          setProgress(progressData.progress);
-          setCurrentStep(progressData.currentStep);
+        try {
+          const progressResponse = await fetch(`/api/import/progress?fileId=${fileId}`);
           
-          if (progressData.completed) {
-            setResult(progressData.result);
+          if (progressResponse.status === 404) {
+            // Progresso non trovato, probabilmente l'importazione è completata
+            console.log('ℹ️ Progresso non trovato, importazione probabilmente completata');
             setIsImporting(false);
+            isImportingRef.current = false;
             return;
           }
+          
+          if (progressResponse.ok) {
+            const progressData = await progressResponse.json();
+            setProgress(progressData.progress);
+            setCurrentStep(progressData.currentStep);
+            
+            if (progressData.completed) {
+              setResult(progressData.result);
+              setIsImporting(false);
+              isImportingRef.current = false;
+              return;
+            }
+          } else {
+            // Altri errori HTTP
+            console.error('Errore nel polling:', progressResponse.status);
+            setIsImporting(false);
+            isImportingRef.current = false;
+            return;
+          }
+          
+          // Continua il polling solo se non è completato
+          setTimeout(pollProgress, 1000);
+        } catch (error) {
+          console.error('Errore nel polling:', error);
+          setIsImporting(false);
+          isImportingRef.current = false;
         }
-        
-        // Continua il polling
-        setTimeout(pollProgress, 1000);
       };
 
       pollProgress();
@@ -80,8 +159,9 @@ function ExecutePageContent() {
       console.error('Errore importazione:', err);
       setError('Errore durante l\'importazione: ' + (err as Error).message);
       setIsImporting(false);
+      isImportingRef.current = false;
     }
-  }, [fileId, mappingParam]);
+  }, [fileId, mappingParam]); // Rimuovo isImporting dalle dipendenze
 
   useEffect(() => {
     if (!fileId || !mappingParam) {
@@ -89,8 +169,10 @@ function ExecutePageContent() {
       return;
     }
 
-    // Avvia automaticamente l'importazione
-    startImport();
+    // Avvia automaticamente l'importazione solo se non è già in corso
+    if (!isImportingRef.current) {
+      startImport();
+    }
   }, [fileId, mappingParam, startImport]);
 
   const retryImport = () => {

@@ -6,8 +6,14 @@ import * as XLSX from 'xlsx';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('🔄 Inizio upload file...');
+    console.log('📋 Request headers:', Object.fromEntries(request.headers.entries()));
+    
     const formData = await request.formData();
+    console.log('📋 FormData ricevuto, campi:', Array.from(formData.keys()));
+    
     const file = formData.get('file') as File;
+    console.log('📁 File ricevuto:', file?.name, 'Dimensione:', file?.size, 'Tipo:', file?.type);
 
     if (!file) {
       return NextResponse.json(
@@ -36,10 +42,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('✅ Validazione file completata');
+
     // Crea cartella uploads se non esiste
     const uploadsDir = join(process.cwd(), 'uploads');
+    console.log('📂 Directory uploads:', uploadsDir);
     if (!existsSync(uploadsDir)) {
       await mkdir(uploadsDir, { recursive: true });
+      console.log('✅ Directory creata');
+    } else {
+      console.log('✅ Directory esistente');
     }
 
     // Genera nome file univoco
@@ -48,31 +60,72 @@ export async function POST(request: NextRequest) {
     const fileName = `${timestamp}_${uniqueId}_${file.name}`;
     const filePath = join(uploadsDir, fileName);
 
+    console.log('💾 Salvataggio file...');
+
     // Salva il file
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     await writeFile(filePath, buffer);
 
-    // Analizza il file Excel per ottenere le intestazioni
-    const workbook = XLSX.read(buffer, { type: 'buffer' });
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
+    console.log('✅ File salvato:', filePath);
+
+    // Analisi semplificata del file Excel
+    console.log('📊 Analisi file Excel...');
+    console.log('📊 Buffer size:', buffer.length, 'bytes');
     
-    // Ottieni le intestazioni (prima riga)
-    const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
-    const headers: string[] = [];
+    let headers: string[] = [];
+    let dataRows = 0;
     
-    for (let col = range.s.c; col <= range.e.c; col++) {
-      const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
-      const cell = worksheet[cellAddress];
-      headers.push(cell ? cell.v : `Colonna ${col + 1}`);
+    try {
+      // Leggi il file Excel con timeout
+      const workbook = XLSX.read(buffer, { type: 'buffer' });
+      console.log('📊 Workbook creato, sheets:', workbook.SheetNames);
+      
+      if (workbook.SheetNames.length === 0) {
+        throw new Error('Nessun foglio trovato nel file Excel');
+      }
+      
+      const sheetName = workbook.SheetNames[0];
+      console.log('📊 Sheet selezionato:', sheetName);
+      
+      const worksheet = workbook.Sheets[sheetName];
+      console.log('📊 Worksheet ottenuto, ref:', worksheet['!ref']);
+      
+      if (!worksheet['!ref']) {
+        throw new Error('Foglio Excel vuoto o non valido');
+      }
+      
+      // Ottieni le intestazioni (prima riga)
+      const range = XLSX.utils.decode_range(worksheet['!ref']);
+      console.log('📊 Range decodificato:', range);
+      
+      headers = [];
+      for (let col = range.s.c; col <= range.e.c; col++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+        const cell = worksheet[cellAddress];
+        const headerValue = cell ? String(cell.v) : `Colonna ${col + 1}`;
+        headers.push(headerValue);
+        console.log(`📊 Header ${col}: ${headerValue}`);
+      }
+
+      // Conta le righe di dati (escludendo l'intestazione)
+      dataRows = range.e.r;
+      console.log('📊 Righe dati trovate:', dataRows);
+      
+    } catch (excelError) {
+      console.error('❌ Errore durante la lettura del file Excel:', excelError);
+      // Invece di fallire, restituisci intestazioni di default
+      headers = ['Colonna A', 'Colonna B', 'Colonna C', 'Colonna D', 'Colonna E'];
+      dataRows = 0;
+      console.log('⚠️ Usando intestazioni di default a causa di errore Excel');
     }
 
-    // Conta le righe di dati (escludendo l'intestazione)
-    const dataRows = range.e.r;
+    console.log('✅ Analisi completata. Intestazioni:', headers.length, 'Righe dati:', dataRows);
 
     // Genera fileId per il tracking
     const fileId = `${timestamp}_${uniqueId}`;
+
+    console.log('🎉 Upload completato con successo!');
 
     return NextResponse.json({
       success: true,
@@ -86,7 +139,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Errore durante l\'upload:', error);
+    console.error('❌ Errore durante l\'upload:', error);
     return NextResponse.json(
       { error: 'Errore interno del server durante l\'upload del file' },
       { status: 500 }

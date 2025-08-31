@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
-// import { existsSync } from 'fs'; // Non utilizzato
 import * as XLSX from 'xlsx';
 import mysql from 'mysql2/promise';
 
@@ -14,20 +13,8 @@ const dbConfig = {
   port: 3306
 };
 
-// Store per il progresso (in produzione usare Redis o database)
-const importProgress = new Map<string, {
-  progress: number;
-  currentStep: string;
-  completed: boolean;
-  result?: {
-    success: boolean;
-    totalRows: number;
-    importedRows: number;
-    errors: string[];
-    sessionId: string;
-    duration: number;
-  };
-}>();
+// Importa la Map condivisa del progresso
+import { importProgress } from '@/lib/import-progress';
 
 export async function POST(request: NextRequest) {
   try {
@@ -39,6 +26,16 @@ export async function POST(request: NextRequest) {
         { error: 'File ID e mapping sono obbligatori' },
         { status: 400 }
       );
+    }
+
+    // Controlla se l'importazione è già in corso
+    const existingProgress = importProgress.get(fileId);
+    if (existingProgress && !existingProgress.completed) {
+      console.log('⚠️ Importazione già in corso per fileId:', fileId);
+      return NextResponse.json({ 
+        error: 'Importazione già in corso per questo file',
+        inProgress: true 
+      }, { status: 409 });
     }
 
     // Inizializza il progresso
@@ -67,6 +64,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function executeImport(fileId: string, mapping: Record<string, string>) {
+  console.log('🚀 Inizio importazione per fileId:', fileId);
   const startTime = Date.now();
   let totalRows = 0;
   let importedRows = 0;
@@ -103,8 +101,14 @@ async function executeImport(fileId: string, mapping: Record<string, string>) {
     totalRows = dataRows.length;
     updateProgress(fileId, 30, `Validazione ${totalRows} righe...`);
 
-    // Connessione al database
-    const connection = await mysql.createConnection(dbConfig);
+    // Connessione al database con timeout
+    const connection = await mysql.createConnection({
+      ...dbConfig,
+      connectTimeout: 60000,
+      acquireTimeout: 60000,
+      timeout: 60000,
+      reconnect: true
+    });
     
     // Genera session_id
     const sessionId = `import_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
@@ -116,25 +120,48 @@ async function executeImport(fileId: string, mapping: Record<string, string>) {
       field !== 'skip' && !field.startsWith('auto_')
     );
     
-    const placeholders = mappedFields.map(() => '?').join(', ');
-    const insertSql = `INSERT INTO viaggi_pod (${mappedFields.join(', ')}, session_id) VALUES (${placeholders}, ?)`;
+    // Aggiungi campi calcolati se presenti nel mapping
+    const calculatedFields = ['Ore_Pod', 'Data', 'Mese', 'Giorno', 'Sett', 'Trimestre'];
+    const fieldsToInsert = [...mappedFields];
+    
+    calculatedFields.forEach(field => {
+      if (Object.values(mapping).includes(field) && !fieldsToInsert.includes(field)) {
+        fieldsToInsert.push(field);
+      }
+    });
+    
+    const placeholders = fieldsToInsert.map(() => '?').join(', ');
+    const insertSql = `INSERT IGNORE INTO viaggi_pod (\`${fieldsToInsert.join('`, `')}\`, session_id) VALUES (${placeholders}, ?)`;
+    
+    console.log('🔍 Campi da inserire:', fieldsToInsert);
+    console.log('🔍 SQL Query:', insertSql);
 
     updateProgress(fileId, 50, 'Inserimento dati nel database...');
 
-    // Inserisci i dati
+    // Inserisci i dati con timeout e gestione errori migliorata
     for (let i = 0; i < dataRows.length; i++) {
       try {
         const row = dataRows[i];
         const values: (string | number | null)[] = [];
 
-        // Mappa i valori secondo il mapping
-        for (const [excelHeader, dbField] of Object.entries(mapping)) {
-          if (dbField === 'skip') continue;
+        // Prepara i valori per tutti i campi da inserire
+        for (const dbField of fieldsToInsert) {
+          let value: string | number | null = null;
           
-          const headerIndex = headers.indexOf(excelHeader);
-          let value = headerIndex >= 0 ? row[headerIndex] : null;
-
-          // Gestisci valori speciali
+          console.log(`🔍 Elaborazione campo: ${dbField}`);
+          
+          // Trova la colonna Excel mappata a questo campo
+          const excelHeader = Object.keys(mapping).find(key => mapping[key] === dbField);
+          
+          if (excelHeader) {
+            const headerIndex = headers.indexOf(excelHeader);
+            value = headerIndex >= 0 ? row[headerIndex] : null;
+            console.log(`   - Excel Header: ${excelHeader}, Index: ${headerIndex}, Valore grezzo: ${value}`);
+          } else {
+            console.log(`   - Nessun mapping trovato per: ${dbField}`);
+          }
+          
+          // Gestisci valori speciali e campi calcolati
           if (dbField.startsWith('auto_')) {
             switch (dbField) {
               case 'auto_filename':
@@ -144,25 +171,38 @@ async function executeImport(fileId: string, mapping: Record<string, string>) {
                 value = new Date().toISOString();
                 break;
               case 'auto_calculated':
-                // Calcoli automatici (es. Ore_Pod, Data, Mese, etc.)
                 value = calculateAutoValue(dbField, row, headers, mapping);
                 break;
             }
+            console.log(`   - Campo auto: ${dbField} = ${value}`);
           }
-
-          // Valida e converte i tipi
-          value = validateAndConvertValue(dbField, value);
           
-          if (dbField !== 'skip' && !dbField.startsWith('auto_')) {
-            values.push(value);
+          // Valida e converte i tipi PRIMA di calcolare i campi automatici
+          const convertedValue = validateAndConvertValue(dbField, value);
+          console.log(`   - Dopo conversione: ${value} -> ${convertedValue}`);
+          
+          // Ora calcola i campi automatici usando i valori già convertiti
+          if (['Ore_Pod', 'Data', 'Mese', 'Giorno', 'Sett', 'Trimestre'].includes(dbField)) {
+            // Campi calcolati automaticamente
+            const calculatedValue = calculateAutoValue(dbField, row, headers, mapping);
+            console.log(`   - Campo calcolato: ${dbField} = ${calculatedValue}`);
+            values.push(calculatedValue);
+          } else {
+            // Campi normali (inclusi Data Inizio e Data Fine)
+            values.push(convertedValue);
           }
         }
 
         // Aggiungi session_id
         values.push(sessionId);
 
-        // Esegui l'inserimento
-        await connection.execute(insertSql, values);
+        // Esegui l'inserimento con timeout
+        const insertPromise = connection.execute(insertSql, values);
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout inserimento')), 30000)
+        );
+        
+        await Promise.race([insertPromise, timeoutPromise]);
         importedRows++;
 
         // Aggiorna progresso ogni 10 righe
@@ -171,10 +211,20 @@ async function executeImport(fileId: string, mapping: Record<string, string>) {
           updateProgress(fileId, progress, `Importazione riga ${i + 1} di ${dataRows.length}...`);
         }
 
+        // Pausa breve per evitare sovraccarico
+        if (i % 50 === 0) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+
       } catch (rowError) {
         const errorMsg = `Riga ${i + 1}: ${(rowError as Error).message}`;
         errors.push(errorMsg);
         console.error(errorMsg);
+        
+        // Se troppi errori, interrompi
+        if (errors.length > 100) {
+          throw new Error('Troppi errori, importazione interrotta');
+        }
       }
     }
 
@@ -196,10 +246,11 @@ async function executeImport(fileId: string, mapping: Record<string, string>) {
     };
 
     // Salva il risultato
+    console.log('✅ Importazione completata con successo!', result);
     updateProgress(fileId, 100, 'Importazione completata', true, result);
 
   } catch (error) {
-    console.error('Errore durante l\'importazione:', error);
+    console.error('❌ Errore durante l\'importazione:', error);
     const result = {
       success: false,
       totalRows,
@@ -209,6 +260,7 @@ async function executeImport(fileId: string, mapping: Record<string, string>) {
       duration: Math.round((Date.now() - startTime) / 1000)
     };
     
+    console.log('❌ Importazione fallita:', result);
     updateProgress(fileId, 100, 'Errore durante l\'importazione', true, result);
   }
 }
@@ -221,6 +273,7 @@ function updateProgress(fileId: string, progress: number, step: string, complete
   sessionId: string;
   duration: number;
 }) {
+  console.log(`📊 Progresso ${fileId}: ${progress}% - ${step}${completed ? ' (COMPLETATO)' : ''}`);
   const current = importProgress.get(fileId);
   if (current) {
     current.progress = progress;
@@ -234,32 +287,126 @@ function updateProgress(fileId: string, progress: number, step: string, complete
 }
 
 function calculateAutoValue(field: string, row: (string | number | null)[], headers: string[], mapping: Record<string, string>): string | number | null {
+  console.log(`⚙️ Tentativo di calcolare il campo: ${field}`);
+  
+  // Trova gli indici delle colonne mappate
+  const dataInizioExcelHeader = Object.keys(mapping).find(k => mapping[k] === 'Data Inizio');
+  const dataFineExcelHeader = Object.keys(mapping).find(k => mapping[k] === 'Data Fine');
+  
+  const dataInizioIndex = dataInizioExcelHeader ? headers.indexOf(dataInizioExcelHeader) : -1;
+  const dataFineIndex = dataFineExcelHeader ? headers.indexOf(dataFineExcelHeader) : -1;
+  
+  console.log(`   - Mapping per Data Inizio: ${dataInizioExcelHeader}, Index: ${dataInizioIndex}`);
+  console.log(`   - Mapping per Data Fine: ${dataFineExcelHeader}, Index: ${dataFineIndex}`);
+  
+  // Ottieni i valori grezzi dall'Excel
+  const dataInizioRaw = dataInizioIndex >= 0 ? row[dataInizioIndex] : null;
+  const dataFineRaw = dataFineIndex >= 0 ? row[dataFineIndex] : null;
+  
+  console.log(`   - Valori grezzi Excel - Data Inizio: ${dataInizioRaw}, Data Fine: ${dataFineRaw}`);
+  
+  // Converti i valori grezzi in date
+  let dataInizio: Date | null = null;
+  let dataFine: Date | null = null;
+  
+     if (dataInizioRaw) {
+     if (typeof dataInizioRaw === 'number') {
+       // È già un numero Excel date
+       dataInizio = new Date((dataInizioRaw - 25569) * 86400 * 1000);
+     } else {
+       dataInizio = new Date(dataInizioRaw);
+       if (isNaN(dataInizio.getTime())) {
+         // Prova come Excel date (numero)
+         const excelDate = parseFloat(String(dataInizioRaw));
+         if (!isNaN(excelDate)) {
+           dataInizio = new Date((excelDate - 25569) * 86400 * 1000);
+         }
+       }
+     }
+   }
+   
+   if (dataFineRaw) {
+     if (typeof dataFineRaw === 'number') {
+       // È già un numero Excel date
+       dataFine = new Date((dataFineRaw - 25569) * 86400 * 1000);
+     } else {
+       dataFine = new Date(dataFineRaw);
+       if (isNaN(dataFine.getTime())) {
+         // Prova come Excel date (numero)
+         const excelDate = parseFloat(String(dataFineRaw));
+         if (!isNaN(excelDate)) {
+           dataFine = new Date((excelDate - 25569) * 86400 * 1000);
+         }
+       }
+     }
+   }
+  
+  console.log(`   - Date convertite - Data Inizio: ${dataInizio?.toISOString()}, Data Fine: ${dataFine?.toISOString()}`);
+  
   switch (field) {
-    case 'auto_calculated':
-      // Esempio: calcola Ore_Pod dalla differenza tra Data Fine e Data Inizio
-      const dataInizioIndex = headers.indexOf(Object.keys(mapping).find(k => mapping[k] === 'Data Inizio') || '');
-      const dataFineIndex = headers.indexOf(Object.keys(mapping).find(k => mapping[k] === 'Data Fine') || '');
-      
-      if (dataInizioIndex >= 0 && dataFineIndex >= 0) {
-        const dataInizioValue = row[dataInizioIndex];
-        const dataFineValue = row[dataFineIndex];
-        
-        if (dataInizioValue && dataFineValue) {
-          const dataInizio = new Date(dataInizioValue);
-          const dataFine = new Date(dataFineValue);
-          if (!isNaN(dataInizio.getTime()) && !isNaN(dataFine.getTime())) {
-            const diffHours = (dataFine.getTime() - dataInizio.getTime()) / (1000 * 60 * 60);
-            return Math.round(diffHours * 100) / 100; // Arrotonda a 2 decimali
-          }
+    case 'Ore_Pod':
+      // Calcola Ore_Pod dalla differenza tra Data Fine e Data Inizio
+      if (dataInizio && dataFine) {
+        if (!isNaN(dataInizio.getTime()) && !isNaN(dataFine.getTime())) {
+          const diffMs = dataFine.getTime() - dataInizio.getTime();
+          const diffHours = diffMs / (1000 * 60 * 60);
+          console.log(`   - Differenza in ore: ${diffHours}`);
+          return parseFloat(diffHours.toFixed(2));
+        } else {
+          console.warn(`   - Errore: Data Inizio o Data Fine non valide per Ore_Pod`);
         }
+      } else {
+        console.warn(`   - Errore: Data Inizio o Data Fine mancanti per Ore_Pod`);
       }
       return null;
+    
+    case 'Data':
+      // Estrai la data da Data Inizio
+      if (dataInizio && !isNaN(dataInizio.getTime())) {
+        return dataInizio.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+      }
+      return null;
+      
+    case 'Mese':
+      // Estrai il mese da Data Inizio
+      if (dataInizio && !isNaN(dataInizio.getTime())) {
+        return dataInizio.getMonth() + 1; // getMonth() restituisce 0-11
+      }
+      return null;
+      
+    case 'Giorno':
+      // Estrai il giorno della settimana da Data Inizio
+      if (dataInizio && !isNaN(dataInizio.getTime())) {
+        const giorni = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
+        const giornoSettimana = giorni[dataInizio.getDay()];
+        console.log(`   - Calcolato Giorno della settimana: ${giornoSettimana}`);
+        return giornoSettimana;
+      }
+      return null;
+    
+    case 'Sett':
+      // Calcola la settimana dell'anno da Data Inizio
+      if (dataInizio && !isNaN(dataInizio.getTime())) {
+        const start = new Date(dataInizio.getFullYear(), 0, 1);
+        const days = Math.floor((dataInizio.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
+        return Math.ceil((days + start.getDay() + 1) / 7);
+      }
+      return null;
+      
+    case 'Trimestre':
+      // Calcola il trimestre da Data Inizio
+      if (dataInizio && !isNaN(dataInizio.getTime())) {
+        return Math.ceil((dataInizio.getMonth() + 1) / 3);
+      }
+      return null;
+    
     default:
       return null;
   }
 }
 
 function validateAndConvertValue(field: string, value: string | number | null): string | number | null {
+  console.log(`🔧 validateAndConvertValue - Campo: ${field}, Valore: ${value}, Tipo: ${typeof value}`);
   if (value === null || value === undefined) return null;
 
   switch (field) {
@@ -274,11 +421,53 @@ function validateAndConvertValue(field: string, value: string | number | null): 
     case 'Data Inizio':
     case 'Data Fine':
     case 'Data':
-      if (value && typeof value === 'object' && 'toISOString' in value) return (value as Date).toISOString();
-      if (typeof value === 'string') {
-        const date = new Date(value);
-        return isNaN(date.getTime()) ? null : date.toISOString();
+      console.log(`   📅 Elaborazione data per campo: ${field}, valore: ${value}`);
+      if (value && typeof value === 'object' && 'toISOString' in value) {
+        const date = value as Date;
+        const mysqlDate = date.toISOString().slice(0, 19).replace('T', ' ');
+        console.log(`   ✅ Data da oggetto Date: ${value} -> ${mysqlDate}`);
+        return mysqlDate; // Formato MySQL: YYYY-MM-DD HH:mm:ss
       }
+      if (typeof value === 'string') {
+        console.log(`   📅 Tentativo conversione stringa: ${value}`);
+        // Gestisci diversi formati di data
+        let date: Date;
+        
+        // Prova prima come ISO string
+        date = new Date(value);
+        if (!isNaN(date.getTime())) {
+          const mysqlDate = date.toISOString().slice(0, 19).replace('T', ' ');
+          console.log(`   ✅ Data convertita da stringa: ${value} -> ${mysqlDate}`);
+          return mysqlDate;
+        }
+        
+        // Prova come Excel date (numero)
+        const excelDate = parseFloat(value);
+        if (!isNaN(excelDate)) {
+          // Converti da Excel date (giorni dal 1900-01-01) a JavaScript Date
+          const excelEpoch = new Date(1900, 0, 1);
+          const jsDate = new Date(excelEpoch.getTime() + (excelDate - 2) * 24 * 60 * 60 * 1000);
+          const mysqlDate = jsDate.toISOString().slice(0, 19).replace('T', ' ');
+          console.log(`   ✅ Excel date convertita: ${value} -> ${mysqlDate}`);
+          return mysqlDate;
+        }
+        
+        console.warn(`   ❌ Data non valida: ${value}`);
+        return null;
+      }
+             if (typeof value === 'number') {
+         console.log(`   📅 Tentativo conversione numero Excel: ${value}`);
+         // Prova come Excel date (numero)
+         const excelDate = value;
+         if (!isNaN(excelDate)) {
+           // Converti da Excel date usando il metodo corretto
+           const jsDate = new Date((excelDate - 25569) * 86400 * 1000);
+           const mysqlDate = jsDate.toISOString().slice(0, 19).replace('T', ' ');
+           console.log(`   ✅ Excel date convertita da numero: ${value} -> ${mysqlDate}`);
+           return mysqlDate;
+         }
+       }
+      console.warn(`   ❌ Data non valida o tipo non supportato: ${value} (${typeof value})`);
       return null;
     
     case 'Ore_Pod':
