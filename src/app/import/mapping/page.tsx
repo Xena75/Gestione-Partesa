@@ -48,8 +48,8 @@ function MappingPageContent() {
       }
     };
 
-    loadFileInfo();
-  }, [fileId]);
+         loadFileInfo();
+   }, [fileId, blobUrl]);
 
   const handleMappingComplete = (mapping: Record<string, string>) => {
     // Reindirizza alla pagina di importazione con il mapping

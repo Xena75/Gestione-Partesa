@@ -163,7 +163,7 @@ function ExecutePageContent() {
       setIsImporting(false);
       isImportingRef.current = false;
     }
-  }, [fileId, mappingParam]); // Rimuovo isImporting dalle dipendenze
+     }, [fileId, mappingParam, blobUrl]); // Aggiungo blobUrl alle dipendenze
 
   useEffect(() => {
     if (!fileId || !mappingParam) {
@@ -175,7 +175,7 @@ function ExecutePageContent() {
     if (!isImportingRef.current) {
       startImport();
     }
-  }, [fileId, mappingParam, startImport]);
+     }, [fileId, mappingParam, blobUrl, startImport]);
 
   const retryImport = () => {
     setResult(null);

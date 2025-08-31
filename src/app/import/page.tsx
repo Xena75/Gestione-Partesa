@@ -11,7 +11,7 @@ export default function ImportPage() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [showMappingsModal, setShowMappingsModal] = useState(false);
-  const [currentFileInfo, setCurrentFileInfo] = useState<{fileId: string, filename: string} | null>(null);
+  const [currentFileInfo, setCurrentFileInfo] = useState<{fileId: string, filename: string, blobUrl: string} | null>(null);
 
   const handleFileUpload = useCallback(async (file: File) => {
     setIsUploading(true);
@@ -34,12 +34,13 @@ export default function ImportPage() {
 
       const result = await response.json();
       
-      // Salva le informazioni del file caricato
-      setUploadedFile(file);
-      setCurrentFileInfo({
-        fileId: result.fileId,
-        filename: file.name
-      });
+             // Salva le informazioni del file caricato
+       setUploadedFile(file);
+       setCurrentFileInfo({
+         fileId: result.fileId,
+         filename: file.name,
+         blobUrl: result.blobUrl
+       });
       
       // File caricato con successo, l'utente decide cosa fare
       console.log('File caricato:', file.name, 'File ID:', result.fileId);
