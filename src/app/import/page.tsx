@@ -51,7 +51,7 @@ export default function ImportPage() {
     } finally {
       setIsUploading(false);
     }
-  }, [router]);
+  }, []);
 
   return (
     <div className="min-vh-100 bg-light">

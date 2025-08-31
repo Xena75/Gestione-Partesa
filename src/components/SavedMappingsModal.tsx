@@ -89,7 +89,7 @@ export default function SavedMappingsModal({ isOpen, onClose, fileId, filename }
             ) : (
               <div>
                 <p className="text-muted mb-3">
-                  Seleziona un mapping salvato per andare direttamente all'importazione:
+                  Seleziona un mapping salvato per andare direttamente all&apos;importazione:
                 </p>
                 
                 <div className="list-group">

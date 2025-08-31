@@ -104,10 +104,7 @@ async function executeImport(fileId: string, mapping: Record<string, string>) {
     // Connessione al database con timeout
     const connection = await mysql.createConnection({
       ...dbConfig,
-      connectTimeout: 60000,
-      acquireTimeout: 60000,
-      timeout: 60000,
-      reconnect: true
+      connectTimeout: 60000
     });
     
     // Genera session_id
@@ -431,10 +428,9 @@ function validateAndConvertValue(field: string, value: string | number | null): 
       if (typeof value === 'string') {
         console.log(`   📅 Tentativo conversione stringa: ${value}`);
         // Gestisci diversi formati di data
-        let date: Date;
         
         // Prova prima come ISO string
-        date = new Date(value);
+        const date = new Date(value);
         if (!isNaN(date.getTime())) {
           const mysqlDate = date.toISOString().slice(0, 19).replace('T', ' ');
           console.log(`   ✅ Data convertita da stringa: ${value} -> ${mysqlDate}`);
