@@ -1,5 +1,5 @@
 // src/app/page.tsx
-import { getPartenzeData, Partenza } from "@/lib/data-partenze";
+import { getPartenzeData, Partenza } from "@/lib/data";
 
 export default async function HomePage() {
   const partenze: Partenza[] = await getPartenzeData();
