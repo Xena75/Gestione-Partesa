@@ -1,29 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
-import { getFileFromStorage } from '../upload/route';
+import { getFileFromBlob } from '../upload/route';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const fileId = searchParams.get('fileId');
+    const blobUrl = searchParams.get('blobUrl');
 
-    if (!fileId) {
+    if (!fileId || !blobUrl) {
       return NextResponse.json(
-        { error: 'File ID mancante' },
+        { error: 'File ID e Blob URL mancanti' },
         { status: 400 }
       );
     }
 
-    console.log('🔍 File Info - Richiesta per fileId:', fileId);
+    console.log('🔍 File Info - Richiesta per fileId:', fileId, 'blobUrl:', blobUrl);
 
-    // Ottieni il file dalla memoria
-    const fileData = getFileFromStorage(fileId);
+    // Ottieni il file dal Blob Storage
+    const fileData = await getFileFromBlob(blobUrl);
     
     if (!fileData) {
-      console.log('❌ File non trovato in memoria per fileId:', fileId);
+      console.log('❌ File non trovato nel Blob Storage per fileId:', fileId);
       return NextResponse.json(
         { 
-          error: 'File non trovato in memoria. Il file potrebbe essere scaduto o non essere stato caricato correttamente.',
+          error: 'File non trovato nel Blob Storage. Il file potrebbe essere scaduto o non essere stato caricato correttamente.',
           fileId,
           suggestion: 'Ricarica il file e riprova.'
         },
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log('✅ File trovato in memoria:', fileData.filename);
+    console.log('✅ File trovato nel Blob Storage:', fileData.filename);
 
     const { buffer, filename } = fileData;
 

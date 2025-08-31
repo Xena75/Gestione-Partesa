@@ -16,9 +16,10 @@ interface SavedMappingsModalProps {
   onClose: () => void;
   fileId: string;
   filename: string;
+  blobUrl: string;
 }
 
-export default function SavedMappingsModal({ isOpen, onClose, fileId, filename }: SavedMappingsModalProps) {
+export default function SavedMappingsModal({ isOpen, onClose, fileId, filename, blobUrl }: SavedMappingsModalProps) {
   const router = useRouter();
   const [mappings, setMappings] = useState<SavedMapping[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,7 +50,7 @@ export default function SavedMappingsModal({ isOpen, onClose, fileId, filename }
     if (selectedMapping) {
       // Vai direttamente all'importazione con il mapping selezionato
       const mappingParam = encodeURIComponent(JSON.stringify(selectedMapping.mapping_data));
-      router.push(`/import/execute?fileId=${fileId}&mapping=${mappingParam}`);
+      router.push(`/import/execute?fileId=${fileId}&mapping=${mappingParam}&blobUrl=${encodeURIComponent(blobUrl)}`);
       onClose();
     }
   };

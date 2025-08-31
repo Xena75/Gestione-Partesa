@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
 import mysql from 'mysql2/promise';
-import { getFileFromStorage, removeFileFromStorage } from '../upload/route';
+import { getFileFromBlob } from '../upload/route';
 
 // Configurazione database
 const dbConfig = {
@@ -18,11 +18,11 @@ import { importProgress } from '@/lib/import-progress';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { fileId, mapping } = body;
+    const { fileId, mapping, blobUrl } = body;
 
-    if (!fileId || !mapping) {
+    if (!fileId || !mapping || !blobUrl) {
       return NextResponse.json(
-        { error: 'File ID e mapping sono obbligatori' },
+        { error: 'File ID, mapping e Blob URL sono obbligatori' },
         { status: 400 }
       );
     }
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Avvia l'importazione in background
-    executeImport(fileId, mapping);
+    executeImport(fileId, mapping, blobUrl);
 
     return NextResponse.json({
       success: true,
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function executeImport(fileId: string, mapping: Record<string, string>) {
+async function executeImport(fileId: string, mapping: Record<string, string>, blobUrl: string) {
   console.log('🚀 Inizio importazione per fileId:', fileId);
   const startTime = Date.now();
   let totalRows = 0;
@@ -73,14 +73,14 @@ async function executeImport(fileId: string, mapping: Record<string, string>) {
     // Aggiorna progresso
     updateProgress(fileId, 10, 'Lettura file Excel...');
 
-    // Ottieni il file dalla memoria
-    const fileData = getFileFromStorage(fileId);
+    // Ottieni il file dal Blob Storage
+    const fileData = await getFileFromBlob(blobUrl);
     if (!fileData) {
-      throw new Error('File non trovato in memoria');
+      throw new Error('File non trovato nel Blob Storage');
     }
 
     const { buffer, filename } = fileData;
-    console.log('📁 File trovato in memoria:', filename);
+    console.log('📁 File trovato nel Blob Storage:', filename);
     
     updateProgress(fileId, 20, 'Parsing dati Excel...');
 
@@ -223,9 +223,6 @@ async function executeImport(fileId: string, mapping: Record<string, string>) {
 
     await connection.end();
 
-    // Rimuovi il file dalla memoria
-    removeFileFromStorage(fileId);
-
     updateProgress(fileId, 90, 'Completamento importazione...');
 
     // Calcola durata
@@ -247,9 +244,6 @@ async function executeImport(fileId: string, mapping: Record<string, string>) {
 
   } catch (error) {
     console.error('❌ Errore durante l\'importazione:', error);
-    
-    // Rimuovi il file dalla memoria anche in caso di errore
-    removeFileFromStorage(fileId);
     
     const result = {
       success: false,

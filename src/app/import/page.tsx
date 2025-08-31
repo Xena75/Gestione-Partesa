@@ -112,7 +112,7 @@ export default function ImportPage() {
                          </button>
                          <button 
                            className="btn btn-outline-primary"
-                           onClick={() => router.push(`/import/mapping?fileId=${currentFileInfo.fileId}&filename=${encodeURIComponent(currentFileInfo.filename)}`)}
+                           onClick={() => router.push(`/import/mapping?fileId=${currentFileInfo.fileId}&filename=${encodeURIComponent(currentFileInfo.filename)}&blobUrl=${encodeURIComponent(currentFileInfo.blobUrl)}`)}
                          >
                            📝 Crea Nuovo Mapping
                          </button>
@@ -163,6 +163,7 @@ export default function ImportPage() {
            onClose={() => setShowMappingsModal(false)}
            fileId={currentFileInfo.fileId}
            filename={currentFileInfo.filename}
+           blobUrl={currentFileInfo.blobUrl}
          />
        )}
      </div>

@@ -21,6 +21,7 @@ function MappingPageContent() {
 
   const fileId = searchParams.get('fileId');
   const filename = searchParams.get('filename');
+  const blobUrl = searchParams.get('blobUrl');
 
   useEffect(() => {
     if (!fileId) {
@@ -30,9 +31,9 @@ function MappingPageContent() {
     }
 
     // Carica informazioni del file
-    const loadFileInfo = async () => {
-      try {
-        const response = await fetch(`/api/import/file-info?fileId=${fileId}`);
+      const loadFileInfo = async () => {
+    try {
+      const response = await fetch(`/api/import/file-info?fileId=${fileId}&blobUrl=${encodeURIComponent(blobUrl!)}`);
         if (!response.ok) {
           throw new Error('Errore nel caricamento delle informazioni del file');
         }
@@ -55,6 +56,7 @@ function MappingPageContent() {
     const mappingParams = new URLSearchParams();
     mappingParams.set('fileId', fileId!);
     mappingParams.set('mapping', JSON.stringify(mapping));
+    mappingParams.set('blobUrl', blobUrl!);
     
     router.push(`/import/execute?${mappingParams.toString()}`);
   };

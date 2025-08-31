@@ -26,6 +26,7 @@ function ExecutePageContent() {
 
   const fileId = searchParams.get('fileId');
   const mappingParam = searchParams.get('mapping');
+  const blobUrl = searchParams.get('blobUrl');
 
   const startImport = useCallback(async () => {
     // Protezione contro importazioni multiple usando ref per evitare loop
@@ -52,7 +53,8 @@ function ExecutePageContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           fileId,
-          mapping
+          mapping,
+          blobUrl
         })
       });
 
