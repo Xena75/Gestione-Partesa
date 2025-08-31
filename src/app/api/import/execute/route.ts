@@ -5,11 +5,11 @@ import { getFileFromBlob } from '../upload/route';
 
 // Configurazione database
 const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'viaggi_db',
-  port: parseInt(process.env.DB_PORT || '3306')
+  host: process.env.DB_VIAGGI_HOST || 'localhost',
+  user: process.env.DB_VIAGGI_USER || 'root',
+  password: process.env.DB_VIAGGI_PASS || '',
+  database: process.env.DB_VIAGGI_NAME || 'viaggi_db',
+  port: parseInt(process.env.DB_VIAGGI_PORT || '3306')
 };
 
 // Importa la Map condivisa del progresso
