@@ -26,9 +26,10 @@ export async function GET() {
     // Prima verifica se la tabella esiste
     try {
       const [tableCheck] = await connection.execute('SHOW TABLES LIKE "import_mappings"');
-      console.log('🔍 Tabella import_mappings esiste:', (tableCheck as any[]).length > 0);
+      const tableExists = Array.isArray(tableCheck) && tableCheck.length > 0;
+      console.log('🔍 Tabella import_mappings esiste:', tableExists);
       
-      if ((tableCheck as any[]).length === 0) {
+      if (!tableExists) {
         console.log('⚠️ Tabella import_mappings non trovata, creo la tabella...');
         
         // Crea la tabella se non esiste
@@ -52,7 +53,8 @@ export async function GET() {
       'SELECT id, name, description, mapping_data, created_at, updated_at FROM import_mappings ORDER BY updated_at DESC'
     );
     
-    console.log('✅ Query eseguita, righe trovate:', (rows as any[]).length);
+    const rowCount = Array.isArray(rows) ? rows.length : 0;
+    console.log('✅ Query eseguita, righe trovate:', rowCount);
     
     await connection.end();
     console.log('✅ Connessione database chiusa');
