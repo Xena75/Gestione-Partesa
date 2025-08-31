@@ -28,7 +28,7 @@ export async function getFattureData(currentPage: number) {
     // Query per contare il numero totale di record
     const countSql = 'SELECT COUNT(*) as total FROM fatt_delivery';
     const [countResult] = await pool.query(countSql);
-    const totalItems = countResult[0].total;
+    const totalItems = (countResult as { total: number }[])[0].total;
     const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
 
     return {

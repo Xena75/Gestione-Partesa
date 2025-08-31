@@ -1,14 +1,12 @@
 // src/app/gestione/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation'; // <-- 1. IMPORTA L'HOOK
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import type { FatturaDelivery } from '@/lib/data-gestione';
 import Link from 'next/link';
 
-// 2. RIMUOVI 'searchParams' DALLE PROPS
-export default function GestionePage() {
-  // 3. USA L'HOOK PER OTTENERE I PARAMETRI
+function GestioneContent() {
   const searchParams = useSearchParams();
   const page = searchParams.get('page');
   const currentPage = Number(page) || 1;
@@ -81,5 +79,13 @@ export default function GestionePage() {
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function GestionePage() {
+  return (
+    <Suspense fallback={<div>Caricamento...</div>}>
+      <GestioneContent />
+    </Suspense>
   );
 }

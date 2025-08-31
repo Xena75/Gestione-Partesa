@@ -144,7 +144,7 @@ export default function FunzionalitaPage() {
                 <div className="col-md-4">
                   <h5>2. Livello API (src/app/api)</h5>
                   <ul>
-                    <li><strong>Crea una nuova cartella:</strong> Per l'endpoint (es. src/app/api/prodotti)</li>
+                    <li><strong>Crea una nuova cartella:</strong> Per l&apos;endpoint (es. src/app/api/prodotti)</li>
                     <li><strong>Crea route.ts:</strong> Al suo interno</li>
                     <li><strong>Crea le funzioni HTTP:</strong> GET, POST, PUT, DELETE</li>
                     <li><strong>Importa e chiama:</strong> Le funzioni definite al punto 1</li>
