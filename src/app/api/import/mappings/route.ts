@@ -1,0 +1,82 @@
+import { NextRequest, NextResponse } from 'next/server';
+import mysql from 'mysql2/promise';
+
+// Configurazione database
+const dbConfig = {
+  host: 'localhost',
+  user: 'root',
+  password: '',
+  database: 'viaggi_db',
+  port: 3306
+};
+
+export async function GET() {
+  try {
+    const connection = await mysql.createConnection(dbConfig);
+    
+    const [rows] = await connection.execute(
+      'SELECT id, name, description, mapping_data, created_at, updated_at FROM import_mappings ORDER BY updated_at DESC'
+    );
+    
+    await connection.end();
+    
+    return NextResponse.json({
+      success: true,
+      mappings: rows,
+      message: 'Mapping recuperati con successo'
+    });
+    
+  } catch (error) {
+    console.error('Errore durante il recupero mapping:', error);
+    return NextResponse.json(
+      { error: 'Errore interno del server durante il recupero dei mapping' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { name, description, mapping_data } = body;
+
+    if (!name || !mapping_data) {
+      return NextResponse.json(
+        { error: 'Nome e mapping_data sono obbligatori' },
+        { status: 400 }
+      );
+    }
+
+    const connection = await mysql.createConnection(dbConfig);
+    
+    // Inserisci il nuovo mapping
+    const [result] = await connection.execute(
+      'INSERT INTO import_mappings (name, description, mapping_data, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())',
+      [name, description || '', JSON.stringify(mapping_data)]
+    );
+    
+    const insertResult = result as { insertId: number };
+    const mappingId = insertResult.insertId;
+    
+    // Recupera il mapping appena inserito
+    const [rows] = await connection.execute(
+      'SELECT id, name, description, mapping_data, created_at, updated_at FROM import_mappings WHERE id = ?',
+      [mappingId]
+    );
+    
+    await connection.end();
+    
+    return NextResponse.json({
+      success: true,
+      mapping: (rows as { id: number; name: string; description: string; mapping_data: string; created_at: Date; updated_at: Date }[])[0],
+      message: 'Mapping salvato con successo'
+    });
+    
+  } catch (error) {
+    console.error('Errore durante il salvataggio mapping:', error);
+    return NextResponse.json(
+      { error: 'Errore interno del server durante il salvataggio del mapping' },
+      { status: 500 }
+    );
+  }
+}
