@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
       
       return NextResponse.json({
         success: true,
-        mapping: (rows as any[])[0],
+        mapping: Array.isArray(rows) && rows.length > 0 ? rows[0] : null,
         message: 'Mapping salvato con successo'
       });
       
