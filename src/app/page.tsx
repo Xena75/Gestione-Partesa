@@ -1,210 +1,212 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
-import type { Viaggio } from "@/lib/data-viaggi";
-import DeleteButton from "@/components/DeleteButton";
-import FiltriViaggi from "@/components/FiltriViaggi";
-import SortableHeader from "@/components/SortableHeader";
 import Link from 'next/link';
 
-function HomePageContent() {
-  const searchParams = useSearchParams();
-  const page = searchParams.get('page');
-  const currentPage = Number(page) || 1;
-  const sortBy = searchParams.get('sortBy') || 'dataOraInizioViaggio';
-  const sortOrder = (searchParams.get('sortOrder') as 'ASC' | 'DESC') || 'DESC';
-  
-  // Parametri dei filtri
-  const dataDa = searchParams.get('dataDa');
-  const dataA = searchParams.get('dataA');
-  const deposito = searchParams.get('deposito');
-  const nominativoId = searchParams.get('nominativoId');
-  const numeroViaggio = searchParams.get('numeroViaggio');
-  const targaMezzoId = searchParams.get('targaMezzoId');
-  
-  const [data, setData] = useState<{ viaggi: Viaggio[], totalPages: number, totalRecords: number } | null>(null);
-  const [stats, setStats] = useState<{ totalRecords: number, totalPages: number, recordsPerPage: number } | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    setIsLoading(true);
-    
-    // Costruisci l'URL con i parametri dei filtri e ordinamento
-    const params = new URLSearchParams();
-    params.set('page', currentPage.toString());
-    params.set('sortBy', sortBy);
-    params.set('sortOrder', sortOrder);
-    
-    if (dataDa) params.set('dataDa', dataDa);
-    if (dataA) params.set('dataA', dataA);
-    if (deposito) params.set('deposito', deposito);
-    if (nominativoId) params.set('nominativoId', nominativoId);
-    if (numeroViaggio) params.set('numeroViaggio', numeroViaggio);
-    if (targaMezzoId) params.set('targaMezzoId', targaMezzoId);
-    
-    // Carica i dati della pagina corrente
-    fetch(`/api/viaggi?${params.toString()}`)
-      .then(res => res.json())
-      .then(fetchedData => {
-        setData(fetchedData);
-        setIsLoading(false);
-      });
-    
-    // Carica le statistiche
-    fetch(`/api/viaggi/stats?page=${currentPage}`)
-      .then(res => res.json())
-      .then(fetchedStats => {
-        setStats(fetchedStats);
-      });
-  }, [currentPage, sortBy, sortOrder, dataDa, dataA, deposito, nominativoId, numeroViaggio, targaMezzoId]);
-
-  if (isLoading) {
-    return <div>Caricamento...</div>;
-  }
-
-  if (!data || !stats) {
-    return <div>Errore nel caricamento dei dati.</div>;
-  }
-
-  const { viaggi, totalPages } = data;
-
+export default function DashboardPage() {
   return (
-    <div className="vh-100 d-flex flex-column p-4">
-      <h1>Lista Viaggi</h1>
-      
-      {/* Card Statistiche */}
-      <div className="row mb-4">
-        <div className="col-md-4">
-          <div className="card shadow-sm">
-            <div className="card-body text-center">
-              <h2 className="text-primary mb-0">{stats.totalRecords.toLocaleString()}</h2>
-              <p className="text-muted mb-0">Record Totali</p>
+    <div className="min-vh-100 bg-light">
+      {/* Header */}
+      <div className="bg-primary text-white py-5">
+        <div className="container">
+          <div className="row align-items-center">
+            <div className="col-md-8">
+              <h1 className="display-4 mb-2">🚚 Gestione Partesa</h1>
+              <p className="lead mb-0">Dashboard completa per la gestione di viaggi e logistica</p>
             </div>
-          </div>
-        </div>
-        <div className="col-md-4">
-          <div className="card shadow-sm">
-            <div className="card-body text-center">
-              <h2 className="text-info mb-0">{stats.totalPages}</h2>
-              <p className="text-muted mb-0">Pagine Totali</p>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-4">
-          <div className="card shadow-sm">
-            <div className="card-body text-center">
-              <h2 className="text-success mb-0">{stats.recordsPerPage}</h2>
-              <p className="text-muted mb-0">Record in questa Pagina</p>
+            <div className="col-md-4 text-md-end">
+              <div className="text-white-50">
+                <small>Versione 1.0</small>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Sezione Filtri */}
-      <FiltriViaggi />
+      {/* Dashboard Cards */}
+      <div className="container py-5">
+        <div className="row g-4">
+          {/* Card Gestione Viaggi */}
+          <div className="col-lg-6 col-xl-4">
+            <div className="card h-100 shadow-sm border-0 hover-lift">
+              <div className="card-body p-4">
+                <div className="d-flex align-items-center mb-3">
+                  <div className="bg-primary bg-opacity-10 rounded-circle p-3 me-3">
+                    <span className="fs-1">⏱️</span>
+                  </div>
+                  <div>
+                    <h3 className="card-title mb-1">Gestione Viaggi</h3>
+                    <p className="text-muted mb-0">Monitoraggio</p>
+                  </div>
+                </div>
+                <p className="card-text text-muted">
+                  CRUD completo, filtri avanzati, ordinamento dinamico, paginazione intelligente e statistiche in tempo reale.
+                </p>
+                <div className="d-flex flex-wrap gap-2 mb-3">
+                  <span className="badge bg-primary">CRUD</span>
+                  <span className="badge bg-info">Filtri</span>
+                  <span className="badge bg-success">Ordinamento</span>
+                  <span className="badge bg-warning">Paginazione</span>
+                </div>
+                <Link href="/viaggi" className="btn btn-primary w-100">
+                  Accedi alla Gestione Viaggi →
+                </Link>
+              </div>
+            </div>
+          </div>
 
-      {/* Tabella */}
-      <div className="flex-grow-1 table-responsive h-100">
-        <table className="table table-striped table-sm table-hover mb-0">
-          <thead>
-            <tr>
-              <th>Deposito</th>
-              <SortableHeader 
-                field="numeroViaggio" 
-                label="Viaggio" 
-                currentSortBy={sortBy} 
-                currentSortOrder={sortOrder} 
-              />
-              <th>Nominativo</th>
-              <th>Affiancato Da</th>
-              <th>Totale Colli</th>
-              <SortableHeader 
-                field="dataOraInizioViaggio" 
-                label="Data Inizio" 
-                currentSortBy={sortBy} 
-                currentSortOrder={sortOrder} 
-              />
-              <SortableHeader 
-                field="dataOraFineViaggio" 
-                label="Data Fine" 
-                currentSortBy={sortBy} 
-                currentSortOrder={sortOrder} 
-              />
-              <th>Ore Effettive</th>
-              <SortableHeader 
-                field="targaMezzoId" 
-                label="Targa Mezzo" 
-                currentSortBy={sortBy} 
-                currentSortOrder={sortOrder} 
-              />
-              <th>KM Iniziali</th>
-              <th>KM Finali</th>
-              <th>KM Effettivi</th>
-              <th>KM al Rifornimento</th>
-              <th>Litri Riforniti</th>
-              <th>€/Litro</th>
-              <th>Ritiri Effettuati</th>
-              <th>Aggiornato</th>
-              <th>Azioni</th>
-            </tr>
-          </thead>
-          <tbody>
-            {viaggi.map((viaggio) => (
-              <tr key={viaggio.id}>
-                <td>{viaggio.deposito || '-'}</td>
-                <td>{viaggio.numeroViaggio || '-'}</td>
-                <td>{viaggio.nominativoId || '-'}</td>
-                <td>{viaggio.affiancatoDaId || '-'}</td>
-                <td>{viaggio.totaleColli || '-'}</td>
-                <td>{viaggio.dataOraInizioViaggio ? new Date(viaggio.dataOraInizioViaggio).toLocaleString('it-IT') : '-'}</td>
-                <td>{viaggio.dataOraFineViaggio ? new Date(viaggio.dataOraFineViaggio).toLocaleString('it-IT') : '-'}</td>
-                <td>{viaggio.oreEffettive || '-'}</td>
-                <td>{viaggio.targaMezzoId || '-'}</td>
-                <td>{viaggio.kmIniziali || '-'}</td>
-                <td>{viaggio.kmFinali || '-'}</td>
-                <td>{viaggio.kmEffettivi || '-'}</td>
-                <td>{viaggio.kmAlRifornimento || '-'}</td>
-                <td>{viaggio.litriRiforniti || '-'}</td>
-                <td>{viaggio.euroLitro || '-'}</td>
-                <td>{viaggio.haiEffettuatoRitiri ? 'Sì' : 'No'}</td>
-                <td>{viaggio.updatedAt ? new Date(viaggio.updatedAt).toLocaleString('it-IT') : '-'}</td>
-                <td className="d-flex gap-2">
-                  <Link href={`/viaggi/${viaggio.id}/modifica`} className="btn btn-secondary btn-sm">
-                    Modifica
-                  </Link>
-                  <DeleteButton id={viaggio.id} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          {/* Card Gestione Logistica */}
+          <div className="col-lg-6 col-xl-4">
+            <div className="card h-100 shadow-sm border-0 hover-lift">
+              <div className="card-body p-4">
+                <div className="d-flex align-items-center mb-3">
+                  <div className="bg-success bg-opacity-10 rounded-circle p-3 me-3">
+                    <span className="fs-1">📦</span>
+                  </div>
+                  <div>
+                    <h3 className="card-title mb-1">Gestione Logistica</h3>
+                    <p className="text-muted mb-0">Delivery</p>
+                  </div>
+                </div>
+                <p className="card-text text-muted">
+                  Dati fatturazione, paginazione avanzata, performance ottimizzate per grandi dataset.
+                </p>
+                <div className="d-flex flex-wrap gap-2 mb-3">
+                  <span className="badge bg-success">Fatturazione</span>
+                  <span className="badge bg-info">Paginazione</span>
+                  <span className="badge bg-warning">Performance</span>
+                </div>
+                <Link href="/gestione" className="btn btn-success w-100">
+                  Accedi alla Gestione Logistica →
+                </Link>
+              </div>
+            </div>
+          </div>
 
-      {/* Controlli di Paginazione */}
-      <div className="d-flex justify-content-center gap-2 mt-3">
-        <Link 
-          href={`/?page=${currentPage - 1}${searchParams.toString() ? `&${searchParams.toString()}` : ''}`}
-          className={`btn btn-primary ${currentPage <= 1 ? 'disabled' : ''}`}
-        >
-          Indietro
-        </Link>
-        <span className="d-flex align-items-center">Pagina {currentPage} di {totalPages}</span>
-        <Link 
-          href={`/?page=${currentPage + 1}${searchParams.toString() ? `&${searchParams.toString()}` : ''}`}
-          className={`btn btn-primary ${currentPage >= totalPages ? 'disabled' : ''}`}
-        >
-          Avanti
-        </Link>
+          {/* Card Funzionalità */}
+          <div className="col-lg-6 col-xl-4">
+            <div className="card h-100 shadow-sm border-0 hover-lift">
+              <div className="card-body p-4">
+                <div className="d-flex align-items-center mb-3">
+                  <div className="bg-warning bg-opacity-10 rounded-circle p-3 me-3">
+                    <span className="fs-1">✨</span>
+                  </div>
+                  <div>
+                    <h3 className="card-title mb-1">Funzionalità</h3>
+                    <p className="text-muted mb-0">Documentazione</p>
+                  </div>
+                </div>
+                <p className="card-text text-muted">
+                  Documentazione completa dell'applicazione, workflow di sviluppo e caratteristiche tecniche.
+                </p>
+                <div className="d-flex flex-wrap gap-2 mb-3">
+                  <span className="badge bg-warning">Documentazione</span>
+                  <span className="badge bg-info">Workflow</span>
+                  <span className="badge bg-secondary">Tecnico</span>
+                </div>
+                <Link href="/funzionalita" className="btn btn-warning w-100">
+                  Visualizza Documentazione →
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Card Statistiche (Futuro) */}
+          <div className="col-lg-6 col-xl-4">
+            <div className="card h-100 shadow-sm border-0 opacity-75">
+              <div className="card-body p-4">
+                <div className="d-flex align-items-center mb-3">
+                  <div className="bg-secondary bg-opacity-10 rounded-circle p-3 me-3">
+                    <span className="fs-1">📈</span>
+                  </div>
+                  <div>
+                    <h3 className="card-title mb-1">Statistiche</h3>
+                    <p className="text-muted mb-0">In Sviluppo</p>
+                  </div>
+                </div>
+                <p className="card-text text-muted">
+                  Grafici e report avanzati per analisi dettagliate dei dati di viaggio e logistica.
+                </p>
+                <div className="d-flex flex-wrap gap-2 mb-3">
+                  <span className="badge bg-secondary">Grafici</span>
+                  <span className="badge bg-info">Report</span>
+                  <span className="badge bg-warning">Analisi</span>
+                </div>
+                <button className="btn btn-secondary w-100" disabled>
+                  Prossimamente...
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Card Quick Stats */}
+          <div className="col-lg-6 col-xl-4">
+            <div className="card h-100 shadow-sm border-0 bg-gradient-primary text-white">
+              <div className="card-body p-4">
+                <div className="d-flex align-items-center mb-3">
+                  <div className="bg-white bg-opacity-20 rounded-circle p-3 me-3">
+                    <span className="fs-1">📊</span>
+                  </div>
+                  <div>
+                    <h3 className="card-title mb-1">Quick Stats</h3>
+                    <p className="text-white-50 mb-0">Panoramica</p>
+                  </div>
+                </div>
+                <p className="card-text text-white-75">
+                  Accesso rapido alle statistiche principali e monitoraggio in tempo reale.
+                </p>
+                <div className="d-flex flex-wrap gap-2 mb-3">
+                  <span className="badge bg-white bg-opacity-20">Tempo Reale</span>
+                  <span className="badge bg-white bg-opacity-20">Monitoraggio</span>
+                </div>
+                <Link href="/viaggi" className="btn btn-light w-100">
+                  Visualizza Statistiche →
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Card Supporto */}
+          <div className="col-lg-6 col-xl-4">
+            <div className="card h-100 shadow-sm border-0">
+              <div className="card-body p-4">
+                <div className="d-flex align-items-center mb-3">
+                  <div className="bg-info bg-opacity-10 rounded-circle p-3 me-3">
+                    <span className="fs-1">🛠️</span>
+                  </div>
+                  <div>
+                    <h3 className="card-title mb-1">Supporto</h3>
+                    <p className="text-muted mb-0">Tecnico</p>
+                  </div>
+                </div>
+                <p className="card-text text-muted">
+                  Informazioni tecniche, configurazione e supporto per l'utilizzo dell'applicazione.
+                </p>
+                <div className="d-flex flex-wrap gap-2 mb-3">
+                  <span className="badge bg-info">Configurazione</span>
+                  <span className="badge bg-secondary">Supporto</span>
+                </div>
+                <Link href="/funzionalita" className="btn btn-info w-100">
+                  Visualizza Supporto →
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="row mt-5">
+          <div className="col-12">
+            <div className="text-center text-muted">
+              <p className="mb-2">
+                <strong>Gestione Partesa</strong> - Sistema completo per la gestione di viaggi e logistica
+              </p>
+              <small>
+                Sviluppato con Next.js 15, React 19, TypeScript e Bootstrap 5
+              </small>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-  );
-}
-
-export default function HomePage() {
-  return (
-    <Suspense fallback={<div>Caricamento...</div>}>
-      <HomePageContent />
-    </Suspense>
   );
 }

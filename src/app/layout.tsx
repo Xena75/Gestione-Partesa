@@ -4,8 +4,8 @@ import type { Metadata } from "next";
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: "Gestione Viaggi",
-  description: "App per la gestione dei viaggi e logistica",
+  title: "Gestione Partesa - Dashboard",
+  description: "Dashboard completa per la gestione di viaggi e logistica",
 };
 
 export default function RootLayout({ children, }: { children: React.ReactNode; }) {
@@ -15,11 +15,11 @@ export default function RootLayout({ children, }: { children: React.ReactNode; }
         <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
           <div className="container">
             <Link className="navbar-brand" href="/">
-              Gestione Partesa
+              🚚 Gestione Partesa
             </Link>
-            <div className="navbar-nav">
-              <Link className="nav-link" href="/gestione">
-                Gestione Logistica
+            <div className="navbar-nav ms-auto">
+              <Link className="nav-link" href="/">
+                Dashboard
               </Link>
             </div>
           </div>
