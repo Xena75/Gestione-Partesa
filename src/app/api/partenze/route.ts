@@ -1,7 +1,9 @@
 // src/app/api/partenze/route.ts
-import { getPartenzeData, createPartenzaData } from '@/lib/data-partenze';
 
-// Qui non usiamo 'request', quindi aggiungiamo l'underscore
+// ✅ CORREZIONE: Importa da "@/lib/data" come da tua struttura di file
+import { getPartenzeData, createPartenzaData } from '@/lib/data';
+
+// Qui non usiamo 'request', quindi aggiungiamo l'underscore per pulizia
 export async function GET(_request: Request) { 
   const partenze = await getPartenzeData();
   return Response.json(partenze);
