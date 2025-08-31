@@ -25,6 +25,7 @@ Un'applicazione web moderna per la gestione completa della logistica aziendale, 
 
 ### 📤 Sistema di Importazione Excel Avanzato
 - **Upload drag & drop** di file Excel (.xlsx, .xls)
+- **Vercel Blob Storage** per gestione file sicura e scalabile
 - **Mapping colonne intelligente** con auto-mapping
 - **Configurazioni salvabili** per importazioni ricorrenti
 - **Importazione in background** con progresso in tempo reale
@@ -39,6 +40,7 @@ Un'applicazione web moderna per la gestione completa della logistica aziendale, 
 - **Conversione date Excel** automatica (formato numerico Excel → MySQL datetime)
 - **Storico importazioni** con dettagli completi
 - **Gestione sessioni** per tracciabilità
+- **Eliminazione record** per session_id specifico
 
 ### 📈 Storico e Monitoraggio
 - **Storico importazioni** con filtri avanzati
@@ -60,6 +62,7 @@ Un'applicazione web moderna per la gestione completa della logistica aziendale, 
 - **MySQL/MariaDB** come database
 - **mysql2/promise** per connessioni asincrone
 - **xlsx** per elaborazione file Excel
+- **@vercel/blob** per gestione file su Vercel Blob Storage
 - **Connection pooling** per performance ottimali
 
 ### Database
@@ -135,18 +138,21 @@ npm install
 Crea il file `.env.local` nella root del progetto:
 ```env
 # Database Viaggi
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=
-DB_NAME=viaggi_db
-DB_PORT=3306
+DB_VIAGGI_HOST=localhost
+DB_VIAGGI_USER=root
+DB_VIAGGI_PASS=
+DB_VIAGGI_NAME=viaggi_db
+DB_VIAGGI_PORT=3306
 
 # Database Gestione Logistica
-GESTIONE_DB_HOST=localhost
-GESTIONE_DB_USER=root
-GESTIONE_DB_PASSWORD=
-GESTIONE_DB_NAME=gestionelogistica
-GESTIONE_DB_PORT=3306
+DB_GESTIONE_HOST=localhost
+DB_GESTIONE_USER=root
+DB_GESTIONE_PASS=
+DB_GESTIONE_NAME=gestionelogistica
+DB_GESTIONE_PORT=3306
+
+# Vercel Blob Storage (per deployment su Vercel)
+BLOB_READ_WRITE_TOKEN=your_blob_token_here
 ```
 
 ### 4. Setup Database
@@ -245,6 +251,12 @@ vercel
 - **DigitalOcean**: App Platform per deployment completo
 
 ## 📝 Changelog
+
+### v2.1.0 - Vercel Blob Storage Integration
+- ✅ Integrazione Vercel Blob Storage per gestione file
+- ✅ Configurazione variabili d'ambiente ottimizzata
+- ✅ Risoluzione problemi deployment su Vercel
+- ✅ Sistema importazione Excel completamente funzionante
 
 ### v2.0.0 - Sistema Importazione Completo
 - ✅ Sistema importazione Excel avanzato

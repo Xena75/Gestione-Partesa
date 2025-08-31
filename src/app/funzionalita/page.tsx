@@ -341,6 +341,7 @@ export default function FunzionalitaPage() {
                         <div className="accordion-body">
                           <ul>
                             <li><strong>Drag & Drop:</strong> Interfaccia intuitiva per caricare file</li>
+                            <li><strong>Vercel Blob Storage:</strong> Gestione file sicura e scalabile</li>
                             <li><strong>Validazione File:</strong> Controllo automatico formato Excel</li>
                             <li><strong>Dimensioni Limitate:</strong> Gestione sicura file grandi</li>
                             <li><strong>Parsing Intelligente:</strong> Lettura automatica intestazioni</li>
@@ -433,6 +434,7 @@ export default function FunzionalitaPage() {
                         <div className="accordion-body">
                           <ul>
                             <li><strong>Session ID:</strong> Tracciabilità completa importazioni</li>
+                            <li><strong>Eliminazione Record:</strong> Rimozione record per session_id specifico</li>
                             <li><strong>Storico Dettagliato:</strong> Log di tutte le operazioni</li>
                             <li><strong>Statistiche Importazione:</strong> Righe totali, importate, errori</li>
                             <li><strong>Filtri Storico:</strong> Ricerca e filtraggio importazioni</li>
@@ -467,6 +469,7 @@ export default function FunzionalitaPage() {
                     <div className="card-body">
                       <ul className="list-unstyled">
                         <li>✅ Libreria xlsx per parsing</li>
+                        <li>✅ Vercel Blob Storage integration</li>
                         <li>✅ Importazione asincrona</li>
                         <li>✅ Gestione memoria ottimizzata</li>
                         <li>✅ Connection pooling</li>
@@ -562,6 +565,16 @@ export default function FunzionalitaPage() {
                           <h6>xlsx</h6>
                           <small className="text-muted">
                             Parsing file Excel, gestione formati
+                          </small>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="col-md-6">
+                      <div className="card border-0 shadow-sm mb-3">
+                        <div className="card-body">
+                          <h6>@vercel/blob</h6>
+                          <small className="text-muted">
+                            Gestione file su Vercel Blob Storage
                           </small>
                         </div>
                       </div>
