@@ -1,6 +1,6 @@
-#  Gestione Viaggi 🚚
+#  Gestione Viaggi & Logistica 🚚
 
-Applicazione web per la gestione dei viaggi, sviluppata con Next.js e TypeScript e deployata su Vercel.
+Applicazione web per la gestione dei viaggi e della logistica, sviluppata con Next.js e TypeScript e deployata su Vercel.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FXena75%2FGestione-Partesa)
 
@@ -42,19 +42,16 @@ Assicurati di avere installato [Node.js](https://nodejs.org/) (versione 18 o sup
 
 ### Configurazione
 
-1.  Crea un file per le variabili d'ambiente locali nella cartella principale del progetto:
-    ```bash
-    touch .env.local
-    ```
-2.  Apri il file `.env.local` e incollaci la seguente struttura, compilando i valori con le tue credenziali.
+1.  Crea un file `.env.local` nella cartella principale del progetto.
+2.  Apri il file e incollaci la seguente struttura, compilando i valori con le tue credenziali.
 
     ```env
     # --- Database 1: VIAGGI ---
-    DB_VIAGGI_HOST='INDIRIZZO_SERVER_DB' # es. localhost o l'URL del tunnel
-    DB_VIAGGI_PORT='3306'               # La porta del tuo server MySQL
-    DB_VIAGGI_USER='root'               # Il tuo utente DB
-    DB_VIAGGI_PASS=''                   # La tua password DB (lascia vuoto se non c'è)
-    DB_VIAGGI_NAME='viaggi_db'          # Il nome del database
+    DB_VIAGGI_HOST='INDIRIZZO_SERVER_DB'
+    DB_VIAGGI_PORT='3306'
+    DB_VIAGGI_USER='root'
+    DB_VIAGGI_PASS=''
+    DB_VIAGGI_NAME='viaggi_db'
 
     # --- Database 2: GESTIONE ---
     DB_GESTIONE_HOST='INDIRIZZO_SERVER_DB'
@@ -64,24 +61,8 @@ Assicurati di avere installato [Node.js](https://nodejs.org/) (versione 18 o sup
     DB_GESTIONE_NAME='gestionelogistica'
     ```
 
-### Avvio Server di Sviluppo
-
-1.  Lancia il server:
-    ```bash
-    npm run dev
-    ```
-2.  Apri il browser all'indirizzo [http://localhost:3000](http://localhost:3000).
-
----
-
-## 🌐 Deploy
-
-Il deploy è gestito automaticamente da Vercel. Ogni `push` sul branch `main` avvia una nuova build e la messa online del progetto.
-
----
-
-## ✨ Funzionalità Attuali
-
-* **Visualizzazione (Read):** Mostra la lista completa dei viaggi presi dal database.
-* **Creazione (Create):** Permette di aggiungere un nuovo viaggio tramite un form dedicato.
-* **Eliminazione (Delete):** Permette di eliminare un viaggio dalla lista.
+### Ottimizzazione Database (Opzionale ma Consigliato)
+Per migliorare le performance su tabelle con molti dati, è consigliabile aggiungere degli indici. Connettiti al tuo database ed esegui:
+```sql
+-- Per il database gestionelogistica
+CREATE INDEX idx_data_mov_merce ON fatt_delivery (data_mov_merce DESC);

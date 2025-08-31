@@ -1,11 +1,11 @@
 // src/app/layout.tsx
 import 'bootstrap/dist/css/bootstrap.min.css';
 import type { Metadata } from "next";
-import Link from 'next/link'; // <-- 1. IMPORTA IL COMPONENTE LINK
+import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: "Gestione Partesa",
-  description: "App per la gestione delle partese",
+  title: "Gestione Viaggi", // Titolo aggiornato
+  description: "App per la gestione dei viaggi e logistica",
 };
 
 export default function RootLayout({
@@ -18,10 +18,18 @@ export default function RootLayout({
       <body>
         <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
           <div className="container">
-            {/* -- 2. SOSTITUISCI <a> CON <Link> -- */}
             <Link className="navbar-brand" href="/">
-              Gestione Partesa
+              Gestione Viaggi
             </Link>
+            <div className="navbar-nav">
+              {/* LINK ALLA NUOVA PAGINA */}
+              <Link className="nav-link" href="/gestione">
+                Gestione Logistica
+              </Link>
+              <Link className="nav-link" href="/funzionalita">
+                Funzionalità
+              </Link>
+            </div>
           </div>
         </nav>
 
