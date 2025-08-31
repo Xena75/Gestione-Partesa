@@ -1,20 +1,19 @@
 // src/app/api/partenze/route.ts
+import { getPartenzeData, createPartenzaData } from '@/lib/data-partenze';
 
-import { getPartenzeData } from "@/lib/data";
-
-export async function GET(request: Request) {
+// Qui non usiamo 'request', quindi aggiungiamo l'underscore
+export async function GET(_request: Request) { 
   const partenze = await getPartenzeData();
   return Response.json(partenze);
 }
 
+// Qui usiamo 'request', quindi rimane com'è
 export async function POST(request: Request) {
-  const dati = await request.json();
-
-  // Per ora, li stampiamo nel terminale del server per vedere se arrivano
-  console.log('Dati ricevuti dal form:', dati);
-
-  // In futuro, qui salveremo i dati nel database
-  
-  // Rispondiamo al client con un messaggio di successo
-  return Response.json({ message: 'Partenza creata con successo!', data: dati }, { status: 201 });
+  try {
+    const dati = await request.json();
+    await createPartenzaData(dati);
+    return Response.json({ message: 'Partenza creata con successo!' }, { status: 201 });
+  } catch (error) {
+    return Response.json({ message: 'Errore interno del server' }, { status: 500 });
+  }
 }

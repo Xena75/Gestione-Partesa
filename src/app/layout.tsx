@@ -1,5 +1,7 @@
-import 'bootstrap/dist/css/bootstrap.min.css'; // Importa Bootstrap
+// src/app/layout.tsx
+import 'bootstrap/dist/css/bootstrap.min.css';
 import type { Metadata } from "next";
+import Link from 'next/link'; // <-- 1. IMPORTA IL COMPONENTE LINK
 
 export const metadata: Metadata = {
   title: "Gestione Partesa",
@@ -16,14 +18,15 @@ export default function RootLayout({
       <body>
         <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
           <div className="container">
-            <a className="navbar-brand" href="/">
+            {/* -- 2. SOSTITUISCI <a> CON <Link> -- */}
+            <Link className="navbar-brand" href="/">
               Gestione Partesa
-            </a>
+            </Link>
           </div>
         </nav>
 
         <div className="container mt-4">
-          {children} {/* Qui verranno caricate le tue pagine */}
+          {children}
         </div>
       </body>
     </html>
