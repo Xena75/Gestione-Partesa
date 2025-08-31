@@ -2,13 +2,10 @@
 import { getViaggioById } from "@/lib/data-viaggi";
 import EditViaggioForm from "@/components/EditViaggioForm";
 
-// La firma della funzione rimane la stessa, la logica interna è già corretta
-export default async function ModificaViaggioPage({ params }: { params: { id: string } }) {
-  // ID è ora una stringa
-  const id = params.id;
+export default async function ModificaViaggioPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
 
   const viaggio = await getViaggioById(id);
-
   if (!viaggio) {
     return <div>Viaggio non trovato.</div>;
   }

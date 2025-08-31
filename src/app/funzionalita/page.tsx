@@ -21,6 +21,8 @@ export default function FunzionalitaPage() {
                 <li><strong>Delete:</strong> Eliminazione di un viaggio</li>
               </ul>
               <p><strong>Dati gestiti:</strong> 19 colonne complete incluse informazioni su conducenti, veicoli, km, rifornimenti e campi per JOIN con altre tabelle</p>
+              <p><strong>Filtri Avanzati:</strong> Sezione toggle con filtri per Magazzino, Nominativo, Viaggio, Targa, Data Da/A</p>
+              <p><strong>Ordinamento Dinamico:</strong> Intestazioni cliccabili per ordinare per Viaggio, Deposito, Data Inizio/Fine, Targa</p>
               <Link href="/" className="btn btn-primary">Vai ai Viaggi</Link>
             </div>
           </div>
@@ -56,11 +58,12 @@ export default function FunzionalitaPage() {
               <h5>Ottimizzazioni Implementate:</h5>
               <ul>
                 <li><strong>Indici Database:</strong> Ottimizzazione query di ordinamento</li>
-                <li><strong>Paginazione:</strong> Caricamento a blocchi per scalabilità</li>
+                <li><strong>Paginazione Intelligente:</strong> Navigazione tra pagine con mantenimento filtri e ordinamento</li>
                 <li><strong>LIMIT/OFFSET:</strong> Query efficienti per grandi dataset</li>
                 <li><strong>Client Components:</strong> Interfaccia reattiva e veloce</li>
                 <li><strong>Interfaccia Ottimizzata:</strong> Utilizzo completo dello spazio schermo</li>
                 <li><strong>Formattazione Intelligente:</strong> Date in formato italiano, gestione valori null</li>
+                <li><strong>URL Bookmarkable:</strong> Tutti i filtri e l&apos;ordinamento sono salvati nell&apos;URL</li>
               </ul>
             </div>
           </div>
@@ -99,6 +102,7 @@ export default function FunzionalitaPage() {
                     <li>Gestione di milioni di record</li>
                     <li>Paginazione efficiente</li>
                     <li>Indici database ottimizzati</li>
+                    <li>Filtri avanzati con toggle</li>
                   </ul>
                 </div>
                 <div className="col-md-4">
@@ -107,6 +111,7 @@ export default function FunzionalitaPage() {
                     <li>Validazione input lato server</li>
                     <li>Gestione errori robusta</li>
                     <li>Query parametrizzate</li>
+                    <li>Validazione campi di ordinamento</li>
                   </ul>
                 </div>
                 <div className="col-md-4">
@@ -117,6 +122,8 @@ export default function FunzionalitaPage() {
                     <li>Navigazione intuitiva</li>
                     <li>Utilizzo completo dello spazio schermo</li>
                     <li>Tabella ottimizzata per grandi dataset</li>
+                    <li>Intestazioni ordinabili con icone</li>
+                    <li>Statistiche in tempo reale</li>
                   </ul>
                 </div>
               </div>

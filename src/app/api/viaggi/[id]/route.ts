@@ -1,12 +1,13 @@
 // src/app/api/viaggi/[id]/route.ts
 import { deleteViaggioData, updateViaggioData } from '@/lib/data-viaggi';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-// Fix già applicato in precedenza per la funzione DELETE
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function DELETE(request: any, context: any) {
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
-    const id = context.params.id;
+    const { id } = await context.params;
     await deleteViaggioData(id);
     return NextResponse.json({ message: `Viaggio ${id} eliminato` });
   } catch (error) {
@@ -15,18 +16,14 @@ export async function DELETE(request: any, context: any) {
   }
 }
 
-// Applichiamo lo stesso fix anche alla nuova funzione PUT
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function PUT(request: any, context: any) {
+export async function PUT(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
-    const id = context.params.id;
+    const { id } = await context.params;
     const dati = await request.json();
-    // Mappiamo i nomi dei campi dal form ai nomi del database
-    const viaggioData = {
-      deposito: dati.deposito,
-      dataOraInizioViaggio: dati.dataOraInizioViaggio
-    };
-    await updateViaggioData(id, viaggioData);
+    await updateViaggioData(id, dati);
     return NextResponse.json({ message: `Viaggio ${id} aggiornato` });
   } catch (error) {
     console.error('Errore API PUT:', error);

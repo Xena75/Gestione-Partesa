@@ -1,164 +1,133 @@
-#  Gestione Viaggi & Logistica 🚚
+# 🚚 Gestione Partesa
 
-Applicazione web per la gestione dei viaggi e della logistica, sviluppata con Next.js e TypeScript e deployata su Vercel.
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FXena75%2FGestione-Partesa)
-
----
+Applicazione web per la gestione completa di viaggi e logistica, sviluppata con Next.js 15 e TypeScript.
 
 ## 🛠️ Stack Tecnologico
 
-* **Framework**: [Next.js](https://nextjs.org/) (con App Router)
-* **Linguaggio**: [TypeScript](https://www.typescriptlang.org/)
-* **UI**: [React](https://react.dev/)
-* **Stile**: [Bootstrap](https://getbootstrap.com/)
-* **Database**: [MySQL](https://www.mysql.com/) / [MariaDB](https://mariadb.org/)
-* **Deployment**: [Vercel](https://vercel.com/)
+- **Frontend**: Next.js 15, React 19, TypeScript
+- **UI Framework**: Bootstrap 5
+- **Database**: MySQL/MariaDB
+- **ORM**: mysql2 per Node.js
+- **Deployment**: Vercel
 
----
-
-## 🚀 Avvio Rapido
-
-Segui questi passaggi per avviare il progetto in locale.
+## ⚙️ Configurazione
 
 ### Prerequisiti
-
-Assicurati di avere installato [Node.js](https://nodejs.org/) (versione 18 o superiore).
+- Node.js 18+
+- MySQL/MariaDB
+- npm o yarn
 
 ### Installazione
 
-1.  Clona il repository:
-    ```bash
-    git clone [https://github.com/Xena75/Gestione-Partesa.git](https://github.com/Xena75/Gestione-Partesa.git)
-    ```
-2.  Entra nella cartella del progetto:
-    ```bash
-    cd Gestione-Partesa
-    ```
-3.  Installa le dipendenze:
-    ```bash
-    npm install
-    ```
-
-### Configurazione
-
-1.  Crea un file `.env.local` nella cartella principale del progetto.
-2.  Apri il file e incollaci la seguente struttura, compilando i valori con le tue credenziali.
-
-    ```env
-    # --- Database 1: VIAGGI ---
-    DB_VIAGGI_HOST='127.0.0.1'
-    DB_VIAGGI_PORT='3306'
-    DB_VIAGGI_USER='root'
-    DB_VIAGGI_PASS=''
-    DB_VIAGGI_NAME='viaggi_db'
-
-    # --- Database 2: GESTIONE ---
-    DB_GESTIONE_HOST='127.0.0.1'
-    DB_GESTIONE_PORT='3306'
-    DB_GESTIONE_USER='root'
-    DB_GESTIONE_PASS=''
-    DB_GESTIONE_NAME='gestionelogistica'
-    ```
-
-### Ottimizzazione Database (Opzionale ma Consigliato)
-Per migliorare le performance su tabelle con molti dati, è consigliabile aggiungere degli indici. Connettiti al tuo database ed esegui:
-```sql
--- Per il database gestionelogistica
-CREATE INDEX idx_data_mov_merce ON fatt_delivery (data_mov_merce DESC);
+1. **Clona il repository**
+```bash
+git clone https://github.com/Xena75/Gestione-Partesa.git
+cd gestione-partesa
 ```
 
-### Avvio
+2. **Installa le dipendenze**
+```bash
+npm install
+```
 
-1.  Avvia il server di sviluppo:
-    ```bash
-    npm run dev
-    ```
-2.  Apri [http://localhost:3000](http://localhost:3000) nel browser.
+3. **Configura le variabili d'ambiente**
+Crea un file `.env.local` nella root del progetto:
+```env
+# Database Viaggi
+DB_VIAGGI_HOST=127.0.0.1
+DB_VIAGGI_PORT=3306
+DB_VIAGGI_USER=root
+DB_VIAGGI_PASSWORD=
+DB_VIAGGI_DATABASE=viaggi_db
 
----
+# Database Gestione Logistica
+DB_GESTIONE_HOST=127.0.0.1
+DB_GESTIONE_PORT=3306
+DB_GESTIONE_USER=root
+DB_GESTIONE_PASSWORD=
+DB_GESTIONE_DATABASE=gestionelogistica
+```
+
+4. **Avvia il server di sviluppo**
+```bash
+npm run dev
+```
+
+L'applicazione sarà disponibile su `http://localhost:3000`
 
 ## ✨ Funzionalità
 
 ### 🚚 Gestione Viaggi
 - **CRUD Completo**: Create, Read, Update, Delete per i viaggi
-- **Visualizzazione Dettagliata**: Tabella con 19 colonne incluse informazioni su:
-  - Dati base (ID, Deposito, Numero Viaggio)
-  - Informazioni sui conducenti (Nominativo, Affiancato Da)
-  - Dettagli del viaggio (Date, Km, Rifornimenti)
-  - Campi per JOIN con altre tabelle (NominativoId, AffiancatoDaId, TargaMezzoId)
-- **Interfaccia Ottimizzata**: Utilizzo completo dello spazio schermo con tabella responsive
+- **Dati Gestiti**: 19 colonne complete incluse informazioni su conducenti, veicoli, km, rifornimenti e campi per JOIN con altre tabelle
+- **Filtri Avanzati**: Sezione toggle con filtri per Magazzino, Nominativo, Numero Viaggio, Targa, Data Da/A
+- **Ordinamento Dinamico**: Intestazioni cliccabili per ordinare per Numero Viaggio, Deposito, Data Inizio/Fine, Targa
+- **Paginazione Intelligente**: Navigazione tra pagine con mantenimento filtri e ordinamento
+- **Statistiche in Tempo Reale**: Card con Record Totali, Pagine Totali, Record per Pagina
+- **Interfaccia Ottimizzata**: Utilizzo completo dello spazio schermo
 - **Formattazione Intelligente**: Date in formato italiano, gestione valori null
 
-### 📦 Gestione Logistica
-- **Visualizzazione Dati**: Tabella fatt_delivery con informazioni su:
-  - Ragione Sociale
-  - Viaggio
-  - Data Movimento Merce
-  - Compenso Totale
+### 📊 Gestione Logistica
+- **Visualizzazione Dati**: Dati dalla tabella fatt_delivery
 - **Paginazione**: Navigazione tra i risultati per gestire grandi quantità di dati
-- **Performance Ottimizzate**: Indici database e limiti di query per caricamenti veloci
+- **Performance**: Ottimizzata per grandi dataset
+- **Indici DB**: Ordinamento veloce per data
 
-### 🛠️ Caratteristiche Tecniche
-- **Database Multipli**: Connessione a due database separati (viaggi_db e gestionelogistica)
-- **TypeScript**: Tipizzazione completa per sicurezza del codice
-- **Bootstrap**: Interfaccia moderna e responsive
-- **Next.js App Router**: Architettura moderna con Server e Client Components
-- **API RESTful**: Endpoint per tutte le operazioni CRUD
-
----
+### 🎯 Caratteristiche Avanzate
+- **Scalabilità**: Gestione di milioni di record con paginazione efficiente
+- **Sicurezza**: Validazione input lato server, query parametrizzate
+- **UX/UI**: Interfaccia responsive, feedback utente immediato, navigazione intuitiva
+- **URL Bookmarkable**: Tutti i filtri e l'ordinamento sono salvati nell'URL
 
 ## 📁 Struttura del Progetto
 
 ```
 src/
-├── app/                    # Next.js App Router
+├── app/                    # App Router di Next.js
 │   ├── api/               # API Routes
-│   │   ├── gestione/      # API per gestione logistica
-│   │   └── viaggi/        # API per gestione viaggi
+│   │   ├── viaggi/        # Endpoint per i viaggi
+│   │   └── gestione/      # Endpoint per la logistica
+│   ├── viaggi/            # Pagine per la gestione viaggi
 │   ├── gestione/          # Pagina gestione logistica
-│   ├── viaggi/            # Pagina gestione viaggi
-│   └── funzionalita/      # Pagina documentazione funzionalità
+│   └── funzionalita/      # Pagina documentazione
 ├── components/            # Componenti React riutilizzabili
-├── lib/                   # Logica di business e connessioni DB
-└── globals.css            # Stili globali
+│   ├── DeleteButton.tsx   # Pulsante eliminazione
+│   ├── FiltriViaggi.tsx   # Sezione filtri toggle
+│   └── SortableHeader.tsx # Intestazioni ordinabili
+└── lib/                   # Logica di business e database
+    ├── data-viaggi.ts     # Funzioni per i viaggi
+    ├── data-gestione.ts   # Funzioni per la logistica
+    ├── db-viaggi.ts       # Connessione DB viaggi
+    └── db-gestione.ts     # Connessione DB gestione
 ```
-
----
 
 ## 🔧 Script Disponibili
 
 - `npm run dev` - Avvia il server di sviluppo
-- `npm run build` - Compila l'applicazione per la produzione
+- `npm run build` - Build per la produzione
 - `npm run start` - Avvia il server di produzione
 - `npm run lint` - Esegue il linting del codice
-
----
 
 ## 📝 Note di Sviluppo
 
 ### Workflow per Nuove Funzionalità
-1. **Livello Dati** (`src/lib`): Definisci tipi e funzioni database
-2. **Livello API** (`src/app/api`): Crea endpoint REST
-3. **Livello Interfaccia** (`src/app` e `src/components`): Implementa UI
+1. **Livello Dati** (src/lib): Definisci tipi e funzioni database
+2. **Livello API** (src/app/api): Crea endpoint REST
+3. **Livello Interfaccia** (src/app e src/components): Implementa UI
 
 ### Gestione Errori
-- Tutti gli errori di database sono gestiti con try/catch
-- Messaggi di errore informativi per l'utente
-- Logging dettagliato per il debugging
-
----
+- Tutte le query database sono protette da try-catch
+- Validazione input lato server
+- Messaggi di errore user-friendly
 
 ## 🤝 Contribuire
 
-1. Fai il fork del progetto
-2. Crea un branch per la tua feature (`git checkout -b feature/AmazingFeature`)
-3. Committa le modifiche (`git commit -m 'Add some AmazingFeature'`)
-4. Pusha al branch (`git push origin feature/AmazingFeature`)
-5. Apri una Pull Request
-
----
+1. Fork del repository
+2. Crea un branch per la feature (`git checkout -b feature/nuova-funzionalita`)
+3. Commit delle modifiche (`git commit -am 'Aggiunge nuova funzionalità'`)
+4. Push del branch (`git push origin feature/nuova-funzionalita`)
+5. Crea una Pull Request
 
 ## 📄 Licenza
 
-Questo progetto è sotto licenza MIT. Vedi il file `LICENSE` per maggiori dettagli.
+Questo progetto è sotto licenza MIT. Vedi il file `LICENSE` per i dettagli.
