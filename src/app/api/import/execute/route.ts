@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readFile } from 'fs/promises';
-import { join } from 'path';
 import * as XLSX from 'xlsx';
 import mysql from 'mysql2/promise';
+import { getFileFromStorage, removeFileFromStorage } from '../upload/route';
 
 // Configurazione database
 const dbConfig = {
-  host: 'localhost',
-  user: 'root',
-  password: '',
-  database: 'viaggi_db',
-  port: 3306
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'viaggi_db',
+  port: parseInt(process.env.DB_PORT || '3306')
 };
 
 // Importa la Map condivisa del progresso
@@ -74,17 +73,14 @@ async function executeImport(fileId: string, mapping: Record<string, string>) {
     // Aggiorna progresso
     updateProgress(fileId, 10, 'Lettura file Excel...');
 
-    // Trova e leggi il file
-    const uploadsDir = join(process.cwd(), 'uploads');
-    const files = await import('fs/promises').then(fs => fs.readdir(uploadsDir));
-    const targetFile = files.find(file => file.startsWith(fileId));
-    
-    if (!targetFile) {
-      throw new Error('File non trovato');
+    // Ottieni il file dalla memoria
+    const fileData = getFileFromStorage(fileId);
+    if (!fileData) {
+      throw new Error('File non trovato in memoria');
     }
 
-    const filePath = join(uploadsDir, targetFile);
-    const buffer = await readFile(filePath);
+    const { buffer, filename } = fileData;
+    console.log('📁 File trovato in memoria:', filename);
     
     updateProgress(fileId, 20, 'Parsing dati Excel...');
 
@@ -162,7 +158,7 @@ async function executeImport(fileId: string, mapping: Record<string, string>) {
           if (dbField.startsWith('auto_')) {
             switch (dbField) {
               case 'auto_filename':
-                value = targetFile;
+                value = filename;
                 break;
               case 'auto_current_date':
                 value = new Date().toISOString();
@@ -227,6 +223,9 @@ async function executeImport(fileId: string, mapping: Record<string, string>) {
 
     await connection.end();
 
+    // Rimuovi il file dalla memoria
+    removeFileFromStorage(fileId);
+
     updateProgress(fileId, 90, 'Completamento importazione...');
 
     // Calcola durata
@@ -248,6 +247,10 @@ async function executeImport(fileId: string, mapping: Record<string, string>) {
 
   } catch (error) {
     console.error('❌ Errore durante l\'importazione:', error);
+    
+    // Rimuovi il file dalla memoria anche in caso di errore
+    removeFileFromStorage(fileId);
+    
     const result = {
       success: false,
       totalRows,

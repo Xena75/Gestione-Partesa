@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readFile } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
 import * as XLSX from 'xlsx';
+import { getFileFromStorage } from '../upload/route';
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,30 +14,19 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Cerca il file nella cartella uploads
-    const uploadsDir = join(process.cwd(), 'uploads');
-    const files = await import('fs/promises').then(fs => fs.readdir(uploadsDir));
+    // Ottieni il file dalla memoria
+    const fileData = getFileFromStorage(fileId);
     
-    const targetFile = files.find(file => file.startsWith(fileId));
-    
-    if (!targetFile) {
+    if (!fileData) {
       return NextResponse.json(
-        { error: 'File non trovato' },
+        { error: 'File non trovato in memoria' },
         { status: 404 }
       );
     }
 
-    const filePath = join(uploadsDir, targetFile);
-    
-    if (!existsSync(filePath)) {
-      return NextResponse.json(
-        { error: 'File non trovato sul filesystem' },
-        { status: 404 }
-      );
-    }
+    const { buffer, filename } = fileData;
 
     // Leggi il file Excel
-    const buffer = await readFile(filePath);
     const workbook = XLSX.read(buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
@@ -57,13 +44,10 @@ export async function GET(request: NextRequest) {
     // Conta le righe di dati (escludendo l'intestazione)
     const dataRows = range.e.r;
 
-    // Estrai il nome originale del file
-    const originalName = targetFile.substring(targetFile.lastIndexOf('_') + 1);
-
     return NextResponse.json({
       success: true,
       fileId,
-      filename: originalName,
+      filename,
       headers,
       dataRows,
       message: 'Informazioni file recuperate con successo'

@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
 import * as XLSX from 'xlsx';
+
+// Map per memorizzare i file in memoria (solo per sviluppo)
+const fileStorage = new Map<string, { buffer: Buffer, filename: string }>();
 
 export async function POST(request: NextRequest) {
   try {
     console.log('🔄 Inizio upload file...');
-    console.log('📋 Request headers:', Object.fromEntries(request.headers.entries()));
     
     const formData = await request.formData();
     console.log('📋 FormData ricevuto, campi:', Array.from(formData.keys()));
@@ -44,32 +43,26 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Validazione file completata');
 
-    // Crea cartella uploads se non esiste
-    const uploadsDir = join(process.cwd(), 'uploads');
-    console.log('📂 Directory uploads:', uploadsDir);
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true });
-      console.log('✅ Directory creata');
-    } else {
-      console.log('✅ Directory esistente');
-    }
-
     // Genera nome file univoco
     const timestamp = Date.now();
     const uniqueId = Math.random().toString(36).substring(2, 15);
-    const fileName = `${timestamp}_${uniqueId}_${file.name}`;
-    const filePath = join(uploadsDir, fileName);
+    const fileId = `${timestamp}_${uniqueId}`;
 
-    console.log('💾 Salvataggio file...');
+    console.log('💾 Salvataggio file in memoria...');
 
-    // Salva il file
+    // Salva il file in memoria
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    await writeFile(filePath, buffer);
+    
+    // Memorizza il file in memoria (solo per sviluppo)
+    fileStorage.set(fileId, {
+      buffer,
+      filename: file.name
+    });
 
-    console.log('✅ File salvato:', filePath);
+    console.log('✅ File salvato in memoria con ID:', fileId);
 
-    // Analisi semplificata del file Excel
+    // Analisi del file Excel
     console.log('📊 Analisi file Excel...');
     console.log('📊 Buffer size:', buffer.length, 'bytes');
     
@@ -77,7 +70,7 @@ export async function POST(request: NextRequest) {
     let dataRows = 0;
     
     try {
-      // Leggi il file Excel con timeout
+      // Leggi il file Excel
       const workbook = XLSX.read(buffer, { type: 'buffer' });
       console.log('📊 Workbook creato, sheets:', workbook.SheetNames);
       
@@ -122,15 +115,12 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Analisi completata. Intestazioni:', headers.length, 'Righe dati:', dataRows);
 
-    // Genera fileId per il tracking
-    const fileId = `${timestamp}_${uniqueId}`;
-
     console.log('🎉 Upload completato con successo!');
 
     return NextResponse.json({
       success: true,
       fileId,
-      fileName,
+      fileName: file.name,
       originalName: file.name,
       size: file.size,
       headers,
@@ -145,4 +135,14 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// Funzione per ottenere un file dalla memoria
+export function getFileFromStorage(fileId: string) {
+  return fileStorage.get(fileId);
+}
+
+// Funzione per rimuovere un file dalla memoria
+export function removeFileFromStorage(fileId: string) {
+  fileStorage.delete(fileId);
 }
