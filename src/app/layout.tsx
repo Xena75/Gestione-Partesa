@@ -33,9 +33,9 @@ export default function RootLayout({
           </div>
         </nav>
 
-        <div className="container mt-4">
-          {children}
-        </div>
+              <div className="container-fluid p-0">
+        {children}
+      </div>
       </body>
     </html>
   );

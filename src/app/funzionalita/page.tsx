@@ -20,7 +20,7 @@ export default function FunzionalitaPage() {
                 <li><strong>Update:</strong> Modifica di un viaggio esistente</li>
                 <li><strong>Delete:</strong> Eliminazione di un viaggio</li>
               </ul>
-              <p><strong>Dati gestiti:</strong> Deposito, Data e Ora Inizio Viaggio</p>
+              <p><strong>Dati gestiti:</strong> 19 colonne complete incluse informazioni su conducenti, veicoli, km, rifornimenti e campi per JOIN con altre tabelle</p>
               <Link href="/" className="btn btn-primary">Vai ai Viaggi</Link>
             </div>
           </div>
@@ -59,6 +59,8 @@ export default function FunzionalitaPage() {
                 <li><strong>Paginazione:</strong> Caricamento a blocchi per scalabilità</li>
                 <li><strong>LIMIT/OFFSET:</strong> Query efficienti per grandi dataset</li>
                 <li><strong>Client Components:</strong> Interfaccia reattiva e veloce</li>
+                <li><strong>Interfaccia Ottimizzata:</strong> Utilizzo completo dello spazio schermo</li>
+                <li><strong>Formattazione Intelligente:</strong> Date in formato italiano, gestione valori null</li>
               </ul>
             </div>
           </div>
@@ -113,6 +115,8 @@ export default function FunzionalitaPage() {
                     <li>Interfaccia responsive</li>
                     <li>Feedback utente immediato</li>
                     <li>Navigazione intuitiva</li>
+                    <li>Utilizzo completo dello spazio schermo</li>
+                    <li>Tabella ottimizzata per grandi dataset</li>
                   </ul>
                 </div>
               </div>

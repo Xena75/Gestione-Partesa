@@ -3,16 +3,41 @@ import pool from './db-viaggi';
 
 // Aggiorniamo il tipo per corrispondere alle colonne reali
 export type Viaggio = {
-  id: number;
+  id: string;
   deposito: string;
-  dataOraInizioViaggio: string;
+  numeroViaggio: string;
+  nominativoId: string | null;
+  affiancatoDaId: string | null;
+  totaleColli: number | null;
+  dataOraInizioViaggio: string | null;
+  dataOraFineViaggio: string | null;
+  targaMezzoId: string | null;
+  kmIniziali: number | null;
+  kmFinali: number | null;
+  kmAlRifornimento: number | null;
+  litriRiforniti: number | null;
+  euroLitro: number | null;
+  haiEffettuatoRitiri: boolean | null;
+  updatedAt: string | null;
+  createdAt: string | null;
+  kmEffettivi: number | null;
+  oreEffettive: number | null;
 };
 
 // --- FUNZIONE PER LEGGERE I VIAGGI ---
 export async function getViaggiData(): Promise<Viaggio[]> {
   try {
-    // Usiamo i nomi delle colonne corrette: deposito, dataOraInizioViaggio
-    const sql = 'SELECT id, deposito, dataOraInizioViaggio FROM travels ORDER BY dataOraInizioViaggio DESC';
+    // Selezioniamo tutte le colonne disponibili - usando i nomi reali del database
+    const sql = `
+      SELECT 
+        id, deposito, numeroViaggio, nominativoId, affiancatoDaId, totaleColli,
+        dataOraInizioViaggio, dataOraFineViaggio, targaMezzoId, kmIniziali, kmFinali,
+        kmAlRifornimento, litriRiforniti, euroLitro, haiEffettuatoRitiri,
+        updatedAt, createdAt, kmEffettivi, oreEffettive
+      FROM travels 
+      ORDER BY dataOraInizioViaggio DESC
+      LIMIT 100
+    `;
     const [rows] = await pool.query(sql);
     return rows as Viaggio[];
   } catch (error) {
@@ -22,13 +47,13 @@ export async function getViaggiData(): Promise<Viaggio[]> {
 }
 
 // --- FUNZIONE PER CREARE UN NUOVO VIAGGIO ---
-export async function createViaggioData(viaggio: { deposito: string, data: string }) {
-  // Riceviamo 'data' dal form e la usiamo per 'dataOraInizioViaggio'
-  const { deposito, data } = viaggio; 
+export async function createViaggioData(viaggio: { deposito: string, dataOraInizioViaggio: string }) {
+  // Riceviamo i dati dal form
+  const { deposito, dataOraInizioViaggio } = viaggio; 
   try {
     // Usiamo i nomi delle colonne corrette per l'inserimento
     const sql = 'INSERT INTO travels (deposito, dataOraInizioViaggio) VALUES (?, ?)';
-    const [result] = await pool.query(sql, [deposito, data]);
+    const [result] = await pool.query(sql, [deposito, dataOraInizioViaggio]);
     console.log('Viaggio inserito con successo nel DB:', result);
     return result;
   } catch (error) {
@@ -42,7 +67,7 @@ export async function createViaggioData(viaggio: { deposito: string, data: strin
 // ... le tue funzioni getViaggiData e createViaggioData sono già qui ...
 
 // --- FUNZIONE PER ELIMINARE UN VIAGGIO ---
-export async function deleteViaggioData(id: number) {
+export async function deleteViaggioData(id: string) {
   try {
     // Assicurati che il nome della tabella 'travels' sia corretto
     const sql = 'DELETE FROM travels WHERE id = ?';
@@ -56,9 +81,16 @@ export async function deleteViaggioData(id: number) {
 }
 
 // --- FUNZIONE PER LEGGERE UN SINGOLO VIAGGIO TRAMITE ID ---
-export async function getViaggioById(id: number): Promise<Viaggio | null> {
+export async function getViaggioById(id: string): Promise<Viaggio | null> {
   try {
-    const sql = 'SELECT id, deposito, dataOraInizioViaggio FROM travels WHERE id = ?';
+    const sql = `
+      SELECT 
+        id, deposito, numeroViaggio, nominativoId, affiancatoDaId, totaleColli,
+        dataOraInizioViaggio, dataOraFineViaggio, targaMezzoId, kmIniziali, kmFinali,
+        kmAlRifornimento, litriRiforniti, euroLitro, haiEffettuatoRitiri,
+        updatedAt, createdAt, kmEffettivi, oreEffettive
+      FROM travels WHERE id = ?
+    `;
     const [rows] = await pool.query(sql, [id]);
     return (rows as Viaggio[])[0] || null; // Restituisce il primo risultato o null se non trovato
   } catch (error) {
@@ -68,11 +100,11 @@ export async function getViaggioById(id: number): Promise<Viaggio | null> {
 }
 
 // --- FUNZIONE PER AGGIORNARE UN VIAGGIO ---
-export async function updateViaggioData(id: number, viaggio: { deposito: string, data: string }) {
-  const { deposito, data } = viaggio;
+export async function updateViaggioData(id: string, viaggio: { deposito: string, dataOraInizioViaggio: string }) {
+  const { deposito, dataOraInizioViaggio } = viaggio;
   try {
     const sql = 'UPDATE travels SET deposito = ?, dataOraInizioViaggio = ? WHERE id = ?';
-    const [result] = await pool.query(sql, [deposito, data, id]);
+    const [result] = await pool.query(sql, [deposito, dataOraInizioViaggio, id]);
     console.log(`Viaggio con id ${id} aggiornato con successo.`);
     return result;
   } catch (error) {

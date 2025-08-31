@@ -6,7 +6,7 @@ import { NextResponse } from 'next/server';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function DELETE(request: any, context: any) {
   try {
-    const id = parseInt(context.params.id, 10);
+    const id = context.params.id;
     await deleteViaggioData(id);
     return NextResponse.json({ message: `Viaggio ${id} eliminato` });
   } catch (error) {
@@ -19,9 +19,14 @@ export async function DELETE(request: any, context: any) {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function PUT(request: any, context: any) {
   try {
-    const id = parseInt(context.params.id, 10);
+    const id = context.params.id;
     const dati = await request.json();
-    await updateViaggioData(id, dati);
+    // Mappiamo i nomi dei campi dal form ai nomi del database
+    const viaggioData = {
+      deposito: dati.deposito,
+      dataOraInizioViaggio: dati.dataOraInizioViaggio
+    };
+    await updateViaggioData(id, viaggioData);
     return NextResponse.json({ message: `Viaggio ${id} aggiornato` });
   } catch (error) {
     console.error('Errore API PUT:', error);

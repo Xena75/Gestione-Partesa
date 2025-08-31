@@ -15,7 +15,7 @@ export default function EditViaggioForm({ viaggio }: { viaggio: Viaggio }) {
     if (viaggio) {
       setDeposito(viaggio.deposito);
       // Formattiamo la data per l'input datetime-local
-      const formattedDate = new Date(viaggio.dataOraInizioViaggio).toISOString().slice(0, 16);
+      const formattedDate = viaggio.dataOraInizioViaggio ? new Date(viaggio.dataOraInizioViaggio).toISOString().slice(0, 16) : '';
       setData(formattedDate);
     }
   }, [viaggio]);
@@ -26,7 +26,7 @@ export default function EditViaggioForm({ viaggio }: { viaggio: Viaggio }) {
       const response = await fetch(`/api/viaggi/${viaggio.id}`, {
         method: 'PUT', // Usiamo PUT per l'aggiornamento
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deposito, data }),
+        body: JSON.stringify({ deposito: deposito, dataOraInizioViaggio: data }),
       });
 
       if (!response.ok) throw new Error("Errore nell'aggiornamento");
