@@ -1,5 +1,7 @@
 // src/app/page.tsx
 import { getViaggiData, Viaggio } from "@/lib/data-viaggi";
+import DeleteButton from "@/components/DeleteButton";
+import Link from 'next/link';
 
 export default async function HomePage() {
   const viaggi: Viaggio[] = await getViaggiData();
@@ -12,14 +14,22 @@ export default async function HomePage() {
           <tr>
             <th>Deposito</th>
             <th>Data e Ora Inizio</th>
+            <th>Azioni</th>
           </tr>
         </thead>
         <tbody>
           {viaggi.map((viaggio) => (
             <tr key={viaggio.id}>
               <td>{viaggio.deposito}</td>
-              {/* CORREZIONE APPLICATA QUI SOTTO */}
               <td>{new Date(viaggio.dataOraInizioViaggio).toLocaleString('it-IT')}</td>
+              <td className="d-flex gap-2">
+                {/* --- ASSICURATI CHE QUESTA PARTE SIA PRESENTE --- */}
+                <Link href={`/viaggi/${viaggio.id}/modifica`} className="btn btn-secondary btn-sm">
+                  Modifica
+                </Link>
+                <DeleteButton id={viaggio.id} />
+                {/* --- --------------------------------------- --- */}
+              </td>
             </tr>
           ))}
         </tbody>
