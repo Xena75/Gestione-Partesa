@@ -54,3 +54,29 @@ export async function deleteViaggioData(id: number) {
     throw new Error('Impossibile eliminare il viaggio.');
   }
 }
+
+// --- FUNZIONE PER LEGGERE UN SINGOLO VIAGGIO TRAMITE ID ---
+export async function getViaggioById(id: number): Promise<Viaggio | null> {
+  try {
+    const sql = 'SELECT id, deposito, dataOraInizioViaggio FROM travels WHERE id = ?';
+    const [rows] = await pool.query(sql, [id]);
+    return (rows as Viaggio[])[0] || null; // Restituisce il primo risultato o null se non trovato
+  } catch (error) {
+    console.error(`Errore nel recuperare il viaggio ${id}:`, error);
+    return null;
+  }
+}
+
+// --- FUNZIONE PER AGGIORNARE UN VIAGGIO ---
+export async function updateViaggioData(id: number, viaggio: { deposito: string, data: string }) {
+  const { deposito, data } = viaggio;
+  try {
+    const sql = 'UPDATE travels SET deposito = ?, dataOraInizioViaggio = ? WHERE id = ?';
+    const [result] = await pool.query(sql, [deposito, data, id]);
+    console.log(`Viaggio con id ${id} aggiornato con successo.`);
+    return result;
+  } catch (error) {
+    console.error(`Errore nell'aggiornamento del viaggio ${id}:`, error);
+    throw new Error('Impossibile aggiornare il viaggio.');
+  }
+}
