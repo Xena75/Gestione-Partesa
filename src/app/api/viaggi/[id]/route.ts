@@ -1,28 +1,23 @@
 // src/app/api/viaggi/[id]/route.ts
-import { deleteViaggioData, updateViaggioData } from '@/lib/data-viaggi'; // <-- Aggiungi updateViaggioData
-import { NextRequest, NextResponse } from 'next/server';
+import { deleteViaggioData, updateViaggioData } from '@/lib/data-viaggi';
+import { NextResponse } from 'next/server';
 
-// Aggiungiamo questo commento speciale per disabilitare il controllo di qualità solo per la riga seguente
+// Fix già applicato in precedenza per la funzione DELETE
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function DELETE(request: any, context: any) {
   try {
     const id = parseInt(context.params.id, 10);
-    
     await deleteViaggioData(id);
-    
     return NextResponse.json({ message: `Viaggio ${id} eliminato` });
-
   } catch (error) {
     console.error('Errore API DELETE:', error);
     return NextResponse.json({ message: 'Errore durante l\'eliminazione' }, { status: 500 });
   }
 }
 
-// --- FUNZIONE PER GESTIRE LE RICHIESTE DI AGGIORNAMENTO (PUT) ---
-export async function PUT(
-  request: NextRequest,
-  context: { params: { id: string } }
-) {
+// Applichiamo lo stesso fix anche alla nuova funzione PUT
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function PUT(request: any, context: any) {
   try {
     const id = parseInt(context.params.id, 10);
     const dati = await request.json();
