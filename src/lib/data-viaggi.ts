@@ -36,3 +36,21 @@ export async function createViaggioData(viaggio: { deposito: string, data: strin
     throw new Error('Impossibile creare il viaggio.');
   }
 }
+
+// src/lib/data-viaggi.ts
+
+// ... le tue funzioni getViaggiData e createViaggioData sono già qui ...
+
+// --- FUNZIONE PER ELIMINARE UN VIAGGIO ---
+export async function deleteViaggioData(id: number) {
+  try {
+    // Assicurati che il nome della tabella 'travels' sia corretto
+    const sql = 'DELETE FROM travels WHERE id = ?';
+    const [result] = await pool.query(sql, [id]);
+    console.log(`Viaggio con id ${id} eliminato con successo.`);
+    return result;
+  } catch (error) {
+    console.error(`Errore nell'eliminazione del viaggio ${id}:`, error);
+    throw new Error('Impossibile eliminare il viaggio.');
+  }
+}
