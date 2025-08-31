@@ -1,26 +1,26 @@
 // src/app/page.tsx
-import { getPartenzeData, Partenza } from "@/lib/data";
+import { getViaggiData, Viaggio } from "@/lib/data-viaggi";
 
 export default async function HomePage() {
-  const partenze: Partenza[] = await getPartenzeData();
+  const viaggi: Viaggio[] = await getViaggiData();
 
   return (
     <div>
-      <h1>Lista Partenze</h1>
+      <h1>Lista Viaggi</h1>
       <table className="table table-striped">
         <thead>
           <tr>
-            <th>Destinazione</th>
-            <th>Data</th>
-            <th>Note</th>
+            {/* Colonne aggiornate */}
+            <th>Deposito</th>
+            <th>Data e Ora Inizio</th>
           </tr>
         </thead>
         <tbody>
-          {partenze.map((partenza) => (
-            <tr key={partenza.id}>
-              <td>{partenza.destinazione}</td>
-              <td>{partenza.data}</td>
-              <td>{partenza.note}</td>
+          {viaggi.map((viaggio) => (
+            <tr key={viaggio.id}>
+              {/* Dati aggiornati */}
+              <td>{viaggio.deposito}</td>
+              <td>{viaggio.dataOraInizioViaggio}</td>
             </tr>
           ))}
         </tbody>
