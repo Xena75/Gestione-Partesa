@@ -1,9 +1,7 @@
 // src/app/page.tsx
-
-import { getPartenzeData, Partenza } from "@/lib/data";
+import { getPartenzeData, Partenza } from "@/lib/data-partenze";
 
 export default async function HomePage() {
-  // ✅ NIENTE PIÙ FETCH! Chiamiamo la funzione direttamente.
   const partenze: Partenza[] = await getPartenzeData();
 
   return (
