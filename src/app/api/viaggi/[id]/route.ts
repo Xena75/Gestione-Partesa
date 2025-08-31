@@ -1,17 +1,24 @@
 // src/app/api/viaggi/[id]/route.ts
 import { deleteViaggioData } from '@/lib/data-viaggi';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-// Questa funzione gestisce le richieste DELETE con la firma corretta
+// Usiamo una firma più esplicita per la funzione DELETE
 export async function DELETE(
-  request: NextRequest, // Usiamo il tipo più specifico NextRequest
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: { id: string } }
 ) {
   try {
-    const id = parseInt(params.id, 10);
+    // Estraiamo l'id dal parametro 'context'
+    const id = parseInt(context.params.id, 10);
+    
     await deleteViaggioData(id);
-    return Response.json({ message: `Viaggio ${id} eliminato` }, { status: 200 });
-  } catch { // Rimuoviamo (error) perché non è usato, sistemando l'avviso
-    return Response.json({ message: 'Errore durante l\'eliminazione' }, { status: 500 });
+    
+    // Usiamo NextResponse per una risposta più standard
+    return NextResponse.json({ message: `Viaggio ${id} eliminato` });
+
+  } catch (error) {
+    // Logghiamo l'errore per un miglior debug su Vercel
+    console.error('Errore API DELETE:', error);
+    return NextResponse.json({ message: 'Errore durante l\'eliminazione' }, { status: 500 });
   }
 }
