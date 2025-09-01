@@ -17,6 +17,26 @@ function ViaggiPageContent() {
   const sortBy = searchParams.get('sortBy') || 'dataOraInizioViaggio';
   const sortOrder = (searchParams.get('sortOrder') as 'ASC' | 'DESC') || 'DESC';
   
+  // Funzione per convertire le date dal formato database al formato italiano
+  const formatDateToItalian = (dateString: string | null): string => {
+    if (!dateString) return '';
+    
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return dateString; // Se non è una data valida, ritorna la stringa originale
+      
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      
+      return `${day}-${month}-${year} ${hours}:${minutes}`;
+    } catch {
+      return dateString; // In caso di errore, ritorna la stringa originale
+    }
+  };
+  
   // Parametri dei filtri
   const dataDa = searchParams.get('dataDa');
   const dataA = searchParams.get('dataA');
@@ -166,8 +186,8 @@ function ViaggiPageContent() {
                 <td>{viaggio.nominativoId || '-'}</td>
                 <td>{viaggio.affiancatoDaId || '-'}</td>
                 <td>{viaggio.totaleColli || '-'}</td>
-                <td>{viaggio.dataOraInizioViaggio ? viaggio.dataOraInizioViaggio.replace('T', ' ').slice(0, 19) : '-'}</td>
-                <td>{viaggio.dataOraFineViaggio ? viaggio.dataOraFineViaggio.replace('T', ' ').slice(0, 19) : '-'}</td>
+                <td>{formatDateToItalian(viaggio.dataOraInizioViaggio)}</td>
+                <td>{formatDateToItalian(viaggio.dataOraFineViaggio)}</td>
                 <td>{viaggio.oreEffettive || '-'}</td>
                 <td>{viaggio.targaMezzoId || '-'}</td>
                 <td>{viaggio.kmIniziali || '-'}</td>
@@ -177,7 +197,7 @@ function ViaggiPageContent() {
                 <td>{viaggio.litriRiforniti || '-'}</td>
                 <td>{viaggio.euroLitro || '-'}</td>
                 <td>{viaggio.haiEffettuatoRitiri ? 'Sì' : 'No'}</td>
-                <td>{viaggio.updatedAt ? viaggio.updatedAt.replace('T', ' ').slice(0, 19) : '-'}</td>
+                <td>{formatDateToItalian(viaggio.updatedAt)}</td>
                 <td className="d-flex gap-2">
                   <Link href={`/viaggi/${viaggio.id}/modifica`} className="btn btn-secondary btn-sm">
                     Modifica

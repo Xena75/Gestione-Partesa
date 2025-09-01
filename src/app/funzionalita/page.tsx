@@ -92,10 +92,10 @@ export default function FunzionalitaPage() {
                           <div className="bg-primary bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3">
                             <span className="fs-1">🚛</span>
                           </div>
-                          <h5>Gestione Viaggi</h5>
-                          <p className="text-muted">
-                            CRUD completo con filtri avanzati, ordinamento dinamico, paginazione ottimizzata e gestione date precisa
-                          </p>
+                                  <h5>Gestione Viaggi</h5>
+        <p className="text-muted">
+          CRUD completo con filtri avanzati, ordinamento dinamico, paginazione ottimizzata, gestione date precisa, pagina di modifica completa e gestione immagini
+        </p>
                           <Link href="/viaggi" className="btn btn-primary btn-sm">
                             Vai ai Viaggi
                           </Link>

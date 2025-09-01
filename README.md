@@ -17,6 +17,10 @@ Un'applicazione web moderna per la gestione completa della logistica aziendale, 
 - **Paginazione ottimizzata** per grandi dataset
 - **Statistiche in tempo reale** (totale record, record per pagina, pagine totali)
 - **Gestione date precisa** con configurazione `dateStrings: true` per evitare conversioni di fuso orario
+- **Pagina di modifica completa** con layout elegante e sezioni organizzate
+- **Gestione immagini associate** con visualizzazione a schermo intero e caricamento
+- **Formattazione date italiana** (dd-mm-yyyy hh:mm) per migliore leggibilità
+- **Calcoli automatici** per costi carburante, durata viaggio e chilometraggio
 
 ### 📦 Gestione Logistica
 - **Visualizzazione dati** dalla tabella `fatt_delivery`
@@ -258,6 +262,17 @@ vercel
 - ✅ Configurazione `dateStrings: true` per mysql2/promise
 - ✅ Visualizzazione date esatta come nel database (senza conversione automatica)
 - ✅ Eliminazione differenza di 2 ore tra database e frontend
+
+### v2.3.0 - Pagina Modifica Viaggio Completa
+- ✅ Pagina di modifica/dettaglio viaggio completamente ridisegnata
+- ✅ Layout elegante con sezioni organizzate (Informazioni Principali, Rifornimento, Tempi e Chilometraggio, Note)
+- ✅ Gestione immagini associate con visualizzazione a schermo intero
+- ✅ Caricamento nuove immagini con tipizzazione
+- ✅ Formattazione date in formato italiano (dd-mm-yyyy hh:mm)
+- ✅ Validazione campi obbligatori lato client e server
+- ✅ Calcoli automatici (Costo Totale Carburante, Durata, Km Effettivi)
+- ✅ Modal per visualizzazione immagini ingrandite
+- ✅ Integrazione completa con tabella `travel_images`
 
 ### v2.1.0 - Vercel Blob Storage Integration
 - ✅ Integrazione Vercel Blob Storage per gestione file
