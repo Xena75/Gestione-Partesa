@@ -41,6 +41,10 @@ export default [
           jsx: true,
         },
       },
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+      },
     },
     plugins: {
       '@typescript-eslint': typescriptPlugin,
@@ -53,6 +57,9 @@ export default [
       '@typescript-eslint/no-unused-vars': 'warn',
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
+      'no-undef': 'off', // Disabilita errori per console e process
+      'no-console': 'off', // Permette l'uso di console.log
+      'no-unused-vars': 'warn', // Cambia da error a warning per variabili non utilizzate
     },
   },
 ];

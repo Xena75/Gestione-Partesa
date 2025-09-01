@@ -1,7 +1,7 @@
 // src/app/api/viaggi/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db-viaggi';
-import type { RowDataPacket, FieldPacket, ResultSetHeader } from 'mysql2/promise';
+// Import rimossi perché non utilizzati
 
 
 

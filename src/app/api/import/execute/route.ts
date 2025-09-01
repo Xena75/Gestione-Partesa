@@ -465,18 +465,20 @@ function validateAndConvertValue(field: string, value: string | number | null): 
     
     case 'Ore_Pod':
     case 'Peso (Kg)':
-    case 'Km':
+    case 'Km': {
       const num = parseFloat(String(value));
       return isNaN(num) ? null : num;
+    }
     
     case 'Colli':
     case 'Toccate':
     case 'Ordini':
     case 'Mese':
     case 'Sett':
-    case 'Trimestre':
+    case 'Trimestre': {
       const int = parseInt(String(value));
       return isNaN(int) ? null : int;
+    }
     
     default:
       return value;
