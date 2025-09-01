@@ -6,7 +6,8 @@ const pool = mysql.createPool({
   port: Number(process.env.DB_VIAGGI_PORT), // <-- Aggiunta la porta
   user: process.env.DB_VIAGGI_USER,
   password: process.env.DB_VIAGGI_PASS,
-  database: process.env.DB_VIAGGI_NAME
+  database: process.env.DB_VIAGGI_NAME,
+  dateStrings: true // <-- Forza mysql2 a restituire le date come stringhe
 });
 
 export default pool;

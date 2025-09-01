@@ -8,16 +8,7 @@ import FiltriViaggi from "@/components/FiltriViaggi";
 import SortableHeader from "@/components/SortableHeader";
 import Link from 'next/link';
 
-// Funzione helper per formattare le date in UTC
-function formatDateUTC(dateString: string | null): string {
-  if (!dateString) return '-';
-  try {
-    const date = new Date(dateString);
-    return date.toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
-  } catch {
-    return '-';
-  }
-}
+
 
 function ViaggiPageContent() {
   const searchParams = useSearchParams();
@@ -120,11 +111,7 @@ function ViaggiPageContent() {
       {/* Sezione Filtri */}
       <FiltriViaggi />
 
-      {/* Informazione Fuso Orario */}
-      <div className="alert alert-info mb-3">
-        <strong>ℹ️ Informazione Fuso Orario:</strong> Tutte le date e orari sono visualizzati in <strong>UTC (Coordinated Universal Time)</strong> 
-        per garantire precisione e consistenza con i dati del database. Le date non vengono convertite nel fuso orario locale.
-      </div>
+
 
       {/* Tabella */}
       <div className="flex-grow-1 table-responsive h-100">
@@ -143,13 +130,13 @@ function ViaggiPageContent() {
               <th>Totale Colli</th>
               <SortableHeader 
                 field="dataOraInizioViaggio" 
-                label="Data Inizio (UTC)" 
+                label="Data Inizio" 
                 currentSortBy={sortBy} 
                 currentSortOrder={sortOrder} 
               />
               <SortableHeader 
                 field="dataOraFineViaggio" 
-                label="Data Fine (UTC)" 
+                label="Data Fine" 
                 currentSortBy={sortBy} 
                 currentSortOrder={sortOrder} 
               />
@@ -167,7 +154,7 @@ function ViaggiPageContent() {
               <th>Litri Riforniti</th>
               <th>€/Litro</th>
               <th>Ritiri Effettuati</th>
-                              <th>Aggiornato (UTC)</th>
+                              <th>Aggiornato</th>
               <th>Azioni</th>
             </tr>
           </thead>
@@ -179,8 +166,8 @@ function ViaggiPageContent() {
                 <td>{viaggio.nominativoId || '-'}</td>
                 <td>{viaggio.affiancatoDaId || '-'}</td>
                 <td>{viaggio.totaleColli || '-'}</td>
-                <td>{formatDateUTC(viaggio.dataOraInizioViaggio)}</td>
-                <td>{formatDateUTC(viaggio.dataOraFineViaggio)}</td>
+                <td>{viaggio.dataOraInizioViaggio ? viaggio.dataOraInizioViaggio.replace('T', ' ').slice(0, 19) : '-'}</td>
+                <td>{viaggio.dataOraFineViaggio ? viaggio.dataOraFineViaggio.replace('T', ' ').slice(0, 19) : '-'}</td>
                 <td>{viaggio.oreEffettive || '-'}</td>
                 <td>{viaggio.targaMezzoId || '-'}</td>
                 <td>{viaggio.kmIniziali || '-'}</td>
@@ -190,7 +177,7 @@ function ViaggiPageContent() {
                 <td>{viaggio.litriRiforniti || '-'}</td>
                 <td>{viaggio.euroLitro || '-'}</td>
                 <td>{viaggio.haiEffettuatoRitiri ? 'Sì' : 'No'}</td>
-                <td>{formatDateUTC(viaggio.updatedAt)}</td>
+                <td>{viaggio.updatedAt ? viaggio.updatedAt.replace('T', ' ').slice(0, 19) : '-'}</td>
                 <td className="d-flex gap-2">
                   <Link href={`/viaggi/${viaggio.id}/modifica`} className="btn btn-secondary btn-sm">
                     Modifica

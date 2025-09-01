@@ -16,6 +16,7 @@ Un'applicazione web moderna per la gestione completa della logistica aziendale, 
 - **Ordinamento dinamico** su tutte le colonne principali
 - **Paginazione ottimizzata** per grandi dataset
 - **Statistiche in tempo reale** (totale record, record per pagina, pagine totali)
+- **Gestione date precisa** con configurazione `dateStrings: true` per evitare conversioni di fuso orario
 
 ### 📦 Gestione Logistica
 - **Visualizzazione dati** dalla tabella `fatt_delivery`
@@ -60,7 +61,7 @@ Un'applicazione web moderna per la gestione completa della logistica aziendale, 
 ### Backend
 - **Next.js API Routes** per API RESTful
 - **MySQL/MariaDB** come database
-- **mysql2/promise** per connessioni asincrone
+- **mysql2/promise** per connessioni asincrone con configurazione `dateStrings: true`
 - **xlsx** per elaborazione file Excel
 - **@vercel/blob** per gestione file su Vercel Blob Storage
 - **Connection pooling** per performance ottimali
@@ -251,6 +252,12 @@ vercel
 - **DigitalOcean**: App Platform per deployment completo
 
 ## 📝 Changelog
+
+### v2.2.0 - Correzione Gestione Date
+- ✅ Risoluzione problema fuso orario nelle date dei viaggi
+- ✅ Configurazione `dateStrings: true` per mysql2/promise
+- ✅ Visualizzazione date esatta come nel database (senza conversione automatica)
+- ✅ Eliminazione differenza di 2 ore tra database e frontend
 
 ### v2.1.0 - Vercel Blob Storage Integration
 - ✅ Integrazione Vercel Blob Storage per gestione file

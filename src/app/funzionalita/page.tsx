@@ -94,7 +94,7 @@ export default function FunzionalitaPage() {
                           </div>
                           <h5>Gestione Viaggi</h5>
                           <p className="text-muted">
-                            CRUD completo con filtri avanzati, ordinamento dinamico e paginazione ottimizzata
+                            CRUD completo con filtri avanzati, ordinamento dinamico, paginazione ottimizzata e gestione date precisa
                           </p>
                           <Link href="/viaggi" className="btn btn-primary btn-sm">
                             Vai ai Viaggi
