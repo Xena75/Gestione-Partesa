@@ -60,7 +60,7 @@ export default function FiltriViaggi() {
       params.set('page', '1');
     }
     
-    router.push(`/?${params.toString()}`);
+    router.push(`/viaggi?${params.toString()}`);
   };
 
   const resetFilters = () => {
@@ -80,7 +80,7 @@ export default function FiltriViaggi() {
       params.set('page', currentPage);
     }
     
-    router.push(`/?${params.toString()}`);
+    router.push(`/viaggi?${params.toString()}`);
   };
 
   return (
