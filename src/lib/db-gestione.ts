@@ -11,15 +11,10 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 20, // Aumentato per gestire più richieste simultanee
   queueLimit: 0,
-  acquireTimeout: 30000, // Timeout ridotto per evitare blocchi
-  timeout: 30000, // Timeout ridotto per evitare blocchi
   dateStrings: true, // Mantiene le date come stringhe
   // 🚀 NUOVE OPZIONI PER PERFORMANCE
   multipleStatements: false, // Sicurezza
-  charset: 'utf8mb4',
-  // 🚀 OTTIMIZZAZIONI CONNECTION POOL
-  enableKeepAlive: true,
-  keepAliveInitialDelay: 10000
+  charset: 'utf8mb4'
 });
 
 export default pool;

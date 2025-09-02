@@ -264,7 +264,13 @@ export default function FunzionalitaPage() {
                 <li><strong>TOTALE</strong>: ~8 secondi (prima: 60+ secondi)</li>
               </ul>
             </div>
-          </div>>
+          </div>
+
+          {/* Performance e Ottimizzazioni Generali */}
+          <div className="card mb-4">
+            <div className="card-header">
+              <h3 className="h4 mb-0">⚡ Performance e Ottimizzazioni Generali</h3>
+            </div>
             <div className="card-body">
               <ul>
                 <li><strong>Connection Pooling</strong>: Gestione efficiente connessioni database</li>
