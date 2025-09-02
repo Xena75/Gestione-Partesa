@@ -30,11 +30,11 @@ Un'applicazione web moderna per la gestione completa della logistica aziendale, 
 
 ### 📤 Sistema di Importazione Excel Avanzato
 - **Upload drag & drop** di file Excel (.xlsx, .xls)
-- **Vercel Blob Storage** per gestione file sicura e scalabile
-- **Mapping colonne intelligente** con auto-mapping
+- **Sistema ibrido di storage**: Vercel Blob Storage in produzione, storage locale in sviluppo
+- **Mapping colonne intelligente** con auto-mapping e validazione
 - **Configurazioni salvabili** per importazioni ricorrenti
 - **Importazione in background** con progresso in tempo reale
-- **Gestione errori robusta** con logging dettagliato
+- **Gestione errori robusta** con logging dettagliato e recovery automatico
 - **Campi calcolati automatici**:
   - `Ore_Pod`: Calcolo automatico ore di POD
   - `Data`: Estrazione data da Data Inizio
@@ -43,9 +43,11 @@ Un'applicazione web moderna per la gestione completa della logistica aziendale, 
   - `Sett`: Settimana dell'anno
   - `Trimestre`: Trimestre calcolato
 - **Conversione date Excel** automatica (formato numerico Excel → MySQL datetime)
+- **Gestione campo Viaggio** con rimozione automatica zeri iniziali
 - **Storico importazioni** con dettagli completi
 - **Gestione sessioni** per tracciabilità
 - **Eliminazione record** per session_id specifico
+- **Workflow post-upload ottimizzato** con scelta tra mapping salvato o nuovo
 
 ### 📈 Storico e Monitoraggio
 - **Storico importazioni** con filtri avanzati
@@ -67,8 +69,9 @@ Un'applicazione web moderna per la gestione completa della logistica aziendale, 
 - **MySQL/MariaDB** come database
 - **mysql2/promise** per connessioni asincrone con configurazione `dateStrings: true`
 - **xlsx** per elaborazione file Excel
-- **@vercel/blob** per gestione file su Vercel Blob Storage
+- **Sistema storage ibrido**: Vercel Blob Storage in produzione, filesystem locale in sviluppo
 - **Connection pooling** per performance ottimali
+- **Gestione errori avanzata** con timeout configurabili e recovery automatico
 
 ### Database
 - **Indici ottimizzati** per query veloci
@@ -200,20 +203,23 @@ gestione-partesa/
 ## 🔧 Funzionalità Avanzate
 
 ### Sistema di Importazione Excel
-1. **Upload File**: Drag & drop o selezione file
-2. **Mapping Colonne**: Interfaccia intuitiva per mappare colonne Excel → Database
-3. **Configurazioni Salvabili**: Salva mapping per uso futuro
-4. **Importazione Background**: Processo asincrono con progresso real-time
-5. **Gestione Errori**: Logging dettagliato e recovery automatico
-6. **Campi Calcolati**: Calcolo automatico di campi derivati
-7. **Storico Completo**: Tracciabilità di tutte le importazioni
+1. **Upload File**: Drag & drop o selezione file con sistema storage ibrido
+2. **Mapping Colonne**: Interfaccia intuitiva per mappare colonne Excel → Database con validazione
+3. **Configurazioni Salvabili**: Salva mapping per uso futuro e riutilizzo
+4. **Importazione Background**: Processo asincrono con progresso real-time e gestione errori
+5. **Gestione Errori**: Logging dettagliato, recovery automatico e timeout configurabili
+6. **Campi Calcolati**: Calcolo automatico di campi derivati e gestione campi speciali
+7. **Storico Completo**: Tracciabilità di tutte le importazioni con statistiche dettagliate
+8. **Workflow Ottimizzato**: Scelta intelligente tra mapping salvato e creazione nuovo
 
 ### Performance e Ottimizzazioni
 - **Connection Pooling**: Gestione efficiente connessioni database
 - **Indici Database**: Query ottimizzate per grandi dataset
 - **Paginazione Server-side**: Caricamento efficiente dati
-- **Timeout Configurabili**: Prevenzione blocchi server
+- **Timeout Configurabili**: Prevenzione blocchi server e gestione errori
 - **Gestione Memoria**: Pulizia automatica file temporanei
+- **Sistema Storage Ibrido**: Ottimizzazione per sviluppo locale e produzione
+- **Recovery Automatico**: Gestione intelligente degli errori con retry automatici
 
 ## 📊 Monitoraggio e Logging
 
@@ -262,6 +268,15 @@ vercel
 - ✅ Configurazione `dateStrings: true` per mysql2/promise
 - ✅ Visualizzazione date esatta come nel database (senza conversione automatica)
 - ✅ Eliminazione differenza di 2 ore tra database e frontend
+
+### v2.4.0 - Sistema Importazione Excel Ottimizzato
+- ✅ Sistema storage ibrido: Vercel Blob Storage in produzione, storage locale in sviluppo
+- ✅ Risoluzione errore 500 Internal Server Error in ambiente locale
+- ✅ Gestione campo Viaggio con rimozione automatica zeri iniziali
+- ✅ Workflow post-upload ottimizzato con scelta intelligente tra mapping salvato e nuovo
+- ✅ Validazione mapping colonne per prevenire errori "Unknown column"
+- ✅ Gestione errori avanzata con timeout configurabili e recovery automatico
+- ✅ Logging dettagliato per debugging e monitoraggio
 
 ### v2.3.0 - Pagina Modifica Viaggio Completa
 - ✅ Pagina di modifica/dettaglio viaggio completamente ridisegnata

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
+import { writeFile, mkdir } from 'fs/promises';
+import { join } from 'path';
 
 export async function POST(request: NextRequest) {
   try {
@@ -7,7 +9,11 @@ export async function POST(request: NextRequest) {
     
     // Verifica variabili d'ambiente
     console.log('🔍 Verifica variabili d\'ambiente...');
-    console.log('🔍 BLOB_READ_WRITE_TOKEN presente:', !!process.env.BLOB_READ_WRITE_TOKEN);
+    const isProduction = process.env.NODE_ENV === 'production';
+    const hasBlobToken = !!process.env.BLOB_READ_WRITE_TOKEN;
+    
+    console.log('🔍 Ambiente:', isProduction ? 'PRODUZIONE' : 'SVILUPPO');
+    console.log('🔍 BLOB_READ_WRITE_TOKEN presente:', hasBlobToken);
     
     const formData = await request.formData();
     console.log('🔍 FormData ricevuto');
@@ -39,29 +45,55 @@ export async function POST(request: NextRequest) {
     const timestamp = Date.now();
     const uniqueId = Math.random().toString(36).substring(2, 15);
     const fileId = `${timestamp}_${uniqueId}`;
-    const blobName = `imports/${fileId}_${file.name}`;
-
-    console.log('📁 File ricevuto:', { filename: file.name, size: file.size, fileId });
-    console.log('📁 Tentativo upload su Blob Storage con nome:', blobName);
-
-    // Carica il file su Vercel Blob Storage
-    let blob;
-    try {
-      blob = await put(blobName, file, {
-        access: 'public',
-        addRandomSuffix: false
-      });
-      console.log('✅ File caricato su Blob Storage:', blob.url);
-    } catch (blobError) {
-      console.error('❌ Errore durante upload su Blob Storage:', blobError);
-      throw blobError;
+    
+    let blobUrl: string;
+    
+    if (isProduction && hasBlobToken) {
+      // PRODUZIONE: Usa Vercel Blob Storage
+      const blobName = `imports/${fileId}_${file.name}`;
+      console.log('📁 Tentativo upload su Blob Storage con nome:', blobName);
+      
+      try {
+        const blob = await put(blobName, file, {
+          access: 'public',
+          addRandomSuffix: false
+        });
+        blobUrl = blob.url;
+        console.log('✅ File caricato su Blob Storage:', blobUrl);
+      } catch (blobError) {
+        console.error('❌ Errore durante upload su Blob Storage:', blobError);
+        throw blobError;
+      }
+    } else {
+      // SVILUPPO: Salva in locale
+      console.log('📁 Ambiente di sviluppo - Salvataggio file locale');
+      
+      try {
+        // Crea directory uploads se non esiste
+        const uploadsDir = join(process.cwd(), 'uploads');
+        await mkdir(uploadsDir, { recursive: true });
+        
+        // Salva il file
+        const filePath = join(uploadsDir, `${fileId}_${file.name}`);
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+        
+        await writeFile(filePath, buffer);
+        
+        // Crea un URL fittizio per lo sviluppo
+        blobUrl = `file://${filePath}`;
+        console.log('✅ File salvato localmente:', filePath);
+      } catch (localError) {
+        console.error('❌ Errore durante salvataggio locale:', localError);
+        throw localError;
+      }
     }
 
     return NextResponse.json({
       success: true,
       fileId,
       filename: file.name,
-      blobUrl: blob.url,
+      blobUrl,
       message: 'File caricato con successo'
     });
 
@@ -74,24 +106,39 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Funzione helper per recuperare un file dal Blob Storage
+// Funzione helper per recuperare un file dal Blob Storage o dal filesystem locale
 export async function getFileFromBlob(blobUrl: string) {
   try {
-    const response = await fetch(blobUrl);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    if (blobUrl.startsWith('file://')) {
+      // File locale (sviluppo)
+      const { readFile } = await import('fs/promises');
+      const filePath = blobUrl.replace('file://', '');
+      const buffer = await readFile(filePath);
+      const filename = filePath.split('/').pop() || 'unknown.xlsx';
+      
+      return {
+        filename,
+        buffer,
+        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      };
+    } else {
+      // Vercel Blob Storage (produzione)
+      const response = await fetch(blobUrl);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const buffer = Buffer.from(await response.arrayBuffer());
+      const filename = blobUrl.split('/').pop() || 'unknown.xlsx';
+      
+      return {
+        filename,
+        buffer,
+        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      };
     }
-    
-    const buffer = Buffer.from(await response.arrayBuffer());
-    const filename = blobUrl.split('/').pop() || 'unknown.xlsx';
-    
-    return {
-      filename,
-      buffer,
-      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    };
   } catch (error) {
-    console.error('❌ Errore durante il recupero file dal Blob:', error);
+    console.error('❌ Errore durante il recupero file:', error);
     return null;
   }
 }

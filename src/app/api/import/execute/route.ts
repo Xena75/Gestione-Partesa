@@ -406,15 +406,31 @@ function validateAndConvertValue(field: string, value: string | number | null): 
   switch (field) {
     case 'ID':
     case 'Source#Name':
-    case 'Viaggio':
     case 'Magazzino di partenza':
     case 'Nome Trasportatore':
     case 'Giorno':
       return String(value);
     
+    case 'Viaggio': {
+      // Rimuovi gli zeri iniziali dal campo Viaggio
+      console.log(`   🔍 Campo Viaggio - Valore originale: ${value} (tipo: ${typeof value})`);
+      if (typeof value === 'number') {
+        // Se è un numero, convertilo in stringa e rimuovi gli zeri iniziali
+        const strValue = value.toString();
+        const trimmedValue = strValue.replace(/^0+/, '');
+        console.log(`   ✅ Numero convertito: ${value} -> ${strValue} -> ${trimmedValue} (rimossi zeri iniziali)`);
+        return trimmedValue;
+      }
+      // Se è già una stringa, rimuovi gli zeri iniziali
+      const strValue = String(value);
+      const trimmedValue = strValue.replace(/^0+/, '');
+      console.log(`   ✅ Stringa processata: ${value} -> ${strValue} -> ${trimmedValue} (rimossi zeri iniziali)`);
+      return trimmedValue;
+    }
+    
     case 'Data Inizio':
     case 'Data Fine':
-    case 'Data':
+    case 'Data': {
       console.log(`   📅 Elaborazione data per campo: ${field}, valore: ${value}`);
       if (value && typeof value === 'object' && 'toISOString' in value) {
         const date = value as Date;
@@ -448,20 +464,21 @@ function validateAndConvertValue(field: string, value: string | number | null): 
         console.warn(`   ❌ Data non valida: ${value}`);
         return null;
       }
-             if (typeof value === 'number') {
-         console.log(`   📅 Tentativo conversione numero Excel: ${value}`);
-         // Prova come Excel date (numero)
-         const excelDate = value;
-         if (!isNaN(excelDate)) {
-           // Converti da Excel date usando il metodo corretto
-           const jsDate = new Date((excelDate - 25569) * 86400 * 1000);
-           const mysqlDate = jsDate.toISOString().slice(0, 19).replace('T', ' ');
-           console.log(`   ✅ Excel date convertita da numero: ${value} -> ${mysqlDate}`);
-           return mysqlDate;
-         }
-       }
+      if (typeof value === 'number') {
+        console.log(`   📅 Tentativo conversione numero Excel: ${value}`);
+        // Prova come Excel date (numero)
+        const excelDate = value;
+        if (!isNaN(excelDate)) {
+          // Converti da Excel date usando il metodo corretto
+          const jsDate = new Date((excelDate - 25569) * 86400 * 1000);
+          const mysqlDate = jsDate.toISOString().slice(0, 19).replace('T', ' ');
+          console.log(`   ✅ Excel date convertita da numero: ${value} -> ${mysqlDate}`);
+          return mysqlDate;
+        }
+      }
       console.warn(`   ❌ Data non valida o tipo non supportato: ${value} (${typeof value})`);
       return null;
+    }
     
     case 'Ore_Pod':
     case 'Peso (Kg)':
