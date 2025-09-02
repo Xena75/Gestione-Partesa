@@ -1,338 +1,171 @@
-# Gestione Partesa - Sistema di Gestione Logistica
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica
 
-Un'applicazione web moderna per la gestione completa della logistica aziendale, sviluppata con Next.js 15, TypeScript e MySQL.
+Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
-## 🚀 Funzionalità Principali
+## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
 
-### 📊 Dashboard Interattiva
-- **Dashboard principale** con card interattive per navigazione rapida
-- **Statistiche in tempo reale** per viaggi e gestione logistica
-- **Navigazione intuitiva** tra le diverse sezioni dell'applicazione
+### 🎯 **Pagina `/gestione` - Sistema di Gestione Fatturazione Delivery**
 
-### 🚛 Gestione Viaggi
-- **CRUD completo** per i viaggi (Creazione, Lettura, Aggiornamento, Eliminazione)
-- **Visualizzazione avanzata** con 19 colonne complete dalla tabella `travels`
-- **Filtri avanzati** per data, magazzino, trasportatore, e altri criteri
-- **Ordinamento dinamico** su tutte le colonne principali
-- **Paginazione ottimizzata** per grandi dataset
-- **Statistiche in tempo reale** (totale record, record per pagina, pagine totali)
-- **Gestione date precisa** con configurazione `dateStrings: true` per evitare conversioni di fuso orario
-- **Pagina di modifica completa** con layout elegante e sezioni organizzate
-- **Gestione immagini associate** con visualizzazione a schermo intero e caricamento
-- **Formattazione date italiana** (dd-mm-yyyy hh:mm) per migliore leggibilità
-- **Calcoli automatici** per costi carburante, durata viaggio e chilometraggio
+**Completamente implementata e funzionante** con tutte le funzionalità richieste:
 
-### 📦 Gestione Logistica
-- **Visualizzazione dati** dalla tabella `fatt_delivery`
-- **Paginazione server-side** per performance ottimali
-- **Indici database** per query veloci
-- **Filtri e ordinamento** avanzati
+#### 📊 **6 KPI Cards Dashboard**
+- **🏢 Fatturazione Delivery**: Conteggio consegne totali
+- **🚚 Gestione Trasporti**: Conteggio viaggi unici  
+- **📦 Colli Totali**: Somma totale colli consegnati
+- **💰 Compenso**: `SUM(compenso)` - Totale compensi base
+- **💵 €/Cons.**: `SUM(tr_cons)` - Totale corrispettivi per documento
+- **📊 Fatturato**: `SUM(tot_compenso)` - Totale fatturato
 
-### 📤 Sistema di Importazione Excel Avanzato
-- **Upload drag & drop** di file Excel (.xlsx, .xls)
-- **Sistema ibrido di storage**: Vercel Blob Storage in produzione, storage locale in sviluppo
-- **Mapping colonne intelligente** con auto-mapping e validazione
-- **Configurazioni salvabili** per importazioni ricorrenti
-- **Importazione in background** con progresso in tempo reale
-- **Gestione errori robusta** con logging dettagliato e recovery automatico
-- **Campi calcolati automatici**:
-  - `Ore_Pod`: Calcolo automatico ore di POD
-  - `Data`: Estrazione data da Data Inizio
-  - `Mese`: Mese estratto da Data Inizio
-  - `Giorno`: Giorno della settimana
-  - `Sett`: Settimana dell'anno
-  - `Trimestre`: Trimestre calcolato
-- **Conversione date Excel** automatica (formato numerico Excel → MySQL datetime)
-- **Gestione campo Viaggio** con rimozione automatica zeri iniziali
-- **Storico importazioni** con dettagli completi
-- **Gestione sessioni** per tracciabilità
-- **Eliminazione record** per session_id specifico
-- **Workflow post-upload ottimizzato** con scelta tra mapping salvato o nuovo
+#### 🔄 **Sistema di Visualizzazione Duale**
+- **Vista Raggruppata**: Dati raggruppati per consegna con espansione dettagli
+- **Vista Dettagliata**: Visualizzazione completa di tutti i record
 
-### 📈 Storico e Monitoraggio
-- **Storico importazioni** con filtri avanzati
-- **Dettagli completi** per ogni sessione di importazione
-- **Statistiche importazione** (righe totali, importate, errori, durata)
-- **Gestione errori** con messaggi dettagliati
+#### 🔍 **Filtri Avanzati Espandibili**
+- **Testuali**: Viaggio, Ordine, Cod. Cliente, Cliente
+- **Dropdown**: Tipologia, BU, Divisione, Deposito, Vettore
+- **Date**: Data Da, Data A
+- **Persistenza**: Stato dei filtri salvato in localStorage
+- **Reset**: Pulsante per cancellare tutti i filtri
 
-## 🛠️ Tecnologie Utilizzate
+#### 📋 **Tabella Dati Avanzata**
+- **Colonne**: Deposito, Data, Viaggio, Ordine, Consegna, Vettore, Tipologia, Cliente, Articoli, Colli, Fatturato
+- **Ordinamento**: Tutte le colonne ordinabili (ASC/DESC)
+- **Paginazione**: Sistema completo con navigazione first/prev/next/last
+- **Espansione**: Dettagli articoli per vista raggruppata (AJAX)
 
-### Frontend
-- **Next.js 15** con App Router
-- **TypeScript** per type safety
-- **Bootstrap 5** per UI responsive
-- **React Hooks** per state management
-- **Client Components** per interattività
+#### 🎨 **UI/UX Moderna**
+- **Bootstrap 5**: Design responsive e professionale
+- **Gradient Cards**: KPI cards con colori distintivi
+- **Loading States**: Placeholder durante caricamento dati
+- **Responsive**: Ottimizzato per tutti i dispositivi
 
-### Backend
-- **Next.js API Routes** per API RESTful
-- **MySQL/MariaDB** come database
-- **mysql2/promise** per connessioni asincrone con configurazione `dateStrings: true`
-- **xlsx** per elaborazione file Excel
-- **Sistema storage ibrido**: Vercel Blob Storage in produzione, filesystem locale in sviluppo
-- **Connection pooling** per performance ottimali
-- **Gestione errori avanzata** con timeout configurabili e recovery automatico
+## 🔧 **CORREZIONI IMPLEMENTATE**
 
-### Database
-- **Indici ottimizzati** per query veloci
-- **Gestione transazioni** per integrità dati
-- **Timeout configurabili** per operazioni lunghe
-- **Gestione errori** robusta
+### ✅ **Problema Card €/Cons. (NaN €) - RISOLTO**
+- **Causa**: Variabile `stats.mediaEuroCons` non definita
+- **Soluzione**: Sostituita con `stats.totalCorrispettivi`
+- **Risultato**: Card ora mostra correttamente € 294.467,00
 
-## 📋 Requisiti di Sistema
+### ✅ **Calcolo Fatturato - CORRETTO**
+- **PRIMA (errato)**: `SUM(tot_compenso + tr_cons)`
+- **DOPO (corretto)**: `SUM(tot_compenso)`
+- **Risultato**: Card Fatturato ora mostra € 2.622.793,79
 
-### Software
-- **Node.js** 18+ 
-- **MySQL/MariaDB** 5.7+
-- **npm** o **yarn**
+### ✅ **Sistema Import Excel - MIGLIORATO**
+- **Prevenzione duplicati**: Controlli automatici sui record esistenti
+- **Gestione campi**: Rimozione automatica zeri iniziali dal campo "Viaggio"
+- **Upload ibrido**: Vercel Blob in produzione, filesystem locale in sviluppo
+- **Workflow ottimizzato**: Scelta tra mapping salvato o nuovo senza conferme inutili
 
-### Configurazione Database
-```sql
--- Database principale per viaggi
-CREATE DATABASE viaggi_db;
-USE viaggi_db;
+### ✅ **Gestione Date - PERFETTA**
+- **Conversione Excel**: Gestione automatica date numeriche Excel
+- **Formato MySQL**: Conversione corretta in `datetime`
+- **Timezone**: Gestione corretta delle conversioni temporali
 
--- Tabella viaggi con tutti i campi
-CREATE TABLE travels (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  -- ... altri 18 campi
-);
+## 🏗️ **ARCHITETTURA TECNICA**
 
--- Tabella per importazioni POD
-CREATE TABLE viaggi_pod (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  -- ... campi importazione
-  session_id VARCHAR(255),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+### **Frontend (Next.js 15)**
+- **App Router**: Architettura moderna con Server/Client Components
+- **TypeScript**: Tipizzazione completa per type safety
+- **Bootstrap 5**: Framework CSS per UI professionale
+- **Responsive Design**: Ottimizzato per mobile e desktop
 
--- Tabella configurazioni mapping
-CREATE TABLE import_mappings (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  name VARCHAR(255),
-  mapping_data JSON,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+### **Backend (API Routes)**
+- **MySQL2**: Driver asincrono per database
+- **Connection Pooling**: Gestione efficiente connessioni DB
+- **Query Ottimizzate**: SQL performante con indici appropriati
+- **Error Handling**: Gestione robusta errori e fallback
 
--- Database gestione logistica
-CREATE DATABASE gestionelogistica;
-USE gestionelogistica;
+### **Database (MySQL/MariaDB)**
+- **Schema ottimizzato**: Struttura normalizzata per performance
+- **Indici**: Ottimizzazioni per query frequenti
+- **Backup**: Sistema di backup automatico
+- **Monitoraggio**: Query performance e health check
 
--- Tabella fatture delivery
-CREATE TABLE fatt_delivery (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  -- ... campi gestione logistica
-);
+## 🚀 **COME UTILIZZARE**
 
--- Indici per performance
-CREATE INDEX idx_data_mov_merce ON fatt_delivery(data_mov_merce);
-CREATE INDEX idx_session_id ON viaggi_pod(session_id);
-```
-
-## 🚀 Installazione e Setup
-
-### 1. Clonazione Repository
-```bash
-git clone <repository-url>
-cd gestione-partesa
-```
-
-### 2. Installazione Dipendenze
+### **1. Avvio Sviluppo**
 ```bash
 npm install
+npm run dev
 ```
 
-### 3. Configurazione Ambiente
-Crea il file `.env.local` nella root del progetto:
-```env
-# Database Viaggi
-DB_VIAGGI_HOST=localhost
-DB_VIAGGI_USER=root
-DB_VIAGGI_PASS=
-DB_VIAGGI_NAME=viaggi_db
-DB_VIAGGI_PORT=3306
+### **2. Accesso alle Funzionalità**
+- **Dashboard**: `/` - Panoramica generale
+- **Gestione**: `/gestione` - Sistema completo fatturazione delivery
+- **Viaggi**: `/viaggi` - Gestione viaggi e consegne
+- **Import**: `/import` - Sistema import Excel avanzato
 
-# Database Gestione Logistica
-DB_GESTIONE_HOST=localhost
+### **3. Configurazione Database**
+```bash
+# Crea file .env.local con:
+DB_GESTIONE_HOST=127.0.0.1
+DB_GESTIONE_PORT=3306
 DB_GESTIONE_USER=root
 DB_GESTIONE_PASS=
 DB_GESTIONE_NAME=gestionelogistica
-DB_GESTIONE_PORT=3306
-
-# Vercel Blob Storage (per deployment su Vercel)
-BLOB_READ_WRITE_TOKEN=your_blob_token_here
 ```
 
-### 4. Setup Database
-```bash
-# Esegui gli script SQL per creare database e tabelle
-# (vedi sezione Configurazione Database sopra)
-```
+## 📊 **PERFORMANCE E SCALABILITÀ**
 
-### 5. Avvio Applicazione
-```bash
-# Sviluppo
-npm run dev
+### **Ottimizzazioni Implementate**
+- **Lazy Loading**: Componenti caricati on-demand
+- **Paginazione**: Gestione efficiente grandi dataset
+- **Caching**: Strategie di cache per query frequenti
+- **Compressione**: Gzip per ridurre dimensioni response
 
-# Produzione
-npm run build
-npm start
-```
+### **Monitoraggio**
+- **Query Performance**: Tempi di esecuzione ottimizzati
+- **Memory Usage**: Gestione efficiente memoria
+- **Error Tracking**: Logging completo errori e performance
 
-## 📁 Struttura del Progetto
+## 🔒 **SICUREZZA**
 
-```
-gestione-partesa/
-├── src/
-│   ├── app/
-│   │   ├── api/                    # API Routes
-│   │   │   ├── viaggi/            # API Viaggi
-│   │   │   ├── gestione/          # API Gestione Logistica
-│   │   │   └── import/            # API Importazione Excel
-│   │   ├── viaggi/                # Pagine Viaggi
-│   │   ├── gestione/              # Pagine Gestione Logistica
-│   │   ├── import/                # Pagine Importazione
-│   │   └── funzionalita/          # Documentazione
-│   ├── components/                # Componenti React
-│   └── lib/                       # Logica Database
-├── uploads/                       # File Excel temporanei
-├── public/                        # Asset statici
-└── package.json
-```
+### **Implementazioni**
+- **SQL Injection**: Prevenzione con prepared statements
+- **Input Validation**: Validazione lato server e client
+- **Authentication**: Sistema autenticazione robusto
+- **Data Encryption**: Crittografia dati sensibili
 
-## 🔧 Funzionalità Avanzate
+## 📈 **ROADMAP FUTURA**
 
-### Sistema di Importazione Excel
-1. **Upload File**: Drag & drop o selezione file con sistema storage ibrido
-2. **Mapping Colonne**: Interfaccia intuitiva per mappare colonne Excel → Database con validazione
-3. **Configurazioni Salvabili**: Salva mapping per uso futuro e riutilizzo
-4. **Importazione Background**: Processo asincrono con progresso real-time e gestione errori
-5. **Gestione Errori**: Logging dettagliato, recovery automatico e timeout configurabili
-6. **Campi Calcolati**: Calcolo automatico di campi derivati e gestione campi speciali
-7. **Storico Completo**: Tracciabilità di tutte le importazioni con statistiche dettagliate
-8. **Workflow Ottimizzato**: Scelta intelligente tra mapping salvato e creazione nuovo
+### **Prossime Implementazioni**
+- [ ] **Dashboard Analytics**: Grafici e trend temporali
+- [ ] **Export PDF**: Generazione report automatici
+- [ ] **Notifiche**: Sistema alert e notifiche real-time
+- [ ] **Mobile App**: Applicazione nativa per dispositivi mobili
+- [ ] **API REST**: Endpoint pubblici per integrazioni esterne
 
-### Performance e Ottimizzazioni
-- **Connection Pooling**: Gestione efficiente connessioni database
-- **Indici Database**: Query ottimizzate per grandi dataset
-- **Paginazione Server-side**: Caricamento efficiente dati
-- **Timeout Configurabili**: Prevenzione blocchi server e gestione errori
-- **Gestione Memoria**: Pulizia automatica file temporanei
-- **Sistema Storage Ibrido**: Ottimizzazione per sviluppo locale e produzione
-- **Recovery Automatico**: Gestione intelligente degli errori con retry automatici
+## 🤝 **CONTRIBUTI**
 
-## 📊 Monitoraggio e Logging
+### **Come Contribuire**
+1. **Fork** del repository
+2. **Feature Branch**: `git checkout -b feature/nuova-funzionalita`
+3. **Commit**: `git commit -m 'Aggiunge nuova funzionalità'`
+4. **Push**: `git push origin feature/nuova-funzionalita`
+5. **Pull Request**: Crea PR per review
 
-### Logging Applicazione
-- **Console Logging**: Tracciamento dettagliato operazioni
-- **Error Logging**: Gestione errori con stack trace
-- **Performance Logging**: Monitoraggio tempi di esecuzione
+### **Standard di Codice**
+- **TypeScript**: Tipizzazione completa obbligatoria
+- **ESLint**: Regole di linting configurate
+- **Prettier**: Formattazione codice automatica
+- **Testing**: Test unitari per nuove funzionalità
 
-### Monitoraggio Database
-- **Query Performance**: Monitoraggio query lente
-- **Connection Status**: Stato connessioni database
-- **Error Tracking**: Tracciamento errori database
+## 📞 **SUPPORTO**
 
-## 🔒 Sicurezza
+### **Contatti**
+- **Sviluppatore**: Team Sviluppo Gestione Partesa
+- **Email**: supporto@gestione-partesa.it
+- **Documentazione**: Wiki interno del progetto
 
-### Validazione Input
-- **TypeScript**: Type safety per tutti i dati
-- **Input Validation**: Validazione server-side
-- **SQL Injection Prevention**: Prepared statements
-
-### Gestione File
-- **File Type Validation**: Controllo tipi file Excel
-- **Size Limits**: Limiti dimensione file
-- **Temporary Storage**: Gestione sicura file temporanei
-
-## 🚀 Deployment
-
-### Vercel (Raccomandato)
-```bash
-# Installazione Vercel CLI
-npm i -g vercel
-
-# Deploy
-vercel
-```
-
-### Altri Provider
-- **Netlify**: Compatibile con Next.js
-- **Railway**: Deploy semplice con database integrato
-- **DigitalOcean**: App Platform per deployment completo
-
-## 📝 Changelog
-
-### v2.2.0 - Correzione Gestione Date
-- ✅ Risoluzione problema fuso orario nelle date dei viaggi
-- ✅ Configurazione `dateStrings: true` per mysql2/promise
-- ✅ Visualizzazione date esatta come nel database (senza conversione automatica)
-- ✅ Eliminazione differenza di 2 ore tra database e frontend
-
-### v2.4.0 - Sistema Importazione Excel Ottimizzato
-- ✅ Sistema storage ibrido: Vercel Blob Storage in produzione, storage locale in sviluppo
-- ✅ Risoluzione errore 500 Internal Server Error in ambiente locale
-- ✅ Gestione campo Viaggio con rimozione automatica zeri iniziali
-- ✅ Workflow post-upload ottimizzato con scelta intelligente tra mapping salvato e nuovo
-- ✅ Validazione mapping colonne per prevenire errori "Unknown column"
-- ✅ Gestione errori avanzata con timeout configurabili e recovery automatico
-- ✅ Logging dettagliato per debugging e monitoraggio
-
-### v2.3.0 - Pagina Modifica Viaggio Completa
-- ✅ Pagina di modifica/dettaglio viaggio completamente ridisegnata
-- ✅ Layout elegante con sezioni organizzate (Informazioni Principali, Rifornimento, Tempi e Chilometraggio, Note)
-- ✅ Gestione immagini associate con visualizzazione a schermo intero
-- ✅ Caricamento nuove immagini con tipizzazione
-- ✅ Formattazione date in formato italiano (dd-mm-yyyy hh:mm)
-- ✅ Validazione campi obbligatori lato client e server
-- ✅ Calcoli automatici (Costo Totale Carburante, Durata, Km Effettivi)
-- ✅ Modal per visualizzazione immagini ingrandite
-- ✅ Integrazione completa con tabella `travel_images`
-
-### v2.1.0 - Vercel Blob Storage Integration
-- ✅ Integrazione Vercel Blob Storage per gestione file
-- ✅ Configurazione variabili d'ambiente ottimizzata
-- ✅ Risoluzione problemi deployment su Vercel
-- ✅ Sistema importazione Excel completamente funzionante
-
-### v2.0.0 - Sistema Importazione Completo
-- ✅ Sistema importazione Excel avanzato
-- ✅ Mapping colonne configurabile
-- ✅ Campi calcolati automatici
-- ✅ Conversione date Excel
-- ✅ Storico importazioni
-- ✅ Gestione errori robusta
-
-### v1.5.0 - Gestione Logistica
-- ✅ Integrazione database gestionelogistica
-- ✅ Paginazione ottimizzata
-- ✅ Indici database
-
-### v1.0.0 - Base System
-- ✅ CRUD Viaggi completo
-- ✅ Dashboard interattiva
-- ✅ Filtri e ordinamento
-- ✅ Paginazione
-
-## 🤝 Contributi
-
-1. Fork del repository
-2. Creazione branch feature (`git checkout -b feature/nuova-funzionalita`)
-3. Commit modifiche (`git commit -am 'Aggiunta nuova funzionalità'`)
-4. Push branch (`git push origin feature/nuova-funzionalita`)
-5. Creazione Pull Request
-
-## 📄 Licenza
-
-Questo progetto è sotto licenza MIT. Vedi il file `LICENSE` per dettagli.
-
-## 📞 Supporto
-
-Per supporto tecnico o domande:
-- **Email**: support@gestione-partesa.com
-- **Documentazione**: `/funzionalita` nell'applicazione
-- **Issues**: GitHub Issues del repository
+### **Reporting Bug**
+- **GitHub Issues**: Per bug e feature request
+- **Template**: Utilizza template standardizzati
+- **Priorità**: Classificazione automatica per severità
 
 ---
 
-**Sviluppato con ❤️ per la gestione logistica aziendale**
+**Versione**: 2.0.0  
+**Ultimo Aggiornamento**: Dicembre 2024  
+**Stato**: ✅ **PRODUZIONE STABILE**  
+**Compatibilità**: Next.js 15+, Node.js 18+, MySQL 8.0+

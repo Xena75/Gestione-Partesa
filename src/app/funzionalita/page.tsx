@@ -1,657 +1,327 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 
 export default function FunzionalitaPage() {
-  const [activeTab, setActiveTab] = useState('overview');
-
   return (
-    <div className="min-vh-100 bg-light">
-      {/* Header */}
-      <div className="bg-primary text-white py-4">
-        <div className="container">
-          <div className="d-flex justify-content-between align-items-center">
-            <div>
-              <h1 className="h3 mb-1">📚 Funzionalità e Documentazione</h1>
-              <p className="mb-0 text-white-50">
-                Guida completa alle funzionalità del sistema
-              </p>
-            </div>
-            <Link href="/" className="btn btn-outline-light">
-              ← Torna alla Dashboard
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="container py-5">
-        {/* Navigation Tabs */}
-        <ul className="nav nav-tabs mb-4" role="tablist">
-          <li className="nav-item">
-            <button 
-              className={`nav-link ${activeTab === 'overview' ? 'active' : ''}`}
-              onClick={() => setActiveTab('overview')}
-            >
-              🏠 Panoramica
-            </button>
-          </li>
-          <li className="nav-item">
-            <button 
-              className={`nav-link ${activeTab === 'viaggi' ? 'active' : ''}`}
-              onClick={() => setActiveTab('viaggi')}
-            >
-              🚛 Gestione Viaggi
-            </button>
-          </li>
-          <li className="nav-item">
-            <button 
-              className={`nav-link ${activeTab === 'logistica' ? 'active' : ''}`}
-              onClick={() => setActiveTab('logistica')}
-            >
-              📦 Gestione Logistica
-            </button>
-          </li>
-          <li className="nav-item">
-            <button 
-              className={`nav-link ${activeTab === 'import' ? 'active' : ''}`}
-              onClick={() => setActiveTab('import')}
-            >
-              📤 Importazione Excel
-            </button>
-          </li>
-          <li className="nav-item">
-            <button 
-              className={`nav-link ${activeTab === 'tech' ? 'active' : ''}`}
-              onClick={() => setActiveTab('tech')}
-            >
-              🛠️ Tecnologie
-            </button>
-          </li>
-        </ul>
-
-        {/* Tab Content */}
-        <div className="tab-content">
+    <div className="container-fluid py-4">
+      <div className="row">
+        <div className="col-12">
+          <h1 className="h2 mb-4">🚀 Funzionalità del Sistema</h1>
           
-          {/* Overview Tab */}
-          {activeTab === 'overview' && (
-            <div className="tab-pane fade show active">
-              <div className="row">
-                <div className="col-lg-8">
-                  <h2>🎯 Panoramica del Sistema</h2>
-                  <p className="lead">
-                    Gestione Partesa è un sistema completo per la gestione della logistica aziendale, 
-                    sviluppato con tecnologie moderne e architettura scalabile.
-                  </p>
-                  
-                  <div className="row mt-4">
-                    <div className="col-md-6 mb-4">
-                      <div className="card h-100 border-0 shadow-sm">
-                        <div className="card-body text-center">
-                          <div className="bg-primary bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3">
-                            <span className="fs-1">🚛</span>
-                          </div>
-                                  <h5>Gestione Viaggi</h5>
-        <p className="text-muted">
-          CRUD completo con filtri avanzati, ordinamento dinamico, paginazione ottimizzata, gestione date precisa, pagina di modifica completa e gestione immagini
-        </p>
-                          <Link href="/viaggi" className="btn btn-primary btn-sm">
-                            Vai ai Viaggi
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="col-md-6 mb-4">
-                      <div className="card h-100 border-0 shadow-sm">
-                        <div className="card-body text-center">
-                          <div className="bg-success bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3">
-                            <span className="fs-1">📦</span>
-                          </div>
-                          <h5>Gestione Logistica</h5>
-                          <p className="text-muted">
-                            Visualizzazione dati fatturazione con performance ottimizzate
-                          </p>
-                          <Link href="/gestione" className="btn btn-success btn-sm">
-                            Vai alla Logistica
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="col-md-6 mb-4">
-                      <div className="card h-100 border-0 shadow-sm">
-                        <div className="card-body text-center">
-                          <div className="bg-info bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3">
-                            <span className="fs-1">📤</span>
-                          </div>
-                          <h5>Importazione Excel</h5>
-                          <p className="text-muted">
-                            Sistema avanzato per importare dati Excel con mapping configurabile
-                          </p>
-                          <Link href="/import" className="btn btn-info btn-sm">
-                            Vai all&apos;Importazione
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="col-md-6 mb-4">
-                      <div className="card h-100 border-0 shadow-sm">
-                        <div className="card-body text-center">
-                          <div className="bg-warning bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3">
-                            <span className="fs-1">📊</span>
-                          </div>
-                          <h5>Dashboard</h5>
-                          <p className="text-muted">
-                            Interfaccia principale con navigazione rapida e statistiche
-                          </p>
-                          <Link href="/" className="btn btn-warning btn-sm">
-                            Vai alla Dashboard
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="col-lg-4">
-                  <div className="card border-0 shadow-sm">
-                    <div className="card-header bg-light">
-                      <h5 className="mb-0">📈 Statistiche Sistema</h5>
-                    </div>
-                    <div className="card-body">
-                      <div className="d-flex justify-content-between mb-3">
-                        <span>Database Viaggi:</span>
-                        <span className="badge bg-primary">19 Colonne</span>
-                      </div>
-                      <div className="d-flex justify-content-between mb-3">
-                        <span>Database Logistica:</span>
-                        <span className="badge bg-success">Ottimizzato</span>
-                      </div>
-                      <div className="d-flex justify-content-between mb-3">
-                        <span>Importazione Excel:</span>
-                        <span className="badge bg-info">Avanzato</span>
-                      </div>
-                      <div className="d-flex justify-content-between mb-3">
-                        <span>Performance:</span>
-                        <span className="badge bg-warning">Alta</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+          {/* Dashboard Principale */}
+          <div className="card mb-4">
+            <div className="card-header">
+              <h3 className="h4 mb-0">📊 Dashboard Principale</h3>
             </div>
-          )}
+            <div className="card-body">
+              <p>Dashboard interattiva con card navigabili per accesso rapido alle diverse sezioni del sistema.</p>
+              <Link href="/" className="btn btn-primary">Vai alla Dashboard</Link>
+            </div>
+          </div>
 
-          {/* Viaggi Tab */}
-          {activeTab === 'viaggi' && (
-            <div className="tab-pane fade show active">
-              <h2>🚛 Gestione Viaggi</h2>
-              <p className="lead">
-                Sistema completo per la gestione di tutti i viaggi aziendali con funzionalità avanzate.
-              </p>
+          {/* Nuova Pagina Gestione - COMPLETAMENTE IMPLEMENTATA */}
+          <div className="card mb-4 border-success">
+            <div className="card-header bg-success text-white">
+              <h3 className="h4 mb-0">🎯 Sistema di Gestione Fatturazione Delivery - NUOVO!</h3>
+            </div>
+            <div className="card-body">
+              <div className="alert alert-success">
+                <strong>✅ COMPLETAMENTE IMPLEMENTATA E FUNZIONANTE!</strong>
+              </div>
+              
+              <h5>📊 6 KPI Cards Dashboard</h5>
+              <ul>
+                <li><strong>🏢 Fatturazione Delivery</strong>: Conteggio consegne totali</li>
+                <li><strong>🚚 Gestione Trasporti</strong>: Conteggio viaggi unici</li>
+                <li><strong>📦 Colli Totali</strong>: Somma totale colli consegnati</li>
+                <li><strong>💰 Compenso</strong>: SUM(compenso) - Totale compensi base</li>
+                <li><strong>💵 €/Cons.</strong>: SUM(tr_cons) - Totale corrispettivi per documento</li>
+                <li><strong>📊 Fatturato</strong>: SUM(tot_compenso) - Totale fatturato</li>
+              </ul>
 
-              <div className="row">
-                <div className="col-lg-8">
-                  <h4>✨ Funzionalità Principali</h4>
-                  <ul className="list-group list-group-flush mb-4">
-                    <li className="list-group-item">
-                      <strong>CRUD Completo:</strong> Creazione, lettura, aggiornamento e eliminazione di viaggi
-                    </li>
-                    <li className="list-group-item">
-                      <strong>19 Colonne Dettagliate:</strong> Informazioni complete su ogni viaggio
-                    </li>
-                    <li className="list-group-item">
-                      <strong>Filtri Avanzati:</strong> Per data, magazzino, trasportatore, numero viaggio, targa
-                    </li>
-                    <li className="list-group-item">
-                      <strong>Ordinamento Dinamico:</strong> Su tutte le colonne principali
-                    </li>
-                    <li className="list-group-item">
-                      <strong>Paginazione Intelligente:</strong> Gestione efficiente di grandi dataset
-                    </li>
-                    <li className="list-group-item">
-                      <strong>Statistiche Real-time:</strong> Record totali, pagine totali, record per pagina
-                    </li>
-                    <li className="list-group-item">
-                      <strong>URL Bookmarkable:</strong> Filtri e ordinamento persistono negli URL
-                    </li>
+              <h5>🔄 Sistema di Visualizzazione Duale</h5>
+              <ul>
+                <li><strong>Vista Raggruppata</strong>: Dati raggruppati per consegna con espansione dettagli</li>
+                <li><strong>Vista Dettagliata</strong>: Visualizzazione completa di tutti i record</li>
+              </ul>
+
+              <h5>🔍 Filtri Avanzati Espandibili</h5>
+              <ul>
+                <li><strong>Testuali</strong>: Viaggio, Ordine, Cod. Cliente, Cliente</li>
+                <li><strong>Dropdown</strong>: Tipologia, BU, Divisione, Deposito, Vettore</li>
+                <li><strong>Date</strong>: Data Da, Data A</li>
+                <li><strong>Persistenza</strong>: Stato dei filtri salvato in localStorage</li>
+                <li><strong>Reset</strong>: Pulsante per cancellare tutti i filtri</li>
+              </ul>
+
+              <h5>📋 Tabella Dati Avanzata</h5>
+              <ul>
+                <li><strong>Colonne</strong>: Deposito, Data, Viaggio, Ordine, Consegna, Vettore, Tipologia, Cliente, Articoli, Colli, Fatturato</li>
+                <li><strong>Ordinamento</strong>: Tutte le colonne ordinabili (ASC/DESC)</li>
+                <li><strong>Paginazione</strong>: Sistema completo con navigazione first/prev/next/last</li>
+                <li><strong>Espansione</strong>: Dettagli articoli per vista raggruppata (AJAX)</li>
+              </ul>
+
+              <h5>🎨 UI/UX Moderna</h5>
+              <ul>
+                <li><strong>Bootstrap 5</strong>: Design responsive e professionale</li>
+                <li><strong>Gradient Cards</strong>: KPI cards con colori distintivi</li>
+                <li><strong>Loading States</strong>: Placeholder durante caricamento dati</li>
+                <li><strong>Responsive</strong>: Ottimizzato per tutti i dispositivi</li>
+              </ul>
+
+              <Link href="/gestione" className="btn btn-success">Vai alla Gestione</Link>
+            </div>
+          </div>
+
+          {/* Gestione Viaggi */}
+          <div className="card mb-4">
+            <div className="card-header">
+              <h3 className="h4 mb-0">🚛 Gestione Viaggi</h3>
+            </div>
+            <div className="card-body">
+              <ul>
+                <li><strong>CRUD completo</strong> per i viaggi (Creazione, Lettura, Aggiornamento, Eliminazione)</li>
+                <li><strong>Visualizzazione avanzata</strong> con 19 colonne complete dalla tabella <code>travels</code></li>
+                <li><strong>Filtri avanzati</strong> per data, magazzino, trasportatore, e altri criteri</li>
+                <li><strong>Ordinamento dinamico</strong> su tutte le colonne principali</li>
+                <li><strong>Paginazione ottimizzata</strong> per grandi dataset</li>
+                <li><strong>Statistiche in tempo reale</strong> (totale record, record per pagina, pagine totali)</li>
+                <li><strong>Gestione date precisa</strong> con configurazione <code>dateStrings: true</code></li>
+                <li><strong>Pagina di modifica completa</strong> con layout elegante e sezioni organizzate</li>
+                <li><strong>Gestione immagini associate</strong> con visualizzazione a schermo intero</li>
+                <li><strong>Formattazione date italiana</strong> (dd-mm-yyyy hh:mm)</li>
+                <li><strong>Calcoli automatici</strong> per costi carburante, durata viaggio e chilometraggio</li>
+              </ul>
+              <Link href="/viaggi" className="btn btn-primary">Vai ai Viaggi</Link>
+            </div>
+          </div>
+
+          {/* Sistema Importazione Excel */}
+          <div className="card mb-4">
+            <div className="card-header">
+              <h3 className="h4 mb-0">📤 Sistema di Importazione Excel Avanzato</h3>
+            </div>
+            <div className="card-body">
+              <ul>
+                <li><strong>Upload drag & drop</strong> di file Excel (.xlsx, .xls)</li>
+                <li><strong>Sistema ibrido di storage</strong>: Vercel Blob Storage in produzione, storage locale in sviluppo</li>
+                <li><strong>Mapping colonne intelligente</strong> con auto-mapping e validazione</li>
+                <li><strong>Configurazioni salvabili</strong> per importazioni ricorrenti</li>
+                <li><strong>Importazione in background</strong> con progresso in tempo reale</li>
+                <li><strong>Gestione errori robusta</strong> con logging dettagliato e recovery automatico</li>
+                <li><strong>Campi calcolati automatici</strong>:
+                  <ul>
+                    <li><code>Ore_Pod</code>: Calcolo automatico ore di POD</li>
+                    <li><code>Data</code>: Estrazione data da Data Inizio</li>
+                    <li><code>Mese</code>: Mese estratto da Data Inizio</li>
+                    <li><code>Giorno</code>: Giorno della settimana</li>
+                    <li><code>Sett</code>: Settimana dell'anno</li>
+                    <li><code>Trimestre</code>: Trimestre calcolato</li>
                   </ul>
-
-                  <h4>🔧 Caratteristiche Tecniche</h4>
-                  <div className="row">
-                    <div className="col-md-6">
-                      <ul>
-                        <li>TypeScript per type safety</li>
-                        <li>Server Components per performance</li>
-                        <li>Client Components per interattività</li>
-                        <li>API RESTful strutturate</li>
-                      </ul>
-                    </div>
-                    <div className="col-md-6">
-                      <ul>
-                        <li>Prepared statements per sicurezza</li>
-                        <li>Connection pooling per performance</li>
-                        <li>Gestione errori robusta</li>
-                        <li>Logging dettagliato</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="col-lg-4">
-                  <div className="card border-0 shadow-sm">
-                    <div className="card-header bg-light">
-                      <h5 className="mb-0">📊 Colonne Disponibili</h5>
-                    </div>
-                    <div className="card-body">
-                      <small className="text-muted">
-                        ID, Viaggio, Magazzino di partenza, Data Inizio, Data Fine, 
-                        Ore Effettive, Km Effettivi, Nome Trasportatore, Colli, 
-                        Peso (Kg), Km, Toccate, Ordini, e altri campi dettagliati
-                      </small>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                </li>
+                <li><strong>Conversione date Excel</strong> automatica (formato numerico Excel → MySQL datetime)</li>
+                <li><strong>Gestione campo Viaggio</strong> con rimozione automatica zeri iniziali</li>
+                <li><strong>Storico importazioni</strong> con dettagli completi</li>
+                <li><strong>Gestione sessioni</strong> per tracciabilità</li>
+                <li><strong>Eliminazione record</strong> per session_id specifico</li>
+                <li><strong>Workflow post-upload ottimizzato</strong> con scelta tra mapping salvato o nuovo</li>
+              </ul>
+              <Link href="/import" className="btn btn-primary">Vai all'Import</Link>
             </div>
-          )}
+          </div>
 
-          {/* Logistica Tab */}
-          {activeTab === 'logistica' && (
-            <div className="tab-pane fade show active">
-              <h2>📦 Gestione Logistica</h2>
-              <p className="lead">
-                Sistema per la visualizzazione e gestione dei dati di fatturazione delivery.
-              </p>
-
-              <div className="row">
-                <div className="col-lg-8">
-                  <h4>✨ Funzionalità Principali</h4>
-                  <ul className="list-group list-group-flush mb-4">
-                    <li className="list-group-item">
-                      <strong>Visualizzazione Dati:</strong> Accesso completo ai dati fatturazione
-                    </li>
-                    <li className="list-group-item">
-                      <strong>Paginazione Server-side:</strong> Performance ottimizzate per grandi dataset
-                    </li>
-                    <li className="list-group-item">
-                      <strong>Indici Database:</strong> Query veloci e ottimizzate
-                    </li>
-                    <li className="list-group-item">
-                      <strong>Filtri e Ordinamento:</strong> Ricerca avanzata sui dati
-                    </li>
-                    <li className="list-group-item">
-                      <strong>Database Separato:</strong> Isolamento dati logistica
-                    </li>
-                  </ul>
-
-                  <h4>🔧 Ottimizzazioni</h4>
-                  <div className="alert alert-info">
-                    <strong>Indici Database:</strong> Creati automaticamente per ottimizzare le query
-                    <br />
-                    <strong>Connection Pooling:</strong> Gestione efficiente delle connessioni
-                    <br />
-                    <strong>Timeout Configurabili:</strong> Prevenzione blocchi server
-                  </div>
-                </div>
-
-                <div className="col-lg-4">
-                  <div className="card border-0 shadow-sm">
-                    <div className="card-header bg-light">
-                      <h5 className="mb-0">📊 Dati Principali</h5>
-                    </div>
-                    <div className="card-body">
-                      <ul className="list-unstyled">
-                        <li>✅ Ragione Sociale</li>
-                        <li>✅ Viaggio</li>
-                        <li>✅ Data Movimento Merce</li>
-                        <li>✅ Totale Compenso</li>
-                        <li>✅ Altri campi dettagliati</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
+          {/* Storico e Monitoraggio */}
+          <div className="card mb-4">
+            <div className="card-header">
+              <h3 className="h4 mb-0">📈 Storico e Monitoraggio</h3>
             </div>
-          )}
-
-          {/* Import Tab */}
-          {activeTab === 'import' && (
-            <div className="tab-pane fade show active">
-              <h2>📤 Sistema di Importazione Excel</h2>
-              <p className="lead">
-                Sistema avanzato per importare dati da file Excel con mapping configurabile e campi calcolati automatici.
-              </p>
-
-              <div className="row">
-                <div className="col-lg-8">
-                  <h4>🚀 Funzionalità Avanzate</h4>
-                  
-                  <div className="accordion mb-4" id="importAccordion">
-                    <div className="accordion-item">
-                      <h2 className="accordion-header">
-                        <button className="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#upload">
-                          📁 Upload e Validazione
-                        </button>
-                      </h2>
-                      <div id="upload" className="accordion-collapse collapse show" data-bs-parent="#importAccordion">
-                        <div className="accordion-body">
-                          <ul>
-                            <li><strong>Drag & Drop:</strong> Interfaccia intuitiva per caricare file</li>
-                            <li><strong>Vercel Blob Storage:</strong> Gestione file sicura e scalabile</li>
-                            <li><strong>Validazione File:</strong> Controllo automatico formato Excel</li>
-                            <li><strong>Dimensioni Limitate:</strong> Gestione sicura file grandi</li>
-                            <li><strong>Parsing Intelligente:</strong> Lettura automatica intestazioni</li>
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="accordion-item">
-                      <h2 className="accordion-header">
-                        <button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#mapping">
-                          🗺️ Mapping Colonne
-                        </button>
-                      </h2>
-                      <div id="mapping" className="accordion-collapse collapse" data-bs-parent="#importAccordion">
-                        <div className="accordion-body">
-                          <ul>
-                            <li><strong>Auto-mapping:</strong> Riconoscimento automatico colonne</li>
-                            <li><strong>Mapping Manuale:</strong> Configurazione personalizzata</li>
-                            <li><strong>Configurazioni Salvabili:</strong> Riutilizzo mapping frequenti</li>
-                            <li><strong>Validazione Mapping:</strong> Controllo integrità configurazione</li>
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="accordion-item">
-                      <h2 className="accordion-header">
-                        <button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#calculated">
-                          ⚙️ Campi Calcolati Automatici
-                        </button>
-                      </h2>
-                      <div id="calculated" className="accordion-collapse collapse" data-bs-parent="#importAccordion">
-                        <div className="accordion-body">
-                          <ul>
-                            <li><strong>Ore_Pod:</strong> Calcolo automatico ore di POD</li>
-                            <li><strong>Data:</strong> Estrazione data da Data Inizio</li>
-                            <li><strong>Mese:</strong> Mese estratto da Data Inizio</li>
-                            <li><strong>Giorno:</strong> Giorno della settimana</li>
-                            <li><strong>Sett:</strong> Settimana dell&apos;anno</li>
-                            <li><strong>Trimestre:</strong> Trimestre calcolato</li>
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="accordion-item">
-                      <h2 className="accordion-header">
-                        <button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#conversion">
-                          📅 Conversione Date Excel
-                        </button>
-                      </h2>
-                      <div id="conversion" className="accordion-collapse collapse" data-bs-parent="#importAccordion">
-                        <div className="accordion-body">
-                          <ul>
-                            <li><strong>Formato Numerico Excel:</strong> Riconoscimento automatico date Excel</li>
-                            <li><strong>Conversione Automatica:</strong> Excel → MySQL datetime</li>
-                            <li><strong>Gestione Errori:</strong> Validazione date non valide</li>
-                            <li><strong>Logging Dettagliato:</strong> Tracciamento processo conversione</li>
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="accordion-item">
-                      <h2 className="accordion-header">
-                        <button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#progress">
-                          📊 Progresso e Monitoraggio
-                        </button>
-                      </h2>
-                      <div id="progress" className="accordion-collapse collapse" data-bs-parent="#importAccordion">
-                        <div className="accordion-body">
-                          <ul>
-                            <li><strong>Progresso Real-time:</strong> Barra di progresso aggiornata</li>
-                            <li><strong>Stato Operazioni:</strong> Indicatori step-by-step</li>
-                            <li><strong>Gestione Errori:</strong> Recovery automatico e logging</li>
-                            <li><strong>Timeout Configurabili:</strong> Prevenzione blocchi server</li>
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="accordion-item">
-                      <h2 className="accordion-header">
-                        <button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#history">
-                          📈 Storico e Tracciabilità
-                        </button>
-                      </h2>
-                      <div id="history" className="accordion-collapse collapse" data-bs-parent="#importAccordion">
-                        <div className="accordion-body">
-                          <ul>
-                            <li><strong>Session ID:</strong> Tracciabilità completa importazioni</li>
-                            <li><strong>Eliminazione Record:</strong> Rimozione record per session_id specifico</li>
-                            <li><strong>Storico Dettagliato:</strong> Log di tutte le operazioni</li>
-                            <li><strong>Statistiche Importazione:</strong> Righe totali, importate, errori</li>
-                            <li><strong>Filtri Storico:</strong> Ricerca e filtraggio importazioni</li>
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="col-lg-4">
-                  <div className="card border-0 shadow-sm mb-4">
-                    <div className="card-header bg-light">
-                      <h5 className="mb-0">📋 Workflow Importazione</h5>
-                    </div>
-                    <div className="card-body">
-                      <ol className="list-group list-group-numbered">
-                        <li className="list-group-item">Upload file Excel</li>
-                        <li className="list-group-item">Configurazione mapping</li>
-                        <li className="list-group-item">Avvio importazione</li>
-                        <li className="list-group-item">Monitoraggio progresso</li>
-                        <li className="list-group-item">Verifica risultati</li>
-                        <li className="list-group-item">Storico importazione</li>
-                      </ol>
-                    </div>
-                  </div>
-
-                  <div className="card border-0 shadow-sm">
-                    <div className="card-header bg-light">
-                      <h5 className="mb-0">🔧 Caratteristiche Tecniche</h5>
-                    </div>
-                    <div className="card-body">
-                      <ul className="list-unstyled">
-                        <li>✅ Libreria xlsx per parsing</li>
-                        <li>✅ Vercel Blob Storage integration</li>
-                        <li>✅ Importazione asincrona</li>
-                        <li>✅ Gestione memoria ottimizzata</li>
-                        <li>✅ Connection pooling</li>
-                        <li>✅ Prepared statements</li>
-                        <li>✅ Logging dettagliato</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <div className="card-body">
+              <ul>
+                <li><strong>Storico importazioni</strong> con filtri avanzati</li>
+                <li><strong>Dettagli completi</strong> per ogni sessione di importazione</li>
+                <li><strong>Statistiche importazione</strong> (righe totali, importate, errori, durata)</li>
+                <li><strong>Gestione errori</strong> con messaggi dettagliati</li>
+              </ul>
             </div>
-          )}
+          </div>
 
-          {/* Tech Tab */}
-          {activeTab === 'tech' && (
-            <div className="tab-pane fade show active">
-              <h2>🛠️ Tecnologie e Architettura</h2>
-              <p className="lead">
-                Stack tecnologico moderno e architettura scalabile per performance ottimali.
-              </p>
-
-              <div className="row">
-                <div className="col-lg-8">
-                  <h4>🎯 Frontend</h4>
-                  <div className="row mb-4">
-                    <div className="col-md-6">
-                      <div className="card border-0 shadow-sm mb-3">
-                        <div className="card-body">
-                          <h6>Next.js 15</h6>
-                          <small className="text-muted">
-                            App Router, Server Components, API Routes
-                          </small>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="card border-0 shadow-sm mb-3">
-                        <div className="card-body">
-                          <h6>TypeScript</h6>
-                          <small className="text-muted">
-                            Type safety completo, interfacce tipizzate
-                          </small>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="card border-0 shadow-sm mb-3">
-                        <div className="card-body">
-                          <h6>React 19</h6>
-                          <small className="text-muted">
-                            Hooks moderni, Suspense, Client Components
-                          </small>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="card border-0 shadow-sm mb-3">
-                        <div className="card-body">
-                          <h6>Bootstrap 5</h6>
-                          <small className="text-muted">
-                            UI responsive, componenti professionali
-                          </small>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <h4>⚙️ Backend</h4>
-                  <div className="row mb-4">
-                    <div className="col-md-6">
-                      <div className="card border-0 shadow-sm mb-3">
-                        <div className="card-body">
-                          <h6>MySQL/MariaDB</h6>
-                          <small className="text-muted">
-                            Database relazionale, indici ottimizzati
-                          </small>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="card border-0 shadow-sm mb-3">
-                        <div className="card-body">
-                          <h6>mysql2/promise</h6>
-                          <small className="text-muted">
-                            Connessioni asincrone, connection pooling
-                          </small>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="card border-0 shadow-sm mb-3">
-                        <div className="card-body">
-                          <h6>xlsx</h6>
-                          <small className="text-muted">
-                            Parsing file Excel, gestione formati
-                          </small>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="card border-0 shadow-sm mb-3">
-                        <div className="card-body">
-                          <h6>@vercel/blob</h6>
-                          <small className="text-muted">
-                            Gestione file su Vercel Blob Storage
-                          </small>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="card border-0 shadow-sm mb-3">
-                        <div className="card-body">
-                          <h6>RESTful APIs</h6>
-                          <small className="text-muted">
-                            Endpoint strutturati, gestione errori
-                          </small>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <h4>🔒 Sicurezza</h4>
-                  <div className="alert alert-success">
-                    <ul className="mb-0">
-                      <li><strong>Prepared Statements:</strong> Prevenzione SQL injection</li>
-                      <li><strong>Environment Variables:</strong> Credenziali sicure</li>
-                      <li><strong>Type Safety:</strong> TypeScript per prevenire errori</li>
-                      <li><strong>Input Validation:</strong> Controlli sui dati utente</li>
-                      <li><strong>File Validation:</strong> Controllo tipi e dimensioni file</li>
-                    </ul>
-                  </div>
-                </div>
-
-                <div className="col-lg-4">
-                  <div className="card border-0 shadow-sm mb-4">
-                    <div className="card-header bg-light">
-                      <h5 className="mb-0">📊 Performance</h5>
-                    </div>
-                    <div className="card-body">
-                      <ul className="list-unstyled">
-                        <li>✅ Connection pooling</li>
-                        <li>✅ Indici database ottimizzati</li>
-                        <li>✅ Paginazione server-side</li>
-                        <li>✅ Lazy loading componenti</li>
-                        <li>✅ Caching intelligente</li>
-                        <li>✅ Timeout configurabili</li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  <div className="card border-0 shadow-sm mb-4">
-                    <div className="card-header bg-light">
-                      <h5 className="mb-0">🚀 Deployment</h5>
-                    </div>
-                    <div className="card-body">
-                      <ul className="list-unstyled">
-                        <li>✅ Vercel (raccomandato)</li>
-                        <li>✅ Netlify</li>
-                        <li>✅ Railway</li>
-                        <li>✅ DigitalOcean</li>
-                        <li>✅ Docker support</li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  <div className="card border-0 shadow-sm">
-                    <div className="card-header bg-light">
-                      <h5 className="mb-0">📈 Monitoraggio</h5>
-                    </div>
-                    <div className="card-body">
-                      <ul className="list-unstyled">
-                        <li>✅ Console logging</li>
-                        <li>✅ Error tracking</li>
-                        <li>✅ Performance monitoring</li>
-                        <li>✅ Database query analysis</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
+          {/* Correzioni Implementate */}
+          <div className="card mb-4 border-warning">
+            <div className="card-header bg-warning text-dark">
+              <h3 className="h4 mb-0">🔧 Correzioni Implementate</h3>
             </div>
-          )}
+            <div className="card-body">
+              <div className="alert alert-warning">
+                <strong>⚠️ PROBLEMI RISOLTI RECENTEMENTE</strong>
+              </div>
+              
+              <h5>✅ Problema Card €/Cons. (NaN €) - RISOLTO</h5>
+              <ul>
+                <li><strong>Causa</strong>: Variabile <code>stats.mediaEuroCons</code> non definita</li>
+                <li><strong>Soluzione</strong>: Sostituita con <code>stats.totalCorrispettivi</code></li>
+                <li><strong>Risultato</strong>: Card ora mostra correttamente € 294.467,00</li>
+              </ul>
+
+              <h5>✅ Calcolo Fatturato - CORRETTO</h5>
+              <ul>
+                <li><strong>PRIMA (errato)</strong>: <code>SUM(tot_compenso + tr_cons)</code></li>
+                <li><strong>DOPO (corretto)</strong>: <code>SUM(tot_compenso)</code></li>
+                <li><strong>Risultato</strong>: Card Fatturato ora mostra € 2.622.793,79</li>
+              </ul>
+
+              <h5>✅ Sistema Import Excel - MIGLIORATO</h5>
+              <ul>
+                <li><strong>Prevenzione duplicati</strong>: Controlli automatici sui record esistenti</li>
+                <li><strong>Gestione campi</strong>: Rimozione automatica zeri iniziali dal campo "Viaggio"</li>
+                <li><strong>Upload ibrido</strong>: Vercel Blob in produzione, filesystem locale in sviluppo</li>
+                <li><strong>Workflow ottimizzato</strong>: Scelta tra mapping salvato o nuovo senza conferme inutili</li>
+              </ul>
+
+              <h5>✅ Gestione Date - PERFETTA</h5>
+              <ul>
+                <li><strong>Conversione Excel</strong>: Gestione automatica date numeriche Excel</li>
+                <li><strong>Formato MySQL</strong>: Conversione corretta in <code>datetime</code></li>
+                <li><strong>Timezone</strong>: Gestione corretta delle conversioni temporali</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Tecnologie */}
+          <div className="card mb-4">
+            <div className="card-header">
+              <h3 className="h4 mb-0">🛠️ Tecnologie Utilizzate</h3>
+            </div>
+            <div className="card-body">
+              <h5>Frontend</h5>
+              <ul>
+                <li><strong>Next.js 15</strong> con App Router</li>
+                <li><strong>TypeScript</strong> per type safety</li>
+                <li><strong>Bootstrap 5</strong> per UI responsive</li>
+                <li><strong>React Hooks</strong> per state management</li>
+                <li><strong>Client Components</strong> per interattività</li>
+              </ul>
+
+              <h5>Backend</h5>
+              <ul>
+                <li><strong>Next.js API Routes</strong> per API RESTful</li>
+                <li><strong>MySQL/MariaDB</strong> come database</li>
+                <li><strong>mysql2/promise</strong> per connessioni asincrone</li>
+                <li><strong>xlsx</strong> per elaborazione file Excel</li>
+                <li><strong>Sistema storage ibrido</strong>: Vercel Blob Storage in produzione, filesystem locale in sviluppo</li>
+                <li><strong>Connection pooling</strong> per performance ottimali</li>
+                <li><strong>Gestione errori avanzata</strong> con timeout configurabili e recovery automatico</li>
+              </ul>
+
+              <h5>Database</h5>
+              <ul>
+                <li><strong>Indici ottimizzati</strong> per query veloci</li>
+                <li><strong>Gestione transazioni</strong> per integrità dati</li>
+                <li><strong>Timeout configurabili</strong> per operazioni lunghe</li>
+                <li><strong>Gestione errori</strong> robusta</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Performance e Ottimizzazioni */}
+          <div className="card mb-4">
+            <div className="card-header">
+              <h3 className="h4 mb-0">⚡ Performance e Ottimizzazioni</h3>
+            </div>
+            <div className="card-body">
+              <ul>
+                <li><strong>Connection Pooling</strong>: Gestione efficiente connessioni database</li>
+                <li><strong>Indici Database</strong>: Query ottimizzate per grandi dataset</li>
+                <li><strong>Paginazione Server-side</strong>: Caricamento efficiente dati</li>
+                <li><strong>Timeout Configurabili</strong>: Prevenzione blocchi server e gestione errori</li>
+                <li><strong>Gestione Memoria</strong>: Pulizia automatica file temporanei</li>
+                <li><strong>Sistema Storage Ibrido</strong>: Ottimizzazione per sviluppo locale e produzione</li>
+                <li><strong>Recovery Automatico</strong>: Gestione intelligente degli errori con retry automatici</li>
+                <li><strong>Lazy Loading</strong>: Componenti caricati on-demand</li>
+                <li><strong>Caching</strong>: Strategie di cache per query frequenti</li>
+                <li><strong>Compressione</strong>: Gzip per ridurre dimensioni response</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Sicurezza */}
+          <div className="card mb-4">
+            <div className="card-header">
+              <h3 className="h4 mb-0">🔒 Sicurezza</h3>
+            </div>
+            <div className="card-body">
+              <h5>Validazione Input</h5>
+              <ul>
+                <li><strong>TypeScript</strong>: Type safety per tutti i dati</li>
+                <li><strong>Input Validation</strong>: Validazione server-side</li>
+                <li><strong>SQL Injection Prevention</strong>: Prepared statements</li>
+              </ul>
+
+              <h5>Gestione File</h5>
+              <ul>
+                <li><strong>File Type Validation</strong>: Controllo tipi file Excel</li>
+                <li><strong>Size Limits</strong>: Limiti dimensione file</li>
+                <li><strong>Temporary Storage</strong>: Gestione sicura file temporanei</li>
+              </ul>
+
+              <h5>Autenticazione e Autorizzazione</h5>
+              <ul>
+                <li><strong>Sistema autenticazione</strong> robusto</li>
+                <li><strong>Crittografia dati</strong> sensibili</li>
+                <li><strong>Session management</strong> sicuro</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Monitoraggio e Logging */}
+          <div className="card mb-4">
+            <div className="card-header">
+              <h3 className="h4 mb-0">📊 Monitoraggio e Logging</h3>
+            </div>
+            <div className="card-body">
+              <h5>Logging Applicazione</h5>
+              <ul>
+                <li><strong>Console Logging</strong>: Tracciamento dettagliato operazioni</li>
+                <li><strong>Error Logging</strong>: Gestione errori con stack trace</li>
+                <li><strong>Performance Logging</strong>: Monitoraggio tempi di esecuzione</li>
+              </ul>
+
+              <h5>Monitoraggio Database</h5>
+              <ul>
+                <li><strong>Query Performance</strong>: Monitoraggio query lente</li>
+                <li><strong>Connection Status</strong>: Stato connessioni database</li>
+                <li><strong>Error Tracking</strong>: Tracciamento errori database</li>
+              </ul>
+
+              <h5>Health Check</h5>
+              <ul>
+                <li><strong>Database connectivity</strong>: Verifica connessioni</li>
+                <li><strong>API endpoints</strong>: Test funzionalità</li>
+                <li><strong>Performance metrics</strong>: Monitoraggio tempi di risposta</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Roadmap Futura */}
+          <div className="card mb-4 border-info">
+            <div className="card-header bg-info text-white">
+              <h3 className="h4 mb-0">📈 Roadmap Futura</h3>
+            </div>
+            <div className="card-body">
+              <h5>🚀 Prossime Implementazioni</h5>
+              <ul>
+                <li><strong>Dashboard Analytics</strong>: Grafici e trend temporali</li>
+                <li><strong>Export PDF</strong>: Generazione report automatici</li>
+                <li><strong>Notifiche</strong>: Sistema alert e notifiche real-time</li>
+                <li><strong>Mobile App</strong>: Applicazione nativa per dispositivi mobili</li>
+                <li><strong>API REST</strong>: Endpoint pubblici per integrazioni esterne</li>
+                <li><strong>Machine Learning</strong>: Predizioni e analisi predittive</li>
+                <li><strong>Integrazione ERP</strong>: Sincronizzazione con sistemi aziendali</li>
+                <li><strong>Multi-tenant</strong>: Supporto per multiple aziende</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
     </div>

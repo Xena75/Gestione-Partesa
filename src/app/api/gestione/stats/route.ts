@@ -1,13 +1,9 @@
-// src/app/api/gestione/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { getDeliveryData, getDeliveryGrouped, type DeliveryFilters, type DeliverySort } from '@/lib/data-gestione';
+import { getDeliveryStats, type DeliveryFilters } from '@/lib/data-gestione';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    
-    const page = searchParams.get('page');
-    const currentPage = Number(page) || 1;
     
     // Estrai i parametri dei filtri dall'URL
     const filters: DeliveryFilters = {};
@@ -45,33 +41,14 @@ export async function GET(request: NextRequest) {
     const dataA = searchParams.get('dataA');
     if (dataA) filters.dataA = dataA;
 
-    // Estrai i parametri di ordinamento
-    const sortBy = searchParams.get('sortBy');
-    const sortOrder = searchParams.get('sortOrder') as 'ASC' | 'DESC' || 'DESC';
-    
-    const sort: DeliverySort = {
-      field: sortBy || 'data_mov_merce',
-      order: sortOrder
-    };
+    // Ottieni le statistiche con i filtri applicati
+    const stats = await getDeliveryStats(filters);
 
-    // Estrai il tipo di vista
-    const viewType = searchParams.get('viewType') || 'grouped';
-
-    let result;
-    
-    if (viewType === 'grouped') {
-      // Vista raggruppata per consegna
-      result = await getDeliveryGrouped(currentPage, filters, sort);
-    } else {
-      // Vista dettagliata (tutti i record)
-      result = await getDeliveryData(currentPage, filters, sort);
-    }
-
-    return NextResponse.json(result);
+    return NextResponse.json(stats);
   } catch (error) {
-    console.error('Errore nel filtrare i dati delivery:', error);
+    console.error('Errore nel recuperare le statistiche delivery:', error);
     return NextResponse.json(
-      { error: 'Errore nel filtraggio dati' },
+      { error: 'Errore nel recupero statistiche' },
       { status: 500 }
     );
   }
