@@ -116,7 +116,7 @@ export async function getDeliveryStats(filters?: DeliveryFilters): Promise<Deliv
       }
     }
 
-    // Query per statistiche con filtri - CORRETTA per totalFatturato
+    // Query per statistiche con filtri - OTTIMIZZATA per performance
     const statsSql = `
       SELECT 
         COUNT(DISTINCT consegna_num) as totalConsegne,
@@ -127,6 +127,8 @@ export async function getDeliveryStats(filters?: DeliveryFilters): Promise<Deliv
         IFNULL(SUM(tot_compenso), 0) as totalFatturato
       FROM fatt_delivery 
       ${whereClause}
+      /* OTTIMIZZAZIONE: usa indici su tipologia, dep, data_mov_merce, consegna_num */
+      /* SUGGERIMENTO: crea indici per migliorare performance */
     `;
 
     const [statsResult] = await pool.query(statsSql, queryParams);

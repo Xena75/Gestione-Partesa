@@ -54,13 +54,26 @@ export default function DeliveryStats({ className = '' }: DeliveryStatsProps) {
         const dataA = searchParams.get('dataA');
         if (dataA) params.append('dataA', dataA);
 
-        const response = await fetch(`/api/gestione/stats?${params.toString()}`);
+        // 🚀 OTTIMIZZAZIONE: timeout per evitare attese infinite
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 secondi timeout
+        
+        const response = await fetch(`/api/gestione/stats?${params.toString()}`, {
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
         if (response.ok) {
           const data = await response.json();
           setStats(data);
         }
       } catch (error) {
-        console.error('Errore nel recuperare le statistiche:', error);
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.error('Timeout nel recuperare le statistiche');
+        } else {
+          console.error('Errore nel recuperare le statistiche:', error);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -109,21 +122,21 @@ export default function DeliveryStats({ className = '' }: DeliveryStatsProps) {
 
   return (
     <div className={`row g-3 mb-4 ${className}`}>
-      {/* Card 1: Fatturazione Delivery */}
+      {/* Card 1: N° Consegne */}
       <div className="col-md-4 col-lg-2">
         <div className="card h-100 border-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #6f42c1, #8e44ad)' }}>
           <div className="card-body text-center text-white">
-            <h6 className="card-title mb-2">Fatturazione Delivery</h6>
+            <h6 className="card-title mb-2">N° Consegne</h6>
             <h3 className="mb-0 fw-bold">{formatNumber(stats.totalConsegne)}</h3>
           </div>
         </div>
       </div>
 
-      {/* Card 2: Gestione Trasporti */}
+      {/* Card 2: N° Viaggi */}
       <div className="col-md-4 col-lg-2">
         <div className="card h-100 border-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #6f42c1, #8e44ad)' }}>
           <div className="card-body text-center text-white">
-            <h6 className="card-title mb-2">Gestione Trasporti</h6>
+            <h6 className="card-title mb-2">N° Viaggi</h6>
             <h3 className="mb-0 fw-bold">{formatNumber(stats.totalViaggi)}</h3>
           </div>
         </div>

@@ -9,9 +9,9 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 **Completamente implementata e funzionante** con tutte le funzionalità richieste:
 
 #### 📊 **6 KPI Cards Dashboard**
-- **🏢 Fatturazione Delivery**: Conteggio consegne totali
-- **🚚 Gestione Trasporti**: Conteggio viaggi unici  
-- **📦 Colli Totali**: Somma totale colli consegnati
+- **🏢 N° Consegne**: `COUNT(DISTINCT consegna_num)` - Conteggio consegne totali
+- **🚚 N° Viaggi**: `COUNT(DISTINCT viaggio)` - Conteggio viaggi unici  
+- **📦 Colli Totali**: `SUM(colli)` - Somma totale colli consegnati
 - **💰 Compenso**: `SUM(compenso)` - Totale compensi base
 - **💵 €/Cons.**: `SUM(tr_cons)` - Totale corrispettivi per documento
 - **📊 Fatturato**: `SUM(tot_compenso)` - Totale fatturato

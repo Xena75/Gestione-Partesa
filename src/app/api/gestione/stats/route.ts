@@ -41,12 +41,25 @@ export async function GET(request: NextRequest) {
     const dataA = searchParams.get('dataA');
     if (dataA) filters.dataA = dataA;
 
-    // Ottieni le statistiche con i filtri applicati
-    const stats = await getDeliveryStats(filters);
+    // 🚀 OTTIMIZZAZIONE: timeout per evitare blocchi
+    const stats = await Promise.race([
+      getDeliveryStats(filters),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout')), 25000)
+      )
+    ]);
 
     return NextResponse.json(stats);
   } catch (error) {
     console.error('Errore nel recuperare le statistiche delivery:', error);
+    
+    if (error instanceof Error && error.message === 'Timeout') {
+      return NextResponse.json(
+        { error: 'Timeout: la richiesta ha impiegato troppo tempo' },
+        { status: 408 }
+      );
+    }
+    
     return NextResponse.json(
       { error: 'Errore nel recupero statistiche' },
       { status: 500 }
