@@ -13,7 +13,7 @@ export default function DeleteButton({ id }: { id: string }) {
     }
 
     try {
-      const response = await fetch(`/api/viaggi/${id}`, {
+      const response = await fetch(`/api/monitoraggio/${id}`, {
         method: 'DELETE',
       });
 

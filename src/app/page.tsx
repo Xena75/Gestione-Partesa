@@ -34,8 +34,8 @@ export default function DashboardPage() {
                     <span className="fs-1">⏱️</span>
                   </div>
                   <div>
-                    <h3 className="card-title mb-1">Gestione Viaggi</h3>
-                    <p className="text-muted mb-0">Monitoraggio</p>
+                                      <h3 className="card-title mb-1">Monitoraggio Viaggi</h3>
+                  <p className="text-muted mb-0">Gestione</p>
                   </div>
                 </div>
                 <p className="card-text text-muted">
@@ -47,8 +47,8 @@ export default function DashboardPage() {
                   <span className="badge bg-success">Ordinamento</span>
                   <span className="badge bg-warning">Paginazione</span>
                 </div>
-                <Link href="/viaggi" className="btn btn-primary w-100">
-                  Accedi alla Gestione Viaggi →
+                <Link href="/monitoraggio" className="btn btn-primary w-100">
+                  Accedi al Monitoraggio Viaggi →
                 </Link>
               </div>
             </div>

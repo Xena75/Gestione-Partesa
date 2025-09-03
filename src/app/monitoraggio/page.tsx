@@ -4,13 +4,13 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { Viaggio } from "@/lib/data-viaggi";
 import DeleteButton from "@/components/DeleteButton";
-import FiltriViaggi from "@/components/FiltriViaggi";
+import FiltriMonitoraggio from "@/components/FiltriMonitoraggio";
 import SortableHeader from "@/components/SortableHeader";
 import Link from 'next/link';
 
 
 
-function ViaggiPageContent() {
+function MonitoraggioPageContent() {
   const searchParams = useSearchParams();
   const page = searchParams.get('page');
   const currentPage = Number(page) || 1;
@@ -66,7 +66,7 @@ function ViaggiPageContent() {
     if (targaMezzoId) params.set('targaMezzoId', targaMezzoId);
     
     // Carica i dati della pagina corrente
-    fetch(`/api/viaggi?${params.toString()}`)
+    fetch(`/api/monitoraggio?${params.toString()}`)
       .then(res => res.json())
       .then(fetchedData => {
         setData(fetchedData);
@@ -74,7 +74,7 @@ function ViaggiPageContent() {
       });
     
     // Carica le statistiche
-    fetch(`/api/viaggi/stats?page=${currentPage}`)
+    fetch(`/api/monitoraggio/stats?page=${currentPage}`)
       .then(res => res.json())
       .then(fetchedStats => {
         setStats(fetchedStats);
@@ -94,7 +94,7 @@ function ViaggiPageContent() {
   return (
     <div className="vh-100 d-flex flex-column p-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1>🚚 Gestione Viaggi - Monitoraggio</h1>
+        <h1>📊 Monitoraggio Viaggi</h1>
         <Link href="/" className="btn btn-outline-secondary">
           ← Torna alla Dashboard
         </Link>
@@ -129,7 +129,7 @@ function ViaggiPageContent() {
       </div>
 
       {/* Sezione Filtri */}
-      <FiltriViaggi />
+              <FiltriMonitoraggio />
 
 
 
@@ -199,9 +199,9 @@ function ViaggiPageContent() {
                 <td>{viaggio.haiEffettuatoRitiri ? 'Sì' : 'No'}</td>
                 <td>{formatDateToItalian(viaggio.updatedAt)}</td>
                 <td className="d-flex gap-2">
-                  <Link href={`/viaggi/${viaggio.id}/modifica`} className="btn btn-secondary btn-sm">
-                    Modifica
-                  </Link>
+                                     <Link href={`/monitoraggio/${viaggio.id}/modifica`} className="btn btn-secondary btn-sm">
+                     Modifica
+                   </Link>
                   <DeleteButton id={viaggio.id} />
                 </td>
               </tr>
@@ -212,28 +212,28 @@ function ViaggiPageContent() {
 
       {/* Controlli di Paginazione */}
       <div className="d-flex justify-content-center gap-2 mt-3">
-        <Link 
-          href={`/viaggi?page=${currentPage - 1}${searchParams.toString() ? `&${searchParams.toString()}` : ''}`}
-          className={`btn btn-primary ${currentPage <= 1 ? 'disabled' : ''}`}
-        >
-          Indietro
-        </Link>
+                 <Link 
+           href={`/monitoraggio?page=${currentPage - 1}${searchParams.toString() ? `&${searchParams.toString()}` : ''}`}
+           className={`btn btn-primary ${currentPage <= 1 ? 'disabled' : ''}`}
+         >
+           Indietro
+         </Link>
         <span className="d-flex align-items-center">Pagina {currentPage} di {totalPages}</span>
-        <Link 
-          href={`/viaggi?page=${currentPage + 1}${searchParams.toString() ? `&${searchParams.toString()}` : ''}`}
-          className={`btn btn-primary ${currentPage >= totalPages ? 'disabled' : ''}`}
-        >
-          Avanti
-        </Link>
+                 <Link 
+           href={`/monitoraggio?page=${currentPage + 1}${searchParams.toString() ? `&${searchParams.toString()}` : ''}`}
+           className={`btn btn-primary ${currentPage >= totalPages ? 'disabled' : ''}`}
+         >
+           Avanti
+         </Link>
       </div>
     </div>
   );
 }
 
-export default function ViaggiPage() {
+export default function MonitoraggioPage() {
   return (
     <Suspense fallback={<div>Caricamento...</div>}>
-      <ViaggiPageContent />
+      <MonitoraggioPageContent />
     </Suspense>
   );
 }

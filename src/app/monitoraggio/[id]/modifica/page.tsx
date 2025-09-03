@@ -39,7 +39,7 @@ interface Viaggio {
   images?: TravelImage[];
 }
 
-export default function ModificaViaggioPage({ params }: { params: Promise<{ id: string }> }) {
+export default function ModificaMonitoraggioPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const [viaggio, setViaggio] = useState<Viaggio | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -59,7 +59,7 @@ export default function ModificaViaggioPage({ params }: { params: Promise<{ id: 
   const fetchViaggio = useCallback(async () => {
     try {
       const { id } = await params;
-      const response = await fetch(`/api/viaggi/${id}`);
+      const response = await fetch(`/api/monitoraggio/${id}`);
       if (!response.ok) {
         throw new Error('Viaggio non trovato');
       }
@@ -109,7 +109,7 @@ export default function ModificaViaggioPage({ params }: { params: Promise<{ id: 
 
     try {
       const { id } = await params;
-      const response = await fetch(`/api/viaggi/${id}`, {
+      const response = await fetch(`/api/monitoraggio/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -124,9 +124,9 @@ export default function ModificaViaggioPage({ params }: { params: Promise<{ id: 
       }
 
       setSuccess('Viaggio aggiornato con successo!');
-      setTimeout(() => {
-        router.push('/viaggi');
-      }, 2000);
+             setTimeout(() => {
+         router.push('/monitoraggio');
+       }, 2000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Errore nell\'aggiornamento');
     } finally {
@@ -161,7 +161,7 @@ export default function ModificaViaggioPage({ params }: { params: Promise<{ id: 
       formData.append('image', newImageFile);
       formData.append('type', newImageType);
 
-      const response = await fetch(`/api/viaggi/${id}/images`, {
+      const response = await fetch(`/api/monitoraggio/${id}/images`, {
         method: 'POST',
         body: formData,
       });
@@ -223,8 +223,8 @@ export default function ModificaViaggioPage({ params }: { params: Promise<{ id: 
         <div className="text-center">
           <h2 className="text-danger mb-3">❌ Errore</h2>
           <p className="mb-3">{error}</p>
-          <Link href="/viaggi" className="btn btn-primary">
-            ← Torna ai Viaggi
+          <Link href="/monitoraggio" className="btn btn-primary">
+            ← Torna al Monitoraggio
           </Link>
         </div>
       </div>
@@ -236,8 +236,8 @@ export default function ModificaViaggioPage({ params }: { params: Promise<{ id: 
       <div className="vh-100 d-flex justify-content-center align-items-center">
         <div className="text-center">
           <h2 className="text-warning mb-3">⚠️ Viaggio non trovato</h2>
-          <Link href="/viaggi" className="btn btn-primary">
-            ← Torna ai Viaggi
+          <Link href="/monitoraggio" className="btn btn-primary">
+            ← Torna al Monitoraggio
           </Link>
         </div>
       </div>
@@ -255,7 +255,7 @@ export default function ModificaViaggioPage({ params }: { params: Promise<{ id: 
           </p>
         </div>
         <div className="d-flex gap-2">
-          <Link href="/viaggi" className="btn btn-secondary">
+          <Link href="/monitoraggio" className="btn btn-secondary">
             ← Torna alla lista
           </Link>
           <button type="submit" form="viaggioForm" className="btn btn-primary" disabled={isSaving}>

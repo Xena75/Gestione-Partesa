@@ -1,4 +1,4 @@
-// src/app/api/viaggi/[id]/route.ts
+// src/app/api/monitoraggio/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db-viaggi';
 // Import rimossi perché non utilizzati

@@ -1,4 +1,4 @@
-// src/app/api/viaggi/route.ts
+// src/app/api/monitoraggio/route.ts
 import { getViaggiData, getViaggiFiltrati, createViaggioData } from '@/lib/data-viaggi';
 import { NextRequest, NextResponse } from 'next/server';
 

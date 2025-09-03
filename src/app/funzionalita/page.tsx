@@ -75,28 +75,28 @@ export default function FunzionalitaPage() {
             </div>
           </div>
 
-          {/* Gestione Viaggi */}
-          <div className="card mb-4">
-            <div className="card-header">
-              <h3 className="h4 mb-0">🚛 Gestione Viaggi</h3>
-            </div>
-            <div className="card-body">
-              <ul>
-                <li><strong>CRUD completo</strong> per i viaggi (Creazione, Lettura, Aggiornamento, Eliminazione)</li>
-                <li><strong>Visualizzazione avanzata</strong> con 19 colonne complete dalla tabella <code>travels</code></li>
-                <li><strong>Filtri avanzati</strong> per data, magazzino, trasportatore, e altri criteri</li>
-                <li><strong>Ordinamento dinamico</strong> su tutte le colonne principali</li>
-                <li><strong>Paginazione ottimizzata</strong> per grandi dataset</li>
-                <li><strong>Statistiche in tempo reale</strong> (totale record, record per pagina, pagine totali)</li>
-                <li><strong>Gestione date precisa</strong> con configurazione <code>dateStrings: true</code></li>
-                <li><strong>Pagina di modifica completa</strong> con layout elegante e sezioni organizzate</li>
-                <li><strong>Gestione immagini associate</strong> con visualizzazione a schermo intero</li>
-                <li><strong>Formattazione date italiana</strong> (dd-mm-yyyy hh:mm)</li>
-                <li><strong>Calcoli automatici</strong> per costi carburante, durata viaggio e chilometraggio</li>
-              </ul>
-              <Link href="/viaggi" className="btn btn-primary">Vai ai Viaggi</Link>
-            </div>
-          </div>
+                     {/* Monitoraggio Viaggi */}
+           <div className="card mb-4">
+             <div className="card-header">
+               <h3 className="h4 mb-0">📊 Monitoraggio Viaggi</h3>
+             </div>
+             <div className="card-body">
+               <ul>
+                 <li><strong>CRUD completo</strong> per i viaggi (Creazione, Lettura, Aggiornamento, Eliminazione)</li>
+                 <li><strong>Visualizzazione avanzata</strong> con 19 colonne complete dalla tabella <code>travels</code></li>
+                 <li><strong>Filtri avanzati</strong> per data, magazzino, trasportatore, e altri criteri</li>
+                 <li><strong>Ordinamento dinamico</strong> su tutte le colonne principali</li>
+                 <li><strong>Paginazione ottimizzata</strong> per grandi dataset</li>
+                 <li><strong>Statistiche in tempo reale</strong> (totale record, record per pagina, pagine totali)</li>
+                 <li><strong>Gestione date precisa</strong> con configurazione <code>dateStrings: true</code></li>
+                 <li><strong>Pagina di modifica completa</strong> con layout elegante e sezioni organizzate</li>
+                 <li><strong>Gestione immagini associate</strong> con visualizzazione a schermo intero</li>
+                 <li><strong>Formattazione date italiana</strong> (dd-mm-yyyy hh:mm)</li>
+                 <li><strong>Calcoli automatici</strong> per costi carburante, durata viaggio e chilometraggio</li>
+               </ul>
+               <Link href="/monitoraggio" className="btn btn-primary">Vai al Monitoraggio</Link>
+             </div>
+           </div>
 
           {/* Sistema Importazione Excel */}
           <div className="card mb-4">
