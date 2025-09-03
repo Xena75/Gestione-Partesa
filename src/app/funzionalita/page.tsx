@@ -98,6 +98,68 @@ export default function FunzionalitaPage() {
              </div>
            </div>
 
+           {/* Gestione Viaggi - Nuova Funzionalità */}
+           <div className="card mb-4 border-info">
+             <div className="card-header bg-info text-white">
+               <h3 className="h4 mb-0">🚚 Gestione Viaggi - NUOVA FUNZIONALITÀ!</h3>
+             </div>
+             <div className="card-body">
+               <div className="alert alert-info">
+                 <strong>🆕 NUOVA PAGINA COMPLETA CREATA!</strong><br/>
+                 Gestione avanzata della tabella <code>tab_viaggi</code> con dashboard statistiche e filtri avanzati.
+               </div>
+               
+               <h5>📊 Dashboard Statistiche in Tempo Reale</h5>
+               <ul>
+                 <li><strong>4 Card KPI</strong>: Viaggi totali, Km totali, Colli totali, Viaggi del mese</li>
+                 <li><strong>Aggiornamento dinamico</strong> basato sui filtri applicati</li>
+                 <li><strong>Formattazione numeri</strong> con separatori delle migliaia</li>
+               </ul>
+
+               <h5>🔍 Sistema Filtri Avanzato (10 Filtri)</h5>
+               <ul>
+                 <li><strong>Azienda Vettore</strong>: Dropdown con valori distinti dal database</li>
+                 <li><strong>Nominativo</strong>: Ricerca testuale per nome/cognome</li>
+                 <li><strong>Trasportatore</strong>: Filtro per nome trasportatore</li>
+                 <li><strong>Numero Viaggio</strong>: Ricerca per numero specifico</li>
+                 <li><strong>Targa</strong>: Filtro per targa veicolo</li>
+                 <li><strong>Magazzino di Partenza</strong>: Dropdown con magazzini disponibili</li>
+                 <li><strong>Mese</strong>: Selezione mese (1-12)</li>
+                 <li><strong>Trimestre</strong>: Selezione trimestre (1-4)</li>
+                 <li><strong>Data Da</strong>: Filtro data inizio periodo</li>
+                 <li><strong>Data A</strong>: Filtro data fine periodo</li>
+               </ul>
+
+               <h5>📋 Tabella Dati Completa (15 Colonne)</h5>
+               <ul>
+                 <li><strong>Colonne principali</strong>: Data, Viaggio, Trasportatore, Nominativo, Tipo Patente</li>
+                 <li><strong>Metriche operative</strong>: Ore, Colli, Peso, Ordini, Toccate</li>
+                 <li><strong>Informazioni veicolo</strong>: Targa, Km iniziali/finali/viaggio</li>
+                 <li><strong>Dettagli logistici</strong>: Magazzino partenza, € rifornimento</li>
+                 <li><strong>Ordinamento dinamico</strong> su tutte le colonne (ASC/DESC)</li>
+               </ul>
+
+               <h5>⚡ Performance e Funzionalità</h5>
+               <ul>
+                 <li><strong>Paginazione intelligente</strong> con 20 record per pagina</li>
+                 <li><strong>Filtri toggle</strong> con pulsante mostra/nascondi</li>
+                 <li><strong>URL state management</strong> per condivisione e bookmark</li>
+                 <li><strong>Responsive design</strong> ottimizzato per tutti i dispositivi</li>
+                 <li><strong>Loading states</strong> durante caricamento dati</li>
+               </ul>
+
+               <h5>🔧 Tecnologie Implementate</h5>
+               <ul>
+                 <li><strong>API Routes dedicate</strong>: <code>/api/viaggi</code>, <code>/api/viaggi/stats</code>, <code>/api/viaggi/filters</code></li>
+                 <li><strong>Database layer</strong>: <code>data-viaggi-tab.ts</code> per operazioni tab_viaggi</li>
+                 <li><strong>Componenti React</strong>: <code>FiltriViaggi</code> per gestione filtri avanzati</li>
+                 <li><strong>TypeScript interfaces</strong>: Tipizzazione completa per <code>ViaggioTab</code> e <code>Statistiche</code></li>
+               </ul>
+
+               <Link href="/viaggi" className="btn btn-info">Vai alla Gestione Viaggi</Link>
+             </div>
+           </div>
+
           {/* Sistema Importazione Excel */}
           <div className="card mb-4">
             <div className="card-header">

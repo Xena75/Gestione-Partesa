@@ -3,56 +3,60 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-type FilterOptions = {
-  depositi: string[];
-  nominativi: string[];
+interface FilterOptions {
+  aziendeVettore: string[];
+  trasportatori: string[];
   targhe: string[];
-};
+  magazzini: string[];
+  mesi: number[];
+  trimestri: number[];
+}
 
-type Filters = {
-  dataDa: string;
-  dataA: string;
-  deposito: string;
-  nominativoId: string;
-  numeroViaggio: string;
-  targaMezzoId: string;
-};
-
-export default function FiltriMonitoraggio() {
+export default function FiltriViaggi() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  const [showFilters, setShowFilters] = useState(false);
-  const [filterOptions, setFilterOptions] = useState<FilterOptions>({ depositi: [], nominativi: [], targhe: [] });
-  const [filters, setFilters] = useState<Filters>({
-    dataDa: searchParams.get('dataDa') || '',
-    dataA: searchParams.get('dataA') || '',
-    deposito: searchParams.get('deposito') || '',
-    nominativoId: searchParams.get('nominativoId') || '',
-    numeroViaggio: searchParams.get('numeroViaggio') || '',
-    targaMezzoId: searchParams.get('targaMezzoId') || ''
+  // Stati per i valori dei filtri
+  const [aziendaVettore, setAziendaVettore] = useState(searchParams.get('aziendaVettore') || '');
+  const [nominativo, setNominativo] = useState(searchParams.get('nominativo') || '');
+  const [trasportatore, setTrasportatore] = useState(searchParams.get('trasportatore') || '');
+  const [numeroViaggio, setNumeroViaggio] = useState(searchParams.get('numeroViaggio') || '');
+  const [targa, setTarga] = useState(searchParams.get('targa') || '');
+  const [magazzino, setMagazzino] = useState(searchParams.get('magazzino') || '');
+  const [mese, setMese] = useState(searchParams.get('mese') || '');
+  const [trimestre, setTrimestre] = useState(searchParams.get('trimestre') || '');
+  const [dataDa, setDataDa] = useState(searchParams.get('dataDa') || '');
+  const [dataA, setDataA] = useState(searchParams.get('dataA') || '');
+  
+  // Stati per le opzioni dei filtri
+  const [filterOptions, setFilterOptions] = useState<FilterOptions>({
+    aziendeVettore: [],
+    trasportatori: [],
+    targhe: [],
+    magazzini: [],
+    mesi: [],
+    trimestri: []
   });
+  
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Carica le opzioni dei filtri
+  // Carica le opzioni per i filtri
   useEffect(() => {
-    fetch('/api/monitoraggio/filters')
+    fetch('/api/viaggi/filters')
       .then(res => res.json())
-      .then(data => setFilterOptions(data));
+      .then(data => {
+        setFilterOptions(data);
+        setIsLoading(false);
+      })
+      .catch(error => {
+        console.error('Errore nel caricamento delle opzioni filtri:', error);
+        setIsLoading(false);
+      });
   }, []);
 
-  const handleFilterChange = (field: keyof Filters, value: string) => {
-    setFilters(prev => ({ ...prev, [field]: value }));
-  };
-
+  // Applica i filtri
   const applyFilters = () => {
     const params = new URLSearchParams();
-    
-    // Aggiungi solo i filtri non vuoti
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value) {
-        params.set(key, value);
-      }
-    });
     
     // Mantieni la pagina corrente o vai alla prima
     const currentPage = searchParams.get('page');
@@ -60,18 +64,33 @@ export default function FiltriMonitoraggio() {
       params.set('page', '1');
     }
     
-    router.push(`/monitoraggio?${params.toString()}`);
+    // Aggiungi i filtri attivi
+    if (aziendaVettore) params.set('aziendaVettore', aziendaVettore);
+    if (nominativo) params.set('nominativo', nominativo);
+    if (trasportatore) params.set('trasportatore', trasportatore);
+    if (numeroViaggio) params.set('numeroViaggio', numeroViaggio);
+    if (targa) params.set('targa', targa);
+    if (magazzino) params.set('magazzino', magazzino);
+    if (mese) params.set('mese', mese);
+    if (trimestre) params.set('trimestre', trimestre);
+    if (dataDa) params.set('dataDa', dataDa);
+    if (dataA) params.set('dataA', dataA);
+    
+    router.push(`/viaggi?${params.toString()}`);
   };
 
-  const resetFilters = () => {
-    setFilters({
-      dataDa: '',
-      dataA: '',
-      deposito: '',
-      nominativoId: '',
-      numeroViaggio: '',
-      targaMezzoId: ''
-    });
+  // Pulisci tutti i filtri
+  const clearFilters = () => {
+    setAziendaVettore('');
+    setNominativo('');
+    setTrasportatore('');
+    setNumeroViaggio('');
+    setTarga('');
+    setMagazzino('');
+    setMese('');
+    setTrimestre('');
+    setDataDa('');
+    setDataA('');
     
     // Rimuovi tutti i parametri dei filtri dall'URL
     const params = new URLSearchParams();
@@ -80,120 +99,174 @@ export default function FiltriMonitoraggio() {
       params.set('page', currentPage);
     }
     
-    router.push(`/monitoraggio?${params.toString()}`);
+    router.push(`/viaggi?${params.toString()}`);
   };
 
-  return (
-    <div className="mb-4">
-      {/* Pulsante Toggle Filtri */}
-      <button
-        onClick={() => setShowFilters(!showFilters)}
-        className="btn btn-outline-primary mb-3"
-      >
-        🔍 {showFilters ? 'Nascondi Filtri' : 'Mostra Filtri'} {showFilters ? '▲' : '▼'}
-      </button>
+  if (isLoading) {
+    return <div className="text-center">Caricamento opzioni filtri...</div>;
+  }
 
-      {/* Sezione Filtri */}
-      {showFilters && (
-        <div className="card bg-light">
-          <div className="card-body">
-            <h5 className="card-title mb-3">Filtri</h5>
-            
-            <div className="row g-3">
-              {/* Prima riga */}
-              <div className="col-md-4">
-                <label className="form-label">Magazzino di Partenza</label>
-                <select
-                  className="form-select"
-                  value={filters.deposito}
-                  onChange={(e) => handleFilterChange('deposito', e.target.value)}
-                >
-                  <option value="">Tutti</option>
-                  {filterOptions.depositi.map(deposito => (
-                    <option key={deposito} value={deposito}>{deposito}</option>
-                  ))}
-                </select>
-              </div>
-              
-              <div className="col-md-4">
-                <label className="form-label">Nominativo</label>
-                <select
-                  className="form-select"
-                  value={filters.nominativoId}
-                  onChange={(e) => handleFilterChange('nominativoId', e.target.value)}
-                >
-                  <option value="">Tutti</option>
-                  {filterOptions.nominativi.map(nominativo => (
-                    <option key={nominativo} value={nominativo}>{nominativo}</option>
-                  ))}
-                </select>
-              </div>
-              
-              <div className="col-md-4">
-                <label className="form-label">Numero Viaggio</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Cerca numero viaggio..."
-                  value={filters.numeroViaggio}
-                  onChange={(e) => handleFilterChange('numeroViaggio', e.target.value)}
-                />
-              </div>
-              
-              {/* Seconda riga */}
-              <div className="col-md-4">
-                <label className="form-label">Targa</label>
-                <select
-                  className="form-select"
-                  value={filters.targaMezzoId}
-                  onChange={(e) => handleFilterChange('targaMezzoId', e.target.value)}
-                >
-                  <option value="">Tutte</option>
-                  {filterOptions.targhe.map(targa => (
-                    <option key={targa} value={targa}>{targa}</option>
-                  ))}
-                </select>
-              </div>
-              
-              <div className="col-md-4">
-                <label className="form-label">Data Da</label>
-                <input
-                  type="date"
-                  className="form-control"
-                  value={filters.dataDa}
-                  onChange={(e) => handleFilterChange('dataDa', e.target.value)}
-                />
-              </div>
-              
-              <div className="col-md-4">
-                <label className="form-label">Data A</label>
-                <input
-                  type="date"
-                  className="form-control"
-                  value={filters.dataA}
-                  onChange={(e) => handleFilterChange('dataA', e.target.value)}
-                />
-              </div>
-            </div>
-            
-            {/* Pulsanti Azione */}
-            <div className="d-flex justify-content-end gap-2 mt-3">
-              <button
-                onClick={resetFilters}
-                className="btn btn-outline-secondary"
-              >
-                ✕ Reset
-              </button>
-              <button
-                onClick={applyFilters}
-                className="btn btn-primary"
-              >
-                🔍 Filtra
-              </button>
-            </div>
-          </div>
+  return (
+    <div className="row g-3">
+      {/* Azienda Vettore */}
+      <div className="col-md-6 col-lg-4">
+        <label className="form-label fw-bold">Azienda Vettore</label>
+        <select 
+          className="form-select"
+          value={aziendaVettore}
+          onChange={(e) => setAziendaVettore(e.target.value)}
+        >
+          <option value="">Tutte le aziende</option>
+          {filterOptions.aziendeVettore.map((azienda, index) => (
+            <option key={index} value={azienda}>{azienda}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Nominativo */}
+      <div className="col-md-6 col-lg-4">
+        <label className="form-label fw-bold">Nominativo</label>
+        <input
+          type="text"
+          className="form-control"
+          placeholder="Cerca nominativo..."
+          value={nominativo}
+          onChange={(e) => setNominativo(e.target.value)}
+        />
+      </div>
+
+      {/* Trasportatore */}
+      <div className="col-md-6 col-lg-4">
+        <label className="form-label fw-bold">Trasportatore</label>
+        <select 
+          className="form-select"
+          value={trasportatore}
+          onChange={(e) => setTrasportatore(e.target.value)}
+        >
+          <option value="">Tutti i trasportatori</option>
+          {filterOptions.trasportatori.map((trasport, index) => (
+            <option key={index} value={trasport}>{trasport}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Numero Viaggio */}
+      <div className="col-md-6 col-lg-4">
+        <label className="form-label fw-bold">Numero Viaggio</label>
+        <input
+          type="text"
+          className="form-control"
+          placeholder="Cerca viaggio..."
+          value={numeroViaggio}
+          onChange={(e) => setNumeroViaggio(e.target.value)}
+        />
+      </div>
+
+      {/* Targa */}
+      <div className="col-md-6 col-lg-4">
+        <label className="form-label fw-bold">Targa</label>
+        <select 
+          className="form-select"
+          value={targa}
+          onChange={(e) => setTarga(e.target.value)}
+        >
+          <option value="">Tutte le targhe</option>
+          {filterOptions.targhe.map((targaOpt, index) => (
+            <option key={index} value={targaOpt}>{targaOpt}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Magazzino di Partenza */}
+      <div className="col-md-6 col-lg-4">
+        <label className="form-label fw-bold">Magazzino di Partenza</label>
+        <select 
+          className="form-select"
+          value={magazzino}
+          onChange={(e) => setMagazzino(e.target.value)}
+        >
+          <option value="">Tutti i magazzini</option>
+          {filterOptions.magazzini.map((mag, index) => (
+            <option key={index} value={mag}>{mag}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Mese */}
+      <div className="col-md-6 col-lg-4">
+        <label className="form-label fw-bold">Mese</label>
+        <select 
+          className="form-select"
+          value={mese}
+          onChange={(e) => setMese(e.target.value)}
+        >
+          <option value="">Tutti i mesi</option>
+          {filterOptions.mesi.map((m, index) => (
+            <option key={index} value={m}>
+              {new Date(2025, m - 1).toLocaleDateString('it-IT', { month: 'long' })}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Trimestre */}
+      <div className="col-md-6 col-lg-4">
+        <label className="form-label fw-bold">Trimestre</label>
+        <select 
+          className="form-select"
+          value={trimestre}
+          onChange={(e) => setTrimestre(e.target.value)}
+        >
+          <option value="">Tutti i trimestri</option>
+          {filterOptions.trimestri.map((t, index) => (
+            <option key={index} value={t}>{t}° Trimestre</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Data Da */}
+      <div className="col-md-6 col-lg-4">
+        <label className="form-label fw-bold">Data Da</label>
+        <input
+          type="date"
+          className="form-control"
+          value={dataDa}
+          onChange={(e) => setDataDa(e.target.value)}
+        />
+      </div>
+
+      {/* Data A */}
+      <div className="col-md-6 col-lg-4">
+        <label className="form-label fw-bold">Data A</label>
+        <input
+          type="date"
+          className="form-control"
+          value={dataA}
+          onChange={(e) => setDataA(e.target.value)}
+        />
+      </div>
+
+      {/* Pulsanti Azioni */}
+      <div className="col-12">
+        <div className="d-flex gap-2">
+          <button 
+            type="button" 
+            className="btn btn-primary"
+            onClick={applyFilters}
+          >
+            <i className="bi bi-search me-2"></i>
+            Applica Filtri
+          </button>
+          <button 
+            type="button" 
+            className="btn btn-outline-secondary"
+            onClick={clearFilters}
+          >
+            <i className="bi bi-x-circle me-2"></i>
+            Pulisci Filtri
+          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 }

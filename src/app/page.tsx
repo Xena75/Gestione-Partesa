@@ -54,6 +54,35 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          {/* Card Gestione Viaggi */}
+          <div className="col-lg-6 col-xl-4">
+            <div className="card h-100 shadow-sm border-0 hover-lift">
+              <div className="card-body p-4">
+                <div className="d-flex align-items-center mb-3">
+                  <div className="bg-info bg-opacity-10 rounded-circle p-3 me-3">
+                    <span className="fs-1">🚚</span>
+                  </div>
+                  <div>
+                    <h3 className="card-title mb-1">Gestione Viaggi</h3>
+                    <p className="text-muted mb-0">Tabella Completa</p>
+                  </div>
+                </div>
+                <p className="card-text text-muted">
+                  Tabella completa con 15 colonne ordinate, 10 filtri avanzati, statistiche dashboard e paginazione intelligente.
+                </p>
+                <div className="d-flex flex-wrap gap-2 mb-3">
+                  <span className="badge bg-info">15 Colonne</span>
+                  <span className="badge bg-primary">10 Filtri</span>
+                  <span className="badge bg-success">Statistiche</span>
+                  <span className="badge bg-warning">Paginazione</span>
+                </div>
+                <Link href="/viaggi" className="btn btn-info w-100">
+                  Accedi alla Gestione Viaggi →
+                </Link>
+              </div>
+            </div>
+          </div>
+
           {/* Card Gestione Logistica */}
           <div className="col-lg-6 col-xl-4">
             <div className="card h-100 shadow-sm border-0 hover-lift">
