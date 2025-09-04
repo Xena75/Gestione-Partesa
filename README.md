@@ -32,6 +32,13 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Reset filtri**: L'ordinamento viene mantenuto anche quando si resettano i filtri
 - **Workflow completo**: Ordinamento preservato durante modifica e ritorno alla pagina
 
+#### 💰 **Formattazione Valuta Avanzata - v2.3.2**
+- **Campo "€ Rifornimento"**: Formattato in valuta italiana (€ 1.234,56) e calcolato automaticamente
+- **Campo "€/lt"**: Input personalizzato con simbolo € e formattazione automatica
+- **Calcolo automatico**: € Rifornimento = Litri Riforniti × €/lt (formula nel database)
+- **Formato italiano**: Separatori delle migliaia e decimali secondo standard italiano
+- **Campi read-only intelligenti**: Indicazione visiva per campi calcolati automaticamente
+
 ### 🎯 **Pagina `/gestione` - Sistema di Gestione Fatturazione Delivery**
 
 **Completamente implementata e funzionante** con tutte le funzionalità richieste:
@@ -194,7 +201,7 @@ DB_GESTIONE_NAME=gestionelogistica
 
 ---
 
-**Versione**: 2.3.1  
+**Versione**: 2.3.2  
 **Ultimo Aggiornamento**: Dicembre 2024  
 **Stato**: ✅ **PRODUZIONE STABILE**  
 **Compatibilità**: Next.js 15+, Node.js 18+, MySQL 8.0+

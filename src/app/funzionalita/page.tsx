@@ -173,6 +173,7 @@ export default function FunzionalitaPage() {
                  <li><strong>Workflow fluido</strong>: Nessuna perdita di contesto durante le modifiche</li>
                  <li><strong>Ordinamento corretto</strong>: Bug risolto per funzionamento perfetto su tutte le pagine</li>
                  <li><strong>Preservazione ordinamento completa</strong>: sortBy e sortOrder mantenuti in tutte le operazioni</li>
+                 <li><strong>Formattazione valuta avanzata</strong>: Campi monetari formattati in valuta italiana</li>
                </ul>
 
                <Link href="/viaggi" className="btn btn-info">Vai alla Gestione Viaggi</Link>
@@ -336,6 +337,16 @@ export default function FunzionalitaPage() {
                 <li><strong>Soluzione</strong>: Aggiunta preservazione parametri ordinamento in entrambe le funzioni</li>
                 <li><strong>Implementazione</strong>: <code>currentSortBy</code> e <code>currentSortOrder</code> preservati</li>
                 <li><strong>Risultato</strong>: Ordinamento mantenuto in tutte le operazioni</li>
+              </ul>
+
+              <h5>✅ Formattazione Valuta - IMPLEMENTATA</h5>
+              <ul>
+                <li><strong>Problema</strong>: Campi monetari mostrati come numeri semplici senza formato valuta</li>
+                <li><strong>Soluzione</strong>: Implementata formattazione valuta italiana per campi monetari</li>
+                <li><strong>Campo "€ Rifornimento"</strong>: Read-only con formato € 1.234,56 e calcolo automatico</li>
+                <li><strong>Campo "€/lt"</strong>: Input personalizzato con simbolo € e formattazione automatica</li>
+                <li><strong>Implementazione</strong>: <code>toLocaleString('it-IT')</code> per formato italiano</li>
+                <li><strong>Risultato</strong>: Interfaccia più professionale e user-friendly</li>
               </ul>
             </div>
           </div>

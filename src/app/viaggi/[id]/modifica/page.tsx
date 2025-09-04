@@ -602,22 +602,36 @@ export default function ModificaViaggioPage({ params }: { params: Promise<{ id: 
                         <div className="row g-2 mt-2">
                           <div className="col-md-6">
                             <label className="form-label small mb-1">€/lt</label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              className="form-control form-control-sm"
-                              value={viaggio['€/lt'] || ''}
-                              onChange={(e) => handleInputChange('€/lt', parseFloat(e.target.value) || 0)}
-                            />
+                            <div className="input-group input-group-sm">
+                              <span className="input-group-text">€</span>
+                              <input
+                                type="text"
+                                className="form-control"
+                                value={viaggio['€/lt'] ? Number(viaggio['€/lt']).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}
+                                onChange={(e) => {
+                                  // Rimuovi tutto tranne numeri, virgole e punti
+                                  const cleanValue = e.target.value.replace(/[^\d,.-]/g, '');
+                                  // Converti virgole in punti per il parsing
+                                  const numericValue = cleanValue.replace(',', '.');
+                                  const parsedValue = parseFloat(numericValue) || 0;
+                                  handleInputChange('€/lt', parsedValue);
+                                }}
+                                placeholder="0,00"
+                              />
+                            </div>
                           </div>
                           <div className="col-md-6">
-                            <label className="form-label small mb-1">€ Rifornimento</label>
+                            <label className="form-label small mb-1">
+                              € Rifornimento 
+                              <small className="text-muted ms-1">(calcolato automaticamente)</small>
+                            </label>
                             <input
-                              type="number"
-                              step="0.01"
-                              className="form-control form-control-sm"
-                              value={viaggio['euro_rifornimento'] || ''}
-                              onChange={(e) => handleInputChange('euro_rifornimento', parseFloat(e.target.value) || 0)}
+                              type="text"
+                              className="form-control form-control-sm bg-light"
+                              value={viaggio['euro_rifornimento'] ? `€ ${Number(viaggio['euro_rifornimento']).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '€ 0,00'}
+                              readOnly
+                              style={{ cursor: 'not-allowed' }}
+                              title="Campo calcolato automaticamente: Litri Riforniti × €/lt"
                             />
                           </div>
                         </div>
