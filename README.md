@@ -93,8 +93,8 @@ npm run dev
 ### **2. Accesso alle Funzionalità**
 - **Dashboard**: `/` - Panoramica generale
 - **Gestione**: `/gestione` - Sistema completo fatturazione delivery
-- **Monitoraggio**: `/monitoraggio` - Monitoraggio viaggi e consegne
-- **Viaggi**: `/viaggi` - Gestione completa tabella tab_viaggi con filtri avanzati
+- **Monitoraggio**: `/monitoraggio` - Monitoraggio viaggi e consegne (ex-viaggi)
+- **Viaggi**: `/viaggi` - Gestione completa tabella tab_viaggi con filtri avanzati e modifica
 - **Import**: `/import` - Sistema import Excel avanzato
 
 ### **3. Configurazione Database**
@@ -166,7 +166,7 @@ DB_GESTIONE_NAME=gestionelogistica
 
 ---
 
-**Versione**: 2.1.0  
+**Versione**: 2.2.0  
 **Ultimo Aggiornamento**: Dicembre 2024  
 **Stato**: ✅ **PRODUZIONE STABILE**  
 **Compatibilità**: Next.js 15+, Node.js 18+, MySQL 8.0+

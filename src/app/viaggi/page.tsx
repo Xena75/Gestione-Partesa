@@ -286,30 +286,39 @@ function ViaggiPageContent() {
                 currentSortBy={sortBy} 
                 currentSortOrder={sortOrder} 
               />
-              <th>€ Rifornimento</th>
-            </tr>
-          </thead>
-          <tbody>
-            {viaggi.map((viaggio, index) => (
-              <tr key={`${viaggio.Viaggio}-${index}`}>
-                <td>{viaggio.Data ? new Date(viaggio.Data).toLocaleDateString('it-IT') : '-'}</td>
-                <td>{viaggio.Viaggio || '-'}</td>
-                <td>{viaggio['Nome Trasportatore'] || '-'}</td>
-                <td>{viaggio.Nominativo || '-'}</td>
-                <td>{viaggio['Tipo Patente'] || '-'}</td>
-                <td>{viaggio.Ore || '-'}</td>
-                <td>{viaggio.Colli || '-'}</td>
-                <td>{viaggio['Peso (Kg)'] || '-'}</td>
-                <td>{viaggio.Ordini || '-'}</td>
-                <td>{viaggio.Toccate || '-'}</td>
-                <td>{viaggio.Targa || '-'}</td>
-                <td>{viaggio['Magazzino di partenza'] || '-'}</td>
-                <td>{viaggio['Km Iniziali Viaggio'] || '-'}</td>
-                <td>{viaggio['Km Finali Viaggio'] || '-'}</td>
-                <td>{viaggio['Km Viaggio'] || '-'}</td>
-                <td>{viaggio.euro_rifornimento || '-'}</td>
-              </tr>
-            ))}
+                             <th>€ Rifornimento</th>
+               <th>Azioni</th>
+             </tr>
+           </thead>
+           <tbody>
+             {viaggi.map((viaggio, index) => (
+               <tr key={`${viaggio.Viaggio}-${index}`}>
+                 <td>{viaggio.Data ? new Date(viaggio.Data).toLocaleDateString('it-IT') : '-'}</td>
+                 <td>{viaggio.Viaggio || '-'}</td>
+                 <td>{viaggio['Nome Trasportatore'] || '-'}</td>
+                 <td>{viaggio.Nominativo || '-'}</td>
+                 <td>{viaggio['Tipo Patente'] || '-'}</td>
+                 <td>{viaggio.Ore || '-'}</td>
+                 <td>{viaggio.Colli || '-'}</td>
+                 <td>{viaggio['Peso (Kg)'] || '-'}</td>
+                 <td>{viaggio.Ordini || '-'}</td>
+                 <td>{viaggio.Toccate || '-'}</td>
+                 <td>{viaggio.Targa || '-'}</td>
+                 <td>{viaggio['Magazzino di partenza'] || '-'}</td>
+                 <td>{viaggio['Km Iniziali Viaggio'] || '-'}</td>
+                 <td>{viaggio['Km Finali Viaggio'] || '-'}</td>
+                 <td>{viaggio['Km Viaggio'] || '-'}</td>
+                 <td>{viaggio.euro_rifornimento || '-'}</td>
+                 <td>
+                   <Link 
+                     href={`/viaggi/${viaggio.Viaggio}/modifica`}
+                     className="btn btn-sm btn-outline-primary"
+                   >
+                     ✏️ Modifica
+                   </Link>
+                 </td>
+               </tr>
+             ))}
           </tbody>
         </table>
       </div>
