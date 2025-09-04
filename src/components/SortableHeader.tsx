@@ -7,9 +7,10 @@ type SortableHeaderProps = {
   label: string;
   currentSortBy: string;
   currentSortOrder: 'ASC' | 'DESC';
+  basePath?: string;
 };
 
-export default function SortableHeader({ field, label, currentSortBy, currentSortOrder }: SortableHeaderProps) {
+export default function SortableHeader({ field, label, currentSortBy, currentSortOrder, basePath = '/viaggi' }: SortableHeaderProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -29,7 +30,7 @@ export default function SortableHeader({ field, label, currentSortBy, currentSor
     // Reset alla prima pagina quando cambiamo ordinamento
     params.set('page', '1');
     
-    router.push(`/?${params.toString()}`);
+    router.push(`${basePath}?${params.toString()}`);
   };
 
   const getSortIcon = () => {

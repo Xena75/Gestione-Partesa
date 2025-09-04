@@ -4,6 +4,28 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
 
+### 🚀 **Miglioramenti Pagina `/viaggi` - v2.3.0**
+
+**Completamente implementati e funzionanti**:
+
+#### 🔧 **Campo "Km Viaggio" Calcolato Automaticamente**
+- **Calcolo automatico**: `Km Viaggio = Km Finali Viaggio - Km Iniziali Viaggio`
+- **Aggiornamento real-time**: Si ricalcola quando modifichi i campi base
+- **Campo read-only**: Non modificabile dall'utente per garantire coerenza
+- **Salvataggio nel database**: Il valore calcolato viene persistito
+- **Validazione intelligente**: Calcola solo se i valori sono validi e coerenti
+
+#### 🔄 **Preservazione Filtri Durante Modifica**
+- **Filtri persistenti**: I filtri rimangono attivi dopo modifica e salvataggio
+- **Workflow fluido**: Non perdi mai il contesto durante le modifiche
+- **URL condivisibili**: I filtri sono sempre preservati nell'URL
+- **Reset manuale**: Solo l'utente può resettare i filtri tramite pulsante dedicato
+
+#### 🐛 **Correzione Bug Ordinamento**
+- **SortableHeader corretto**: L'ordinamento ora funziona correttamente su tutte le pagine
+- **Nessun redirect indesiderato**: Cliccare sulle intestazioni ordina i dati senza reindirizzare
+- **Componente dinamico**: Funziona sia su `/viaggi` che `/monitoraggio`
+
 ### 🎯 **Pagina `/gestione` - Sistema di Gestione Fatturazione Delivery**
 
 **Completamente implementata e funzionante** con tutte le funzionalità richieste:
@@ -166,7 +188,7 @@ DB_GESTIONE_NAME=gestionelogistica
 
 ---
 
-**Versione**: 2.2.0  
+**Versione**: 2.3.0  
 **Ultimo Aggiornamento**: Dicembre 2024  
 **Stato**: ✅ **PRODUZIONE STABILE**  
 **Compatibilità**: Next.js 15+, Node.js 18+, MySQL 8.0+

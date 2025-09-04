@@ -165,6 +165,15 @@ export default function FunzionalitaPage() {
                  <li><strong>Design responsive</strong> con Bootstrap 5 per tutti i dispositivi</li>
                </ul>
 
+               <h5>🔧 Funzionalità Avanzate - NUOVE!</h5>
+               <ul>
+                 <li><strong>Campo "Km Viaggio" calcolato automaticamente</strong>: Calcolo real-time di Km Finali - Km Iniziali</li>
+                 <li><strong>Campo read-only intelligente</strong>: Non modificabile dall'utente per garantire coerenza</li>
+                 <li><strong>Preservazione filtri durante modifica</strong>: I filtri rimangono attivi dopo salvataggio</li>
+                 <li><strong>Workflow fluido</strong>: Nessuna perdita di contesto durante le modifiche</li>
+                 <li><strong>Ordinamento corretto</strong>: Bug risolto per funzionamento perfetto su tutte le pagine</li>
+               </ul>
+
                <Link href="/viaggi" className="btn btn-info">Vai alla Gestione Viaggi</Link>
              </div>
            </div>
@@ -293,6 +302,30 @@ export default function FunzionalitaPage() {
                 <li><strong>Conversione Excel</strong>: Gestione automatica date numeriche Excel</li>
                 <li><strong>Formato MySQL</strong>: Conversione corretta in <code>datetime</code></li>
                 <li><strong>Timezone</strong>: Gestione corretta delle conversioni temporali</li>
+              </ul>
+
+              <h5>✅ Bug Ordinamento - RISOLTO</h5>
+              <ul>
+                <li><strong>Problema</strong>: Cliccare sulle intestazioni reindirizzava alla dashboard</li>
+                <li><strong>Causa</strong>: SortableHeader hardcoded su <code>router.push('/')</code></li>
+                <li><strong>Soluzione</strong>: Componente dinamico con <code>basePath</code> configurabile</li>
+                <li><strong>Risultato</strong>: Ordinamento funzionante su tutte le pagine</li>
+              </ul>
+
+              <h5>✅ Campo Km Viaggio - AUTOMATIZZATO</h5>
+              <ul>
+                <li><strong>Problema</strong>: Campo "Km Viaggio" richiedeva calcolo manuale</li>
+                <li><strong>Soluzione</strong>: Calcolo automatico real-time con validazione</li>
+                <li><strong>Implementazione</strong>: Campo read-only con calcolo Km Finali - Km Iniziali</li>
+                <li><strong>Risultato</strong>: Coerenza garantita e workflow semplificato</li>
+              </ul>
+
+              <h5>✅ Preservazione Filtri - IMPLEMENTATA</h5>
+              <ul>
+                <li><strong>Problema</strong>: Filtri persi durante modifica e ritorno</li>
+                <li><strong>Soluzione</strong>: Preservazione parametri URL in tutti i link e redirect</li>
+                <li><strong>Implementazione</strong>: <code>searchParams.toString()</code> in tutti i collegamenti</li>
+                <li><strong>Risultato</strong>: Workflow fluido senza perdita di contesto</li>
               </ul>
             </div>
           </div>

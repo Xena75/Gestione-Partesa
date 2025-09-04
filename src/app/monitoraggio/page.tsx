@@ -143,7 +143,8 @@ function MonitoraggioPageContent() {
                 field="numeroViaggio" 
                 label="Viaggio" 
                 currentSortBy={sortBy} 
-                currentSortOrder={sortOrder} 
+                currentSortOrder={sortOrder}
+                basePath="/monitoraggio"
               />
               <th>Nominativo</th>
               <th>Affiancato Da</th>
@@ -152,20 +153,23 @@ function MonitoraggioPageContent() {
                 field="dataOraInizioViaggio" 
                 label="Data Inizio" 
                 currentSortBy={sortBy} 
-                currentSortOrder={sortOrder} 
+                currentSortOrder={sortOrder}
+                basePath="/monitoraggio"
               />
               <SortableHeader 
                 field="dataOraFineViaggio" 
                 label="Data Fine" 
                 currentSortBy={sortBy} 
-                currentSortOrder={sortOrder} 
+                currentSortOrder={sortOrder}
+                basePath="/monitoraggio"
               />
               <th>Ore Effettive</th>
               <SortableHeader 
                 field="targaMezzoId" 
                 label="Targa Mezzo" 
                 currentSortBy={sortBy} 
-                currentSortOrder={sortOrder} 
+                currentSortOrder={sortOrder}
+                basePath="/monitoraggio"
               />
               <th>KM Iniziali</th>
               <th>KM Finali</th>

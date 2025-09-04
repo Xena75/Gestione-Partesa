@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 // Interface per i dati della tabella tab_viaggi
@@ -43,6 +43,7 @@ interface ViaggioTab {
 
 export default function ModificaViaggioPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [viaggio, setViaggio] = useState<ViaggioTab | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -68,6 +69,24 @@ export default function ModificaViaggioPage({ params }: { params: Promise<{ id: 
   useEffect(() => {
     fetchViaggio();
   }, [fetchViaggio]);
+
+  // Calcola automaticamente "Km Viaggio" quando si carica la pagina
+  useEffect(() => {
+    if (viaggio && viaggio['Km Iniziali Viaggio'] && viaggio['Km Finali Viaggio']) {
+      const kmIniziali = viaggio['Km Iniziali Viaggio'] || 0;
+      const kmFinali = viaggio['Km Finali Viaggio'] || 0;
+      
+      if (kmIniziali > 0 && kmFinali > 0 && kmFinali >= kmIniziali) {
+        const kmViaggio = kmFinali - kmIniziali;
+        if (viaggio['Km Viaggio'] !== kmViaggio) {
+          setViaggio(prev => prev ? {
+            ...prev,
+            'Km Viaggio': kmViaggio
+          } : null);
+        }
+      }
+    }
+  }, [viaggio]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,9 +129,11 @@ export default function ModificaViaggioPage({ params }: { params: Promise<{ id: 
 
       setSuccess('Viaggio aggiornato con successo!');
       
-      // Redirect dopo 2 secondi
+      // Redirect dopo 2 secondi preservando i filtri
       setTimeout(() => {
-        router.push('/viaggi');
+        const currentParams = searchParams.toString();
+        const redirectUrl = currentParams ? `/viaggi?${currentParams}` : '/viaggi';
+        router.push(redirectUrl);
       }, 2000);
 
     } catch (err) {
@@ -125,10 +146,29 @@ export default function ModificaViaggioPage({ params }: { params: Promise<{ id: 
   const handleInputChange = (field: keyof ViaggioTab, value: string | number) => {
     if (!viaggio) return;
     
-    setViaggio(prev => prev ? {
-      ...prev,
-      [field]: value
-    } : null);
+    setViaggio(prev => {
+      if (!prev) return null;
+      
+      const updatedViaggio = {
+        ...prev,
+        [field]: value
+      };
+      
+      // Calcolo automatico di "Km Viaggio" quando cambiano "Km Iniziali Viaggio" o "Km Finali Viaggio"
+      if (field === 'Km Iniziali Viaggio' || field === 'Km Finali Viaggio') {
+        const kmIniziali = field === 'Km Iniziali Viaggio' ? (typeof value === 'number' ? value : parseFloat(value.toString()) || 0) : (prev['Km Iniziali Viaggio'] || 0);
+        const kmFinali = field === 'Km Finali Viaggio' ? (typeof value === 'number' ? value : parseFloat(value.toString()) || 0) : (prev['Km Finali Viaggio'] || 0);
+        
+        // Calcola la differenza solo se entrambi i valori sono validi
+        if (kmIniziali > 0 && kmFinali > 0 && kmFinali >= kmIniziali) {
+          updatedViaggio['Km Viaggio'] = kmFinali - kmIniziali;
+        } else {
+          updatedViaggio['Km Viaggio'] = 0;
+        }
+      }
+      
+      return updatedViaggio;
+    });
   };
 
   if (isLoading) {
@@ -150,7 +190,7 @@ export default function ModificaViaggioPage({ params }: { params: Promise<{ id: 
         <div className="alert alert-danger">
           <h4>Errore</h4>
           <p>{error}</p>
-          <Link href="/viaggi" className="btn btn-primary">
+          <Link href={`/viaggi?${searchParams.toString()}`} className="btn btn-primary">
             ← Torna alla Gestione Viaggi
           </Link>
         </div>
@@ -164,7 +204,7 @@ export default function ModificaViaggioPage({ params }: { params: Promise<{ id: 
         <div className="alert alert-warning">
           <h4>Viaggio non trovato</h4>
           <p>Il viaggio richiesto non esiste.</p>
-          <Link href="/viaggi" className="btn btn-primary">
+          <Link href={`/viaggi?${searchParams.toString()}`} className="btn btn-primary">
             ← Torna alla Gestione Viaggi
           </Link>
         </div>
@@ -179,7 +219,7 @@ export default function ModificaViaggioPage({ params }: { params: Promise<{ id: 
           {/* Header */}
           <div className="d-flex justify-content-between align-items-center mb-4">
             <h1 className="h2 mb-0">✏️ Modifica Viaggio</h1>
-            <Link href="/viaggi" className="btn btn-outline-secondary">
+            <Link href={`/viaggi?${searchParams.toString()}`} className="btn btn-outline-secondary">
               ← Torna alla Gestione Viaggi
             </Link>
           </div>
@@ -487,13 +527,18 @@ export default function ModificaViaggioPage({ params }: { params: Promise<{ id: 
                             />
                           </div>
                           <div className="col-md-4">
-                            <label className="form-label small mb-1">Km Viaggio</label>
+                            <label className="form-label small mb-1">
+                              Km Viaggio 
+                              <small className="text-muted ms-1">(calcolato automaticamente)</small>
+                            </label>
                             <input
                               type="number"
                               step="0.01"
-                              className="form-control form-control-sm"
+                              className="form-control form-control-sm bg-light"
                               value={viaggio['Km Viaggio'] || ''}
-                              onChange={(e) => handleInputChange('Km Viaggio', parseFloat(e.target.value) || 0)}
+                              readOnly
+                              style={{ cursor: 'not-allowed' }}
+                              title="Campo calcolato automaticamente: Km Finali - Km Iniziali"
                             />
                           </div>
                         </div>
@@ -651,7 +696,7 @@ export default function ModificaViaggioPage({ params }: { params: Promise<{ id: 
 
                            {/* Pulsanti di azione */}
              <div className="d-flex justify-content-between mt-5">
-               <Link href="/viaggi" className="btn btn-secondary btn-lg px-4">
+               <Link href={`/viaggi?${searchParams.toString()}`} className="btn btn-secondary btn-lg px-4">
                  ← Annulla
                </Link>
                <button

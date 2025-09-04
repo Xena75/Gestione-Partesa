@@ -200,91 +200,106 @@ function ViaggiPageContent() {
                 field="Data" 
                 label="Data" 
                 currentSortBy={sortBy} 
-                currentSortOrder={sortOrder} 
+                currentSortOrder={sortOrder}
+                basePath="/viaggi"
               />
               <SortableHeader 
                 field="Viaggio" 
                 label="Viaggio" 
                 currentSortBy={sortBy} 
-                currentSortOrder={sortOrder} 
+                currentSortOrder={sortOrder}
+                basePath="/viaggi"
               />
               <SortableHeader 
                 field="Nome Trasportatore" 
                 label="Trasportatore" 
                 currentSortBy={sortBy} 
-                currentSortOrder={sortOrder} 
+                currentSortOrder={sortOrder}
+                basePath="/viaggi"
               />
               <SortableHeader 
                 field="Nominativo" 
                 label="Nominativo" 
                 currentSortBy={sortBy} 
-                currentSortOrder={sortOrder} 
+                currentSortOrder={sortOrder}
+                basePath="/viaggi"
               />
               <SortableHeader 
                 field="Tipo Patente" 
                 label="Tipo Patente" 
                 currentSortBy={sortBy} 
-                currentSortOrder={sortOrder} 
+                currentSortOrder={sortOrder}
+                basePath="/viaggi"
               />
               <SortableHeader 
                 field="Ore" 
                 label="Ore" 
                 currentSortBy={sortBy} 
-                currentSortOrder={sortOrder} 
+                currentSortOrder={sortOrder}
+                basePath="/viaggi"
               />
               <SortableHeader 
                 field="Colli" 
                 label="Colli" 
                 currentSortBy={sortBy} 
-                currentSortOrder={sortOrder} 
+                currentSortOrder={sortOrder}
+                basePath="/viaggi"
               />
               <SortableHeader 
                 field="Peso (Kg)" 
                 label="Peso (kg)" 
                 currentSortBy={sortBy} 
-                currentSortOrder={sortOrder} 
+                currentSortOrder={sortOrder}
+                basePath="/viaggi"
               />
               <SortableHeader 
                 field="Ordini" 
                 label="Ordini" 
                 currentSortBy={sortBy} 
-                currentSortOrder={sortOrder} 
+                currentSortOrder={sortOrder}
+                basePath="/viaggi"
               />
               <SortableHeader 
                 field="Toccate" 
                 label="Toccate" 
                 currentSortBy={sortBy} 
-                currentSortOrder={sortOrder} 
+                currentSortOrder={sortOrder}
+                basePath="/viaggi"
               />
               <SortableHeader 
                 field="Targa" 
                 label="Targa" 
                 currentSortBy={sortBy} 
-                currentSortOrder={sortOrder} 
+                currentSortOrder={sortOrder}
+                basePath="/viaggi"
               />
               <SortableHeader 
                 field="Magazzino di partenza" 
                 label="Magazzino di partenza" 
                 currentSortBy={sortBy} 
-                currentSortOrder={sortOrder} 
+                currentSortOrder={sortOrder}
+                basePath="/viaggi"
               />
               <SortableHeader 
                 field="Km Iniziali Viaggio" 
                 label="Km Iniziali" 
                 currentSortBy={sortBy} 
-                currentSortOrder={sortOrder} 
+                currentSortOrder={sortOrder}
+                basePath="/viaggi"
               />
               <SortableHeader 
                 field="Km Finali Viaggio" 
                 label="Km Finali" 
                 currentSortBy={sortBy} 
-                currentSortOrder={sortOrder} 
+                currentSortOrder={sortOrder}
+                basePath="/viaggi"
               />
               <SortableHeader 
                 field="Km Viaggio" 
                 label="Km Viaggio" 
                 currentSortBy={sortBy} 
-                currentSortOrder={sortOrder} 
+                currentSortOrder={sortOrder}
+                basePath="/viaggi"
               />
                              <th>€ Rifornimento</th>
                <th>Azioni</th>
@@ -311,7 +326,7 @@ function ViaggiPageContent() {
                  <td>{viaggio.euro_rifornimento || '-'}</td>
                  <td>
                    <Link 
-                     href={`/viaggi/${viaggio.Viaggio}/modifica`}
+                     href={`/viaggi/${viaggio.Viaggio}/modifica?${searchParams.toString()}`}
                      className="btn btn-sm btn-outline-primary"
                    >
                      ✏️ Modifica
