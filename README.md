@@ -26,6 +26,12 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Nessun redirect indesiderato**: Cliccare sulle intestazioni ordina i dati senza reindirizzare
 - **Componente dinamico**: Funziona sia su `/viaggi` che `/monitoraggio`
 
+#### 🔄 **Preservazione Ordinamento Completa - v2.3.1**
+- **Ordinamento persistente**: I parametri `sortBy` e `sortOrder` vengono preservati in tutte le operazioni
+- **Applicazione filtri**: L'ordinamento rimane attivo quando si applicano nuovi filtri
+- **Reset filtri**: L'ordinamento viene mantenuto anche quando si resettano i filtri
+- **Workflow completo**: Ordinamento preservato durante modifica e ritorno alla pagina
+
 ### 🎯 **Pagina `/gestione` - Sistema di Gestione Fatturazione Delivery**
 
 **Completamente implementata e funzionante** con tutte le funzionalità richieste:
@@ -188,7 +194,7 @@ DB_GESTIONE_NAME=gestionelogistica
 
 ---
 
-**Versione**: 2.3.0  
+**Versione**: 2.3.1  
 **Ultimo Aggiornamento**: Dicembre 2024  
 **Stato**: ✅ **PRODUZIONE STABILE**  
 **Compatibilità**: Next.js 15+, Node.js 18+, MySQL 8.0+

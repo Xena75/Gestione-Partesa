@@ -64,6 +64,12 @@ export default function FiltriViaggi() {
       params.set('page', '1');
     }
     
+    // Preserva l'ordinamento attuale
+    const currentSortBy = searchParams.get('sortBy');
+    const currentSortOrder = searchParams.get('sortOrder');
+    if (currentSortBy) params.set('sortBy', currentSortBy);
+    if (currentSortOrder) params.set('sortOrder', currentSortOrder);
+    
     // Aggiungi i filtri attivi
     if (aziendaVettore) params.set('aziendaVettore', aziendaVettore);
     if (nominativo) params.set('nominativo', nominativo);
@@ -92,11 +98,20 @@ export default function FiltriViaggi() {
     setDataDa('');
     setDataA('');
     
-    // Rimuovi tutti i parametri dei filtri dall'URL
+    // Rimuovi tutti i parametri dei filtri dall'URL ma preserva ordinamento e pagina
     const params = new URLSearchParams();
     const currentPage = searchParams.get('page');
+    const currentSortBy = searchParams.get('sortBy');
+    const currentSortOrder = searchParams.get('sortOrder');
+    
     if (currentPage) {
       params.set('page', currentPage);
+    }
+    if (currentSortBy) {
+      params.set('sortBy', currentSortBy);
+    }
+    if (currentSortOrder) {
+      params.set('sortOrder', currentSortOrder);
     }
     
     router.push(`/viaggi?${params.toString()}`);

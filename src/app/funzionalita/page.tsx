@@ -172,6 +172,7 @@ export default function FunzionalitaPage() {
                  <li><strong>Preservazione filtri durante modifica</strong>: I filtri rimangono attivi dopo salvataggio</li>
                  <li><strong>Workflow fluido</strong>: Nessuna perdita di contesto durante le modifiche</li>
                  <li><strong>Ordinamento corretto</strong>: Bug risolto per funzionamento perfetto su tutte le pagine</li>
+                 <li><strong>Preservazione ordinamento completa</strong>: sortBy e sortOrder mantenuti in tutte le operazioni</li>
                </ul>
 
                <Link href="/viaggi" className="btn btn-info">Vai alla Gestione Viaggi</Link>
@@ -326,6 +327,15 @@ export default function FunzionalitaPage() {
                 <li><strong>Soluzione</strong>: Preservazione parametri URL in tutti i link e redirect</li>
                 <li><strong>Implementazione</strong>: <code>searchParams.toString()</code> in tutti i collegamenti</li>
                 <li><strong>Risultato</strong>: Workflow fluido senza perdita di contesto</li>
+              </ul>
+
+              <h5>✅ Preservazione Ordinamento - COMPLETATA</h5>
+              <ul>
+                <li><strong>Problema</strong>: Ordinamento perso durante applicazione e reset filtri</li>
+                <li><strong>Causa</strong>: Funzioni <code>applyFilters</code> e <code>clearFilters</code> non preservavano sortBy/sortOrder</li>
+                <li><strong>Soluzione</strong>: Aggiunta preservazione parametri ordinamento in entrambe le funzioni</li>
+                <li><strong>Implementazione</strong>: <code>currentSortBy</code> e <code>currentSortOrder</code> preservati</li>
+                <li><strong>Risultato</strong>: Ordinamento mantenuto in tutte le operazioni</li>
               </ul>
             </div>
           </div>
