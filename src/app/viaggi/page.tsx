@@ -323,7 +323,7 @@ function ViaggiPageContent() {
                  <td>{viaggio['Km Iniziali Viaggio'] || '-'}</td>
                  <td>{viaggio['Km Finali Viaggio'] || '-'}</td>
                  <td>{viaggio['Km Viaggio'] || '-'}</td>
-                 <td>{viaggio.euro_rifornimento ? `€ ${parseFloat(viaggio.euro_rifornimento).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}</td>
+                 <td>{viaggio.euro_rifornimento ? `€ ${Number(viaggio.euro_rifornimento).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}</td>
                  <td>
                    <Link 
                      href={`/viaggi/${viaggio.Viaggio}/modifica?${searchParams.toString()}`}
