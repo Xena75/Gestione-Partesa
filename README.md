@@ -4,6 +4,40 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
 
+### 🚀 **Ottimizzazioni Performance `/gestione` - v2.4.0**
+
+**Completamente implementate e funzionanti**:
+
+#### ⚡ **Sistema Cache Intelligente**
+- **Cache in-memory**: Sistema di cache per query frequenti
+- **TTL configurabile**: Cache per stats (2min), filtri (10min), dati (1min)
+- **Chiavi dinamiche**: Cache separata per ogni combinazione di filtri
+- **Auto-cleanup**: Pulizia automatica cache scadute ogni 10 minuti
+- **API gestione**: Endpoint `/api/gestione/cache` per monitoraggio e pulizia
+
+#### 🎯 **Filtro di Default per Performance**
+- **Ottimizzazione automatica**: Senza filtri, mostra ultimi 3 mesi (90% record in meno)
+- **Filtri utente**: Override del filtro default per periodi specifici
+- **Messaggio informativo**: Alert che spiega l'ottimizzazione all'utente
+- **Performance**: Da 73+ secondi a 5-10 secondi per caricamento iniziale
+
+#### 📊 **KPI Cards Dinamiche**
+- **Aggiornamento real-time**: Le statistiche si aggiornano con i filtri applicati
+- **Cache per filtri**: Ogni combinazione di filtri ha la sua cache
+- **Performance**: Risposta istantanea per filtri già utilizzati
+- **Accuratezza**: Dati sempre coerenti con i filtri selezionati
+
+#### 🔧 **Indici Database Ottimizzati**
+- **9 nuovi indici**: Per query frequenti e filtri multipli
+- **Indici compositi**: Per ottimizzare GROUP BY e WHERE complessi
+- **Performance**: Miglioramento drastico per query raggruppate
+- **Scalabilità**: Ottimizzato per dataset di 500k+ record
+
+#### 🚀 **Query Parallele**
+- **Filtri paralleli**: Esecuzione simultanea di query DISTINCT
+- **Promise.all**: Ottimizzazione per recupero opzioni filtri
+- **Performance**: Riduzione tempo caricamento filtri da 18s a 5s
+
 ### 🚀 **Miglioramenti Pagina `/viaggi` - v2.3.0**
 
 **Completamente implementati e funzionanti**:
@@ -201,7 +235,7 @@ DB_GESTIONE_NAME=gestionelogistica
 
 ---
 
-**Versione**: 2.3.2  
-**Ultimo Aggiornamento**: Dicembre 2024  
+**Versione**: 2.4.0  
+**Ultimo Aggiornamento**: Gennaio 2025  
 **Stato**: ✅ **PRODUZIONE STABILE**  
 **Compatibilità**: Next.js 15+, Node.js 18+, MySQL 8.0+

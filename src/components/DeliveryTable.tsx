@@ -25,6 +25,7 @@ interface GroupedRow {
   compenso_totale: number;
   trasporto_totale: number;
   fatturato_totale: number;
+  ID_fatt: string;
 }
 
 export default function DeliveryTable({ viewType }: DeliveryTableProps) {
@@ -121,13 +122,28 @@ export default function DeliveryTable({ viewType }: DeliveryTableProps) {
       setLoadingDetails(prev => new Set(prev).add(rowKey));
       
       try {
-        const response = await fetch(`/api/gestione/details?consegna=${consegnaNum}&vettore=${vettore}&tipologia=${tipologia}`);
+        const params = new URLSearchParams({
+          consegna: consegnaNum,
+          vettore: vettore,
+          tipologia: tipologia
+        });
+        
+        const apiUrl = `/api/gestione/details?${params.toString()}`;
+        console.log('🔍 Caricamento dettagli per:', { consegnaNum, vettore, tipologia });
+        console.log('🌐 URL API:', apiUrl);
+        
+        const response = await fetch(apiUrl);
         if (response.ok) {
           const details = await response.json();
+          console.log('✅ Dettagli caricati:', details.length, 'record');
           setRowDetails(prev => ({ ...prev, [rowKey]: details }));
+        } else {
+          console.error('❌ Errore nella risposta API:', response.status, response.statusText);
+          const errorText = await response.text();
+          console.error('📄 Dettagli errore:', errorText);
         }
       } catch (error) {
-        console.error('Errore nel caricare i dettagli:', error);
+        console.error('❌ Errore nel caricare i dettagli:', error);
       } finally {
         setLoadingDetails(prev => {
           const newSet = new Set(prev);
@@ -176,6 +192,20 @@ export default function DeliveryTable({ viewType }: DeliveryTableProps) {
   return (
     <div className="card">
       <div className="card-body">
+        {/* Messaggio informativo per performance */}
+        {!searchParams.get('dataDa') && !searchParams.get('dataA') && 
+         !searchParams.get('tipologia') && !searchParams.get('deposito') && 
+         !searchParams.get('vettore') && !searchParams.get('bu') && 
+         !searchParams.get('divisione') && !searchParams.get('viaggio') && 
+         !searchParams.get('ordine') && !searchParams.get('codCliente') && 
+         !searchParams.get('cliente') && (
+          <div className="alert alert-info mb-3">
+            <i className="fas fa-info-circle me-2"></i>
+            <strong>Ottimizzazione Performance:</strong> Per migliorare i tempi di caricamento, 
+            vengono mostrati i dati degli ultimi 3 mesi. Usa i filtri per visualizzare periodi specifici.
+          </div>
+        )}
+        
         {/* Tabella */}
         <div className="table-responsive">
           <table className="table table-hover table-striped">
@@ -224,6 +254,12 @@ export default function DeliveryTable({ viewType }: DeliveryTableProps) {
                   Tipologia {renderSortIcon('tipologia')}
                 </th>
                 <th 
+                  style={{ cursor: 'pointer', minWidth: '150px' }}
+                  onClick={() => handleSort('ID_fatt')}
+                >
+                  ID Fatt {renderSortIcon('ID_fatt')}
+                </th>
+                <th 
                   style={{ cursor: 'pointer', minWidth: '200px' }}
                   onClick={() => handleSort('ragione_sociale')}
                 >
@@ -267,6 +303,11 @@ export default function DeliveryTable({ viewType }: DeliveryTableProps) {
                         <td>{row.consegna_num}</td>
                         <td>{row.vettore}</td>
                         <td>{row.tipologia}</td>
+                        <td>
+                          <span className="badge bg-info text-dark">
+                            {row.ID_fatt}
+                          </span>
+                        </td>
                         <td>{row.cliente}</td>
                         <td>
                           <span className="badge bg-primary rounded-pill">
@@ -291,7 +332,7 @@ export default function DeliveryTable({ viewType }: DeliveryTableProps) {
                       {/* Riga espansa con dettagli */}
                       {isExpanded && (
                         <tr>
-                          <td colSpan={12} className="p-0">
+                          <td colSpan={13} className="p-0">
                             <div className="bg-light p-3">
                               {isLoading ? (
                                 <div className="text-center py-3">
@@ -309,6 +350,7 @@ export default function DeliveryTable({ viewType }: DeliveryTableProps) {
                                         <th>Colli</th>
                                         <th>Classe Prod.</th>
                                         <th>Classe Tariffa</th>
+                                        <th>ID Fatt</th>
                                         <th>Tariffa</th>
                                         <th>Tariffa Vuoti</th>
                                         <th>Compenso</th>
@@ -324,6 +366,11 @@ export default function DeliveryTable({ viewType }: DeliveryTableProps) {
                                           <td>{detail.colli}</td>
                                           <td>{detail.classe_prod}</td>
                                           <td>{detail.classe_tariffa}</td>
+                                          <td>
+                                            <span className="badge bg-info text-dark">
+                                              {detail.ID_fatt}
+                                            </span>
+                                          </td>
                                           <td>{formatCurrency(detail.tariffa)}</td>
                                           <td>{formatCurrency(detail.tariffa_vuoti)}</td>
                                           <td>{formatCurrency(detail.compenso)}</td>
@@ -353,6 +400,11 @@ export default function DeliveryTable({ viewType }: DeliveryTableProps) {
                     <td>{row.consegna_num}</td>
                     <td>{row.descr_vettore}</td>
                     <td>{row.tipologia}</td>
+                    <td>
+                      <span className="badge bg-info text-dark">
+                        {row.ID_fatt}
+                      </span>
+                    </td>
                     <td>{row.ragione_sociale}</td>
                     <td>
                       <span className="badge bg-primary rounded-pill">
