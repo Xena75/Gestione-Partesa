@@ -38,6 +38,29 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Promise.all**: Ottimizzazione per recupero opzioni filtri
 - **Performance**: Riduzione tempo caricamento filtri da 18s a 5s
 
+### 🔒 **Prevenzione Duplicati Database - v2.5.0**
+
+**Completamente implementata e funzionante**:
+
+#### 🛡️ **Indice UNIQUE per Integrità Dati**
+- **Indice composito**: `consegna_num + tipologia + cod_articolo + id`
+- **Prevenzione automatica**: MySQL blocca inserimenti duplicati
+- **Integrità garantita**: Impossibile inserire record identici
+- **Performance ottimizzata**: Indice migliora velocità query
+- **Compatibilità**: Funziona perfettamente con trigger esistenti
+
+#### 🔧 **Gestione Intelligente Duplicati**
+- **Stesso prodotto, consegna diversa**: ✅ Permesso (ID diverso)
+- **Record completamente identico**: ❌ Bloccato automaticamente
+- **Errore MySQL**: `ER_DUP_ENTRY` per tentativi duplicati
+- **Workflow sicuro**: Nessun duplicato accidentale possibile
+
+#### 📊 **Analisi Trigger Database**
+- **8 trigger attivi**: Su 4 tabelle del database
+- **Trigger fatt_delivery**: Gestione automatica campo `dep` basato su `div`
+- **Nessun conflitto**: Trigger e indice UNIQUE lavorano in armonia
+- **Sistema stabile**: Architettura robusta e collaudata
+
 ### 🚀 **Miglioramenti Pagina `/viaggi` - v2.3.0**
 
 **Completamente implementati e funzionanti**:
@@ -235,7 +258,7 @@ DB_GESTIONE_NAME=gestionelogistica
 
 ---
 
-**Versione**: 2.4.0  
+**Versione**: 2.5.0  
 **Ultimo Aggiornamento**: Gennaio 2025  
 **Stato**: ✅ **PRODUZIONE STABILE**  
 **Compatibilità**: Next.js 15+, Node.js 18+, MySQL 8.0+

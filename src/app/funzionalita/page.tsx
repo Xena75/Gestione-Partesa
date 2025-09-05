@@ -23,7 +23,7 @@ export default function FunzionalitaPage() {
           {/* Nuova Pagina Gestione - COMPLETAMENTE IMPLEMENTATA */}
           <div className="card mb-4 border-success">
             <div className="card-header bg-success text-white">
-              <h3 className="h4 mb-0">🎯 Sistema di Gestione Fatturazione Delivery - v2.4.0!</h3>
+              <h3 className="h4 mb-0">🎯 Sistema di Gestione Fatturazione Delivery - v2.5.0!</h3>
             </div>
             <div className="card-body">
               <div className="alert alert-success">
@@ -38,6 +38,16 @@ export default function FunzionalitaPage() {
                   <li><strong>KPI dinamiche</strong>: Statistiche si aggiornano con i filtri</li>
                   <li><strong>Indici ottimizzati</strong>: 9 nuovi indici per query veloci</li>
                   <li><strong>Query parallele</strong>: Caricamento filtri da 18s a 5s</li>
+                </ul>
+              </div>
+
+              <div className="alert alert-warning">
+                <strong>🔒 NUOVA FUNZIONALITÀ v2.5.0 - PREVENZIONE DUPLICATI:</strong>
+                <ul className="mb-0 mt-2">
+                  <li><strong>Indice UNIQUE</strong>: Prevenzione automatica duplicati nel database</li>
+                  <li><strong>Integrità dati</strong>: Impossibile inserire record identici</li>
+                  <li><strong>Performance</strong>: Indice ottimizza velocità query</li>
+                  <li><strong>Compatibilità</strong>: Funziona perfettamente con trigger esistenti</li>
                 </ul>
               </div>
               
