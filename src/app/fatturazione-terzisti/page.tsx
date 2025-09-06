@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { TerzistiData, TerzistiStats, TerzistiFilters, TerzistiFilterOptions } from '@/lib/data-terzisti';
 import SortableHeader from '@/components/SortableHeader';
@@ -34,7 +34,7 @@ export default function FatturazioneTerzistiPage() {
   const [rowDetails, setRowDetails] = useState<Record<string, any[]>>({});
 
   // Carica i dati
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -68,10 +68,10 @@ export default function FatturazioneTerzistiPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, sortBy, sortOrder, viewType, filters]);
 
   // Carica le opzioni di filtro
-  const loadFilterOptions = async () => {
+  const loadFilterOptions = useCallback(async () => {
     try {
       const response = await fetch('/api/terzisti/filters');
       if (response.ok) {
@@ -81,10 +81,10 @@ export default function FatturazioneTerzistiPage() {
     } catch (err) {
       console.error('Errore nel caricamento delle opzioni filtro:', err);
     }
-  };
+  }, []);
 
   // Carica le statistiche
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       const params = new URLSearchParams();
       Object.entries(filters).forEach(([key, value]) => {
@@ -101,7 +101,7 @@ export default function FatturazioneTerzistiPage() {
     } catch (err) {
       console.error('Errore nel caricamento delle statistiche:', err);
     }
-  };
+  }, [filters]);
 
   // Carica i dettagli di una consegna
   const loadConsegnaDetails = async (consegna: string, vettore: string, tipologia: string) => {
@@ -198,7 +198,7 @@ export default function FatturazioneTerzistiPage() {
   // Effetti
   useEffect(() => {
     loadData();
-  }, [currentPage, sortBy, sortOrder, viewType, filters, loadData]);
+  }, [loadData]);
 
   useEffect(() => {
     loadFilterOptions();
@@ -206,7 +206,7 @@ export default function FatturazioneTerzistiPage() {
 
   useEffect(() => {
     loadStats();
-  }, [filters, loadStats]);
+  }, [loadStats]);
 
   // Aggiorna URL quando cambiano i parametri
   useEffect(() => {

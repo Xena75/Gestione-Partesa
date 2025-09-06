@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createPool } from 'mysql2/promise';
 
 export async function POST() {
