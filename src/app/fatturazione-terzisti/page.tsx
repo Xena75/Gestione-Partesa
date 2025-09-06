@@ -14,14 +14,14 @@ export default function FatturazioneTerzistiPage() {
     totalRecords: 0,
     totalConsegne: 0,
     totalViaggi: 0,
-    totalColli: '0',
-    totalCompenso: '0.00',
-    totalExtra: '0.00',
-    totalFatturato: '0.00',
+    totalColli: 0,
+    totalCompenso: 0,
+    totalExtra: 0,
+    totalFatturato: 0,
     uniqueVettori: 0,
     uniqueAziende: 0,
-    mediaColliViaggio: '0.00',
-    mediaFatturatoViaggio: '0.00'
+    mediaColliViaggio: 0,
+    mediaFatturatoViaggio: 0
   });
 
   const [filterOptions, setFilterOptions] = useState<TerzistiFilterOptions | null>(null);
@@ -121,7 +121,7 @@ export default function FatturazioneTerzistiPage() {
 
   // Memoizza i valori delle card per evitare re-render continui
   const mediaColliValue = useMemo(() => {
-    if (!stats.mediaColliViaggio || stats.mediaColliViaggio === '0.00') {
+    if (!stats.mediaColliViaggio || stats.mediaColliViaggio === 0) {
       return '0,00';
     }
     
@@ -132,7 +132,7 @@ export default function FatturazioneTerzistiPage() {
   }, [stats.mediaColliViaggio]);
 
   const mediaFatturatoValue = useMemo(() => {
-    if (!stats.mediaFatturatoViaggio || stats.mediaFatturatoViaggio === '0.00') {
+    if (!stats.mediaFatturatoViaggio || stats.mediaFatturatoViaggio === 0) {
       return '0,00';
     }
     
