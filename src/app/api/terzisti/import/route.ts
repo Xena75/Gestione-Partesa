@@ -40,7 +40,7 @@ export async function POST() {
     `);
     console.log(`📊 Record esistenti: ${(existingCount as any[])[0].count}`);
 
-    // 3. Query per estrarre dati con JOIN e filtri (CORRETTA)
+    // 3. Query per estrarre dati con JOIN e filtri + calcolo tariffa dinamica
     const extractQuery = `
       SELECT 
         fd.id,
@@ -60,7 +60,7 @@ export async function POST() {
         NULL as peso,
         NULL as volume,
         fd.compenso,
-        fd.tr_cons,
+        fd.extra_cons,
         fd.tot_compenso,
         fd.cod_cliente,
         fd.ragione_sociale,
@@ -70,11 +70,21 @@ export async function POST() {
         tv.Descr_Vettore as Descr_Vettore_Join,
         tv.Tipo_Vettore,
         tv.Azienda_Vettore,
+        tv.Id_Tariffa,
         -- Campo da tab_viaggi (tabella viaggi corretta)
-        tvi.data as data_viaggio
+        tvi.data as data_viaggio,
+        -- Calcolo tariffa dinamica basata su Id_Tariffa
+        CASE 
+          WHEN tv.Id_Tariffa = '2' THEN tt.Tariffa_2
+          WHEN tv.Id_Tariffa = '3' THEN tt.Tariffa_3
+          ELSE tt.Tariffa
+        END as tariffa_terzista,
+        -- Campo ID_fatt per JOIN con tab_tariffe
+        CONCAT(fd.\`div\`, '-', fd.classe_tariffa, '-', fd.classe_prod) as ID_fatt
       FROM fatt_delivery fd
       INNER JOIN tab_vettori tv ON fd.descr_vettore = tv.Descr_Vettore
       INNER JOIN tab_viaggi tvi ON fd.viaggio = tvi.viaggio
+      LEFT JOIN tab_tariffe tt ON CONCAT(fd.\`div\`, '-', fd.classe_tariffa, '-', fd.classe_prod) = tt.ID_Fatt
       WHERE fd.\`div\` IN ('W007', 'W009')
       AND tv.Tipo_Vettore = 'Terzista'
       AND fd.tipologia = 'Consegna pieni'
@@ -102,7 +112,7 @@ export async function POST() {
       const batch = (sourceData as any[]).slice(i, i + batchSize);
       
       try {
-        // Prepara i valori per l'inserimento batch (CORRETTI)
+        // Prepara i valori per l'inserimento batch (AGGIORNATI con tariffa dinamica)
         const values = batch.map(record => [
           record.div,
           record.bu,
@@ -120,7 +130,7 @@ export async function POST() {
           record.peso,
           record.volume,
           record.compenso,
-          record.tr_cons,
+          record.extra_cons,
           record.tot_compenso,
           record.cod_cliente,
           record.ragione_sociale,
@@ -129,16 +139,20 @@ export async function POST() {
           record.Descr_Vettore_Join,
           record.Tipo_Vettore,
           record.Azienda_Vettore,
-          record.data_viaggio
+          record.data_viaggio,
+          record.Id_Tariffa,
+          record.tariffa_terzista,
+          record.ID_fatt
         ]);
 
         const insertQuery = `
           INSERT IGNORE INTO tab_delivery_terzisti (
             \`div\`, bu, dep, data_mov_merce, viaggio, ordine, consegna_num,
             Cod_Vettore, descr_vettore, tipologia, cod_articolo, descr_articolo,
-            colli, peso, volume, compenso, tr_cons, tot_compenso,
+            colli, peso, volume, compenso, extra_cons, tot_compenso,
             cod_cliente, ragione_sociale, classe_prod, classe_tariffa,
-            Descr_Vettore_Join, Tipo_Vettore, Azienda_Vettore, data_viaggio
+            Descr_Vettore_Join, Tipo_Vettore, Azienda_Vettore, data_viaggio,
+            Id_Tariffa, tariffa_terzista, ID_fatt
           ) VALUES ?
         `;
 

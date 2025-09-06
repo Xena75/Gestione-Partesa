@@ -48,11 +48,13 @@ export async function GET(request: NextRequest) {
       filters.articolo = searchParams.get('articolo')!;
     }
 
-    console.log('📊 API Terzisti Stats - filters:', filters);
-
+    console.log('🔍 API Stats - chiamando getTerzistiStats con filtri:', filters);
+    
     const stats = await getTerzistiStats(filters);
 
-    console.log('✅ API Terzisti Stats - completata');
+    console.log('🔍 API Stats - risultato da getTerzistiStats:', stats);
+    console.log('🔍 API Stats - mediaColliViaggio:', stats.mediaColliViaggio, 'tipo:', typeof stats.mediaColliViaggio);
+    console.log('🔍 API Stats - mediaFatturatoViaggio:', stats.mediaFatturatoViaggio, 'tipo:', typeof stats.mediaFatturatoViaggio);
 
     return NextResponse.json(stats);
 

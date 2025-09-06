@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { TerzistiData, TerzistiStats, TerzistiFilters, TerzistiFilterOptions } from '@/lib/data-terzisti';
 import SortableHeader from '@/components/SortableHeader';
@@ -10,9 +10,23 @@ export default function FatturazioneTerzistiPage() {
   
   // State per i dati
   const [data, setData] = useState<TerzistiData[]>([]);
-  const [stats, setStats] = useState<TerzistiStats | null>(null);
+  const [stats, setStats] = useState<TerzistiStats>({
+    totalRecords: 0,
+    totalConsegne: 0,
+    totalViaggi: 0,
+    totalColli: '0',
+    totalCompenso: '0.00',
+    totalExtra: '0.00',
+    totalFatturato: '0.00',
+    uniqueVettori: 0,
+    uniqueAziende: 0,
+    mediaColliViaggio: '0.00',
+    mediaFatturatoViaggio: '0.00'
+  });
+
   const [filterOptions, setFilterOptions] = useState<TerzistiFilterOptions | null>(null);
   const [loading, setLoading] = useState(true);
+  const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   // State per paginazione
@@ -59,7 +73,6 @@ export default function FatturazioneTerzistiPage() {
 
       const result = await response.json();
       setData(result.data);
-      setStats(result.stats);
       setTotalPages(result.pagination.totalPages);
       setTotalRecords(result.pagination.total);
 
@@ -83,9 +96,11 @@ export default function FatturazioneTerzistiPage() {
     }
   }, []);
 
-  // Carica le statistiche
+  // Carica le statistiche con debounce
   const loadStats = useCallback(async () => {
     try {
+      console.log('🚀 loadStats chiamato con filtri:', filters);
+      
       const params = new URLSearchParams();
       Object.entries(filters).forEach(([key, value]) => {
         if (value) {
@@ -102,6 +117,30 @@ export default function FatturazioneTerzistiPage() {
       console.error('Errore nel caricamento delle statistiche:', err);
     }
   }, [filters]);
+
+
+  // Memoizza i valori delle card per evitare re-render continui
+  const mediaColliValue = useMemo(() => {
+    if (!stats.mediaColliViaggio || stats.mediaColliViaggio === '0.00') {
+      return '0,00';
+    }
+    
+    return Number.parseFloat(Number(stats.mediaColliViaggio).toFixed(2)).toLocaleString('it-IT', { 
+      minimumFractionDigits: 2, 
+      maximumFractionDigits: 2 
+    });
+  }, [stats.mediaColliViaggio]);
+
+  const mediaFatturatoValue = useMemo(() => {
+    if (!stats.mediaFatturatoViaggio || stats.mediaFatturatoViaggio === '0.00') {
+      return '0,00';
+    }
+    
+    return Number.parseFloat(Number(stats.mediaFatturatoViaggio).toFixed(2)).toLocaleString('it-IT', { 
+      minimumFractionDigits: 2, 
+      maximumFractionDigits: 2 
+    });
+  }, [stats.mediaFatturatoViaggio]);
 
   // Carica i dettagli di una consegna
   const loadConsegnaDetails = async (consegna: string, vettore: string, tipologia: string) => {
@@ -125,7 +164,7 @@ export default function FatturazioneTerzistiPage() {
   // Gestione import dati
   const handleImportData = async () => {
     try {
-      setLoading(true);
+      setImporting(true);
       setError(null);
 
       const response = await fetch('/api/terzisti/import', {
@@ -152,7 +191,7 @@ export default function FatturazioneTerzistiPage() {
       setError(err instanceof Error ? err.message : 'Errore sconosciuto');
       alert('❌ Errore durante l\'import: ' + (err instanceof Error ? err.message : 'Errore sconosciuto'));
     } finally {
-      setLoading(false);
+      setImporting(false);
     }
   };
 
@@ -197,16 +236,14 @@ export default function FatturazioneTerzistiPage() {
 
   // Effetti
   useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  useEffect(() => {
     loadFilterOptions();
   }, [loadFilterOptions]);
 
+  // Carica dati e statistiche all'avvio e quando cambiano i filtri
   useEffect(() => {
+    loadData();
     loadStats();
-  }, [loadStats]);
+  }, [filters, loadData, loadStats]);
 
   // Aggiorna URL quando cambiano i parametri
   useEffect(() => {
@@ -258,9 +295,9 @@ export default function FatturazioneTerzistiPage() {
                 type="button"
                 className="btn btn-success"
                 onClick={handleImportData}
-                disabled={loading}
+                disabled={importing}
               >
-                {loading ? (
+                {importing ? (
                   <>
                     <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                     Importando...
@@ -292,18 +329,10 @@ export default function FatturazioneTerzistiPage() {
           {stats && (
             <div className="row mb-4">
               <div className="col-md-3">
-                <div className="card bg-primary text-white">
-                  <div className="card-body">
-                    <h5 className="card-title">📊 Record Totali</h5>
-                    <h3 className="card-text">{stats.totalRecords ? stats.totalRecords.toLocaleString() : '0'}</h3>
-                  </div>
-                </div>
-              </div>
-              <div className="col-md-3">
                 <div className="card bg-success text-white">
                   <div className="card-body">
                     <h5 className="card-title">🚚 Consegne</h5>
-                    <h3 className="card-text">{stats.totalConsegne ? stats.totalConsegne.toLocaleString() : '0'}</h3>
+                    <h3 className="card-text">{stats.totalConsegne ? stats.totalConsegne.toLocaleString('it-IT') : '0'}</h3>
                   </div>
                 </div>
               </div>
@@ -311,7 +340,15 @@ export default function FatturazioneTerzistiPage() {
                 <div className="card bg-info text-white">
                   <div className="card-body">
                     <h5 className="card-title">📦 Colli</h5>
-                    <h3 className="card-text">{stats.totalColli ? stats.totalColli.toLocaleString() : '0'}</h3>
+                    <h3 className="card-text">{stats.totalColli ? Number(stats.totalColli).toLocaleString('it-IT') : '0'}</h3>
+                  </div>
+                </div>
+              </div>
+              <div className="col-md-3">
+                <div className="card bg-secondary text-white">
+                  <div className="card-body">
+                    <h5 className="card-title">💵 Compenso</h5>
+                    <h3 className="card-text">€ {stats.totalCompenso ? Number(stats.totalCompenso).toLocaleString('it-IT', { minimumFractionDigits: 2 }) : '0,00'}</h3>
                   </div>
                 </div>
               </div>
@@ -319,7 +356,53 @@ export default function FatturazioneTerzistiPage() {
                 <div className="card bg-warning text-white">
                   <div className="card-body">
                     <h5 className="card-title">💰 Fatturato</h5>
-                    <h3 className="card-text">€ {stats.totalFatturato ? stats.totalFatturato.toLocaleString('it-IT', { minimumFractionDigits: 2 }) : '0,00'}</h3>
+                    <h3 className="card-text">€ {stats.totalFatturato ? Number(stats.totalFatturato).toLocaleString('it-IT', { minimumFractionDigits: 2 }) : '0,00'}</h3>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Statistiche Aggiuntive */}
+          {stats && (
+            <div className="row mb-4">
+              <div className="col-md-2">
+                <div className="card bg-dark text-white">
+                  <div className="card-body">
+                    <h5 className="card-title">➕ Extra</h5>
+                    <h3 className="card-text">€ {stats.totalExtra ? Number(stats.totalExtra).toLocaleString('it-IT', { minimumFractionDigits: 2 }) : '0,00'}</h3>
+                  </div>
+                </div>
+              </div>
+              <div className="col-md-2">
+                <div className="card bg-primary text-white">
+                  <div className="card-body">
+                    <h5 className="card-title">🏢 Aziende</h5>
+                    <h3 className="card-text">{stats.uniqueAziende ? stats.uniqueAziende.toLocaleString('it-IT') : '0'}</h3>
+                  </div>
+                </div>
+              </div>
+              <div className="col-md-2">
+                <div className="card bg-info text-white">
+                  <div className="card-body">
+                    <h5 className="card-title">🚛 Vettori</h5>
+                    <h3 className="card-text">{stats.uniqueVettori ? stats.uniqueVettori.toLocaleString('it-IT') : '0'}</h3>
+                  </div>
+                </div>
+              </div>
+              <div className="col-md-3">
+                <div className="card bg-success text-white">
+                  <div className="card-body">
+                    <h5 className="card-title">📦 Media Colli/Consegna</h5>
+                    <h3 className="card-text">{mediaColliValue}</h3>
+                  </div>
+                </div>
+              </div>
+              <div className="col-md-3">
+                <div className="card bg-warning text-white">
+                  <div className="card-body">
+                    <h5 className="card-title">💰 Media Compenso/Consegna</h5>
+                    <h3 className="card-text">€ {mediaFatturatoValue}</h3>
                   </div>
                 </div>
               </div>
@@ -444,7 +527,7 @@ export default function FatturazioneTerzistiPage() {
                   📋 Dati Terzisti 
                   {totalRecords > 0 && (
                     <span className="badge bg-secondary ms-2">
-                      {totalRecords ? totalRecords.toLocaleString() : '0'} record
+                      {totalRecords ? totalRecords.toLocaleString('it-IT') : '0'} record
                     </span>
                   )}
                 </h5>
@@ -475,15 +558,22 @@ export default function FatturazioneTerzistiPage() {
                               basePath="/fatturazione-terzisti"
                             />
                             <SortableHeader 
-                              field="data_mov_merce" 
-                              label="Data"
+                              field="viaggio" 
+                              label="Viaggio"
                               currentSortBy={sortBy} 
                               currentSortOrder={sortOrder}
                               basePath="/fatturazione-terzisti"
                             />
                             <SortableHeader 
-                              field="viaggio" 
-                              label="Viaggio"
+                              field="data_viaggio" 
+                              label="Data Viaggio"
+                              currentSortBy={sortBy} 
+                              currentSortOrder={sortOrder}
+                              basePath="/fatturazione-terzisti"
+                            />
+                            <SortableHeader 
+                              field="ordine" 
+                              label="Ordine"
                               currentSortBy={sortBy} 
                               currentSortOrder={sortOrder}
                               basePath="/fatturazione-terzisti"
@@ -496,15 +586,15 @@ export default function FatturazioneTerzistiPage() {
                               basePath="/fatturazione-terzisti"
                             />
                             <SortableHeader 
-                              field="Descr_Vettore_Join" 
-                              label="Vettore"
+                              field="Azienda_Vettore" 
+                              label="Azienda"
                               currentSortBy={sortBy} 
                               currentSortOrder={sortOrder}
                               basePath="/fatturazione-terzisti"
                             />
                             <SortableHeader 
-                              field="Azienda_Vettore" 
-                              label="Azienda"
+                              field="Descr_Vettore_Join" 
+                              label="Vettore"
                               currentSortBy={sortBy} 
                               currentSortOrder={sortOrder}
                               basePath="/fatturazione-terzisti"
@@ -525,8 +615,22 @@ export default function FatturazioneTerzistiPage() {
                               basePath="/fatturazione-terzisti"
                             />
                             <SortableHeader 
+                              field="avg_tariffa_terzista" 
+                              label="Tariffa Media"
+                              currentSortBy={sortBy} 
+                              currentSortOrder={sortOrder}
+                              basePath="/fatturazione-terzisti"
+                            />
+                            <SortableHeader 
+                              field="total_extra_cons" 
+                              label="Extra"
+                              currentSortBy={sortBy} 
+                              currentSortOrder={sortOrder}
+                              basePath="/fatturazione-terzisti"
+                            />
+                            <SortableHeader 
                               field="total_compenso" 
-                              label="Fatturato"
+                              label="Totale"
                               currentSortBy={sortBy} 
                               currentSortOrder={sortOrder}
                               basePath="/fatturazione-terzisti"
@@ -592,8 +696,29 @@ export default function FatturazioneTerzistiPage() {
                               basePath="/fatturazione-terzisti"
                             />
                             <SortableHeader 
+                              field="tariffa_terzista" 
+                              label="Tariffa"
+                              currentSortBy={sortBy} 
+                              currentSortOrder={sortOrder}
+                              basePath="/fatturazione-terzisti"
+                            />
+                            <SortableHeader 
+                              field="compenso" 
+                              label="Compenso"
+                              currentSortBy={sortBy} 
+                              currentSortOrder={sortOrder}
+                              basePath="/fatturazione-terzisti"
+                            />
+                            <SortableHeader 
+                              field="extra_cons" 
+                              label="Extra"
+                              currentSortBy={sortBy} 
+                              currentSortOrder={sortOrder}
+                              basePath="/fatturazione-terzisti"
+                            />
+                            <SortableHeader 
                               field="tot_compenso" 
-                              label="Fatturato"
+                              label="Totale"
                               currentSortBy={sortBy} 
                               currentSortOrder={sortOrder}
                               basePath="/fatturazione-terzisti"
@@ -604,24 +729,27 @@ export default function FatturazioneTerzistiPage() {
                     </thead>
                     <tbody>
                       {data.map((row) => {
-                        const rowKey = `${row.consegna_num}-${row.Descr_Vettore_Join}-${row.tipologia}`;
+                        const rowKey = `${row.id}-${row.consegna_num}-${row.Descr_Vettore_Join}-${row.tipologia}`;
                         const isExpanded = expandedRows.has(rowKey);
                         
                         return (
                           <React.Fragment key={rowKey}>
                             <tr>
                               <td>{row.div}</td>
-                              <td>{new Date(row.data_mov_merce).toLocaleDateString('it-IT')}</td>
                               <td>{row.viaggio}</td>
+                              <td>{row.data_viaggio ? new Date(row.data_viaggio).toLocaleDateString('it-IT') : '-'}</td>
+                              <td>{row.ordine}</td>
                               <td>{row.consegna_num}</td>
-                              <td>{row.Descr_Vettore_Join}</td>
                               <td>{row.Azienda_Vettore}</td>
+                              <td>{row.Descr_Vettore_Join}</td>
                               {viewType === 'grouped' ? (
                                 <>
                                   <td>{row.ragione_sociale}</td>
                                   <td>{(row as any).articoli_count || 1}</td>
                                   <td>{(row as any).total_colli || row.colli}</td>
-                                  <td>€ {((row as any).total_compenso || row.tot_compenso) ? ((row as any).total_compenso || row.tot_compenso).toLocaleString('it-IT', { minimumFractionDigits: 2 }) : '0,00'}</td>
+                                  <td>€ {((row as any).avg_tariffa_terzista || row.tariffa_terzista) ? Number.parseFloat(Number((row as any).avg_tariffa_terzista || row.tariffa_terzista).toFixed(2)).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00'}</td>
+                                  <td>€ {((row as any).total_extra_cons || row.extra_cons) ? Number.parseFloat(Number((row as any).total_extra_cons || row.extra_cons).toFixed(2)).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00'}</td>
+                                  <td>€ {((row as any).total_compenso || row.tot_compenso) ? Number.parseFloat(Number((row as any).total_compenso || row.tot_compenso).toFixed(2)).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00'}</td>
                                   <td>
                                     <button
                                       className="btn btn-sm btn-outline-primary"
@@ -635,13 +763,16 @@ export default function FatturazioneTerzistiPage() {
                                 <>
                                   <td>{row.cod_articolo}</td>
                                   <td>{row.colli}</td>
-                                  <td>€ {row.tot_compenso ? row.tot_compenso.toLocaleString('it-IT', { minimumFractionDigits: 2 }) : '0,00'}</td>
+                                  <td>€ {row.tariffa_terzista ? Number.parseFloat(Number(row.tariffa_terzista).toFixed(2)).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00'}</td>
+                                  <td>€ {row.compenso ? Number.parseFloat(Number(row.compenso).toFixed(2)).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00'}</td>
+                                  <td>€ {row.extra_cons ? Number.parseFloat(Number(row.extra_cons).toFixed(2)).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00'}</td>
+                                  <td>€ {row.tot_compenso ? Number.parseFloat(Number(row.tot_compenso).toFixed(2)).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00'}</td>
                                 </>
                               )}
                             </tr>
                             {viewType === 'grouped' && isExpanded && (
                               <tr>
-                                <td colSpan={viewType === 'grouped' ? 11 : 9}>
+                                <td colSpan={viewType === 'grouped' ? 13 : 12}>
                                   <div className="p-3 bg-light">
                                     <h6>Dettagli Articoli</h6>
                                     {rowDetails[rowKey] ? (
@@ -652,14 +783,15 @@ export default function FatturazioneTerzistiPage() {
                                               <th>Divisione</th>
                                               <th>Data</th>
                                               <th>Viaggio</th>
+                                              <th>Ordine</th>
                                               <th>Consegna</th>
-                                              <th>Vettore</th>
-                                              <th>Azienda</th>
                                               <th>Cliente</th>
                                               <th>Cod. Articolo</th>
                                               <th>Descrizione</th>
                                               <th>Colli</th>
+                                              <th>Tariffa</th>
                                               <th>Compenso</th>
+                                              <th>Extra</th>
                                               <th>Tot. Compenso</th>
                                             </tr>
                                           </thead>
@@ -669,15 +801,16 @@ export default function FatturazioneTerzistiPage() {
                                                 <td>{detail.div}</td>
                                                 <td>{new Date(detail.data_mov_merce).toLocaleDateString('it-IT')}</td>
                                                 <td>{detail.viaggio}</td>
+                                                <td>{detail.ordine}</td>
                                                 <td>{detail.consegna_num}</td>
-                                                <td>{detail.Descr_Vettore_Join}</td>
-                                                <td>{detail.Azienda_Vettore}</td>
                                                 <td>{detail.ragione_sociale}</td>
                                                 <td>{detail.cod_articolo}</td>
                                                 <td>{detail.descr_articolo}</td>
                                                 <td>{detail.colli}</td>
-                                                <td>€ {detail.compenso ? detail.compenso.toLocaleString('it-IT', { minimumFractionDigits: 2 }) : '0,00'}</td>
-                                                <td>€ {detail.tot_compenso ? detail.tot_compenso.toLocaleString('it-IT', { minimumFractionDigits: 2 }) : '0,00'}</td>
+                                                <td>€ {detail.tariffa_terzista ? Number.parseFloat(Number(detail.tariffa_terzista).toFixed(2)).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00'}</td>
+                                                <td>€ {detail.compenso ? Number.parseFloat(Number(detail.compenso).toFixed(2)).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00'}</td>
+                                                <td>€ {detail.extra_cons ? Number.parseFloat(Number(detail.extra_cons).toFixed(2)).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00'}</td>
+                                                <td>€ {detail.tot_compenso ? Number.parseFloat(Number(detail.tot_compenso).toFixed(2)).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00'}</td>
                                               </tr>
                                             ))}
                                           </tbody>

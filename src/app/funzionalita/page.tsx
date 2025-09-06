@@ -61,6 +61,17 @@ export default function FunzionalitaPage() {
                   <li><strong>Performance ottimizzate</strong>: Cache e query ottimizzate</li>
                 </ul>
               </div>
+
+              <div className="alert alert-success">
+                <strong>🐛 CORREZIONI v2.6.1 - PROBLEMI RISOLTI:</strong>
+                <ul className="mb-0 mt-2">
+                  <li><strong>Card Media</strong>: Risolto problema card "Media Colli/Consegna" e "Media Compenso/Consegna" che tornavano a 0</li>
+                  <li><strong>Conflitto stati</strong>: Separato stato `importing` da `loading` per evitare interferenze</li>
+                  <li><strong>Stato iniziale</strong>: Inizializzazione corretta stato `stats` con oggetto completo</li>
+                  <li><strong>useMemo ottimizzato</strong>: Memoizzazione corretta valori card per evitare re-render</li>
+                  <li><strong>Gestione filtri</strong>: Rimozione conflitto tra `loadData` e `loadStats`</li>
+                </ul>
+              </div>
               
               <h5>📊 6 KPI Cards Dashboard</h5>
               <ul>
@@ -262,14 +273,18 @@ export default function FunzionalitaPage() {
                 <li><strong>Campi integrati</strong>: `Descr_Vettore`, `Tipo_Vettore`, `Azienda_Vettore`, `Cod_Vettore` da `tab_vettori`</li>
                 <li><strong>Data viaggio</strong>: Campo `data_viaggio` da `tab_viaggi` tramite JOIN</li>
                 <li><strong>Filtri automatici</strong>: Solo `div IN ('W007', 'W009')`, `Tipo_Vettore = 'Terzista'`, `tipologia = "Consegna Pieni"`</li>
+                <li><strong>Sistema tariffe</strong>: Campo `Id_Tariffa` in `tab_vettori` per gestione tariffe dinamiche</li>
+                <li><strong>Campi calcolati</strong>: `compenso = colli × tariffa_terzista` e `tot_compenso = compenso + extra_cons`</li>
+                <li><strong>Tariffe dinamiche</strong>: JOIN con `tab_tariffe` per calcolo automatico tariffe terzisti</li>
               </ul>
 
               <h5>📊 Sistema Import Mensile</h5>
               <ul>
                 <li><strong>API automatica</strong>: Endpoint `/api/terzisti/import` per estrazione dati</li>
-                <li><strong>JOIN ottimizzati</strong>: Integrazione automatica con `tab_vettori` e `tab_viaggi`</li>
+                <li><strong>JOIN ottimizzati</strong>: Integrazione automatica con `tab_vettori`, `tab_viaggi` e `tab_tariffe`</li>
                 <li><strong>Batch insertion</strong>: Inserimento efficiente con `INSERT IGNORE INTO ... VALUES ?`</li>
-                <li><strong>Statistiche reali</strong>: 79.030 record estratti, 11.403 importati</li>
+                <li><strong>Calcolo tariffe</strong>: Formula automatica `colli × tariffa_terzista` per compenso</li>
+                <li><strong>Statistiche reali</strong>: 79.030 record estratti, 79.002 con tariffe (99.96% successo)</li>
                 <li><strong>Gestione errori</strong>: Logging completo e gestione duplicati</li>
               </ul>
 
@@ -278,8 +293,10 @@ export default function FunzionalitaPage() {
                 <li><strong>Pagina dedicata</strong>: `/fatturazione-terzisti` con navigazione integrata</li>
                 <li><strong>Viste multiple</strong>: Grouped (raggruppata) e Detailed (dettagliata)</li>
                 <li><strong>Filtri avanzati</strong>: Per divisione, vettore, azienda, date</li>
+                <li><strong>Colonne tariffe</strong>: Visualizzazione `tariffa_terzista`, `compenso`, `extra_cons`, `tot_compenso`</li>
+                <li><strong>Statistiche ottimizzate</strong>: Card principali (Consegne, Colli, Compenso, Fatturato) + card aggiuntive (Extra, Aziende, Vettori, Media Colli/Consegna, Media Compenso/Consegna)</li>
+                <li><strong>Dettagli espandibili</strong>: Tabella completa con tutti i campi tariffa per ogni consegna</li>
                 <li><strong>Ordinamento</strong>: Tutte le colonne ordinabili con `SortableHeader`</li>
-                <li><strong>Dettagli espandibili</strong>: Tabella articoli per ogni consegna</li>
                 <li><strong>Statistiche real-time</strong>: KPI cards con aggiornamento automatico</li>
               </ul>
 

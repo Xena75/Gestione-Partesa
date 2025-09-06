@@ -58,21 +58,30 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Campi integrati**: `Descr_Vettore`, `Tipo_Vettore`, `Azienda_Vettore`, `Cod_Vettore` da `tab_vettori`
 - **Data viaggio**: Campo `data_viaggio` da `tab_viaggi` tramite JOIN
 - **Filtri automatici**: Solo `div IN ('W007', 'W009')`, `Tipo_Vettore = 'Terzista'`, `tipologia = "Consegna Pieni"`
+- **Sistema tariffe**: Campo `Id_Tariffa` in `tab_vettori` per gestione tariffe dinamiche
+- **Campi calcolati**: `compenso = colli × tariffa_terzista` e `tot_compenso = compenso + extra_cons`
+- **Tariffe dinamiche**: JOIN con `tab_tariffe` per calcolo automatico tariffe terzisti
 
 #### 📊 **Sistema Import Mensile**
 - **API automatica**: Endpoint `/api/terzisti/import` per estrazione dati
-- **JOIN ottimizzati**: Integrazione automatica con `tab_vettori` e `tab_viaggi`
+- **JOIN ottimizzati**: Integrazione automatica con `tab_vettori`, `tab_viaggi` e `tab_tariffe`
 - **Batch insertion**: Inserimento efficiente con `INSERT IGNORE INTO ... VALUES ?`
-- **Statistiche**: 79.030 record estratti, 11.403 importati (dati reali)
+- **Calcolo tariffe**: Formula automatica `colli × tariffa_terzista` per compenso
+- **Statistiche**: 79.030 record estratti, 79.002 con tariffe (99.96% successo)
 - **Gestione errori**: Logging completo e gestione duplicati
 
 #### 🎯 **Interfaccia Utente**
 - **Pagina dedicata**: `/fatturazione-terzisti` con navigazione integrata
 - **Viste multiple**: Grouped (raggruppata) e Detailed (dettagliata)
 - **Filtri avanzati**: Per divisione, vettore, azienda, date
+- **Colonne tariffe**: Visualizzazione `tariffa_terzista`, `compenso`, `extra_cons`, `tot_compenso`
+- **Statistiche ottimizzate**: Card principali (Consegne, Colli, Compenso, Fatturato) + card aggiuntive (Extra, Aziende, Vettori, Media Colli/Consegna, Media Compenso/Consegna)
+- **Dettagli espandibili**: Tabella completa con tutti i campi tariffa per ogni consegna
 - **Ordinamento**: Tutte le colonne ordinabili con `SortableHeader`
 - **Dettagli espandibili**: Tabella articoli per ogni consegna
 - **Statistiche real-time**: KPI cards con aggiornamento automatico
+- **Formato italiano**: Tutti i numeri formattati con separatori migliaia e decimali italiani
+- **Pulsante import**: Stato separato per import dati mensili (non interferisce con filtri)
 
 #### 🔧 **API Complete**
 - **4 endpoint dedicati**: `/api/terzisti/*` per dati, stats, filtri, dettagli
@@ -80,6 +89,13 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Gestione errori**: Error handling completo con logging
 - **Validazione**: Controlli su parametri e dati
 - **Performance**: Query ottimizzate con indici appropriati
+
+#### 🐛 **Correzioni Implementate - v2.6.1**
+- **Card Media**: Risolto problema card "Media Colli/Consegna" e "Media Compenso/Consegna" che tornavano a 0
+- **Conflitto stati**: Separato stato `importing` da `loading` per evitare interferenze
+- **Stato iniziale**: Inizializzazione corretta stato `stats` con oggetto completo
+- **useMemo ottimizzato**: Memoizzazione corretta valori card per evitare re-render
+- **Gestione filtri**: Rimozione conflitto tra `loadData` e `loadStats`
 
 #### 🔧 **Gestione Intelligente Duplicati**
 - **Stesso prodotto, consegna diversa**: ✅ Permesso (ID diverso)
@@ -290,7 +306,7 @@ DB_GESTIONE_NAME=gestionelogistica
 
 ---
 
-**Versione**: 2.5.0  
+**Versione**: 2.6.1  
 **Ultimo Aggiornamento**: Gennaio 2025  
 **Stato**: ✅ **PRODUZIONE STABILE**  
 **Compatibilità**: Next.js 15+, Node.js 18+, MySQL 8.0+
