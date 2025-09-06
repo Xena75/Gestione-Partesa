@@ -139,30 +139,30 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Card Statistiche (Futuro) */}
+          {/* Card Fatturazione Terzisti */}
           <div className="col-lg-6 col-xl-4">
-            <div className="card h-100 shadow-sm border-0 opacity-75">
+            <div className="card h-100 shadow-sm border-0 hover-lift">
               <div className="card-body p-4">
                 <div className="d-flex align-items-center mb-3">
-                  <div className="bg-secondary bg-opacity-10 rounded-circle p-3 me-3">
-                    <span className="fs-1">📈</span>
+                  <div className="bg-success bg-opacity-10 rounded-circle p-3 me-3">
+                    <span className="fs-1">💰</span>
                   </div>
                   <div>
-                    <h3 className="card-title mb-1">Statistiche</h3>
-                    <p className="text-muted mb-0">In Sviluppo</p>
+                    <h3 className="card-title mb-1">Fatturazione Terzisti</h3>
+                    <p className="text-muted mb-0">Sistema Completo</p>
                   </div>
                 </div>
                 <p className="card-text text-muted">
-                  Grafici e report avanzati per analisi dettagliate dei dati di viaggio e logistica.
+                  Gestione fatturazione mensile per terzisti W007/W009 con import automatico e dashboard dedicata.
                 </p>
                 <div className="d-flex flex-wrap gap-2 mb-3">
-                  <span className="badge bg-secondary">Grafici</span>
-                  <span className="badge bg-info">Report</span>
-                  <span className="badge bg-warning">Analisi</span>
+                  <span className="badge bg-success">Import Mensile</span>
+                  <span className="badge bg-info">Dashboard</span>
+                  <span className="badge bg-warning">Fatturazione</span>
                 </div>
-                <button className="btn btn-secondary w-100" disabled>
-                  Prossimamente...
-                </button>
+                <Link href="/fatturazione-terzisti" className="btn btn-success w-100">
+                  Accedi alla Fatturazione →
+                </Link>
               </div>
             </div>
           </div>

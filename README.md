@@ -49,6 +49,38 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Performance ottimizzata**: Indice migliora velocità query
 - **Compatibilità**: Funziona perfettamente con trigger esistenti
 
+### 💰 **Sistema Fatturazione Terzisti - v2.6.0**
+
+**Completamente implementato e funzionante**:
+
+#### 🏗️ **Architettura Database**
+- **Tabella dedicata**: `tab_delivery_terzisti` con struttura identica a `fatt_delivery`
+- **Campi integrati**: `Descr_Vettore`, `Tipo_Vettore`, `Azienda_Vettore`, `Cod_Vettore` da `tab_vettori`
+- **Data viaggio**: Campo `data_viaggio` da `tab_viaggi` tramite JOIN
+- **Filtri automatici**: Solo `div IN ('W007', 'W009')`, `Tipo_Vettore = 'Terzista'`, `tipologia = "Consegna Pieni"`
+
+#### 📊 **Sistema Import Mensile**
+- **API automatica**: Endpoint `/api/terzisti/import` per estrazione dati
+- **JOIN ottimizzati**: Integrazione automatica con `tab_vettori` e `tab_viaggi`
+- **Batch insertion**: Inserimento efficiente con `INSERT IGNORE INTO ... VALUES ?`
+- **Statistiche**: 79.030 record estratti, 11.403 importati (dati reali)
+- **Gestione errori**: Logging completo e gestione duplicati
+
+#### 🎯 **Interfaccia Utente**
+- **Pagina dedicata**: `/fatturazione-terzisti` con navigazione integrata
+- **Viste multiple**: Grouped (raggruppata) e Detailed (dettagliata)
+- **Filtri avanzati**: Per divisione, vettore, azienda, date
+- **Ordinamento**: Tutte le colonne ordinabili con `SortableHeader`
+- **Dettagli espandibili**: Tabella articoli per ogni consegna
+- **Statistiche real-time**: KPI cards con aggiornamento automatico
+
+#### 🔧 **API Complete**
+- **4 endpoint dedicati**: `/api/terzisti/*` per dati, stats, filtri, dettagli
+- **Cache intelligente**: Sistema cache per performance ottimali
+- **Gestione errori**: Error handling completo con logging
+- **Validazione**: Controlli su parametri e dati
+- **Performance**: Query ottimizzate con indici appropriati
+
 #### 🔧 **Gestione Intelligente Duplicati**
 - **Stesso prodotto, consegna diversa**: ✅ Permesso (ID diverso)
 - **Record completamente identico**: ❌ Bloccato automaticamente

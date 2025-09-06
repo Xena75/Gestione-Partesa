@@ -21,6 +21,18 @@ export default function RootLayout({ children, }: { children: React.ReactNode; }
               <Link className="nav-link" href="/">
                 Dashboard
               </Link>
+              <Link className="nav-link" href="/gestione">
+                Gestione
+              </Link>
+              <Link className="nav-link" href="/viaggi">
+                Viaggi
+              </Link>
+              <Link className="nav-link" href="/monitoraggio">
+                Monitoraggio
+              </Link>
+              <Link className="nav-link" href="/fatturazione-terzisti">
+                💰 Fatturazione Terzisti
+              </Link>
             </div>
           </div>
         </nav>

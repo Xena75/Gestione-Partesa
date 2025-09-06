@@ -50,6 +50,17 @@ export default function FunzionalitaPage() {
                   <li><strong>Compatibilità</strong>: Funziona perfettamente con trigger esistenti</li>
                 </ul>
               </div>
+
+              <div className="alert alert-primary">
+                <strong>💰 NUOVA FUNZIONALITÀ v2.6.0 - SISTEMA FATTURAZIONE TERZISTI:</strong>
+                <ul className="mb-0 mt-2">
+                  <li><strong>Tabella dedicata</strong>: `tab_delivery_terzisti` per dati terzisti</li>
+                  <li><strong>Import mensile</strong>: API automatica per estrazione dati</li>
+                  <li><strong>Filtri automatici</strong>: Solo W007/W009, Terzisti, Consegna Pieni</li>
+                  <li><strong>Interfaccia completa</strong>: Pagina dedicata con filtri e dettagli</li>
+                  <li><strong>Performance ottimizzate</strong>: Cache e query ottimizzate</li>
+                </ul>
+              </div>
               
               <h5>📊 6 KPI Cards Dashboard</h5>
               <ul>
@@ -232,6 +243,56 @@ export default function FunzionalitaPage() {
                 <li><strong>Workflow post-upload ottimizzato</strong> con scelta tra mapping salvato o nuovo</li>
               </ul>
               <Link href="/import" className="btn btn-primary">Vai all'Import</Link>
+            </div>
+          </div>
+
+          {/* Sistema Fatturazione Terzisti - NUOVO */}
+          <div className="card mb-4 border-primary">
+            <div className="card-header bg-primary text-white">
+              <h3 className="h4 mb-0">💰 Sistema Fatturazione Terzisti - v2.6.0</h3>
+            </div>
+            <div className="card-body">
+              <div className="alert alert-success">
+                <strong>✅ COMPLETAMENTE IMPLEMENTATO E FUNZIONANTE!</strong>
+              </div>
+              
+              <h5>🏗️ Architettura Database</h5>
+              <ul>
+                <li><strong>Tabella dedicata</strong>: `tab_delivery_terzisti` con struttura identica a `fatt_delivery`</li>
+                <li><strong>Campi integrati</strong>: `Descr_Vettore`, `Tipo_Vettore`, `Azienda_Vettore`, `Cod_Vettore` da `tab_vettori`</li>
+                <li><strong>Data viaggio</strong>: Campo `data_viaggio` da `tab_viaggi` tramite JOIN</li>
+                <li><strong>Filtri automatici</strong>: Solo `div IN ('W007', 'W009')`, `Tipo_Vettore = 'Terzista'`, `tipologia = "Consegna Pieni"`</li>
+              </ul>
+
+              <h5>📊 Sistema Import Mensile</h5>
+              <ul>
+                <li><strong>API automatica</strong>: Endpoint `/api/terzisti/import` per estrazione dati</li>
+                <li><strong>JOIN ottimizzati</strong>: Integrazione automatica con `tab_vettori` e `tab_viaggi`</li>
+                <li><strong>Batch insertion</strong>: Inserimento efficiente con `INSERT IGNORE INTO ... VALUES ?`</li>
+                <li><strong>Statistiche reali</strong>: 79.030 record estratti, 11.403 importati</li>
+                <li><strong>Gestione errori</strong>: Logging completo e gestione duplicati</li>
+              </ul>
+
+              <h5>🎯 Interfaccia Utente</h5>
+              <ul>
+                <li><strong>Pagina dedicata</strong>: `/fatturazione-terzisti` con navigazione integrata</li>
+                <li><strong>Viste multiple</strong>: Grouped (raggruppata) e Detailed (dettagliata)</li>
+                <li><strong>Filtri avanzati</strong>: Per divisione, vettore, azienda, date</li>
+                <li><strong>Ordinamento</strong>: Tutte le colonne ordinabili con `SortableHeader`</li>
+                <li><strong>Dettagli espandibili</strong>: Tabella articoli per ogni consegna</li>
+                <li><strong>Statistiche real-time</strong>: KPI cards con aggiornamento automatico</li>
+              </ul>
+
+              <h5>🔧 API Complete</h5>
+              <ul>
+                <li><strong>4 endpoint dedicati</strong>: `/api/terzisti/*` per dati, stats, filtri, dettagli</li>
+                <li><strong>Cache intelligente</strong>: Sistema cache per performance ottimali</li>
+                <li><strong>Gestione errori</strong>: Error handling completo con logging</li>
+                <li><strong>Validazione</strong>: Controlli su parametri e dati</li>
+                <li><strong>Performance</strong>: Query ottimizzate con indici appropriati</li>
+              </ul>
+
+              <Link href="/fatturazione-terzisti" className="btn btn-primary">Vai alla Fatturazione Terzisti</Link>
             </div>
           </div>
 
