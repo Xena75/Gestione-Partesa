@@ -233,9 +233,6 @@ export async function getTerzistiData(
       const totalPages = Math.ceil(total / limit);
 
       const rawStats = (statsResult as any[])[0];
-      console.log('🔍 Raw stats from DB:', rawStats);
-      console.log('🔍 mediaColliViaggio raw:', rawStats.mediaColliViaggio, 'tipo:', typeof rawStats.mediaColliViaggio);
-      console.log('🔍 mediaFatturatoViaggio raw:', rawStats.mediaFatturatoViaggio, 'tipo:', typeof rawStats.mediaFatturatoViaggio);
 
       const stats: TerzistiStats = {
         totalRecords: rawStats.totalRecords || 0,
@@ -251,9 +248,6 @@ export async function getTerzistiData(
         mediaFatturatoViaggio: rawStats.mediaFatturatoViaggio || 0
       };
 
-      console.log('🔍 Final stats object:', stats);
-      console.log('🔍 Final stats - mediaColliViaggio:', stats.mediaColliViaggio, 'tipo:', typeof stats.mediaColliViaggio);
-      console.log('🔍 Final stats - mediaFatturatoViaggio:', stats.mediaFatturatoViaggio, 'tipo:', typeof stats.mediaFatturatoViaggio);
 
       return {
         data: dataResult as TerzistiData[],
@@ -585,7 +579,9 @@ export async function getTerzistiGroupedData(
         totalExtra: (statsResult as any[])[0].totalExtra || 0,
         totalFatturato: (statsResult as any[])[0].totalFatturato || 0,
         uniqueVettori: (statsResult as any[])[0].uniqueVettori || 0,
-        uniqueAziende: (statsResult as any[])[0].uniqueAziende || 0
+        uniqueAziende: (statsResult as any[])[0].uniqueAziende || 0,
+        mediaColliViaggio: (statsResult as any[])[0].mediaColliViaggio || 0,
+        mediaFatturatoViaggio: (statsResult as any[])[0].mediaFatturatoViaggio || 0
       };
 
       return {
