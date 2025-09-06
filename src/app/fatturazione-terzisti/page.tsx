@@ -1,13 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { TerzistiData, TerzistiStats, TerzistiFilters, TerzistiFilterOptions } from '@/lib/data-terzisti';
 import SortableHeader from '@/components/SortableHeader';
 
 export default function FatturazioneTerzistiPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   
   // State per i dati
   const [data, setData] = useState<TerzistiData[]>([]);
@@ -26,8 +25,8 @@ export default function FatturazioneTerzistiPage() {
   const [showFilters, setShowFilters] = useState(false);
   
   // State per ordinamento
-  const [sortBy, setSortBy] = useState('data_mov_merce');
-  const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC');
+  const [sortBy] = useState('data_mov_merce');
+  const [sortOrder] = useState<'ASC' | 'DESC'>('DESC');
   
   // State per vista
   const [viewType, setViewType] = useState<'detailed' | 'grouped'>('grouped');
@@ -199,15 +198,15 @@ export default function FatturazioneTerzistiPage() {
   // Effetti
   useEffect(() => {
     loadData();
-  }, [currentPage, sortBy, sortOrder, viewType]);
+  }, [currentPage, sortBy, sortOrder, viewType, filters, loadData]);
 
   useEffect(() => {
     loadFilterOptions();
-  }, []);
+  }, [loadFilterOptions]);
 
   useEffect(() => {
     loadStats();
-  }, [filters]);
+  }, [filters, loadStats]);
 
   // Aggiorna URL quando cambiano i parametri
   useEffect(() => {
@@ -604,7 +603,7 @@ export default function FatturazioneTerzistiPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {data.map((row, index) => {
+                      {data.map((row) => {
                         const rowKey = `${row.consegna_num}-${row.Descr_Vettore_Join}-${row.tipologia}`;
                         const isExpanded = expandedRows.has(rowKey);
                         

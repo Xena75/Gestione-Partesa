@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTerzistiFilterOptions } from '@/lib/data-terzisti';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     console.log('🔍 API Terzisti Filters - recupero opzioni filtro');
 

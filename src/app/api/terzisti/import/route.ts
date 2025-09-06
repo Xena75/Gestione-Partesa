@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPool } from 'mysql2/promise';
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   let connection;
   
   try {
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       FROM information_schema.TABLES 
       WHERE TABLE_SCHEMA = 'gestionelogistica' 
       AND TABLE_NAME = 'tab_delivery_terzisti'
-    `);
+    `) as [any[], any];
 
     if (tables.length === 0) {
       return NextResponse.json(
