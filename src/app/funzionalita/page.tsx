@@ -63,6 +63,28 @@ export default function FunzionalitaPage() {
               </div>
 
               <div className="alert alert-success">
+                <strong>📊 NUOVA FUNZIONALITÀ v2.7.0 - EXPORT EXCEL AVANZATO:</strong>
+                <ul className="mb-0 mt-2">
+                  <li><strong>Export multi-foglio</strong>: Dati Filtati, Statistiche, Analisi per Vettore</li>
+                  <li><strong>Formattazione professionale</strong>: Intestazioni colorate, numeri italiani, date europee</li>
+                  <li><strong>Filtri applicati</strong>: Export rispetta tutti i filtri attivi</li>
+                  <li><strong>Interfaccia moderna</strong>: Modal opzioni, download automatico, loading indicator</li>
+                  <li><strong>Disponibile su entrambe le pagine</strong>: Gestione e Fatturazione Terzisti</li>
+                </ul>
+              </div>
+
+              <div className="alert alert-info">
+                <strong>🎯 OTTIMIZZAZIONI v2.7.1 - UI E FILTRI:</strong>
+                <ul className="mb-0 mt-2">
+                  <li><strong>Layout filtri ottimizzato</strong>: Due righe con col-md-2 per 6 filtri per riga</li>
+                  <li><strong>Pulsanti nell'header</strong>: Spostamento pulsanti filtri per migliore UX</li>
+                  <li><strong>Filtri temporali avanzati</strong>: Trimestre e Settimana con aggiornamento card KPI</li>
+                  <li><strong>Rimozione colonne vuote</strong>: Eliminate colonne Mese, Trimestre, Settimana dalla tabella</li>
+                  <li><strong>Performance migliorate</strong>: Filtri temporali funzionanti con aggiornamento real-time</li>
+                </ul>
+              </div>
+
+              <div className="alert alert-success">
                 <strong>🐛 CORREZIONI v2.6.1 - PROBLEMI RISOLTI:</strong>
                 <ul className="mb-0 mt-2">
                   <li><strong>Card Media</strong>: Risolto problema card "Media Colli/Consegna" e "Media Compenso/Consegna" che tornavano a 0</li>
@@ -217,6 +239,10 @@ export default function FunzionalitaPage() {
                  <li><strong>Ordinamento corretto</strong>: Bug risolto per funzionamento perfetto su tutte le pagine</li>
                  <li><strong>Preservazione ordinamento completa</strong>: sortBy e sortOrder mantenuti in tutte le operazioni</li>
                  <li><strong>Formattazione valuta avanzata</strong>: Campi monetari formattati in valuta italiana</li>
+                 <li><strong>Supporto tasto Invio</strong>: Applicazione filtri con tasto Enter per migliore UX</li>
+                 <li><strong>Filtri avanzati intelligenti</strong>: Chiusura automatica sezione filtri dopo applicazione</li>
+                 <li><strong>Apertura automatica filtri</strong>: Sezione filtri si apre automaticamente se filtri attivi al ritorno dalla modifica</li>
+                 <li><strong>Standardizzazione nominativi</strong>: Formato "Nome Cognome" per dipendenti (tipo_vettore = dipendente)</li>
                </ul>
 
                <Link href="/viaggi" className="btn btn-info">Vai alla Gestione Viaggi</Link>
@@ -446,6 +472,32 @@ export default function FunzionalitaPage() {
                 <li><strong>Campo "€/lt"</strong>: Input personalizzato con simbolo € e formattazione automatica</li>
                 <li><strong>Implementazione</strong>: <code>toLocaleString('it-IT')</code> per formato italiano</li>
                 <li><strong>Risultato</strong>: Interfaccia più professionale e user-friendly</li>
+              </ul>
+
+              <h5>✅ Campo €/lt - CORRETTO</h5>
+              <ul>
+                <li><strong>Problema</strong>: Campo €/lt non accettava input dell'utente, valori cambiati automaticamente</li>
+                <li><strong>Causa</strong>: Formattazione automatica che interferiva con l'input</li>
+                <li><strong>Soluzione</strong>: Rimossa formattazione automatica, mantenuto solo simbolo €</li>
+                <li><strong>Risultato</strong>: Campo ora accetta correttamente input dell'utente</li>
+              </ul>
+
+              <h5>✅ Filtri Avanzati - OTTIMIZZATI</h5>
+              <ul>
+                <li><strong>Problema</strong>: Filtri avanzati si aprivano sempre dopo applicazione filtro</li>
+                <li><strong>Soluzione</strong>: Filtri rimangono chiusi dopo applicazione per migliore UX</li>
+                <li><strong>Supporto tasto Invio</strong>: Aggiunto supporto per applicare filtri con tasto Enter</li>
+                <li><strong>Apertura automatica</strong>: Filtri si aprono automaticamente se attivi al ritorno dalla modifica</li>
+                <li><strong>Risultato</strong>: Workflow più fluido e intuitivo</li>
+              </ul>
+
+              <h5>✅ Standardizzazione Nominativi - IMPLEMENTATA</h5>
+              <ul>
+                <li><strong>Problema</strong>: Nominativi dipendenti in formato "Cognome Nome"</li>
+                <li><strong>Soluzione</strong>: Standardizzazione automatica in formato "Nome Cognome"</li>
+                <li><strong>Applicazione</strong>: Solo per dipendenti (tipo_vettore = 'dipendente')</li>
+                <li><strong>Esempi</strong>: "Perez Florez Jorge Michel" → "Jorge Michel Perez Florez"</li>
+                <li><strong>Risultato</strong>: Formato consistente per tutti i dipendenti</li>
               </ul>
             </div>
           </div>
