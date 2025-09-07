@@ -3,10 +3,14 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { TerzistiData, TerzistiStats, TerzistiFilters, TerzistiFilterOptions } from '@/lib/data-terzisti';
+import { formatDateEuropean, formatDateISO } from '@/lib/date-utils';
 import SortableHeader from '@/components/SortableHeader';
 
 export default function FatturazioneTerzistiPage() {
   const router = useRouter();
+  
+  // Alias per la funzione di formattazione date
+  const formatDate = formatDateEuropean;
   
   // State per i dati
   const [data, setData] = useState<TerzistiData[]>([]);
@@ -20,12 +24,15 @@ export default function FatturazioneTerzistiPage() {
     totalFatturato: 0,
     uniqueVettori: 0,
     uniqueAziende: 0,
+    mediaColliConsegna: 0,
     mediaColliViaggio: 0,
+    mediaCompensoViaggio: 0,
     mediaFatturatoViaggio: 0
   });
 
   const [filterOptions, setFilterOptions] = useState<TerzistiFilterOptions | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingStats, setLoadingStats] = useState(false);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -99,6 +106,7 @@ export default function FatturazioneTerzistiPage() {
   // Carica le statistiche con debounce
   const loadStats = useCallback(async () => {
     try {
+      setLoadingStats(true);
       console.log('🚀 loadStats chiamato con filtri:', filters);
       
       const params = new URLSearchParams();
@@ -115,12 +123,25 @@ export default function FatturazioneTerzistiPage() {
       }
     } catch (err) {
       console.error('Errore nel caricamento delle statistiche:', err);
+    } finally {
+      setLoadingStats(false);
     }
   }, [filters]);
 
 
   // Memoizza i valori delle card per evitare re-render continui
-  const mediaColliValue = useMemo(() => {
+  const mediaColliConsegnaValue = useMemo(() => {
+    if (!stats.mediaColliConsegna || stats.mediaColliConsegna === 0) {
+      return '0,00';
+    }
+    
+    return Number.parseFloat(Number(stats.mediaColliConsegna).toFixed(2)).toLocaleString('it-IT', { 
+      minimumFractionDigits: 2, 
+      maximumFractionDigits: 2 
+    });
+  }, [stats.mediaColliConsegna]);
+
+  const mediaColliViaggioValue = useMemo(() => {
     if (!stats.mediaColliViaggio || stats.mediaColliViaggio === 0) {
       return '0,00';
     }
@@ -130,6 +151,17 @@ export default function FatturazioneTerzistiPage() {
       maximumFractionDigits: 2 
     });
   }, [stats.mediaColliViaggio]);
+
+  const mediaCompensoViaggioValue = useMemo(() => {
+    if (!stats.mediaCompensoViaggio || stats.mediaCompensoViaggio === 0) {
+      return '0,00';
+    }
+    
+    return Number.parseFloat(Number(stats.mediaCompensoViaggio).toFixed(2)).toLocaleString('it-IT', { 
+      minimumFractionDigits: 2, 
+      maximumFractionDigits: 2 
+    });
+  }, [stats.mediaCompensoViaggio]);
 
   const mediaFatturatoValue = useMemo(() => {
     if (!stats.mediaFatturatoViaggio || stats.mediaFatturatoViaggio === 0) {
@@ -207,11 +239,13 @@ export default function FatturazioneTerzistiPage() {
   const clearFilters = () => {
     setFilters({});
     setCurrentPage(1);
+    loadStats();
   };
 
   const applyFilters = () => {
     setCurrentPage(1);
     loadData();
+    loadStats();
   };
 
 
@@ -239,11 +273,19 @@ export default function FatturazioneTerzistiPage() {
     loadFilterOptions();
   }, [loadFilterOptions]);
 
-  // Carica dati e statistiche all'avvio e quando cambiano i filtri
+  // Carica dati all'avvio e quando cambiano i filtri
   useEffect(() => {
     loadData();
-    loadStats();
-  }, [filters, loadData, loadStats]);
+  }, [filters, loadData]);
+
+  // Carica statistiche con debounce quando cambiano i filtri
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      loadStats();
+    }, 300); // Debounce di 300ms
+
+    return () => clearTimeout(timeoutId);
+  }, [filters, loadStats]);
 
   // Aggiorna URL quando cambiano i parametri
   useEffect(() => {
@@ -328,7 +370,7 @@ export default function FatturazioneTerzistiPage() {
           {/* Statistiche */}
           {stats && (
             <div className="row mb-4">
-              <div className="col-md-3">
+              <div className="col-md-2">
                 <div className="card bg-success text-white">
                   <div className="card-body">
                     <h5 className="card-title">🚚 Consegne</h5>
@@ -336,7 +378,15 @@ export default function FatturazioneTerzistiPage() {
                   </div>
                 </div>
               </div>
-              <div className="col-md-3">
+              <div className="col-md-2">
+                <div className="card bg-primary text-white">
+                  <div className="card-body">
+                    <h5 className="card-title">🚛 Viaggi</h5>
+                    <h3 className="card-text">{stats.totalViaggi ? stats.totalViaggi.toLocaleString('it-IT') : '0'}</h3>
+                  </div>
+                </div>
+              </div>
+              <div className="col-md-2">
                 <div className="card bg-info text-white">
                   <div className="card-body">
                     <h5 className="card-title">📦 Colli</h5>
@@ -344,7 +394,7 @@ export default function FatturazioneTerzistiPage() {
                   </div>
                 </div>
               </div>
-              <div className="col-md-3">
+              <div className="col-md-2">
                 <div className="card bg-secondary text-white">
                   <div className="card-body">
                     <h5 className="card-title">💵 Compenso</h5>
@@ -352,11 +402,19 @@ export default function FatturazioneTerzistiPage() {
                   </div>
                 </div>
               </div>
-              <div className="col-md-3">
+              <div className="col-md-2">
                 <div className="card bg-warning text-white">
                   <div className="card-body">
                     <h5 className="card-title">💰 Fatturato</h5>
                     <h3 className="card-text">€ {stats.totalFatturato ? Number(stats.totalFatturato).toLocaleString('it-IT', { minimumFractionDigits: 2 }) : '0,00'}</h3>
+                  </div>
+                </div>
+              </div>
+              <div className="col-md-2">
+                <div className="card bg-primary text-white">
+                  <div className="card-body">
+                    <h5 className="card-title">🏢 Aziende</h5>
+                    <h3 className="card-text">{stats.uniqueAziende ? stats.uniqueAziende.toLocaleString('it-IT') : '0'}</h3>
                   </div>
                 </div>
               </div>
@@ -375,10 +433,54 @@ export default function FatturazioneTerzistiPage() {
                 </div>
               </div>
               <div className="col-md-2">
+                <div className="card bg-success text-white">
+                  <div className="card-body">
+                    <h5 className="card-title">📦 Media Colli/Consegna</h5>
+                    <h3 className="card-text">
+                      {loadingStats ? (
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      ) : null}
+                      {mediaColliConsegnaValue}
+                    </h3>
+                  </div>
+                </div>
+              </div>
+              <div className="col-md-2">
                 <div className="card bg-primary text-white">
                   <div className="card-body">
-                    <h5 className="card-title">🏢 Aziende</h5>
-                    <h3 className="card-text">{stats.uniqueAziende ? stats.uniqueAziende.toLocaleString('it-IT') : '0'}</h3>
+                    <h5 className="card-title">🚛 Media Colli/Viaggio</h5>
+                    <h3 className="card-text">
+                      {loadingStats ? (
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      ) : null}
+                      {mediaColliViaggioValue}
+                    </h3>
+                  </div>
+                </div>
+              </div>
+              <div className="col-md-2">
+                <div className="card bg-warning text-white">
+                  <div className="card-body">
+                    <h5 className="card-title">💰 Media Compenso/Consegna</h5>
+                    <h3 className="card-text">
+                      {loadingStats ? (
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      ) : null}
+                      € {mediaFatturatoValue}
+                    </h3>
+                  </div>
+                </div>
+              </div>
+              <div className="col-md-2">
+                <div className="card bg-secondary text-white">
+                  <div className="card-body">
+                    <h5 className="card-title">💵 Media Compenso/Viaggio</h5>
+                    <h3 className="card-text">
+                      {loadingStats ? (
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      ) : null}
+                      € {mediaCompensoViaggioValue}
+                    </h3>
                   </div>
                 </div>
               </div>
@@ -387,22 +489,6 @@ export default function FatturazioneTerzistiPage() {
                   <div className="card-body">
                     <h5 className="card-title">🚛 Vettori</h5>
                     <h3 className="card-text">{stats.uniqueVettori ? stats.uniqueVettori.toLocaleString('it-IT') : '0'}</h3>
-                  </div>
-                </div>
-              </div>
-              <div className="col-md-3">
-                <div className="card bg-success text-white">
-                  <div className="card-body">
-                    <h5 className="card-title">📦 Media Colli/Consegna</h5>
-                    <h3 className="card-text">{mediaColliValue}</h3>
-                  </div>
-                </div>
-              </div>
-              <div className="col-md-3">
-                <div className="card bg-warning text-white">
-                  <div className="card-body">
-                    <h5 className="card-title">💰 Media Compenso/Consegna</h5>
-                    <h3 className="card-text">€ {mediaFatturatoValue}</h3>
                   </div>
                 </div>
               </div>
@@ -424,6 +510,7 @@ export default function FatturazioneTerzistiPage() {
             </div>
             {showFilters && (
               <div className="card-body">
+                {/* Prima riga: Filtri principali */}
                 <div className="row">
                   <div className="col-md-3">
                     <label className="form-label">Divisione</label>
@@ -465,22 +552,41 @@ export default function FatturazioneTerzistiPage() {
                     </select>
                   </div>
                   <div className="col-md-3">
+                    <label className="form-label">Mese</label>
+                    <select
+                      className="form-select"
+                      value={filters.mese || ''}
+                      onChange={(e) => handleFilterChange('mese', e.target.value)}
+                    >
+                      <option value="">Tutti i mesi</option>
+                      {filterOptions?.mesi?.map(mese => (
+                        <option key={mese} value={mese}>
+                          {new Date(mese + '-01').toLocaleDateString('it-IT', { 
+                            year: 'numeric', 
+                            month: 'long' 
+                          })}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                {/* Seconda riga: Filtri data e ricerca */}
+                <div className="row mt-3">
+                  <div className="col-md-3">
                     <label className="form-label">Data Da</label>
                     <input
                       type="date"
                       className="form-control"
-                      value={filters.dataDa || ''}
+                      value={formatDateISO(filters.dataDa) || ''}
                       onChange={(e) => handleFilterChange('dataDa', e.target.value)}
                     />
                   </div>
-                </div>
-                <div className="row mt-3">
                   <div className="col-md-3">
                     <label className="form-label">Data A</label>
                     <input
                       type="date"
                       className="form-control"
-                      value={filters.dataA || ''}
+                      value={formatDateISO(filters.dataA) || ''}
                       onChange={(e) => handleFilterChange('dataA', e.target.value)}
                     />
                   </div>
@@ -504,13 +610,23 @@ export default function FatturazioneTerzistiPage() {
                       placeholder="Cerca cliente..."
                     />
                   </div>
-                  <div className="col-md-3 d-flex align-items-end">
-                    <div className="btn-group w-100">
+                </div>
+
+                {/* Terza riga: Pulsanti azione */}
+                <div className="row mt-3">
+                  <div className="col-md-12 d-flex justify-content-end">
+                    <div className="btn-group">
                       <button className="btn btn-primary" onClick={applyFilters}>
+                        <i className="bi bi-funnel me-1"></i>
                         Applica Filtri
                       </button>
                       <button className="btn btn-outline-secondary" onClick={clearFilters}>
+                        <i className="bi bi-arrow-clockwise me-1"></i>
                         Reset
+                      </button>
+                      <button className="btn btn-outline-secondary" onClick={() => setShowFilters(false)}>
+                        <i className="bi bi-eye-slash me-1"></i>
+                        Nascondi Filtri
                       </button>
                     </div>
                   </div>
@@ -737,7 +853,7 @@ export default function FatturazioneTerzistiPage() {
                             <tr>
                               <td>{row.div}</td>
                               <td>{row.viaggio}</td>
-                              <td>{row.data_viaggio ? new Date(row.data_viaggio).toLocaleDateString('it-IT') : '-'}</td>
+                              <td>{formatDate(row.data_viaggio)}</td>
                               <td>{row.ordine}</td>
                               <td>{row.consegna_num}</td>
                               <td>{row.Azienda_Vettore}</td>
@@ -799,7 +915,7 @@ export default function FatturazioneTerzistiPage() {
                                             {rowDetails[rowKey].map((detail, idx) => (
                                               <tr key={idx}>
                                                 <td>{detail.div}</td>
-                                                <td>{new Date(detail.data_mov_merce).toLocaleDateString('it-IT')}</td>
+                                                <td>{formatDate(detail.data_mov_merce)}</td>
                                                 <td>{detail.viaggio}</td>
                                                 <td>{detail.ordine}</td>
                                                 <td>{detail.consegna_num}</td>

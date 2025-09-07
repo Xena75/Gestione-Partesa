@@ -97,6 +97,18 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **useMemo ottimizzato**: Memoizzazione corretta valori card per evitare re-render
 - **Gestione filtri**: Rimozione conflitto tra `loadData` e `loadStats`
 
+#### 🚀 **Miglioramenti Card e Layout - v2.6.2**
+- **Card Viaggi**: Aggiunta card "Viaggi" nella prima riga con aggiornamento automatico
+- **Card Media Colli/Viaggio**: Nuova card per media colli per viaggio (colli ÷ viaggi)
+- **Card Media Compenso/Viaggio**: Nuova card per media compenso per viaggio (compenso ÷ viaggi)
+- **Layout ottimizzato**: 12 card totali distribuite su 2 righe bilanciate (6+6)
+- **Calcoli corretti**: Separazione logica tra medie per consegna e medie per viaggio
+- **Filtro Mese**: Aggiunto filtro mensile basato su `data_viaggio` con opzioni dinamiche
+- **Layout filtri**: Ottimizzazione disposizione filtri su 2 righe per migliore utilizzo spazio
+- **Formato date**: Implementazione formato europeo `dd-mm-yyyy` con parsing robusto
+- **Import dati storici**: Sistema completo import primi 7 mesi 2025 con gestione duplicati
+- **Gestione tariffe**: Sistema tariffe dinamiche con calcolo automatico compensi
+
 #### 🔧 **Gestione Intelligente Duplicati**
 - **Stesso prodotto, consegna diversa**: ✅ Permesso (ID diverso)
 - **Record completamente identico**: ❌ Bloccato automaticamente
@@ -306,7 +318,7 @@ DB_GESTIONE_NAME=gestionelogistica
 
 ---
 
-**Versione**: 2.6.1  
+**Versione**: 2.6.2  
 **Ultimo Aggiornamento**: Gennaio 2025  
 **Stato**: ✅ **PRODUZIONE STABILE**  
 **Compatibilità**: Next.js 15+, Node.js 18+, MySQL 8.0+

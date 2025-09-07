@@ -11,7 +11,9 @@ const pool = createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  dateStrings: true
+  dateStrings: true,
+  supportBigNumbers: true,
+  bigNumberStrings: true
 });
 
 // Interfaccia per i dati terzisti
@@ -59,7 +61,9 @@ export interface TerzistiStats {
   totalFatturato: number;
   uniqueVettori: number;
   uniqueAziende: number;
+  mediaColliConsegna: number;
   mediaColliViaggio: number;
+  mediaCompensoViaggio: number;
   mediaFatturatoViaggio: number;
 }
 
@@ -70,6 +74,7 @@ export interface TerzistiFilters {
   azienda?: string;
   dataDa?: string;
   dataA?: string;
+  mese?: string;
   viaggio?: string;
   ordine?: string;
   consegna?: string;
@@ -82,6 +87,7 @@ export interface TerzistiFilterOptions {
   divisioni: string[];
   vettori: string[];
   aziende: string[];
+  mesi: string[];
   viaggi: string[];
   ordini: string[];
   consegne: string[];
@@ -151,6 +157,11 @@ export async function getTerzistiData(
       queryParams.push(filters.dataA);
     }
 
+    if (filters.mese) {
+      whereConditions.push('DATE_FORMAT(data_viaggio, "%Y-%m") = ?');
+      queryParams.push(filters.mese);
+    }
+
     if (filters.viaggio) {
       whereConditions.push('viaggio LIKE ?');
       queryParams.push(`%${filters.viaggio}%`);
@@ -214,7 +225,17 @@ export async function getTerzistiData(
           WHEN COUNT(DISTINCT consegna_num) > 0 
           THEN SUM(colli) / COUNT(DISTINCT consegna_num) 
           ELSE 0 
+        END as mediaColliConsegna,
+        CASE 
+          WHEN COUNT(DISTINCT viaggio) > 0 
+          THEN SUM(colli) / COUNT(DISTINCT viaggio) 
+          ELSE 0 
         END as mediaColliViaggio,
+        CASE 
+          WHEN COUNT(DISTINCT viaggio) > 0 
+          THEN SUM(compenso) / COUNT(DISTINCT viaggio) 
+          ELSE 0 
+        END as mediaCompensoViaggio,
         CASE 
           WHEN COUNT(DISTINCT consegna_num) > 0 
           THEN SUM(compenso) / COUNT(DISTINCT consegna_num) 
@@ -244,7 +265,9 @@ export async function getTerzistiData(
         totalFatturato: rawStats.totalFatturato || 0,
         uniqueVettori: rawStats.uniqueVettori || 0,
         uniqueAziende: rawStats.uniqueAziende || 0,
+        mediaColliConsegna: rawStats.mediaColliConsegna || 0,
         mediaColliViaggio: rawStats.mediaColliViaggio || 0,
+        mediaCompensoViaggio: rawStats.mediaCompensoViaggio || 0,
         mediaFatturatoViaggio: rawStats.mediaFatturatoViaggio || 0
       };
 
@@ -301,6 +324,11 @@ export async function getTerzistiStats(filters: TerzistiFilters = {}): Promise<T
       queryParams.push(filters.dataA);
     }
 
+    if (filters.mese) {
+      whereConditions.push('DATE_FORMAT(data_viaggio, "%Y-%m") = ?');
+      queryParams.push(filters.mese);
+    }
+
     if (filters.viaggio) {
       whereConditions.push('viaggio LIKE ?');
       queryParams.push(`%${filters.viaggio}%`);
@@ -343,7 +371,17 @@ export async function getTerzistiStats(filters: TerzistiFilters = {}): Promise<T
           WHEN COUNT(DISTINCT consegna_num) > 0 
           THEN SUM(colli) / COUNT(DISTINCT consegna_num) 
           ELSE 0 
+        END as mediaColliConsegna,
+        CASE 
+          WHEN COUNT(DISTINCT viaggio) > 0 
+          THEN SUM(colli) / COUNT(DISTINCT viaggio) 
+          ELSE 0 
         END as mediaColliViaggio,
+        CASE 
+          WHEN COUNT(DISTINCT viaggio) > 0 
+          THEN SUM(compenso) / COUNT(DISTINCT viaggio) 
+          ELSE 0 
+        END as mediaCompensoViaggio,
         CASE 
           WHEN COUNT(DISTINCT consegna_num) > 0 
           THEN SUM(compenso) / COUNT(DISTINCT consegna_num) 
@@ -367,7 +405,9 @@ export async function getTerzistiStats(filters: TerzistiFilters = {}): Promise<T
         totalFatturato: stats.totalFatturato || 0,
         uniqueVettori: stats.uniqueVettori || 0,
         uniqueAziende: stats.uniqueAziende || 0,
+        mediaColliConsegna: stats.mediaColliConsegna || 0,
         mediaColliViaggio: stats.mediaColliViaggio || 0,
+        mediaCompensoViaggio: stats.mediaCompensoViaggio || 0,
         mediaFatturatoViaggio: stats.mediaFatturatoViaggio || 0
       };
 
@@ -382,11 +422,12 @@ export async function getTerzistiStats(filters: TerzistiFilters = {}): Promise<T
  * Ottiene le opzioni di filtro per i terzisti
  */
 export async function getTerzistiFilterOptions(): Promise<TerzistiFilterOptions> {
-  return withCache('terzisti-filters', async () => {
+  return withCache('terzisti-filters-v2', async () => {
     try {
       const [divisioniResult] = await pool.execute('SELECT DISTINCT `div` FROM tab_delivery_terzisti ORDER BY `div`');
       const [vettoriResult] = await pool.execute('SELECT DISTINCT Descr_Vettore_Join FROM tab_delivery_terzisti WHERE Descr_Vettore_Join IS NOT NULL ORDER BY Descr_Vettore_Join');
       const [aziendeResult] = await pool.execute('SELECT DISTINCT Azienda_Vettore FROM tab_delivery_terzisti WHERE Azienda_Vettore IS NOT NULL ORDER BY Azienda_Vettore');
+      const [mesiResult] = await pool.execute('SELECT DISTINCT DATE_FORMAT(data_viaggio, "%Y-%m") as mese FROM tab_delivery_terzisti WHERE data_viaggio IS NOT NULL ORDER BY mese DESC');
       const [viaggiResult] = await pool.execute('SELECT DISTINCT viaggio FROM tab_delivery_terzisti WHERE viaggio IS NOT NULL ORDER BY viaggio');
       const [ordiniResult] = await pool.execute('SELECT DISTINCT ordine FROM tab_delivery_terzisti WHERE ordine IS NOT NULL ORDER BY ordine');
       const [consegneResult] = await pool.execute('SELECT DISTINCT consegna_num FROM tab_delivery_terzisti WHERE consegna_num IS NOT NULL ORDER BY consegna_num');
@@ -397,6 +438,7 @@ export async function getTerzistiFilterOptions(): Promise<TerzistiFilterOptions>
         divisioni: (divisioniResult as any[]).map(row => row.div),
         vettori: (vettoriResult as any[]).map(row => row.Descr_Vettore_Join),
         aziende: (aziendeResult as any[]).map(row => row.Azienda_Vettore),
+        mesi: (mesiResult as any[]).map(row => row.mese),
         viaggi: (viaggiResult as any[]).map(row => row.viaggio),
         ordini: (ordiniResult as any[]).map(row => row.ordine),
         consegne: (consegneResult as any[]).map(row => row.consegna_num),
@@ -419,6 +461,8 @@ export async function getTerzistiConsegnaDetails(consegna: string, vettore: stri
     const query = `
       SELECT 
         *,
+        DATE_FORMAT(data_mov_merce, '%Y-%m-%d') as data_mov_merce,
+        DATE_FORMAT(data_viaggio, '%Y-%m-%d') as data_viaggio,
         Id_Tariffa,
         tariffa_terzista,
         ID_fatt
@@ -481,6 +525,11 @@ export async function getTerzistiGroupedData(
       queryParams.push(filters.dataA);
     }
 
+    if (filters.mese) {
+      whereConditions.push('DATE_FORMAT(data_viaggio, "%Y-%m") = ?');
+      queryParams.push(filters.mese);
+    }
+
     if (filters.viaggio) {
       whereConditions.push('viaggio LIKE ?');
       queryParams.push(`%${filters.viaggio}%`);
@@ -513,7 +562,7 @@ export async function getTerzistiGroupedData(
       SELECT 
         \`div\`,
         dep,
-        data_mov_merce,
+        DATE_FORMAT(data_mov_merce, '%Y-%m-%d') as data_mov_merce,
         viaggio,
         ordine,
         consegna_num,
@@ -525,7 +574,7 @@ export async function getTerzistiGroupedData(
         SUM(colli) as total_colli,
         SUM(extra_cons) as total_extra_cons,
         SUM(tot_compenso) as total_compenso,
-        data_viaggio,
+        DATE_FORMAT(data_viaggio, '%Y-%m-%d') as data_viaggio,
         Id_Tariffa,
         AVG(tariffa_terzista) as avg_tariffa_terzista,
         ID_fatt
@@ -557,7 +606,22 @@ export async function getTerzistiGroupedData(
         SUM(extra_cons) as totalExtra,
         SUM(tot_compenso) as totalFatturato,
         COUNT(DISTINCT Cod_Vettore) as uniqueVettori,
-        COUNT(DISTINCT Azienda_Vettore) as uniqueAziende
+        COUNT(DISTINCT Azienda_Vettore) as uniqueAziende,
+        CASE 
+          WHEN COUNT(DISTINCT consegna_num) > 0 
+          THEN SUM(colli) / COUNT(DISTINCT consegna_num) 
+          ELSE 0 
+        END as mediaColliConsegna,
+        CASE 
+          WHEN COUNT(DISTINCT viaggio) > 0 
+          THEN SUM(colli) / COUNT(DISTINCT viaggio) 
+          ELSE 0 
+        END as mediaColliViaggio,
+        CASE 
+          WHEN COUNT(DISTINCT consegna_num) > 0 
+          THEN SUM(tot_compenso) / COUNT(DISTINCT consegna_num) 
+          ELSE 0 
+        END as mediaFatturatoViaggio
       FROM tab_delivery_terzisti
       ${whereClause}
     `;
@@ -580,8 +644,10 @@ export async function getTerzistiGroupedData(
         totalFatturato: (statsResult as any[])[0].totalFatturato || 0,
         uniqueVettori: (statsResult as any[])[0].uniqueVettori || 0,
         uniqueAziende: (statsResult as any[])[0].uniqueAziende || 0,
-        mediaColliViaggio: (statsResult as any[])[0].mediaColliViaggio || 0,
-        mediaFatturatoViaggio: (statsResult as any[])[0].mediaFatturatoViaggio || 0
+        mediaColliConsegna: parseFloat((statsResult as any[])[0].mediaColliConsegna) || 0,
+        mediaColliViaggio: parseFloat((statsResult as any[])[0].mediaColliViaggio) || 0,
+        mediaCompensoViaggio: parseFloat((statsResult as any[])[0].mediaCompensoViaggio) || 0,
+        mediaFatturatoViaggio: parseFloat((statsResult as any[])[0].mediaFatturatoViaggio) || 0
       };
 
       return {

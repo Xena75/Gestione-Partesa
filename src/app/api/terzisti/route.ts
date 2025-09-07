@@ -37,6 +37,10 @@ export async function GET(request: NextRequest) {
       filters.dataA = searchParams.get('dataA')!;
     }
     
+    if (searchParams.get('mese')) {
+      filters.mese = searchParams.get('mese')!;
+    }
+    
     if (searchParams.get('viaggio')) {
       filters.viaggio = searchParams.get('viaggio')!;
     }
