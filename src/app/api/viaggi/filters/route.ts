@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDistinctValues } from '@/lib/data-viaggi-tab';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Recupera tutti i valori distinti per i filtri
     const [

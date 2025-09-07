@@ -56,7 +56,7 @@ export const formatDateEuropean = (dateString: string | null | undefined): strin
     const year = date.getFullYear();
     
     return `${day}-${month}-${year}`;
-  } catch (error) {
+  } catch (_error) {
     return '-';
   }
 };
@@ -76,7 +76,7 @@ export const formatDateISO = (dateString: string | null | undefined): string => 
     const day = date.getDate().toString().padStart(2, '0');
     
     return `${year}-${month}-${day}`;
-  } catch (error) {
+  } catch (_error) {
     return '';
   }
 };
@@ -90,7 +90,7 @@ export const isValidDate = (dateString: string | null | undefined): boolean => {
   try {
     const date = new Date(dateString);
     return !isNaN(date.getTime()) && date.getFullYear() >= 1900 && date.getFullYear() <= 2100;
-  } catch (error) {
+  } catch (_error) {
     return false;
   }
 };
