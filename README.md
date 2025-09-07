@@ -4,6 +4,38 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
 
+### 📊 **Export Excel Avanzato - v2.7.0**
+
+**Completamente implementato e funzionante**:
+
+#### 📋 **Export Multi-Foglio**
+- **Foglio 1 - Dati Filtati**: Tutti i 30 campi disponibili con dettagli completi
+- **Foglio 2 - Statistiche**: KPI e metriche aggregate in formato tabellare
+- **Foglio 3 - Analisi per Vettore**: Dati raggruppati per vettore con medie
+- **Filtri applicati**: Export rispetta tutti i filtri attivi nella pagina
+- **Date europee**: Formato DD-MM-YYYY senza orario per leggibilità
+
+#### 🎨 **Formattazione Professionale**
+- **Intestazioni colorate**: Sfondo blu con testo bianco per headers
+- **Larghezze ottimizzate**: Colonne dimensionate per contenuto
+- **Numeri italiani**: Formato locale con virgole e punti
+- **Valori numerici**: Conversione automatica da stringhe a numeri
+- **Stili Excel**: Formattazione nativa per compatibilità
+
+#### ⚙️ **Interfaccia Utente**
+- **Modal opzioni**: Selezione fogli da includere nell'export
+- **Pulsante integrato**: Accesso diretto dalla pagina fatturazione-terzisti
+- **Loading indicator**: Feedback visivo durante generazione file
+- **Download automatico**: File scaricato con nome timestamp
+- **Gestione errori**: Messaggi chiari in caso di problemi
+
+#### 🔧 **Architettura Tecnica**
+- **API endpoint**: `/api/terzisti/export` per generazione file
+- **Libreria xlsx**: Generazione file Excel nativi
+- **Compressione**: File ottimizzati per dimensioni ridotte
+- **Batch processing**: Gestione efficiente di dataset grandi
+- **TypeScript**: Tipizzazione completa per sicurezza
+
 ### 🚀 **Ottimizzazioni Performance `/gestione` - v2.4.0**
 
 **Completamente implementate e funzionanti**:
@@ -283,6 +315,7 @@ DB_GESTIONE_NAME=gestionelogistica
 ## 📈 **ROADMAP FUTURA**
 
 ### **Prossime Implementazioni**
+- [x] **Export Excel**: Generazione file Excel multi-foglio ✅
 - [ ] **Dashboard Analytics**: Grafici e trend temporali
 - [ ] **Export PDF**: Generazione report automatici
 - [ ] **Notifiche**: Sistema alert e notifiche real-time

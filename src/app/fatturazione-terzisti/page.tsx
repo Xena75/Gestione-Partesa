@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { TerzistiData, TerzistiStats, TerzistiFilters, TerzistiFilterOptions } from '@/lib/data-terzisti';
 import { formatDateEuropean, formatDateISO } from '@/lib/date-utils';
 import SortableHeader from '@/components/SortableHeader';
+import ExportTerzistiButton from '@/components/ExportTerzistiButton';
 
 export default function FatturazioneTerzistiPage() {
   const router = useRouter();
@@ -350,6 +351,7 @@ export default function FatturazioneTerzistiPage() {
                   </>
                 )}
               </button>
+              <ExportTerzistiButton filters={filters} disabled={loading || importing} />
               <button
                 type="button"
                 className={`btn ${viewType === 'grouped' ? 'btn-primary' : 'btn-outline-primary'}`}
