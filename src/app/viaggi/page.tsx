@@ -78,6 +78,14 @@ function ViaggiPageContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
 
+  // Apri automaticamente i filtri se ci sono parametri di filtro attivi
+  useEffect(() => {
+    const hasActiveFilters = aziendaVettore || nominativo || trasportatore || numeroViaggio || targa || magazzino || mese || trimestre || dataDa || dataA;
+    if (hasActiveFilters) {
+      setShowFilters(true);
+    }
+  }, [aziendaVettore, nominativo, trasportatore, numeroViaggio, targa, magazzino, mese, trimestre, dataDa, dataA]);
+
   useEffect(() => {
     setIsLoading(true);
     
@@ -186,7 +194,7 @@ function ViaggiPageContent() {
         </div>
         {showFilters && (
           <div className="card-body">
-            <FiltriViaggi />
+            <FiltriViaggi onFiltersApplied={() => setShowFilters(false)} />
           </div>
         )}
       </div>

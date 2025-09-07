@@ -12,7 +12,11 @@ interface FilterOptions {
   trimestri: number[];
 }
 
-export default function FiltriViaggi() {
+interface FiltriViaggiProps {
+  onFiltersApplied?: () => void;
+}
+
+export default function FiltriViaggi({ onFiltersApplied }: FiltriViaggiProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -83,6 +87,11 @@ export default function FiltriViaggi() {
     if (dataA) params.set('dataA', dataA);
     
     router.push(`/viaggi?${params.toString()}`);
+    
+    // Chiudi i filtri dopo averli applicati
+    if (onFiltersApplied) {
+      onFiltersApplied();
+    }
   };
 
   // Pulisci tutti i filtri
@@ -117,6 +126,13 @@ export default function FiltriViaggi() {
     router.push(`/viaggi?${params.toString()}`);
   };
 
+  // Gestisce il tasto Enter per applicare i filtri
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      applyFilters();
+    }
+  };
+
   if (isLoading) {
     return <div className="text-center">Caricamento opzioni filtri...</div>;
   }
@@ -147,6 +163,7 @@ export default function FiltriViaggi() {
           placeholder="Cerca nominativo..."
           value={nominativo}
           onChange={(e) => setNominativo(e.target.value)}
+          onKeyPress={handleKeyPress}
         />
       </div>
 
@@ -174,6 +191,7 @@ export default function FiltriViaggi() {
           placeholder="Cerca viaggio..."
           value={numeroViaggio}
           onChange={(e) => setNumeroViaggio(e.target.value)}
+          onKeyPress={handleKeyPress}
         />
       </div>
 
@@ -247,6 +265,7 @@ export default function FiltriViaggi() {
           className="form-control"
           value={dataDa}
           onChange={(e) => setDataDa(e.target.value)}
+          onKeyPress={handleKeyPress}
         />
       </div>
 
@@ -258,6 +277,7 @@ export default function FiltriViaggi() {
           className="form-control"
           value={dataA}
           onChange={(e) => setDataA(e.target.value)}
+          onKeyPress={handleKeyPress}
         />
       </div>
 

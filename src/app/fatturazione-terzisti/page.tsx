@@ -502,19 +502,31 @@ export default function FatturazioneTerzistiPage() {
             <div className="card-header">
               <div className="d-flex justify-content-between align-items-center">
                 <h5 className="mb-0">🔍 Filtri</h5>
-                <button
-                  className="btn btn-outline-secondary btn-sm"
-                  onClick={() => setShowFilters(!showFilters)}
-                >
-                  {showFilters ? 'Nascondi' : 'Mostra'} Filtri
-                </button>
+                <div className="d-flex gap-2">
+                  <div className="btn-group">
+                    <button className="btn btn-primary btn-sm" onClick={applyFilters}>
+                      <i className="bi bi-funnel me-1"></i>
+                      Applica Filtri
+                    </button>
+                    <button className="btn btn-outline-secondary btn-sm" onClick={clearFilters}>
+                      <i className="bi bi-arrow-clockwise me-1"></i>
+                      Reset
+                    </button>
+                  </div>
+                  <button
+                    className="btn btn-outline-secondary btn-sm"
+                    onClick={() => setShowFilters(!showFilters)}
+                  >
+                    {showFilters ? 'Nascondi' : 'Mostra'} Filtri
+                  </button>
+                </div>
               </div>
             </div>
             {showFilters && (
               <div className="card-body">
                 {/* Prima riga: Filtri principali */}
                 <div className="row">
-                  <div className="col-md-3">
+                  <div className="col-md-2">
                     <label className="form-label">Divisione</label>
                     <select
                       className="form-select"
@@ -527,7 +539,7 @@ export default function FatturazioneTerzistiPage() {
                       ))}
                     </select>
                   </div>
-                  <div className="col-md-3">
+                  <div className="col-md-2">
                     <label className="form-label">Vettore</label>
                     <select
                       className="form-select"
@@ -540,7 +552,7 @@ export default function FatturazioneTerzistiPage() {
                       ))}
                     </select>
                   </div>
-                  <div className="col-md-3">
+                  <div className="col-md-2">
                     <label className="form-label">Azienda</label>
                     <select
                       className="form-select"
@@ -553,7 +565,7 @@ export default function FatturazioneTerzistiPage() {
                       ))}
                     </select>
                   </div>
-                  <div className="col-md-3">
+                  <div className="col-md-2">
                     <label className="form-label">Mese</label>
                     <select
                       className="form-select"
@@ -563,7 +575,7 @@ export default function FatturazioneTerzistiPage() {
                       <option value="">Tutti i mesi</option>
                       {filterOptions?.mesi?.map(mese => (
                         <option key={mese} value={mese}>
-                          {new Date(mese + '-01').toLocaleDateString('it-IT', { 
+                          {new Date(2025, parseInt(mese) - 1).toLocaleDateString('it-IT', { 
                             year: 'numeric', 
                             month: 'long' 
                           })}
@@ -571,10 +583,40 @@ export default function FatturazioneTerzistiPage() {
                       ))}
                     </select>
                   </div>
+                  <div className="col-md-2">
+                    <label className="form-label">Trimestre</label>
+                    <select
+                      className="form-select"
+                      value={filters.trimestre || ''}
+                      onChange={(e) => handleFilterChange('trimestre', e.target.value)}
+                    >
+                      <option value="">Tutti i trimestri</option>
+                      {filterOptions?.trimestri?.map(trimestre => (
+                        <option key={trimestre} value={trimestre}>
+                          Q{trimestre} 2025
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="col-md-2">
+                    <label className="form-label">Settimana</label>
+                    <select
+                      className="form-select"
+                      value={filters.settimana || ''}
+                      onChange={(e) => handleFilterChange('settimana', e.target.value)}
+                    >
+                      <option value="">Tutte le settimane</option>
+                      {filterOptions?.settimane?.map(settimana => (
+                        <option key={settimana} value={settimana}>
+                          Settimana {settimana}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-                {/* Seconda riga: Filtri data e ricerca */}
+                {/* Seconda riga: Filtri di ricerca */}
                 <div className="row mt-3">
-                  <div className="col-md-3">
+                  <div className="col-md-2">
                     <label className="form-label">Data Da</label>
                     <input
                       type="date"
@@ -583,7 +625,7 @@ export default function FatturazioneTerzistiPage() {
                       onChange={(e) => handleFilterChange('dataDa', e.target.value)}
                     />
                   </div>
-                  <div className="col-md-3">
+                  <div className="col-md-2">
                     <label className="form-label">Data A</label>
                     <input
                       type="date"
@@ -592,7 +634,7 @@ export default function FatturazioneTerzistiPage() {
                       onChange={(e) => handleFilterChange('dataA', e.target.value)}
                     />
                   </div>
-                  <div className="col-md-3">
+                  <div className="col-md-2">
                     <label className="form-label">Viaggio</label>
                     <input
                       type="text"
@@ -602,7 +644,7 @@ export default function FatturazioneTerzistiPage() {
                       placeholder="Cerca viaggio..."
                     />
                   </div>
-                  <div className="col-md-3">
+                  <div className="col-md-2">
                     <label className="form-label">Cliente</label>
                     <input
                       type="text"
@@ -612,25 +654,25 @@ export default function FatturazioneTerzistiPage() {
                       placeholder="Cerca cliente..."
                     />
                   </div>
-                </div>
-
-                {/* Terza riga: Pulsanti azione */}
-                <div className="row mt-3">
-                  <div className="col-md-12 d-flex justify-content-end">
-                    <div className="btn-group">
-                      <button className="btn btn-primary" onClick={applyFilters}>
-                        <i className="bi bi-funnel me-1"></i>
-                        Applica Filtri
-                      </button>
-                      <button className="btn btn-outline-secondary" onClick={clearFilters}>
-                        <i className="bi bi-arrow-clockwise me-1"></i>
-                        Reset
-                      </button>
-                      <button className="btn btn-outline-secondary" onClick={() => setShowFilters(false)}>
-                        <i className="bi bi-eye-slash me-1"></i>
-                        Nascondi Filtri
-                      </button>
-                    </div>
+                  <div className="col-md-2">
+                    <label className="form-label">Ordine</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={filters.ordine || ''}
+                      onChange={(e) => handleFilterChange('ordine', e.target.value)}
+                      placeholder="Cerca ordine..."
+                    />
+                  </div>
+                  <div className="col-md-2">
+                    <label className="form-label">Consegna</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={filters.consegna || ''}
+                      onChange={(e) => handleFilterChange('consegna', e.target.value)}
+                      placeholder="Cerca consegna..."
+                    />
                   </div>
                 </div>
               </div>
@@ -682,20 +724,20 @@ export default function FatturazioneTerzistiPage() {
                               currentSortOrder={sortOrder}
                               basePath="/fatturazione-terzisti"
                             />
-                            <SortableHeader 
-                              field="data_viaggio" 
-                              label="Data Viaggio"
-                              currentSortBy={sortBy} 
-                              currentSortOrder={sortOrder}
-                              basePath="/fatturazione-terzisti"
-                            />
-                            <SortableHeader 
-                              field="ordine" 
-                              label="Ordine"
-                              currentSortBy={sortBy} 
-                              currentSortOrder={sortOrder}
-                              basePath="/fatturazione-terzisti"
-                            />
+                <SortableHeader 
+                  field="data_viaggio" 
+                  label="Data Viaggio"
+                  currentSortBy={sortBy} 
+                  currentSortOrder={sortOrder}
+                  basePath="/fatturazione-terzisti"
+                />
+                <SortableHeader 
+                  field="ordine" 
+                  label="Ordine"
+                  currentSortBy={sortBy} 
+                  currentSortOrder={sortOrder}
+                  basePath="/fatturazione-terzisti"
+                />
                             <SortableHeader 
                               field="consegna_num" 
                               label="Consegna"
@@ -853,11 +895,11 @@ export default function FatturazioneTerzistiPage() {
                         return (
                           <React.Fragment key={rowKey}>
                             <tr>
-                              <td>{row.div}</td>
-                              <td>{row.viaggio}</td>
-                              <td>{formatDate(row.data_viaggio)}</td>
-                              <td>{row.ordine}</td>
-                              <td>{row.consegna_num}</td>
+                        <td>{row.div}</td>
+                        <td>{row.viaggio}</td>
+                        <td>{formatDate(row.data_viaggio)}</td>
+                        <td>{row.ordine}</td>
+                        <td>{row.consegna_num}</td>
                               <td>{row.Azienda_Vettore}</td>
                               <td>{row.Descr_Vettore_Join}</td>
                               {viewType === 'grouped' ? (
@@ -898,11 +940,11 @@ export default function FatturazioneTerzistiPage() {
                                         <table className="table table-sm table-striped">
                                           <thead>
                                             <tr>
-                                              <th>Divisione</th>
-                                              <th>Data</th>
-                                              <th>Viaggio</th>
-                                              <th>Ordine</th>
-                                              <th>Consegna</th>
+                              <th>Divisione</th>
+                              <th>Data</th>
+                              <th>Viaggio</th>
+                              <th>Ordine</th>
+                              <th>Consegna</th>
                                               <th>Cliente</th>
                                               <th>Cod. Articolo</th>
                                               <th>Descrizione</th>
@@ -916,11 +958,11 @@ export default function FatturazioneTerzistiPage() {
                                           <tbody>
                                             {rowDetails[rowKey].map((detail, idx) => (
                                               <tr key={idx}>
-                                                <td>{detail.div}</td>
-                                                <td>{formatDate(detail.data_mov_merce)}</td>
-                                                <td>{detail.viaggio}</td>
-                                                <td>{detail.ordine}</td>
-                                                <td>{detail.consegna_num}</td>
+                                              <td>{detail.div}</td>
+                                              <td>{formatDate(detail.data_mov_merce)}</td>
+                                              <td>{detail.viaggio}</td>
+                                              <td>{detail.ordine}</td>
+                                              <td>{detail.consegna_num}</td>
                                                 <td>{detail.ragione_sociale}</td>
                                                 <td>{detail.cod_articolo}</td>
                                                 <td>{detail.descr_articolo}</td>

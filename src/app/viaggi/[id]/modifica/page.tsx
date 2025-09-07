@@ -88,6 +88,24 @@ export default function ModificaViaggioPage({ params }: { params: Promise<{ id: 
     }
   }, [viaggio]);
 
+  // Calcola automaticamente "€ Rifornimento" quando si carica la pagina
+  useEffect(() => {
+    if (viaggio && viaggio['€/lt'] && viaggio['Litri Riforniti']) {
+      const euroPerLitro = viaggio['€/lt'] || 0;
+      const litriRiforniti = viaggio['Litri Riforniti'] || 0;
+      
+      if (euroPerLitro > 0 && litriRiforniti > 0) {
+        const euroRifornimento = euroPerLitro * litriRiforniti;
+        if (viaggio['euro_rifornimento'] !== euroRifornimento) {
+          setViaggio(prev => prev ? {
+            ...prev,
+            'euro_rifornimento': euroRifornimento
+          } : null);
+        }
+      }
+    }
+  }, [viaggio]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!viaggio) return;
@@ -164,6 +182,19 @@ export default function ModificaViaggioPage({ params }: { params: Promise<{ id: 
           updatedViaggio['Km Viaggio'] = kmFinali - kmIniziali;
         } else {
           updatedViaggio['Km Viaggio'] = 0;
+        }
+      }
+      
+      // Calcolo automatico di "€ Rifornimento" quando cambiano "€/lt" o "Litri Riforniti"
+      if (field === '€/lt' || field === 'Litri Riforniti') {
+        const euroPerLitro = field === '€/lt' ? (typeof value === 'number' ? value : parseFloat(value.toString()) || 0) : (prev['€/lt'] || 0);
+        const litriRiforniti = field === 'Litri Riforniti' ? (typeof value === 'number' ? value : parseFloat(value.toString()) || 0) : (prev['Litri Riforniti'] || 0);
+        
+        // Calcola il costo del rifornimento
+        if (euroPerLitro > 0 && litriRiforniti > 0) {
+          updatedViaggio['euro_rifornimento'] = euroPerLitro * litriRiforniti;
+        } else {
+          updatedViaggio['euro_rifornimento'] = 0;
         }
       }
       
@@ -605,18 +636,15 @@ export default function ModificaViaggioPage({ params }: { params: Promise<{ id: 
                             <div className="input-group input-group-sm">
                               <span className="input-group-text">€</span>
                               <input
-                                type="text"
+                                type="number"
+                                step="0.01"
                                 className="form-control"
-                                value={viaggio['€/lt'] ? Number(viaggio['€/lt']).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}
+                                value={viaggio['€/lt'] || ''}
                                 onChange={(e) => {
-                                  // Rimuovi tutto tranne numeri, virgole e punti
-                                  const cleanValue = e.target.value.replace(/[^\d,.-]/g, '');
-                                  // Converti virgole in punti per il parsing
-                                  const numericValue = cleanValue.replace(',', '.');
-                                  const parsedValue = parseFloat(numericValue) || 0;
-                                  handleInputChange('€/lt', parsedValue);
+                                  const value = parseFloat(e.target.value) || 0;
+                                  handleInputChange('€/lt', value);
                                 }}
-                                placeholder="0,00"
+                                placeholder="0.00"
                               />
                             </div>
                           </div>

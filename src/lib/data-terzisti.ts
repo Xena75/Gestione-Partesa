@@ -46,6 +46,9 @@ export interface TerzistiData {
   data_viaggio: string;
   Id_Tariffa: string;
   tariffa_terzista: number;
+  mese: number;
+  trimestre: number;
+  settimana: number;
   created_at: string;
   updated_at: string;
 }
@@ -75,6 +78,8 @@ export interface TerzistiFilters {
   dataDa?: string;
   dataA?: string;
   mese?: string;
+  trimestre?: string;
+  settimana?: string;
   viaggio?: string;
   ordine?: string;
   consegna?: string;
@@ -88,6 +93,8 @@ export interface TerzistiFilterOptions {
   vettori: string[];
   aziende: string[];
   mesi: string[];
+  trimestri: string[];
+  settimane: string[];
   viaggi: string[];
   ordini: string[];
   consegne: string[];
@@ -158,8 +165,18 @@ export async function getTerzistiData(
     }
 
     if (filters.mese) {
-      whereConditions.push('DATE_FORMAT(data_viaggio, "%Y-%m") = ?');
+      whereConditions.push('mese = ?');
       queryParams.push(filters.mese);
+    }
+
+    if (filters.trimestre) {
+      whereConditions.push('trimestre = ?');
+      queryParams.push(filters.trimestre);
+    }
+
+    if (filters.settimana) {
+      whereConditions.push('settimana = ?');
+      queryParams.push(filters.settimana);
     }
 
     if (filters.viaggio) {
@@ -189,13 +206,16 @@ export async function getTerzistiData(
 
     const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
-    // Query per i dati (AGGIORNATA con campi tariffa)
+    // Query per i dati (AGGIORNATA con campi tariffa e campi calcolati)
     const dataQuery = `
       SELECT 
         *,
         Id_Tariffa,
         tariffa_terzista,
-        ID_fatt
+        ID_fatt,
+        mese,
+        trimestre,
+        settimana
       FROM tab_delivery_terzisti
       ${whereClause}
       ORDER BY ${sort.field} ${sort.order}
@@ -325,8 +345,18 @@ export async function getTerzistiStats(filters: TerzistiFilters = {}): Promise<T
     }
 
     if (filters.mese) {
-      whereConditions.push('DATE_FORMAT(data_viaggio, "%Y-%m") = ?');
+      whereConditions.push('mese = ?');
       queryParams.push(filters.mese);
+    }
+
+    if (filters.trimestre) {
+      whereConditions.push('trimestre = ?');
+      queryParams.push(filters.trimestre);
+    }
+
+    if (filters.settimana) {
+      whereConditions.push('settimana = ?');
+      queryParams.push(filters.settimana);
     }
 
     if (filters.viaggio) {
@@ -427,7 +457,9 @@ export async function getTerzistiFilterOptions(): Promise<TerzistiFilterOptions>
       const [divisioniResult] = await pool.execute('SELECT DISTINCT `div` FROM tab_delivery_terzisti ORDER BY `div`');
       const [vettoriResult] = await pool.execute('SELECT DISTINCT Descr_Vettore_Join FROM tab_delivery_terzisti WHERE Descr_Vettore_Join IS NOT NULL ORDER BY Descr_Vettore_Join');
       const [aziendeResult] = await pool.execute('SELECT DISTINCT Azienda_Vettore FROM tab_delivery_terzisti WHERE Azienda_Vettore IS NOT NULL ORDER BY Azienda_Vettore');
-      const [mesiResult] = await pool.execute('SELECT DISTINCT DATE_FORMAT(data_viaggio, "%Y-%m") as mese FROM tab_delivery_terzisti WHERE data_viaggio IS NOT NULL ORDER BY mese DESC');
+      const [mesiResult] = await pool.execute('SELECT DISTINCT mese FROM tab_delivery_terzisti WHERE mese IS NOT NULL ORDER BY mese DESC');
+      const [trimestriResult] = await pool.execute('SELECT DISTINCT trimestre FROM tab_delivery_terzisti WHERE trimestre IS NOT NULL ORDER BY trimestre DESC');
+      const [settimaneResult] = await pool.execute('SELECT DISTINCT settimana FROM tab_delivery_terzisti WHERE settimana IS NOT NULL ORDER BY settimana DESC');
       const [viaggiResult] = await pool.execute('SELECT DISTINCT viaggio FROM tab_delivery_terzisti WHERE viaggio IS NOT NULL ORDER BY viaggio');
       const [ordiniResult] = await pool.execute('SELECT DISTINCT ordine FROM tab_delivery_terzisti WHERE ordine IS NOT NULL ORDER BY ordine');
       const [consegneResult] = await pool.execute('SELECT DISTINCT consegna_num FROM tab_delivery_terzisti WHERE consegna_num IS NOT NULL ORDER BY consegna_num');
@@ -439,6 +471,8 @@ export async function getTerzistiFilterOptions(): Promise<TerzistiFilterOptions>
         vettori: (vettoriResult as any[]).map(row => row.Descr_Vettore_Join),
         aziende: (aziendeResult as any[]).map(row => row.Azienda_Vettore),
         mesi: (mesiResult as any[]).map(row => row.mese),
+        trimestri: (trimestriResult as any[]).map(row => row.trimestre),
+        settimane: (settimaneResult as any[]).map(row => row.settimana),
         viaggi: (viaggiResult as any[]).map(row => row.viaggio),
         ordini: (ordiniResult as any[]).map(row => row.ordine),
         consegne: (consegneResult as any[]).map(row => row.consegna_num),
@@ -465,7 +499,10 @@ export async function getTerzistiConsegnaDetails(consegna: string, vettore: stri
         DATE_FORMAT(data_viaggio, '%Y-%m-%d') as data_viaggio,
         Id_Tariffa,
         tariffa_terzista,
-        ID_fatt
+        ID_fatt,
+        mese,
+        trimestre,
+        settimana
       FROM tab_delivery_terzisti
       WHERE consegna_num = ? 
       AND Descr_Vettore_Join = ? 
@@ -526,8 +563,18 @@ export async function getTerzistiGroupedData(
     }
 
     if (filters.mese) {
-      whereConditions.push('DATE_FORMAT(data_viaggio, "%Y-%m") = ?');
+      whereConditions.push('mese = ?');
       queryParams.push(filters.mese);
+    }
+
+    if (filters.trimestre) {
+      whereConditions.push('trimestre = ?');
+      queryParams.push(filters.trimestre);
+    }
+
+    if (filters.settimana) {
+      whereConditions.push('settimana = ?');
+      queryParams.push(filters.settimana);
     }
 
     if (filters.viaggio) {

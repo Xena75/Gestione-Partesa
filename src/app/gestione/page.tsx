@@ -1,22 +1,65 @@
 // src/app/gestione/page.tsx
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import DeliveryStats from '@/components/DeliveryStats';
 import ViewToggle from '@/components/ViewToggle';
 import DeliveryFilters from '@/components/DeliveryFilters';
 import DeliveryTable from '@/components/DeliveryTable';
+import ExportDeliveryButton from '@/components/ExportDeliveryButton';
 
 function GestioneContent() {
   const searchParams = useSearchParams();
   const viewType = (searchParams.get('viewType') || 'grouped') as 'grouped' | 'detailed';
+  
+  // Stato per i filtri attivi (aggiornato in tempo reale)
+  const [activeFilters, setActiveFilters] = useState({
+    viaggio: searchParams.get('viaggio') || undefined,
+    ordine: searchParams.get('ordine') || undefined,
+    bu: searchParams.get('bu') || undefined,
+    divisione: searchParams.get('divisione') || undefined,
+    deposito: searchParams.get('deposito') || undefined,
+    vettore: searchParams.get('vettore') || undefined,
+    tipologia: searchParams.get('tipologia') || undefined,
+    codCliente: searchParams.get('codCliente') || undefined,
+    cliente: searchParams.get('cliente') || undefined,
+    dataDa: searchParams.get('dataDa') || undefined,
+    dataA: searchParams.get('dataA') || undefined
+  });
+
+  // Aggiorna i filtri attivi quando cambiano i parametri URL
+  useEffect(() => {
+    setActiveFilters({
+      viaggio: searchParams.get('viaggio') || undefined,
+      ordine: searchParams.get('ordine') || undefined,
+      bu: searchParams.get('bu') || undefined,
+      divisione: searchParams.get('divisione') || undefined,
+      deposito: searchParams.get('deposito') || undefined,
+      vettore: searchParams.get('vettore') || undefined,
+      tipologia: searchParams.get('tipologia') || undefined,
+      codCliente: searchParams.get('codCliente') || undefined,
+      cliente: searchParams.get('cliente') || undefined,
+      dataDa: searchParams.get('dataDa') || undefined,
+      dataA: searchParams.get('dataA') || undefined
+    });
+  }, [searchParams]);
 
   return (
     <div className="container-fluid">
       <div className="row">
         <div className="col-12">
           <h1 className="h3 mb-4">Gestione Fatturazione Delivery</h1>
+          
+          {/* Pulsante Export */}
+          <div className="card mb-4">
+            <div className="card-body">
+              <div className="d-flex justify-content-between align-items-center">
+                <h5 className="card-title mb-0">📊 Export Dati</h5>
+                <ExportDeliveryButton filters={activeFilters} />
+              </div>
+            </div>
+          </div>
           
           {/* Statistiche Dashboard */}
           <DeliveryStats />

@@ -32,6 +32,14 @@ export async function GET(request: NextRequest) {
       filters.mese = searchParams.get('mese')!;
     }
     
+    if (searchParams.get('trimestre')) {
+      filters.trimestre = searchParams.get('trimestre')!;
+    }
+    
+    if (searchParams.get('settimana')) {
+      filters.settimana = searchParams.get('settimana')!;
+    }
+    
     if (searchParams.get('viaggio')) {
       filters.viaggio = searchParams.get('viaggio')!;
     }

@@ -6,10 +6,10 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 
 ### 📊 **Export Excel Avanzato - v2.7.0**
 
-**Completamente implementato e funzionante**:
+**Completamente implementato e funzionante per entrambe le pagine**:
 
 #### 📋 **Export Multi-Foglio**
-- **Foglio 1 - Dati Filtati**: Tutti i 30 campi disponibili con dettagli completi
+- **Foglio 1 - Dati Filtati**: Tutti i campi disponibili con dettagli completi
 - **Foglio 2 - Statistiche**: KPI e metriche aggregate in formato tabellare
 - **Foglio 3 - Analisi per Vettore**: Dati raggruppati per vettore con medie
 - **Filtri applicati**: Export rispetta tutti i filtri attivi nella pagina
@@ -24,17 +24,19 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 
 #### ⚙️ **Interfaccia Utente**
 - **Modal opzioni**: Selezione fogli da includere nell'export
-- **Pulsante integrato**: Accesso diretto dalla pagina fatturazione-terzisti
+- **Pulsante integrato**: Accesso diretto da entrambe le pagine
+- **Posizionamento ottimizzato**: Pulsante sopra le card per visibilità
 - **Loading indicator**: Feedback visivo durante generazione file
 - **Download automatico**: File scaricato con nome timestamp
 - **Gestione errori**: Messaggi chiari in caso di problemi
 
 #### 🔧 **Architettura Tecnica**
-- **API endpoint**: `/api/terzisti/export` per generazione file
+- **API endpoint**: `/api/terzisti/export` e `/api/gestione/export` per generazione file
 - **Libreria xlsx**: Generazione file Excel nativi
 - **Compressione**: File ottimizzati per dimensioni ridotte
 - **Batch processing**: Gestione efficiente di dataset grandi
 - **TypeScript**: Tipizzazione completa per sicurezza
+- **Filtri corretti**: Risolto problema filtri non applicati nell'export gestione
 
 ### 🚀 **Ottimizzazioni Performance `/gestione` - v2.4.0**
 
@@ -140,6 +142,15 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Formato date**: Implementazione formato europeo `dd-mm-yyyy` con parsing robusto
 - **Import dati storici**: Sistema completo import primi 7 mesi 2025 con gestione duplicati
 - **Gestione tariffe**: Sistema tariffe dinamiche con calcolo automatico compensi
+
+#### 🎯 **Ottimizzazioni Filtri e UI - v2.6.3**
+- **Filtri su due righe**: Layout ottimizzato con `col-md-2` per 6 filtri per riga
+- **Pulsanti nell'header**: Spostamento pulsanti "Applica Filtri", "Reset" e "Nascondi Filtri" nell'header
+- **Filtri temporali avanzati**: Aggiunta filtri "Trimestre" e "Settimana" con aggiornamento card KPI
+- **API stats corretta**: Risolto problema filtri `trimestre` e `settimana` non applicati alle statistiche
+- **Rimozione colonne vuote**: Eliminate colonne "Mese", "Trimestre", "Settimana" dalla tabella (dati vuoti)
+- **Layout responsive**: Ottimizzazione spazio con 12 filtri totali su 2 righe bilanciate
+- **Performance**: Filtri temporali funzionanti con aggiornamento real-time delle card KPI
 
 #### 🔧 **Gestione Intelligente Duplicati**
 - **Stesso prodotto, consegna diversa**: ✅ Permesso (ID diverso)
@@ -276,9 +287,10 @@ npm run dev
 
 ### **2. Accesso alle Funzionalità**
 - **Dashboard**: `/` - Panoramica generale
-- **Gestione**: `/gestione` - Sistema completo fatturazione delivery
+- **Gestione**: `/gestione` - Sistema completo fatturazione delivery con export Excel e filtri ottimizzati
+- **Fatturazione Terzisti**: `/fatturazione-terzisti` - Sistema fatturazione terzisti con export Excel, filtri temporali avanzati e layout ottimizzato
 - **Monitoraggio**: `/monitoraggio` - Monitoraggio viaggi e consegne (ex-viaggi)
-- **Viaggi**: `/viaggi` - Gestione completa tabella tab_viaggi con filtri avanzati e modifica
+- **Viaggi**: `/viaggi` - Gestione completa tabella tab_viaggi con filtri avanzati, modifica e supporto tasto Invio
 - **Import**: `/import` - Sistema import Excel avanzato
 
 ### **3. Configurazione Database**
@@ -351,7 +363,7 @@ DB_GESTIONE_NAME=gestionelogistica
 
 ---
 
-**Versione**: 2.6.2  
+**Versione**: 2.7.1  
 **Ultimo Aggiornamento**: Gennaio 2025  
 **Stato**: ✅ **PRODUZIONE STABILE**  
 **Compatibilità**: Next.js 15+, Node.js 18+, MySQL 8.0+
