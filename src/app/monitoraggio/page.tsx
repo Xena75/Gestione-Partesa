@@ -177,6 +177,7 @@ function MonitoraggioPageContent() {
               <th>KM al Rifornimento</th>
               <th>Litri Riforniti</th>
               <th>€/Litro</th>
+              <th>€ Rifornimento</th>
               <th>Ritiri Effettuati</th>
                               <th>Aggiornato</th>
               <th>Azioni</th>
@@ -200,6 +201,10 @@ function MonitoraggioPageContent() {
                 <td>{viaggio.kmAlRifornimento || '-'}</td>
                 <td>{viaggio.litriRiforniti || '-'}</td>
                 <td>{viaggio.euroLitro || '-'}</td>
+                <td>
+                  {viaggio.litriRiforniti && viaggio.euroLitro ? 
+                    `${(viaggio.litriRiforniti * viaggio.euroLitro).toFixed(2)} €` : '-'}
+                </td>
                 <td>{viaggio.haiEffettuatoRitiri ? 'Sì' : 'No'}</td>
                 <td>{formatDateToItalian(viaggio.updatedAt)}</td>
                 <td className="d-flex gap-2">
