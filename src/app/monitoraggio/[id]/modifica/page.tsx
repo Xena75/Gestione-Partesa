@@ -48,6 +48,10 @@ export default function ModificaMonitoraggioPage({ params }: { params: Promise<{
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   
+  // Stati separati per i campi data in formato italiano
+  const [dataInizioItaliana, setDataInizioItaliana] = useState<string>('');
+  const [dataFineItaliana, setDataFineItaliana] = useState<string>('');
+  
   // Stati per il caricamento immagini
   const [newImageFile, setNewImageFile] = useState<File | null>(null);
   const [newImageType, setNewImageType] = useState<string>('');
@@ -56,6 +60,10 @@ export default function ModificaMonitoraggioPage({ params }: { params: Promise<{
   // Stati per il modal immagine
   const [selectedImage, setSelectedImage] = useState<TravelImage | null>(null);
   const [showImageModal, setShowImageModal] = useState(false);
+  const [imageZoom, setImageZoom] = useState(1);
+  const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
   const fetchViaggio = useCallback(async () => {
     try {
@@ -66,6 +74,10 @@ export default function ModificaMonitoraggioPage({ params }: { params: Promise<{
       }
       const data = await response.json();
       setViaggio(data.viaggio);
+      
+      // Inizializza gli stati italiani con i valori formattati
+      setDataInizioItaliana(formatDateToItalian(data.viaggio.dataOraInizioViaggio));
+      setDataFineItaliana(formatDateToItalian(data.viaggio.dataOraFineViaggio));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Errore nel caricamento');
     } finally {
@@ -110,12 +122,20 @@ export default function ModificaMonitoraggioPage({ params }: { params: Promise<{
 
     try {
       const { id } = await params;
+      
+      // Prepara i dati del viaggio con le date convertite
+      const viaggioToSend = {
+        ...viaggio,
+        dataOraInizioViaggio: convertItalianToDatabase(dataInizioItaliana),
+        dataOraFineViaggio: convertItalianToDatabase(dataFineItaliana)
+      };
+      
       const response = await fetch(`/api/monitoraggio/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(viaggio),
+        body: JSON.stringify(viaggioToSend),
       });
 
       if (!response.ok) {
@@ -146,11 +166,57 @@ export default function ModificaMonitoraggioPage({ params }: { params: Promise<{
   const handleImageClick = (image: TravelImage) => {
     setSelectedImage(image);
     setShowImageModal(true);
+    setImageZoom(1);
+    setImagePosition({ x: 0, y: 0 });
   };
 
   const closeImageModal = () => {
     setShowImageModal(false);
     setSelectedImage(null);
+    setImageZoom(1);
+    setImagePosition({ x: 0, y: 0 });
+  };
+
+  const handleZoomIn = () => {
+    setImageZoom(prev => Math.min(prev + 0.5, 3));
+  };
+
+  const handleZoomOut = () => {
+    setImageZoom(prev => Math.max(prev - 0.5, 0.5));
+  };
+
+  const handleResetZoom = () => {
+    setImageZoom(1);
+    setImagePosition({ x: 0, y: 0 });
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (imageZoom > 1) {
+      setIsDragging(true);
+      setDragStart({ x: e.clientX - imagePosition.x, y: e.clientY - imagePosition.y });
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDragging && imageZoom > 1) {
+      setImagePosition({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    if (e.deltaY < 0) {
+      handleZoomIn();
+    } else {
+      handleZoomOut();
+    }
   };
 
   const handleImageUpload = async () => {
@@ -208,6 +274,34 @@ export default function ModificaMonitoraggioPage({ params }: { params: Promise<{
       return `${day}-${month}-${year} ${hours}:${minutes}`;
     } catch {
       return dateString; // In caso di errore, ritorna la stringa originale
+    }
+  };
+
+  // Funzione per convertire il formato italiano al formato database
+  const convertItalianToDatabase = (italianDate: string): string | null => {
+    if (!italianDate || italianDate.trim() === '') return null;
+    
+    try {
+      // Formato atteso: dd-mm-yyyy hh:mm
+      const match = italianDate.match(/^(\d{2})-(\d{2})-(\d{4}) (\d{2}):(\d{2})$/);
+      if (!match) return null;
+      
+      const [, day, month, year, hours, minutes] = match;
+      
+      // Crea la data in formato ISO per il database
+      const date = new Date(
+        parseInt(year),
+        parseInt(month) - 1, // I mesi in JavaScript sono 0-based
+        parseInt(day),
+        parseInt(hours),
+        parseInt(minutes)
+      );
+      
+      if (isNaN(date.getTime())) return null;
+      
+      return date.toISOString();
+    } catch {
+      return null;
     }
   };
 
@@ -514,15 +608,15 @@ export default function ModificaMonitoraggioPage({ params }: { params: Promise<{
                      <label className="form-label fw-bold">Data/Ora Inizio:</label>
                    </div>
                    <div className="col-6">
-                                           <input
-                        type="text"
-                        className="form-control"
-                        placeholder="dd-mm-yyyy hh:mm"
-                        value={formatDateToItalian(viaggio.dataOraInizioViaggio)}
-                        onChange={(e) => {
-                          handleInputChange('dataOraInizioViaggio', e.target.value || null);
-                        }}
-                      />
+                     <input
+                       type="text"
+                       className="form-control"
+                       placeholder="dd-mm-yyyy hh:mm"
+                       value={dataInizioItaliana}
+                       onChange={(e) => {
+                         setDataInizioItaliana(e.target.value);
+                       }}
+                     />
                    </div>
                  </div>
 
@@ -531,15 +625,15 @@ export default function ModificaMonitoraggioPage({ params }: { params: Promise<{
                      <label className="form-label fw-bold">Data/Ora Fine:</label>
                    </div>
                    <div className="col-6">
-                                           <input
-                        type="text"
-                        className="form-control"
-                        placeholder="dd-mm-yyyy hh:mm"
-                        value={formatDateToItalian(viaggio.dataOraFineViaggio)}
-                        onChange={(e) => {
-                          handleInputChange('dataOraFineViaggio', e.target.value || null);
-                        }}
-                      />
+                     <input
+                       type="text"
+                       className="form-control"
+                       placeholder="dd-mm-yyyy hh:mm"
+                       value={dataFineItaliana}
+                       onChange={(e) => {
+                         setDataFineItaliana(e.target.value);
+                       }}
+                     />
                    </div>
                  </div>
 
@@ -551,10 +645,14 @@ export default function ModificaMonitoraggioPage({ params }: { params: Promise<{
                     <input
                       type="text"
                       className="form-control-plaintext"
-                      value={viaggio.dataOraInizioViaggio && viaggio.dataOraFineViaggio ? 
+                      value={dataInizioItaliana && dataFineItaliana ? 
                         (() => {
-                          const start = new Date(viaggio.dataOraInizioViaggio);
-                          const end = new Date(viaggio.dataOraFineViaggio);
+                          const startDate = convertItalianToDatabase(dataInizioItaliana);
+                          const endDate = convertItalianToDatabase(dataFineItaliana);
+                          if (!startDate || !endDate) return '-';
+                          
+                          const start = new Date(startDate);
+                          const end = new Date(endDate);
                           const diff = end.getTime() - start.getTime();
                           const hours = Math.floor(diff / (1000 * 60 * 60));
                           const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
@@ -762,36 +860,93 @@ export default function ModificaMonitoraggioPage({ params }: { params: Promise<{
          </div>
        </form>
 
-        {/* Modal per visualizzare l'immagine ingrandita */}
+        {/* Modal per visualizzare l'immagine ingrandita con zoom */}
         {showImageModal && selectedImage && (
-          <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.8)' }} tabIndex={-1}>
+          <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.9)' }} tabIndex={-1}>
             <div className="modal-dialog modal-xl modal-dialog-centered">
               <div className="modal-content bg-transparent border-0">
-                <div className="modal-header border-0">
-                  <h5 className="modal-title text-white">{selectedImage.filename}</h5>
-                  <button 
-                    type="button" 
-                    className="btn-close btn-close-white" 
-                    onClick={closeImageModal}
-                    aria-label="Chiudi"
-                  ></button>
+                <div className="modal-header border-0 d-flex justify-content-between align-items-center">
+                  <h5 className="modal-title text-white mb-0">{selectedImage.filename}</h5>
+                  <div className="d-flex gap-2 align-items-center">
+                    {/* Controlli Zoom */}
+                    <div className="btn-group" role="group">
+                      <button 
+                        type="button" 
+                        className="btn btn-outline-light btn-sm"
+                        onClick={handleZoomOut}
+                        disabled={imageZoom <= 0.5}
+                        title="Zoom Out"
+                      >
+                        <i className="bi bi-zoom-out"></i>
+                      </button>
+                      <button 
+                        type="button" 
+                        className="btn btn-outline-light btn-sm"
+                        onClick={handleResetZoom}
+                        title="Reset Zoom"
+                      >
+                        {Math.round(imageZoom * 100)}%
+                      </button>
+                      <button 
+                        type="button" 
+                        className="btn btn-outline-light btn-sm"
+                        onClick={handleZoomIn}
+                        disabled={imageZoom >= 3}
+                        title="Zoom In"
+                      >
+                        <i className="bi bi-zoom-in"></i>
+                      </button>
+                    </div>
+                    <button 
+                      type="button" 
+                      className="btn-close btn-close-white" 
+                      onClick={closeImageModal}
+                      aria-label="Chiudi"
+                    ></button>
+                  </div>
                 </div>
-                <div className="modal-body text-center p-0">
-                  <img 
-                    src={selectedImage.url} 
-                    alt={selectedImage.filename}
-                    className="img-fluid"
-                    style={{ maxHeight: '80vh', maxWidth: '100%' }}
-                  />
+                <div 
+                  className="modal-body text-center p-0 position-relative overflow-hidden"
+                  style={{ height: '80vh', cursor: imageZoom > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default' }}
+                  onMouseDown={handleMouseDown}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUp}
+                  onMouseLeave={handleMouseUp}
+                  onWheel={handleWheel}
+                >
+                  <div 
+                    className="d-flex justify-content-center align-items-center h-100"
+                    style={{
+                      transform: `translate(${imagePosition.x}px, ${imagePosition.y}px)`,
+                      transition: isDragging ? 'none' : 'transform 0.1s ease-out'
+                    }}
+                  >
+                    <img 
+                      src={selectedImage.url} 
+                      alt={selectedImage.filename}
+                      className="img-fluid"
+                      style={{ 
+                        maxHeight: '100%', 
+                        maxWidth: '100%',
+                        transform: `scale(${imageZoom})`,
+                        transition: 'transform 0.2s ease-out',
+                        userSelect: 'none',
+                        pointerEvents: 'none'
+                      }}
+                      draggable={false}
+                    />
+                  </div>
                 </div>
                 <div className="modal-footer border-0 justify-content-center">
                   <div className="text-white text-center">
                     <p className="mb-1">
                       <strong>Tipo:</strong> {selectedImage.type} | 
-                      <strong> Dimensione:</strong> {(selectedImage.size / 1024).toFixed(1)} KB
+                      <strong> Dimensione:</strong> {(selectedImage.size / 1024).toFixed(1)} KB |
+                      <strong> Zoom:</strong> {Math.round(imageZoom * 100)}%
                     </p>
                     <p className="mb-0">
-                      <strong>Caricata:</strong> {formatDateToItalian(selectedImage.createdAt)}
+                      <strong>Caricata:</strong> {formatDateToItalian(selectedImage.createdAt)} |
+                      <small className="ms-2">Usa la rotella del mouse o i pulsanti per zoomare</small>
                     </p>
                   </div>
                 </div>

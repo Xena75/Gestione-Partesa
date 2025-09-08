@@ -3,10 +3,19 @@ import * as XLSX from 'xlsx';
 import { getDeliveryStats, DeliveryFilters } from '@/lib/data-gestione';
 import pool from '@/lib/db-gestione';
 
+// 🚀 CONFIGURAZIONE: Aumenta limiti per export grandi dataset
+export const maxDuration = 300; // 5 minuti timeout
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { filters, includeStats = true, includeVettoreAnalysis = true } = body;
+    
+    // 🚀 TIMEOUT: Limita il tempo di esecuzione per evitare blocchi
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Export timeout: troppi dati da processare')), 600000) // 10 minuti
+    );
     
     
 
@@ -21,7 +30,8 @@ export async function POST(request: NextRequest) {
       codCliente: filters?.codCliente || undefined,
       deposito: filters?.deposito || undefined,
       bu: filters?.bu || undefined,
-      ordine: filters?.ordine || undefined
+      ordine: filters?.ordine || undefined,
+      mese: filters?.mese || undefined
     };
 
     // Funzione per recuperare TUTTI i record (non solo la prima pagina)
@@ -74,6 +84,10 @@ export async function POST(request: NextRequest) {
           conditions.push('data_mov_merce <= ?');
           queryParams.push(filters.dataA);
         }
+        if (filters.mese && filters.mese !== 'Tutti' && filters.mese !== '') {
+          conditions.push('mese = ?');
+          queryParams.push(parseInt(filters.mese));
+        }
       }
 
       const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -85,15 +99,26 @@ export async function POST(request: NextRequest) {
       `;
       
       const [rows] = await pool.query(sql, queryParams);
-      return rows as any[];
+      const data = rows as any[];
+      
+      // 🚀 DEBUG: Log per vedere cosa sta succedendo (rimosso in produzione)
+      
+      // 🚀 LIMITE: Controlla se ci sono troppi record
+      if (data.length > 150000) {
+        throw new Error(`Dataset troppo grande: ${data.length} record trovati (limite: 150.000). Riduci i filtri per l'export.`);
+      }
+      
+      return data;
     };
 
-    const [fatture, statsResult] = await Promise.all([
-      getAllDeliveryData(validFilters),
-      includeStats ? getDeliveryStats(validFilters) : null
-    ]);
+    // 🚀 RACE: Esegui export con timeout
+    const exportPromise = (async () => {
+      const [fatture, statsResult] = await Promise.all([
+        getAllDeliveryData(validFilters),
+        includeStats ? getDeliveryStats(validFilters) : null
+      ]);
 
-    const stats = statsResult;
+      const stats = statsResult;
 
     const workbook = XLSX.utils.book_new();
 
@@ -248,15 +273,32 @@ export async function POST(request: NextRequest) {
       compression: true
     });
 
-    const filename = `fatturazione_delivery_${new Date().toISOString().slice(0, 10)}.xlsx`;
-    return new NextResponse(excelBuffer, {
-      headers: {
-        'Content-Disposition': `attachment; filename="${filename}"`,
-        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      },
-    });
+      const filename = `fatturazione_delivery_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      return new NextResponse(excelBuffer, {
+        headers: {
+          'Content-Disposition': `attachment; filename="${filename}"`,
+          'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        },
+      });
+    })();
+
+    // 🚀 RACE: Esegui con timeout
+    return await Promise.race([exportPromise, timeoutPromise]) as NextResponse;
   } catch (error) {
     console.error('Errore durante l\'export Excel:', error);
+    
+    if (error instanceof Error && error.message.includes('timeout')) {
+      return NextResponse.json({ 
+        error: 'Export timeout: il dataset è troppo grande. Prova a ridurre i filtri o contatta l\'amministratore.' 
+      }, { status: 408 });
+    }
+    
+    if (error instanceof Error && error.message.includes('troppo grande')) {
+      return NextResponse.json({ 
+        error: error.message 
+      }, { status: 413 });
+    }
+    
     return NextResponse.json({ error: 'Errore durante la generazione del file Excel.' }, { status: 500 });
   }
 }

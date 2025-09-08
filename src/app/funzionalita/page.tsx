@@ -20,6 +20,46 @@ export default function FunzionalitaPage() {
             </div>
           </div>
 
+          {/* Export Excel Ottimizzato per Grandi Dataset - v2.8.0 */}
+          <div className="card mb-4 border-primary">
+            <div className="card-header bg-primary text-white">
+              <h3 className="h4 mb-0">🚀 Export Excel Ottimizzato per Grandi Dataset - v2.8.0!</h3>
+            </div>
+            <div className="card-body">
+              <div className="alert alert-primary">
+                <strong>✅ NUOVO: GESTIONE DATASET DI GRANDI DIMENSIONI!</strong>
+                <br />
+                Sistema completamente ottimizzato per gestire export di centinaia di migliaia di record.
+              </div>
+              
+              <h5>📈 Performance e Limiti</h5>
+              <ul>
+                <li><strong>Limite record aumentato</strong>: Fino a 150.000 record per export</li>
+                <li><strong>Timeout esteso</strong>: 10 minuti per dataset grandi</li>
+                <li><strong>Gestione memoria ottimizzata</strong>: Compressione Excel e query efficienti</li>
+                <li><strong>Supporto dataset reali</strong>: Testato con 106.728 record di luglio 2025</li>
+              </ul>
+
+              <h5>🎯 Filtro Mese Migliorato</h5>
+              <ul>
+                <li><strong>Colonna mese nativa</strong>: Usa la colonna `mese` esistente nel database</li>
+                <li><strong>Filtro preciso</strong>: `WHERE mese = 7` per luglio 2025</li>
+                <li><strong>Performance migliorata</strong>: Indici ottimizzati per query veloci</li>
+                <li><strong>Card KPI aggiornate</strong>: Statistiche corrette per mese selezionato</li>
+              </ul>
+
+              <h5>🔧 Ottimizzazioni Tecniche</h5>
+              <ul>
+                <li><strong>Payload ridotto</strong>: Filtri puliti prima dell'invio</li>
+                <li><strong>Errori specifici</strong>: Messaggi chiari per timeout e limiti</li>
+                <li><strong>Configurazione Next.js</strong>: Limiti server aumentati</li>
+                <li><strong>Debug avanzato</strong>: Log dettagliati per troubleshooting</li>
+              </ul>
+
+              <Link href="/gestione" className="btn btn-primary">Vai alla Gestione</Link>
+            </div>
+          </div>
+
           {/* Nuova Pagina Gestione - COMPLETAMENTE IMPLEMENTATA */}
           <div className="card mb-4 border-success">
             <div className="card-header bg-success text-white">

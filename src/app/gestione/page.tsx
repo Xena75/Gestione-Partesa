@@ -25,7 +25,8 @@ function GestioneContent() {
     codCliente: searchParams.get('codCliente') || undefined,
     cliente: searchParams.get('cliente') || undefined,
     dataDa: searchParams.get('dataDa') || undefined,
-    dataA: searchParams.get('dataA') || undefined
+    dataA: searchParams.get('dataA') || undefined,
+    mese: searchParams.get('mese') || undefined
   });
 
   // Aggiorna i filtri attivi quando cambiano i parametri URL
@@ -41,7 +42,8 @@ function GestioneContent() {
       codCliente: searchParams.get('codCliente') || undefined,
       cliente: searchParams.get('cliente') || undefined,
       dataDa: searchParams.get('dataDa') || undefined,
-      dataA: searchParams.get('dataA') || undefined
+      dataA: searchParams.get('dataA') || undefined,
+      mese: searchParams.get('mese') || undefined
     });
   }, [searchParams]);
 

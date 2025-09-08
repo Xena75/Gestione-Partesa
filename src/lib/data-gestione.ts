@@ -49,6 +49,7 @@ export type DeliveryFilters = {
   cliente?: string;
   dataDa?: string;
   dataA?: string;
+  mese?: string;
 };
 
 export type DeliverySort = {
@@ -116,6 +117,10 @@ export async function getDeliveryStats(filters?: DeliveryFilters): Promise<Deliv
         if (filters.dataA) {
           conditions.push('data_mov_merce <= ?');
           queryParams.push(filters.dataA);
+        }
+        if (filters.mese && filters.mese !== 'Tutti') {
+          conditions.push('mese = ?');
+          queryParams.push(parseInt(filters.mese));
         }
 
         if (conditions.length > 0) {
@@ -216,6 +221,14 @@ export async function getDeliveryData(
         if (filters.dataA) {
           conditions.push('data_mov_merce <= ?');
           queryParams.push(filters.dataA);
+        }
+        if (filters.mese && filters.mese !== 'Tutti') {
+          conditions.push('mese = ?');
+          queryParams.push(parseInt(filters.mese));
+        }
+        if (filters.mese && filters.mese !== 'Tutti') {
+          conditions.push('mese = ?');
+          queryParams.push(parseInt(filters.mese));
         }
 
         if (conditions.length > 0) {
@@ -332,6 +345,10 @@ export async function getDeliveryGrouped(
           conditions.push('data_mov_merce <= ?');
           queryParams.push(filters.dataA);
         }
+        if (filters.mese && filters.mese !== 'Tutti') {
+          conditions.push('mese = ?');
+          queryParams.push(parseInt(filters.mese));
+        }
 
         if (conditions.length > 0) {
           whereClause = `WHERE ${conditions.join(' AND ')}`;
@@ -417,25 +434,34 @@ export async function getDeliveryFilterOptions(): Promise<{
   tipologie: string[];
   bu: string[];
   divisioni: string[];
+  mesi: string[];
 }> {
   return await withCache(
     cacheKeys.FILTERS,
     async () => {
       // Esegui tutte le query in parallelo per migliorare le performance
-      const [depositi, vettori, tipologie, bu, divisioni] = await Promise.all([
+      const [depositi, vettori, tipologie, bu, divisioni, mesi] = await Promise.all([
         pool.query('SELECT DISTINCT dep FROM fatt_delivery WHERE dep IS NOT NULL AND dep != "" ORDER BY dep'),
         pool.query('SELECT DISTINCT descr_vettore FROM fatt_delivery WHERE descr_vettore IS NOT NULL AND descr_vettore != "" ORDER BY descr_vettore'),
         pool.query('SELECT DISTINCT tipologia FROM fatt_delivery WHERE tipologia IS NOT NULL AND tipologia != "" ORDER BY tipologia'),
         pool.query('SELECT DISTINCT bu FROM fatt_delivery WHERE bu IS NOT NULL AND bu != "" ORDER BY bu'),
-        pool.query('SELECT DISTINCT `div` FROM fatt_delivery WHERE `div` IS NOT NULL AND `div` != "" ORDER BY `div`')
+        pool.query('SELECT DISTINCT `div` FROM fatt_delivery WHERE `div` IS NOT NULL AND `div` != "" ORDER BY `div`'),
+        pool.query('SELECT DISTINCT mese FROM fatt_delivery WHERE mese IS NOT NULL ORDER BY mese')
       ]);
+
+      // Crea array di mesi con nomi
+      const nomiMesi = [
+        'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
+        'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'
+      ];
 
       return {
         depositi: (depositi[0] as any[]).map(row => row.dep),
         vettori: (vettori[0] as any[]).map(row => row.descr_vettore),
         tipologie: (tipologie[0] as any[]).map(row => row.tipologia),
         bu: (bu[0] as any[]).map(row => row.bu),
-        divisioni: (divisioni[0] as any[]).map(row => row.div)
+        divisioni: (divisioni[0] as any[]).map(row => row.div),
+        mesi: (mesi[0] as any[]).map(row => `${row.mese}-${nomiMesi[row.mese - 1]}`)
       };
     },
     10 * 60 * 1000 // Cache per 10 minuti (i filtri cambiano raramente)

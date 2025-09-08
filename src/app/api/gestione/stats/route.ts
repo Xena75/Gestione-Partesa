@@ -40,6 +40,9 @@ export async function GET(request: NextRequest) {
     
     const dataA = searchParams.get('dataA');
     if (dataA) filters.dataA = dataA;
+    
+    const mese = searchParams.get('mese');
+    if (mese) filters.mese = mese;
 
     // 🚀 OTTIMIZZAZIONE: timeout per evitare blocchi
     const stats = await Promise.race([

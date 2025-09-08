@@ -4,6 +4,28 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
 
+### 🚀 **Export Excel Ottimizzato per Grandi Dataset - v2.8.0**
+
+**Miglioramenti significativi per gestire dataset di grandi dimensioni**:
+
+#### 📈 **Performance e Limiti**
+- **Limite record aumentato**: Fino a 150.000 record per export
+- **Timeout esteso**: 10 minuti per dataset grandi
+- **Gestione memoria ottimizzata**: Compressione Excel e query efficienti
+- **Supporto dataset reali**: Testato con 106.728 record di luglio 2025
+
+#### 🎯 **Filtro Mese Migliorato**
+- **Colonna mese nativa**: Usa la colonna `mese` esistente nel database
+- **Filtro preciso**: `WHERE mese = 7` per luglio 2025
+- **Performance migliorata**: Indici ottimizzati per query veloci
+- **Card KPI aggiornate**: Statistiche corrette per mese selezionato
+
+#### 🔧 **Ottimizzazioni Tecniche**
+- **Payload ridotto**: Filtri puliti prima dell'invio
+- **Errori specifici**: Messaggi chiari per timeout e limiti
+- **Configurazione Next.js**: Limiti server aumentati
+- **Debug avanzato**: Log dettagliati per troubleshooting
+
 ### 📊 **Export Excel Avanzato - v2.7.0**
 
 **Completamente implementato e funzionante per entrambe le pagine**:

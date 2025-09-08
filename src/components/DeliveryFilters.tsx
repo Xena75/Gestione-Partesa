@@ -10,6 +10,7 @@ interface FilterOptions {
   tipologie: string[];
   bu: string[];
   divisioni: string[];
+  mesi: string[];
 }
 
 export default function DeliveryFilters() {
@@ -22,7 +23,8 @@ export default function DeliveryFilters() {
     vettori: [],
     tipologie: [],
     bu: [],
-    divisioni: []
+    divisioni: [],
+    mesi: []
   });
 
 
@@ -38,7 +40,8 @@ export default function DeliveryFilters() {
     codCliente: searchParams.get('codCliente') || '',
     cliente: searchParams.get('cliente') || '',
     dataDa: searchParams.get('dataDa') || '',
-    dataA: searchParams.get('dataA') || ''
+    dataA: searchParams.get('dataA') || '',
+    mese: searchParams.get('mese') || 'Tutti'
   });
 
   // Carica le opzioni dei filtri
@@ -71,7 +74,8 @@ export default function DeliveryFilters() {
       codCliente: searchParams.get('codCliente') || '',
       cliente: searchParams.get('cliente') || '',
       dataDa: searchParams.get('dataDa') || '',
-      dataA: searchParams.get('dataA') || ''
+      dataA: searchParams.get('dataA') || '',
+      mese: searchParams.get('mese') || 'Tutti'
     });
   }, [searchParams]);
 
@@ -125,7 +129,8 @@ export default function DeliveryFilters() {
       codCliente: '',
       cliente: '',
       dataDa: '',
-      dataA: ''
+      dataA: '',
+      mese: 'Tutti'
     });
 
     // Mantieni solo i parametri essenziali
@@ -148,21 +153,37 @@ export default function DeliveryFilters() {
       <div className="card-header bg-light">
         <div className="d-flex justify-content-between align-items-center">
           <h6 className="mb-0">Filtri Avanzati</h6>
-          <button
-            type="button"
-            className="btn btn-link btn-sm p-0"
-            onClick={toggleExpanded}
-          >
-            {isExpanded ? '▼ Nascondi Filtri' : '▶ Mostra Filtri'}
-          </button>
+          <div className="d-flex gap-2 align-items-center">
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={applyFilters}
+            >
+              🔍 Applica Filtri
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={resetFilters}
+            >
+              🔄 Reset
+            </button>
+            <button
+              type="button"
+              className="btn btn-link btn-sm p-0"
+              onClick={toggleExpanded}
+            >
+              {isExpanded ? '▼ Nascondi Filtri' : '▶ Mostra Filtri'}
+            </button>
+          </div>
         </div>
       </div>
       
       {isExpanded && (
         <div className="card-body">
           <div className="row g-3">
-            {/* Prima riga */}
-            <div className="col-md-3">
+            {/* Prima riga - 6 filtri */}
+            <div className="col-md-2">
               <label className="form-label">Viaggio</label>
               <input
                 type="text"
@@ -173,7 +194,7 @@ export default function DeliveryFilters() {
               />
             </div>
 
-            <div className="col-md-3">
+            <div className="col-md-2">
               <label className="form-label">Ordine</label>
               <input
                 type="text"
@@ -184,7 +205,7 @@ export default function DeliveryFilters() {
               />
             </div>
 
-            <div className="col-md-3">
+            <div className="col-md-2">
               <label className="form-label">Tipologia</label>
               <select
                 className="form-select"
@@ -200,7 +221,7 @@ export default function DeliveryFilters() {
               </select>
             </div>
 
-            <div className="col-md-3">
+            <div className="col-md-2">
               <label className="form-label">Cod. Cliente</label>
               <input
                 type="text"
@@ -211,8 +232,7 @@ export default function DeliveryFilters() {
               />
             </div>
 
-            {/* Seconda riga */}
-            <div className="col-md-3">
+            <div className="col-md-2">
               <label className="form-label">BU</label>
               <select
                 className="form-select"
@@ -228,7 +248,7 @@ export default function DeliveryFilters() {
               </select>
             </div>
 
-            <div className="col-md-3">
+            <div className="col-md-2">
               <label className="form-label">Cliente</label>
               <input
                 type="text"
@@ -239,7 +259,8 @@ export default function DeliveryFilters() {
               />
             </div>
 
-            <div className="col-md-3">
+            {/* Seconda riga - 5 filtri */}
+            <div className="col-md-2">
               <label className="form-label">Divisione</label>
               <select
                 className="form-select"
@@ -255,7 +276,7 @@ export default function DeliveryFilters() {
               </select>
             </div>
 
-            <div className="col-md-3">
+            <div className="col-md-2">
               <label className="form-label">Data Da</label>
               <input
                 type="date"
@@ -266,8 +287,7 @@ export default function DeliveryFilters() {
               />
             </div>
 
-            {/* Terza riga */}
-            <div className="col-md-3">
+            <div className="col-md-2">
               <label className="form-label">Deposito</label>
               <select
                 className="form-select"
@@ -283,7 +303,7 @@ export default function DeliveryFilters() {
               </select>
             </div>
 
-            <div className="col-md-3">
+            <div className="col-md-2">
               <label className="form-label">Data A</label>
               <input
                 type="date"
@@ -294,7 +314,7 @@ export default function DeliveryFilters() {
               />
             </div>
 
-            <div className="col-md-3">
+            <div className="col-md-2">
               <label className="form-label">Vettore</label>
               <select
                 className="form-select"
@@ -310,23 +330,20 @@ export default function DeliveryFilters() {
               </select>
             </div>
 
-            <div className="col-md-3 d-flex align-items-end">
-              <div className="d-flex gap-2 w-100">
-                <button
-                  type="button"
-                  className="btn btn-primary flex-fill"
-                  onClick={applyFilters}
-                >
-                  Q Filtra
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary flex-fill"
-                  onClick={resetFilters}
-                >
-                  X Reset
-                </button>
-              </div>
+            <div className="col-md-2">
+              <label className="form-label">Mese</label>
+              <select
+                className="form-select"
+                value={filters.mese}
+                onChange={(e) => handleInputChange('mese', e.target.value)}
+              >
+                <option value="Tutti">Tutti</option>
+                {filterOptions.mesi.map((mese) => (
+                  <option key={mese} value={mese.split('-')[0]}>
+                    {mese}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>

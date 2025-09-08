@@ -19,22 +19,29 @@ export default function ExportDeliveryButton({ filters, disabled = false }: Expo
   const handleExport = async () => {
     setIsExporting(true);
 
-    console.log('🔍 ExportDeliveryButton - Filtri da inviare:', filters);
-
     try {
+      // 🚀 OTTIMIZZAZIONE: Pulisci i filtri per ridurre il payload
+      const cleanFilters = Object.fromEntries(
+        Object.entries(filters).filter(([_, value]) => 
+          value !== undefined && value !== null && value !== '' && value !== 'Tutti' && value !== 'Tutte'
+        )
+      );
+
       const response = await fetch('/api/gestione/export', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          filters,
+          filters: cleanFilters,
           ...exportOptions
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Errore durante l\'export');
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || `Errore ${response.status}: ${response.statusText}`;
+        throw new Error(errorMessage);
       }
 
       const blob = await response.blob();
