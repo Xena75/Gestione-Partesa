@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 interface TravelImage {
@@ -41,6 +41,7 @@ interface Viaggio {
 
 export default function ModificaMonitoraggioPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [viaggio, setViaggio] = useState<Viaggio | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -124,9 +125,12 @@ export default function ModificaMonitoraggioPage({ params }: { params: Promise<{
       }
 
       setSuccess('Viaggio aggiornato con successo!');
-             setTimeout(() => {
-         router.push('/monitoraggio');
-       }, 2000);
+      setTimeout(() => {
+        // Preserva i filtri attivi quando si torna alla pagina monitoraggio
+        const filterParams = searchParams.toString();
+        const returnUrl = filterParams ? `/monitoraggio?${filterParams}` : '/monitoraggio';
+        router.push(returnUrl);
+      }, 2000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Errore nell\'aggiornamento');
     } finally {
@@ -223,7 +227,10 @@ export default function ModificaMonitoraggioPage({ params }: { params: Promise<{
         <div className="text-center">
           <h2 className="text-danger mb-3">❌ Errore</h2>
           <p className="mb-3">{error}</p>
-          <Link href="/monitoraggio" className="btn btn-primary">
+          <Link 
+            href={searchParams.toString() ? `/monitoraggio?${searchParams.toString()}` : '/monitoraggio'} 
+            className="btn btn-primary"
+          >
             ← Torna al Monitoraggio
           </Link>
         </div>
@@ -236,7 +243,10 @@ export default function ModificaMonitoraggioPage({ params }: { params: Promise<{
       <div className="vh-100 d-flex justify-content-center align-items-center">
         <div className="text-center">
           <h2 className="text-warning mb-3">⚠️ Viaggio non trovato</h2>
-          <Link href="/monitoraggio" className="btn btn-primary">
+          <Link 
+            href={searchParams.toString() ? `/monitoraggio?${searchParams.toString()}` : '/monitoraggio'} 
+            className="btn btn-primary"
+          >
             ← Torna al Monitoraggio
           </Link>
         </div>
@@ -255,7 +265,10 @@ export default function ModificaMonitoraggioPage({ params }: { params: Promise<{
           </p>
         </div>
         <div className="d-flex gap-2">
-          <Link href="/monitoraggio" className="btn btn-secondary">
+          <Link 
+            href={searchParams.toString() ? `/monitoraggio?${searchParams.toString()}` : '/monitoraggio'} 
+            className="btn btn-secondary"
+          >
             ← Torna alla lista
           </Link>
           <button type="submit" form="viaggioForm" className="btn btn-primary" disabled={isSaving}>

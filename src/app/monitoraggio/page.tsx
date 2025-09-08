@@ -203,9 +203,12 @@ function MonitoraggioPageContent() {
                 <td>{viaggio.haiEffettuatoRitiri ? 'Sì' : 'No'}</td>
                 <td>{formatDateToItalian(viaggio.updatedAt)}</td>
                 <td className="d-flex gap-2">
-                                     <Link href={`/monitoraggio/${viaggio.id}/modifica`} className="btn btn-secondary btn-sm">
-                     Modifica
-                   </Link>
+                  <Link 
+                    href={`/monitoraggio/${viaggio.id}/modifica?${searchParams.toString()}`} 
+                    className="btn btn-secondary btn-sm"
+                  >
+                    Modifica
+                  </Link>
                   <DeleteButton id={viaggio.id} />
                 </td>
               </tr>
