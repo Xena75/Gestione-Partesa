@@ -69,6 +69,16 @@ class SimpleCache {
       keys: Array.from(this.cache.keys())
     };
   }
+
+  // Invalida cache per pattern
+  invalidatePattern(pattern: string): void {
+    const regex = new RegExp(pattern);
+    for (const key of this.cache.keys()) {
+      if (regex.test(key)) {
+        this.cache.delete(key);
+      }
+    }
+  }
 }
 
 // Istanza globale della cache
@@ -110,4 +120,16 @@ export async function withCache<T>(
     console.error(`❌ Errore nel fetch per ${key}:`, error);
     throw error;
   }
+}
+
+// Funzione per invalidare cache specifica
+export function invalidateCache(key: string): void {
+  cache.delete(key);
+  console.log(`🗑️ Cache invalidata: ${key}`);
+}
+
+// Funzione per invalidare cache per pattern
+export function invalidateCachePattern(pattern: string): void {
+  cache.invalidatePattern(pattern);
+  console.log(`🗑️ Cache invalidata per pattern: ${pattern}`);
 }

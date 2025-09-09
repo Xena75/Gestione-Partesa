@@ -1,11 +1,38 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createPool } from 'mysql2/promise';
+import { invalidateCache, invalidateCachePattern } from '@/lib/cache';
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   let connection;
   
   try {
-    console.log('📥 API Import Terzisti - Inizio import dati');
+    // Leggi i parametri dalla richiesta
+    const body = await request.json();
+    const { mese, anno } = body;
+    
+    // Validazione parametri
+    if (!mese || !anno) {
+      return NextResponse.json(
+        { error: 'Mese e anno sono obbligatori' },
+        { status: 400 }
+      );
+    }
+    
+    if (mese < 1 || mese > 12) {
+      return NextResponse.json(
+        { error: 'Mese deve essere tra 1 e 12' },
+        { status: 400 }
+      );
+    }
+    
+    if (anno < 2020 || anno > 2030) {
+      return NextResponse.json(
+        { error: 'Anno deve essere tra 2020 e 2030' },
+        { status: 400 }
+      );
+    }
+    
+    console.log(`📥 API Import Terzisti - Inizio import dati per ${mese}/${anno}`);
 
     // Crea connessione al database
     connection = await createPool({
@@ -34,13 +61,17 @@ export async function POST() {
       );
     }
 
-    // 2. Conta record esistenti
+    // 2. Conta record esistenti per il mese/anno specificato
     const [existingCount] = await connection.execute(`
-      SELECT COUNT(*) as count FROM tab_delivery_terzisti
-    `);
-    console.log(`📊 Record esistenti: ${(existingCount as any[])[0].count}`);
+      SELECT COUNT(*) as count 
+      FROM tab_delivery_terzisti tdt
+      INNER JOIN fatt_delivery fd ON tdt.id = fd.id
+      WHERE fd.mese = ? AND fd.anno = ?
+    `, [mese, anno]);
+    console.log(`📊 Record esistenti per ${mese}/${anno}: ${(existingCount as any[])[0].count}`);
 
     // 3. Query per estrarre dati con JOIN e filtri + calcolo tariffa dinamica
+    // FILTRO PER MESE E ANNO SPECIFICATI
     const extractQuery = `
       SELECT 
         fd.id,
@@ -60,7 +91,7 @@ export async function POST() {
         NULL as peso,
         NULL as volume,
         fd.compenso,
-        fd.extra_cons,
+        NULL as extra_cons,
         fd.tot_compenso,
         fd.cod_cliente,
         fd.ragione_sociale,
@@ -88,18 +119,22 @@ export async function POST() {
       WHERE fd.\`div\` IN ('W007', 'W009')
       AND tv.Tipo_Vettore = 'Terzista'
       AND fd.tipologia = 'Consegna pieni'
+      AND fd.mese = ?
+      AND fd.anno = ?
       ORDER BY fd.data_mov_merce DESC
     `;
 
-    const [sourceData] = await connection.execute(extractQuery);
-    console.log(`📈 Record estratti da fatt_delivery: ${(sourceData as any[]).length}`);
+    const [sourceData] = await connection.execute(extractQuery, [mese, anno]);
+    console.log(`📈 Record estratti da fatt_delivery per ${mese}/${anno}: ${(sourceData as any[]).length}`);
 
     if ((sourceData as any[]).length === 0) {
       return NextResponse.json({
         success: true,
-        message: 'Nessun record trovato con i filtri specificati',
+        message: `Nessun record trovato per ${mese}/${anno} con i filtri specificati`,
         insertedCount: 0,
-        totalRecords: 0
+        totalRecords: 0,
+        mese,
+        anno
       });
     }
 
@@ -187,13 +222,27 @@ export async function POST() {
 
     console.log('✅ Import completato!');
 
+    // Invalida tutte le cache correlate ai terzisti
+    try {
+      invalidateCache('terzisti-filters-v2');
+      invalidateCachePattern('terzisti:');
+      invalidateCachePattern('terzisti-stats:');
+      invalidateCachePattern('terzisti-grouped:');
+      invalidateCachePattern('terzisti-details:');
+      console.log('✅ Cache terzisti invalidata');
+    } catch (cacheError) {
+      console.warn('⚠️ Errore invalidazione cache:', cacheError);
+    }
+
     return NextResponse.json({
       success: true,
-      message: 'Import dati completato con successo',
+      message: `Import dati completato con successo per ${mese}/${anno}`,
       insertedCount,
       errorCount,
       totalRecords: (finalCount as any[])[0].count,
-      statsByDivision: statsByDiv
+      statsByDivision: statsByDiv,
+      mese,
+      anno
     });
 
   } catch (error) {

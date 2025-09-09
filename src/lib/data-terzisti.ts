@@ -145,13 +145,13 @@ export async function getTerzistiData(
     }
 
     if (filters.vettore) {
-      whereConditions.push('Descr_Vettore_Join LIKE ?');
-      queryParams.push(`%${filters.vettore}%`);
+      whereConditions.push('(Descr_Vettore_Join LIKE ? OR REGEXP_REPLACE(TRIM(Descr_Vettore_Join), \'[[:space:]]+\', \' \') LIKE ?)');
+      queryParams.push(`%${filters.vettore}%`, `%${filters.vettore}%`);
     }
 
     if (filters.azienda) {
-      whereConditions.push('Azienda_Vettore LIKE ?');
-      queryParams.push(`%${filters.azienda}%`);
+      whereConditions.push('(Azienda_Vettore LIKE ? OR TRIM(REGEXP_REPLACE(Azienda_Vettore, \'[[:space:]]+\', \' \')) LIKE ?)');
+      queryParams.push(`%${filters.azienda}%`, `%${filters.azienda}%`);
     }
 
     if (filters.dataDa) {
@@ -195,8 +195,8 @@ export async function getTerzistiData(
     }
 
     if (filters.cliente) {
-      whereConditions.push('(cod_cliente LIKE ? OR ragione_sociale LIKE ?)');
-      queryParams.push(`%${filters.cliente}%`, `%${filters.cliente}%`);
+      whereConditions.push('(cod_cliente LIKE ? OR ragione_sociale LIKE ? OR REGEXP_REPLACE(TRIM(ragione_sociale), \'[[:space:]]+\', \' \') LIKE ?)');
+      queryParams.push(`%${filters.cliente}%`, `%${filters.cliente}%`, `%${filters.cliente}%`);
     }
 
     if (filters.articolo) {
@@ -325,13 +325,13 @@ export async function getTerzistiStats(filters: TerzistiFilters = {}): Promise<T
     }
 
     if (filters.vettore) {
-      whereConditions.push('Descr_Vettore_Join LIKE ?');
-      queryParams.push(`%${filters.vettore}%`);
+      whereConditions.push('(Descr_Vettore_Join LIKE ? OR REGEXP_REPLACE(TRIM(Descr_Vettore_Join), \'[[:space:]]+\', \' \') LIKE ?)');
+      queryParams.push(`%${filters.vettore}%`, `%${filters.vettore}%`);
     }
 
     if (filters.azienda) {
-      whereConditions.push('Azienda_Vettore LIKE ?');
-      queryParams.push(`%${filters.azienda}%`);
+      whereConditions.push('(Azienda_Vettore LIKE ? OR TRIM(REGEXP_REPLACE(Azienda_Vettore, \'[[:space:]]+\', \' \')) LIKE ?)');
+      queryParams.push(`%${filters.azienda}%`, `%${filters.azienda}%`);
     }
 
     if (filters.dataDa) {
@@ -375,8 +375,8 @@ export async function getTerzistiStats(filters: TerzistiFilters = {}): Promise<T
     }
 
     if (filters.cliente) {
-      whereConditions.push('(cod_cliente LIKE ? OR ragione_sociale LIKE ?)');
-      queryParams.push(`%${filters.cliente}%`, `%${filters.cliente}%`);
+      whereConditions.push('(cod_cliente LIKE ? OR ragione_sociale LIKE ? OR REGEXP_REPLACE(TRIM(ragione_sociale), \'[[:space:]]+\', \' \') LIKE ?)');
+      queryParams.push(`%${filters.cliente}%`, `%${filters.cliente}%`, `%${filters.cliente}%`);
     }
 
     if (filters.articolo) {
@@ -455,16 +455,16 @@ export async function getTerzistiFilterOptions(): Promise<TerzistiFilterOptions>
   return withCache('terzisti-filters-v2', async () => {
     try {
       const [divisioniResult] = await pool.execute('SELECT DISTINCT `div` FROM tab_delivery_terzisti ORDER BY `div`');
-      const [vettoriResult] = await pool.execute('SELECT DISTINCT Descr_Vettore_Join FROM tab_delivery_terzisti WHERE Descr_Vettore_Join IS NOT NULL ORDER BY Descr_Vettore_Join');
-      const [aziendeResult] = await pool.execute('SELECT DISTINCT Azienda_Vettore FROM tab_delivery_terzisti WHERE Azienda_Vettore IS NOT NULL ORDER BY Azienda_Vettore');
+      const [vettoriResult] = await pool.execute('SELECT DISTINCT REGEXP_REPLACE(TRIM(Descr_Vettore_Join), \'[[:space:]]+\', \' \') as Descr_Vettore_Join FROM tab_delivery_terzisti WHERE Descr_Vettore_Join IS NOT NULL AND TRIM(Descr_Vettore_Join) != \'\' ORDER BY REGEXP_REPLACE(TRIM(Descr_Vettore_Join), \'[[:space:]]+\', \' \')');
+      const [aziendeResult] = await pool.execute('SELECT DISTINCT TRIM(REGEXP_REPLACE(Azienda_Vettore, \'[[:space:]]+\', \' \')) as Azienda_Vettore FROM tab_delivery_terzisti WHERE Azienda_Vettore IS NOT NULL AND TRIM(Azienda_Vettore) != \'\' ORDER BY TRIM(REGEXP_REPLACE(Azienda_Vettore, \'[[:space:]]+\', \' \'))');
       const [mesiResult] = await pool.execute('SELECT DISTINCT mese FROM tab_delivery_terzisti WHERE mese IS NOT NULL ORDER BY mese DESC');
       const [trimestriResult] = await pool.execute('SELECT DISTINCT trimestre FROM tab_delivery_terzisti WHERE trimestre IS NOT NULL ORDER BY trimestre DESC');
       const [settimaneResult] = await pool.execute('SELECT DISTINCT settimana FROM tab_delivery_terzisti WHERE settimana IS NOT NULL ORDER BY settimana DESC');
       const [viaggiResult] = await pool.execute('SELECT DISTINCT viaggio FROM tab_delivery_terzisti WHERE viaggio IS NOT NULL ORDER BY viaggio');
       const [ordiniResult] = await pool.execute('SELECT DISTINCT ordine FROM tab_delivery_terzisti WHERE ordine IS NOT NULL ORDER BY ordine');
       const [consegneResult] = await pool.execute('SELECT DISTINCT consegna_num FROM tab_delivery_terzisti WHERE consegna_num IS NOT NULL ORDER BY consegna_num');
-      const [clientiResult] = await pool.execute('SELECT DISTINCT ragione_sociale FROM tab_delivery_terzisti WHERE ragione_sociale IS NOT NULL ORDER BY ragione_sociale');
-      const [articoliResult] = await pool.execute('SELECT DISTINCT descr_articolo FROM tab_delivery_terzisti WHERE descr_articolo IS NOT NULL ORDER BY descr_articolo');
+      const [clientiResult] = await pool.execute('SELECT DISTINCT REGEXP_REPLACE(TRIM(ragione_sociale), \'[[:space:]]+\', \' \') as ragione_sociale FROM tab_delivery_terzisti WHERE ragione_sociale IS NOT NULL AND TRIM(ragione_sociale) != \'\' ORDER BY REGEXP_REPLACE(TRIM(ragione_sociale), \'[[:space:]]+\', \' \')');
+      const [articoliResult] = await pool.execute('SELECT DISTINCT REGEXP_REPLACE(TRIM(descr_articolo), \'[[:space:]]+\', \' \') as descr_articolo FROM tab_delivery_terzisti WHERE descr_articolo IS NOT NULL AND TRIM(descr_articolo) != \'\' ORDER BY REGEXP_REPLACE(TRIM(descr_articolo), \'[[:space:]]+\', \' \')');
 
       return {
         divisioni: (divisioniResult as any[]).map(row => row.div),
@@ -484,7 +484,7 @@ export async function getTerzistiFilterOptions(): Promise<TerzistiFilterOptions>
       console.error('Errore nella query opzioni filtro terzisti:', error);
       throw error;
     }
-  }, 600000); // Cache per 10 minuti
+  }, 60000); // Cache per 1 minuto
 }
 
 /**
@@ -543,13 +543,13 @@ export async function getTerzistiGroupedData(
     }
 
     if (filters.vettore) {
-      whereConditions.push('Descr_Vettore_Join LIKE ?');
-      queryParams.push(`%${filters.vettore}%`);
+      whereConditions.push('(Descr_Vettore_Join LIKE ? OR REGEXP_REPLACE(TRIM(Descr_Vettore_Join), \'[[:space:]]+\', \' \') LIKE ?)');
+      queryParams.push(`%${filters.vettore}%`, `%${filters.vettore}%`);
     }
 
     if (filters.azienda) {
-      whereConditions.push('Azienda_Vettore LIKE ?');
-      queryParams.push(`%${filters.azienda}%`);
+      whereConditions.push('(Azienda_Vettore LIKE ? OR TRIM(REGEXP_REPLACE(Azienda_Vettore, \'[[:space:]]+\', \' \')) LIKE ?)');
+      queryParams.push(`%${filters.azienda}%`, `%${filters.azienda}%`);
     }
 
     if (filters.dataDa) {
@@ -593,8 +593,8 @@ export async function getTerzistiGroupedData(
     }
 
     if (filters.cliente) {
-      whereConditions.push('(cod_cliente LIKE ? OR ragione_sociale LIKE ?)');
-      queryParams.push(`%${filters.cliente}%`, `%${filters.cliente}%`);
+      whereConditions.push('(cod_cliente LIKE ? OR ragione_sociale LIKE ? OR REGEXP_REPLACE(TRIM(ragione_sociale), \'[[:space:]]+\', \' \') LIKE ?)');
+      queryParams.push(`%${filters.cliente}%`, `%${filters.cliente}%`, `%${filters.cliente}%`);
     }
 
     if (filters.articolo) {

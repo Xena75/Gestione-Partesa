@@ -5,17 +5,32 @@ import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { getFileFromBlob } from '../upload/route';
 
-// Configurazione database gestionelogistica
+// Configurazione database gestionelogistica con timeout estesi
 const dbConfig = {
   host: process.env.DB_GESTIONE_HOST || 'localhost',
   user: process.env.DB_GESTIONE_USER || 'root',
   password: process.env.DB_GESTIONE_PASS || '',
   database: process.env.DB_GESTIONE_NAME || 'gestionelogistica',
-  port: parseInt(process.env.DB_GESTIONE_PORT || '3306')
+  port: parseInt(process.env.DB_GESTIONE_PORT || '3306'),
+  // Configurazioni per connessioni lunghe
+  acquireTimeout: 60000, // 60 secondi per acquisire connessione
+  timeout: 60000, // 60 secondi timeout query
+  reconnect: true, // Riconnessione automatica
+  keepAliveInitialDelay: 0,
+  enableKeepAlive: true
 };
 
 // Importa la Map condivisa del progresso
 import { updateImportProgress, cleanupImportProgress, getImportProgress } from '@/lib/import-progress-db';
+
+// Funzione per verificare e riconnettere la connessione se necessario
+async function ensureConnection(connection: mysql.Connection | null): Promise<mysql.Connection> {
+  if (!connection || connection.state === 'disconnected') {
+    console.log('🔄 Riconnessione al database...');
+    return await mysql.createConnection(dbConfig);
+  }
+  return connection;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -64,8 +79,22 @@ async function executeDeliveryImport(fileId: string, mapping: Record<string, str
   const startTime = Date.now();
   let connection: mysql.Connection | null = null;
   
+  // Timeout di 2 ore per file grandi
+  const timeout = 2 * 60 * 60 * 1000; // 2 ore
+  const timeoutId = setTimeout(async () => {
+    console.error(`⏰ Timeout raggiunto per import ${fileId} dopo ${timeout/1000/60} minuti`);
+    await updateImportProgress(fileId, 100, 'Importazione interrotta per timeout', true, {
+      success: false,
+      totalRows: 0,
+      importedRows: 0,
+      errors: ['Timeout: Importazione interrotta dopo 30 minuti'],
+      sessionId: fileId,
+      duration: Math.round((Date.now() - startTime) / 1000)
+    });
+  }, timeout);
+  
   try {
-    console.log(`🚀 Avvio importazione delivery per fileId: ${fileId}`);
+    console.log(`🚀 Avvio importazione delivery per fileId: ${fileId} (timeout: ${timeout/1000/60} minuti)`);
     
     // Connessione al database
     await updateImportProgress(fileId, 5, 'Connessione al database...');
@@ -104,23 +133,42 @@ async function executeDeliveryImport(fileId: string, mapping: Record<string, str
     await updateImportProgress(fileId, 25, 'Inizio importazione dati...');
     let importedRows = 0;
     const errors: string[] = [];
-    const batchSize = 100; // Inserisci in batch di 100 righe
+    const batchSize = 1000; // Aumentato per velocità ottimale
+    const totalBatches = Math.ceil(totalRows / batchSize);
+
+    console.log(`📊 Inizio importazione: ${totalRows} righe in ${totalBatches} batch da ${batchSize} righe`);
 
     for (let i = 0; i < totalRows; i += batchSize) {
       const batch = rows.slice(i, i + batchSize);
+      const currentBatch = Math.floor(i / batchSize) + 1;
       const batchProgress = 25 + ((i / totalRows) * 65); // 25% - 90%
       
-      await updateImportProgress(fileId, batchProgress, `Importazione batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(totalRows/batchSize)}...`);
+      await updateImportProgress(fileId, batchProgress, `Importazione batch ${currentBatch}/${totalBatches} (${batch.length} righe)...`);
 
       try {
+        // Verifica e riconnetta la connessione prima di ogni batch
+        connection = await ensureConnection(connection);
+        
+        const batchStartTime = Date.now();
         const batchResults = await processBatch(connection, batch, headers, validMapping, insertQuery, originalName);
+        const batchDuration = Date.now() - batchStartTime;
+        
         importedRows += batchResults.imported;
         errors.push(...batchResults.errors);
         
-        console.log(`📦 Batch ${Math.floor(i/batchSize) + 1}: ${batchResults.imported}/${batch.length} righe importate`);
+        console.log(`📦 Batch ${currentBatch}/${totalBatches}: ${batchResults.imported}/${batch.length} righe importate in ${batchDuration}ms`);
+        
+        // Pausa minima tra batch per stabilità
+        if (currentBatch < totalBatches) {
+          console.log(`⏸️ Pausa 50ms prima del prossimo batch...`);
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
       } catch (batchError) {
-        console.error(`❌ Errore nel batch ${Math.floor(i/batchSize) + 1}:`, batchError);
-        errors.push(`Batch ${Math.floor(i/batchSize) + 1}: ${batchError instanceof Error ? batchError.message : 'Errore sconosciuto'}`);
+        console.error(`❌ Errore nel batch ${currentBatch}:`, batchError);
+        errors.push(`Batch ${currentBatch}: ${batchError instanceof Error ? batchError.message : 'Errore sconosciuto'}`);
+        
+        // Continua con il prossimo batch anche se questo fallisce
+        console.log(`⚠️ Continuo con il prossimo batch...`);
       }
     }
 
@@ -135,6 +183,9 @@ async function executeDeliveryImport(fileId: string, mapping: Record<string, str
       duration
     });
 
+    // Cancella il timeout
+    clearTimeout(timeoutId);
+    
     // NON pulire immediatamente il progresso - lascialo per il frontend
     // Il progresso verrà pulito automaticamente dal database dopo 1 ora
     console.log(`✅ Importazione completata: ${importedRows}/${totalRows} righe importate in ${duration}s`);
@@ -153,6 +204,9 @@ async function executeDeliveryImport(fileId: string, mapping: Record<string, str
       duration
     });
 
+    // Cancella il timeout anche in caso di errore
+    clearTimeout(timeoutId);
+    
     // NON pulire immediatamente il progresso anche in caso di errore
     // Il progresso verrà pulito quando il frontend lo leggerà
     console.log(`❌ Importazione fallita per ${fileId}, progresso mantenuto per il frontend`);
@@ -176,8 +230,8 @@ function validateMapping(mapping: Record<string, string>, headers: string[]): Re
 }
 
 function prepareInsertQuery(mapping: Record<string, string>): string {
-  const fields = ['source_name', 'mese', 'settimana']; // Campi automatici
-  const values = ['?', '?', '?'];
+  const fields = ['source_name']; // Solo source_name è automatico, mese e settimana sono calcolati dal DB
+  const values = ['?'];
   
   // Aggiungi campi mappati
   Object.values(mapping).forEach(field => {
@@ -202,27 +256,58 @@ async function processBatch(
   let imported = 0;
   
   console.log(`🔍 Processando batch di ${batch.length} righe`);
-  console.log(`📋 Headers: ${headers.join(', ')}`);
-  console.log(`🗺️ Mapping: ${JSON.stringify(mapping)}`);
   
+  // Prepara tutte le righe del batch
+  const batchValues: any[][] = [];
   for (let i = 0; i < batch.length; i++) {
     const row = batch[i];
     try {
-      console.log(`📝 Processando riga ${i + 1}: ${JSON.stringify(row)}`);
       const values = prepareRowValues(row, headers, mapping, originalName);
-      console.log(`💾 Valori preparati: ${JSON.stringify(values)}`);
-      await connection.execute(insertQuery, values);
-      imported++;
-      console.log(`✅ Riga ${i + 1} inserita con successo`);
+      batchValues.push(values);
     } catch (error) {
       const rowNum = i + 1;
       const errorMsg = `Riga ${rowNum}: ${error instanceof Error ? error.message : 'Errore sconosciuto'}`;
-      console.error(`❌ Errore riga ${rowNum}:`, error);
+      console.error(`❌ Errore preparazione riga ${rowNum}:`, error);
       errors.push(errorMsg);
     }
   }
   
-  console.log(`📊 Batch completato: ${imported}/${batch.length} righe importate, ${errors.length} errori`);
+  // Inserisci le righe in batch multipli per velocità ottimale
+  if (batchValues.length > 0) {
+    try {
+      // Verifica e riconnetta la connessione se necessario
+      connection = await ensureConnection(connection);
+      
+      // Usa INSERT multipli per velocità massima
+      const multiInsertQuery = insertQuery.replace('VALUES (?)', `VALUES ${batchValues.map(() => '(?)').join(', ')}`);
+      const flatValues = batchValues.flat();
+      
+      await connection.execute(multiInsertQuery, flatValues);
+      imported = batchValues.length;
+      
+      console.log(`✅ Batch completato: ${imported}/${batch.length} righe importate in un singolo INSERT`);
+    } catch (error) {
+      console.error(`❌ Errore INSERT multiplo, fallback a inserimenti singoli:`, error);
+      
+      // Fallback a inserimenti singoli se il batch fallisce
+      for (let i = 0; i < batchValues.length; i++) {
+        try {
+          // Verifica e riconnetta la connessione per ogni riga nel fallback
+          connection = await ensureConnection(connection);
+          await connection.execute(insertQuery, batchValues[i]);
+          imported++;
+        } catch (singleError) {
+          const rowNum = i + 1;
+          const errorMsg = `Riga ${rowNum}: ${singleError instanceof Error ? singleError.message : 'Errore sconosciuto'}`;
+          console.error(`❌ Errore inserimento riga ${rowNum}:`, singleError);
+          errors.push(errorMsg);
+        }
+      }
+      
+      console.log(`✅ Batch completato (fallback): ${imported}/${batch.length} righe importate, ${errors.length} errori`);
+    }
+  }
+  
   return { imported, errors };
 }
 
@@ -232,20 +317,7 @@ function prepareRowValues(row: (string | number | null)[], headers: string[], ma
   // source_name (nome file originale)
   values.push(originalName || 'import_delivery.xlsx');
   
-  // mese e settimana (calcolati da data_mov_merce)
-  let dataMovMerce: Date | null = null;
-  const dataMovMerceHeader = Object.keys(mapping).find(h => mapping[h] === 'data_mov_merce');
-  if (dataMovMerceHeader) {
-    const dataIndex = headers.indexOf(dataMovMerceHeader);
-    if (dataIndex >= 0 && row[dataIndex]) {
-      dataMovMerce = convertExcelDate(row[dataIndex]);
-    }
-  }
-  
-  values.push(dataMovMerce ? dataMovMerce.getMonth() + 1 : null);
-  values.push(dataMovMerce ? getWeekNumber(dataMovMerce) : null);
-  
-  // Campi mappati
+  // Campi mappati (mese e settimana sono calcolati automaticamente dal database)
   Object.entries(mapping).forEach(([excelHeader, dbField]) => {
     if (dbField === 'auto_filename' || dbField === 'auto_calculated' || dbField === 'auto_current_date') {
       return; // Saltato

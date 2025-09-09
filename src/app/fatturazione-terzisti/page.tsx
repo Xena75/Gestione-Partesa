@@ -200,15 +200,52 @@ export default function FatturazioneTerzistiPage() {
       setImporting(true);
       setError(null);
 
+      // Chiedi mese e anno all'utente
+      const mese = prompt('Inserisci il mese (1-12):');
+      const anno = prompt('Inserisci l\'anno (es. 2025):');
+
+      if (!mese || !anno) {
+        alert('❌ Mese e anno sono obbligatori');
+        setImporting(false);
+        return;
+      }
+
+      const meseNum = parseInt(mese);
+      const annoNum = parseInt(anno);
+
+      if (isNaN(meseNum) || meseNum < 1 || meseNum > 12) {
+        alert('❌ Mese deve essere un numero tra 1 e 12');
+        setImporting(false);
+        return;
+      }
+
+      if (isNaN(annoNum) || annoNum < 2020 || annoNum > 2030) {
+        alert('❌ Anno deve essere un numero tra 2020 e 2030');
+        setImporting(false);
+        return;
+      }
+
+      // Conferma
+      const conferma = confirm(`Vuoi importare i dati per ${meseNum}/${annoNum}?`);
+      if (!conferma) {
+        setImporting(false);
+        return;
+      }
+
       const response = await fetch('/api/terzisti/import', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          mese: meseNum,
+          anno: annoNum
+        })
       });
 
       if (!response.ok) {
-        throw new Error('Errore durante l\'import dei dati');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Errore durante l\'import dei dati');
       }
 
       const result = await response.json();
@@ -218,7 +255,7 @@ export default function FatturazioneTerzistiPage() {
       await loadData();
       await loadStats();
 
-      alert('✅ Import dati completato con successo!');
+      alert(`✅ Import dati completato con successo per ${meseNum}/${annoNum}!\n\nRecord importati: ${result.insertedCount}\nRecord totali: ${result.totalRecords}`);
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Errore sconosciuto');
@@ -347,7 +384,7 @@ export default function FatturazioneTerzistiPage() {
                   </>
                 ) : (
                   <>
-                    📥 Importa Dati Mensili
+                    📥 Importa Dati per Mese/Anno
                   </>
                 )}
               </button>
