@@ -23,10 +23,10 @@ export default function UploadZone({ onFileUpload, isUploading, uploadedFile }: 
       return false;
     }
 
-    // Controlla dimensione (10MB)
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    // Controlla dimensione (50MB)
+    const maxSize = 50 * 1024 * 1024; // 50MB
     if (file.size > maxSize) {
-      alert('File troppo grande. Dimensione massima: 10MB');
+      alert('File troppo grande. Dimensione massima: 50MB');
       return false;
     }
 
