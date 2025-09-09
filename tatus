@@ -1,0 +1,5 @@
+[33m07eaa3a[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m fix: Configurazione Vercel per file upload fino a 50MB
+[33m96c8efd[m fix: Allineamento limite dimensione file a 50MB
+[33m7b04131[m feat: Sistema Import Delivery Completo v2.9.0
+[33m2fb310a[m  v2.8.0: Export Excel Ottimizzato per Grandi Dataset
+[33m91dfd43[m feat: Aggiunta colonna € Rifornimento nella tabella monitoraggio

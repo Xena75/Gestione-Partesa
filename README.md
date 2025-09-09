@@ -4,9 +4,9 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
 
-### 🚀 **Sistema Import Delivery Completo - v2.9.0**
+### 🚀 **Sistema Import Delivery Completo - v2.9.1**
 
-**Sistema completo di import per la tabella `fatt_delivery` con progress tracking**:
+**Sistema completo di import per la tabella `fatt_delivery` con progress tracking e configurazione Vercel**:
 
 #### 📊 **Import Excel Avanzato**
 - **Mapping flessibile**: Interfaccia drag-and-drop per mappare colonne Excel a campi database
@@ -28,6 +28,13 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Campi calcolati**: Calcolo automatico di mese, settimana e source_name
 - **Gestione file**: Upload sicuro con validazione tipo e dimensione
 - **Cleanup automatico**: Rimozione file temporanei e progressi vecchi
+
+#### 🚀 **Configurazione Vercel Ottimizzata**
+- **File upload fino a 50MB**: Configurazione serverless per file grandi
+- **Memoria aumentata**: 1GB per funzioni di upload e import
+- **Timeout estesi**: 60s per upload, 600s per import lunghi
+- **Gestione errori migliorata**: Messaggi dettagliati per troubleshooting
+- **Headers CORS**: Configurazione completa per API
 
 #### 📋 **Campi Database Supportati**
 - **Campi base**: appalto, ordine, cod_vettore, descr_vettore, viaggio, consegna_num
