@@ -9,17 +9,9 @@ const nextConfig: NextConfig = {
     serverComponentsExternalPackages: ['mysql2'],
   },
   
-  // Configurazione API per file upload
-  api: {
-    bodyParser: {
-      sizeLimit: '50mb',
-    },
-    responseLimit: '50mb',
-  },
-  
-  // Configurazione server runtime
-  serverRuntimeConfig: {
-    maxDuration: 600, // 10 minuti per import lunghi
+  // Configurazione per Vercel
+  env: {
+    MAX_FILE_SIZE: '50mb',
   },
 };
 

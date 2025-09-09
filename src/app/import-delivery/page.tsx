@@ -29,7 +29,9 @@ export default function ImportDeliveryPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Errore durante l&apos;upload del file');
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || `Errore HTTP ${response.status}: ${response.statusText}`;
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
@@ -48,7 +50,8 @@ export default function ImportDeliveryPage() {
       
     } catch (error) {
       console.error('Errore upload:', error);
-      alert('Errore durante l\'upload del file. Riprova.');
+      const errorMessage = error instanceof Error ? error.message : 'Errore sconosciuto durante l\'upload';
+      alert(`Errore: ${errorMessage}`);
       setUploadedFile(null);
     } finally {
       setIsUploading(false);

@@ -1,0 +1,39 @@
+{
+  "functions": {
+    "src/app/api/import-delivery/upload/route.ts": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "src/app/api/import-delivery/execute/route.ts": {
+      "maxDuration": 600,
+      "memory": 1024
+    },
+    "src/app/api/import/upload/route.ts": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "src/app/api/import/execute/route.ts": {
+      "maxDuration": 600,
+      "memory": 1024
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization"
+        }
+      ]
+    }
+  ]
+}
