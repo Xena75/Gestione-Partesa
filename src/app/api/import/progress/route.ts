@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { importProgress } from '@/lib/import-progress';
+import { getImportProgress } from '@/lib/import-progress-db';
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,24 +13,24 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const progress = importProgress.get(fileId);
+    console.log(`🔍 Richiesta progresso per fileId: ${fileId}`);
+    
+    const progress = await getImportProgress(fileId);
     
     if (!progress) {
+      console.log(`❌ Progresso non trovato per fileId: ${fileId}`);
       return NextResponse.json(
         { error: 'Progresso non trovato' },
         { status: 404 }
       );
     }
 
-    console.log(`📊 API Progress ${fileId}:`, {
+    console.log(`📊 Progresso trovato:`, {
       progress: progress.progress,
       step: progress.currentStep,
       completed: progress.completed,
       hasResult: !!progress.result
     });
-
-    // Debug: mostra tutti i fileId nella Map
-    console.log('📋 Tutti i fileId nella Map:', Array.from(importProgress.keys()));
 
     return NextResponse.json(progress);
 

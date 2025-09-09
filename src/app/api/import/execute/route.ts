@@ -12,8 +12,8 @@ const dbConfig = {
   port: parseInt(process.env.DB_VIAGGI_PORT || '3306')
 };
 
-// Importa la Map condivisa del progresso
-import { importProgress } from '@/lib/import-progress';
+// Importa il sistema di progress tracking database-backed
+import { updateImportProgress, cleanupImportProgress, getImportProgress } from '@/lib/import-progress-db';
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Controlla se l'importazione è già in corso
-    const existingProgress = importProgress.get(fileId);
+    const existingProgress = await getImportProgress(fileId);
     if (existingProgress && !existingProgress.completed) {
       console.log('⚠️ Importazione già in corso per fileId:', fileId);
       return NextResponse.json({ 
@@ -37,12 +37,8 @@ export async function POST(request: NextRequest) {
       }, { status: 409 });
     }
 
-    // Inizializza il progresso
-    importProgress.set(fileId, {
-      progress: 0,
-      currentStep: 'Inizializzazione...',
-      completed: false
-    });
+    // Inizializza il progresso nel database
+    await updateImportProgress(fileId, 0, 'Inizializzazione...', false);
 
     // Avvia l'importazione in background
     executeImport(fileId, mapping, blobUrl);
@@ -71,7 +67,7 @@ async function executeImport(fileId: string, mapping: Record<string, string>, bl
 
   try {
     // Aggiorna progresso
-    updateProgress(fileId, 10, 'Lettura file Excel...');
+    await updateProgress(fileId, 10, 'Lettura file Excel...');
 
     // Ottieni il file dal Blob Storage
     const fileData = await getFileFromBlob(blobUrl);
@@ -82,7 +78,7 @@ async function executeImport(fileId: string, mapping: Record<string, string>, bl
     const { buffer, filename } = fileData;
     console.log('📁 File trovato nel Blob Storage:', filename);
     
-    updateProgress(fileId, 20, 'Parsing dati Excel...');
+    await updateProgress(fileId, 20, 'Parsing dati Excel...');
 
     // Leggi il file Excel
     const workbook = XLSX.read(buffer, { type: 'buffer' });
@@ -95,7 +91,7 @@ async function executeImport(fileId: string, mapping: Record<string, string>, bl
     const dataRows = jsonData.slice(1) as (string | number | null)[][];
     
     totalRows = dataRows.length;
-    updateProgress(fileId, 30, `Validazione ${totalRows} righe...`);
+    await updateProgress(fileId, 30, `Validazione ${totalRows} righe...`);
 
     // Connessione al database con timeout
     const connection = await mysql.createConnection({
@@ -106,7 +102,7 @@ async function executeImport(fileId: string, mapping: Record<string, string>, bl
     // Genera session_id
     const sessionId = `import_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
     
-    updateProgress(fileId, 40, 'Preparazione inserimento dati...');
+    await updateProgress(fileId, 40, 'Preparazione inserimento dati...');
 
     // Prepara la query di inserimento
     const mappedFields = Object.values(mapping).filter(field => 
@@ -129,7 +125,7 @@ async function executeImport(fileId: string, mapping: Record<string, string>, bl
     console.log('🔍 Campi da inserire:', fieldsToInsert);
     console.log('🔍 SQL Query:', insertSql);
 
-    updateProgress(fileId, 50, 'Inserimento dati nel database...');
+    await updateProgress(fileId, 50, 'Inserimento dati nel database...');
 
     // Inserisci i dati con timeout e gestione errori migliorata
     for (let i = 0; i < dataRows.length; i++) {
@@ -201,7 +197,7 @@ async function executeImport(fileId: string, mapping: Record<string, string>, bl
         // Aggiorna progresso ogni 10 righe
         if (i % 10 === 0) {
           const progress = 50 + Math.floor((i / dataRows.length) * 40);
-          updateProgress(fileId, progress, `Importazione riga ${i + 1} di ${dataRows.length}...`);
+          await updateProgress(fileId, progress, `Importazione riga ${i + 1} di ${dataRows.length}...`);
         }
 
         // Pausa breve per evitare sovraccarico
@@ -223,7 +219,7 @@ async function executeImport(fileId: string, mapping: Record<string, string>, bl
 
     await connection.end();
 
-    updateProgress(fileId, 90, 'Completamento importazione...');
+    await updateProgress(fileId, 90, 'Completamento importazione...');
 
     // Calcola durata
     const duration = Math.round((Date.now() - startTime) / 1000);
@@ -240,7 +236,7 @@ async function executeImport(fileId: string, mapping: Record<string, string>, bl
 
     // Salva il risultato
     console.log('✅ Importazione completata con successo!', result);
-    updateProgress(fileId, 100, 'Importazione completata', true, result);
+    await updateProgress(fileId, 100, 'Importazione completata', true, result);
 
   } catch (error) {
     console.error('❌ Errore durante l\'importazione:', error);
@@ -255,11 +251,11 @@ async function executeImport(fileId: string, mapping: Record<string, string>, bl
     };
     
     console.log('❌ Importazione fallita:', result);
-    updateProgress(fileId, 100, 'Errore durante l\'importazione', true, result);
+    await updateProgress(fileId, 100, 'Errore durante l\'importazione', true, result);
   }
 }
 
-function updateProgress(fileId: string, progress: number, step: string, completed = false, result?: {
+async function updateProgress(fileId: string, progress: number, step: string, completed = false, result?: {
   success: boolean;
   totalRows: number;
   importedRows: number;
@@ -268,16 +264,7 @@ function updateProgress(fileId: string, progress: number, step: string, complete
   duration: number;
 }) {
   console.log(`📊 Progresso ${fileId}: ${progress}% - ${step}${completed ? ' (COMPLETATO)' : ''}`);
-  const current = importProgress.get(fileId);
-  if (current) {
-    current.progress = progress;
-    current.currentStep = step;
-    current.completed = completed;
-    if (result) {
-      current.result = result;
-    }
-    importProgress.set(fileId, current);
-  }
+  await updateImportProgress(fileId, progress, step, completed, result);
 }
 
 function calculateAutoValue(field: string, row: (string | number | null)[], headers: string[], mapping: Record<string, string>): string | number | null {
@@ -514,7 +501,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const progress = importProgress.get(fileId);
+  const progress = await getImportProgress(fileId);
   if (!progress) {
     return NextResponse.json(
       { error: 'Progresso non trovato' },

@@ -4,6 +4,39 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
 
+### 🚀 **Sistema Import Delivery Completo - v2.9.0**
+
+**Sistema completo di import per la tabella `fatt_delivery` con progress tracking**:
+
+#### 📊 **Import Excel Avanzato**
+- **Mapping flessibile**: Interfaccia drag-and-drop per mappare colonne Excel a campi database
+- **Auto-mapping intelligente**: Riconoscimento automatico delle colonne con priorità per corrispondenze esatte
+- **Campo anomalia**: Nuovo campo TEXT per gestire note e anomalie
+- **Validazione dati**: Controllo tipi e conversioni automatiche
+- **Gestione errori**: Log dettagliati e recupero da errori
+
+#### 🎯 **Progress Tracking in Tempo Reale**
+- **Progress bar dinamica**: Aggiornamento in tempo reale durante l'import
+- **Database-backed**: Progresso persistente tra sessioni e processi
+- **Stati dettagliati**: Connessione, validazione, import, completamento
+- **Gestione timeout**: Cleanup automatico dei progressi vecchi
+- **UX migliorata**: Feedback visivo completo per l'utente
+
+#### 🔧 **Funzionalità Avanzate**
+- **Mapping salvati**: Salvataggio e riutilizzo di configurazioni di mapping
+- **Batch processing**: Import in batch per ottimizzare le performance
+- **Campi calcolati**: Calcolo automatico di mese, settimana e source_name
+- **Gestione file**: Upload sicuro con validazione tipo e dimensione
+- **Cleanup automatico**: Rimozione file temporanei e progressi vecchi
+
+#### 📋 **Campi Database Supportati**
+- **Campi base**: appalto, ordine, cod_vettore, descr_vettore, viaggio, consegna_num
+- **Dati cliente**: cod_cliente, ragione_sociale, cod_articolo, descr_articolo
+- **Classificazioni**: gr_stat, descr_gruppo_st, classe_prod, descr_classe_prod, classe_tariffa
+- **Dati finanziari**: compenso, tariffa, tariffa_vuoti, tot_compenso, tr_cons (€uro Consegna)
+- **Dati operativi**: data_mov_merce, colli, anomalia, div, bu, tipologia
+- **Fatturazione**: cod_em_fat, emittente_fattura, oda, ID_fatt
+
 ### 🚀 **Export Excel Ottimizzato per Grandi Dataset - v2.8.0**
 
 **Miglioramenti significativi per gestire dataset di grandi dimensioni**:

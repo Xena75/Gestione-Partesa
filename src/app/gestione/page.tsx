@@ -3,6 +3,7 @@
 
 import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import DeliveryStats from '@/components/DeliveryStats';
 import ViewToggle from '@/components/ViewToggle';
 import DeliveryFilters from '@/components/DeliveryFilters';
@@ -53,12 +54,18 @@ function GestioneContent() {
         <div className="col-12">
           <h1 className="h3 mb-4">Gestione Fatturazione Delivery</h1>
           
-          {/* Pulsante Export */}
+          {/* Pulsanti Export e Import */}
           <div className="card mb-4">
             <div className="card-body">
               <div className="d-flex justify-content-between align-items-center">
-                <h5 className="card-title mb-0">📊 Export Dati</h5>
-                <ExportDeliveryButton filters={activeFilters} />
+                <h5 className="card-title mb-0">📊 Gestione Dati</h5>
+                <div className="btn-group">
+                  <Link href="/import-delivery" className="btn btn-success">
+                    <i className="fas fa-file-import me-1"></i>
+                    Import Excel
+                  </Link>
+                  <ExportDeliveryButton filters={activeFilters} />
+                </div>
               </div>
             </div>
           </div>
