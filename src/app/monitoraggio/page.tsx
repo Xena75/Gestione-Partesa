@@ -185,7 +185,7 @@ function MonitoraggioPageContent() {
           </thead>
           <tbody>
             {viaggi.map((viaggio) => (
-              <tr key={viaggio.id}>
+              <tr key={viaggio.id} data-viaggio-id={viaggio.id}>
                 <td>{viaggio.deposito || '-'}</td>
                 <td>{viaggio.numeroViaggio || '-'}</td>
                 <td>{viaggio.nominativoId || '-'}</td>
