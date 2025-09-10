@@ -15,17 +15,19 @@ export async function GET(request: NextRequest) {
   const nominativoId = searchParams.get('nominativoId') || undefined;
   const numeroViaggio = searchParams.get('numeroViaggio') || undefined;
   const targaMezzoId = searchParams.get('targaMezzoId') || undefined;
+  const mese = searchParams.get('mese') || undefined;
   
   try {
     // Se ci sono filtri attivi, usa la funzione filtrata
-    if (dataDa || dataA || deposito || nominativoId || numeroViaggio || targaMezzoId) {
+    if (dataDa || dataA || deposito || nominativoId || numeroViaggio || targaMezzoId || mese) {
       const data = await getViaggiFiltrati(page, 20, sortBy, sortOrder, {
         dataDa,
         dataA,
         deposito,
         nominativoId,
         numeroViaggio,
-        targaMezzoId
+        targaMezzoId,
+        mese
       });
       return NextResponse.json(data);
     } else {

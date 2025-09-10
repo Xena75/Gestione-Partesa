@@ -22,6 +22,7 @@ export type Viaggio = {
   createdAt: string | null;
   kmEffettivi: number | null;
   oreEffettive: number | null;
+  mese: number | null;
 };
 
 // --- FUNZIONE PER LEGGERE I VIAGGI CON PAGINAZIONE E ORDINAMENTO ---
@@ -35,7 +36,7 @@ export async function getViaggiData(
     const offset = (currentPage - 1) * recordsPerPage;
     
     // Validiamo i campi di ordinamento permessi
-    const allowedSortFields = ['numeroViaggio', 'deposito', 'nominativoId', 'dataOraInizioViaggio', 'dataOraFineViaggio', 'targaMezzoId', 'haiEffettuatoRitiri'];
+    const allowedSortFields = ['numeroViaggio', 'deposito', 'nominativoId', 'dataOraInizioViaggio', 'dataOraFineViaggio', 'targaMezzoId', 'haiEffettuatoRitiri', 'mese'];
     const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'dataOraInizioViaggio';
     const validSortOrder = sortOrder === 'ASC' || sortOrder === 'DESC' ? sortOrder : 'DESC';
     
@@ -45,7 +46,7 @@ export async function getViaggiData(
         id, deposito, numeroViaggio, nominativoId, affiancatoDaId, totaleColli,
         dataOraInizioViaggio, dataOraFineViaggio, targaMezzoId, kmIniziali, kmFinali,
         kmAlRifornimento, litriRiforniti, euroLitro, haiEffettuatoRitiri,
-        updatedAt, createdAt, kmEffettivi, oreEffettive
+        updatedAt, createdAt, kmEffettivi, oreEffettive, mese
       FROM travels 
       ORDER BY ${validSortBy} ${validSortOrder}
       LIMIT ? OFFSET ?
@@ -115,7 +116,7 @@ export async function getViaggioById(id: string): Promise<Viaggio | null> {
         id, deposito, numeroViaggio, nominativoId, affiancatoDaId, totaleColli,
         dataOraInizioViaggio, dataOraFineViaggio, targaMezzoId, kmIniziali, kmFinali,
         kmAlRifornimento, litriRiforniti, euroLitro, haiEffettuatoRitiri,
-        updatedAt, createdAt, kmEffettivi, oreEffettive
+        updatedAt, createdAt, kmEffettivi, oreEffettive, mese
       FROM travels WHERE id = ?
     `;
     const [rows] = await pool.query(sql, [id]);
@@ -211,13 +212,14 @@ export async function getViaggiFiltrati(
     nominativoId?: string;
     numeroViaggio?: string;
     targaMezzoId?: string;
+    mese?: string;
   }
 ): Promise<{ viaggi: Viaggio[], totalPages: number, totalRecords: number }> {
   try {
     const offset = (currentPage - 1) * recordsPerPage;
     
     // Validiamo i campi di ordinamento permessi
-    const allowedSortFields = ['numeroViaggio', 'deposito', 'nominativoId', 'dataOraInizioViaggio', 'dataOraFineViaggio', 'targaMezzoId', 'haiEffettuatoRitiri'];
+    const allowedSortFields = ['numeroViaggio', 'deposito', 'nominativoId', 'dataOraInizioViaggio', 'dataOraFineViaggio', 'targaMezzoId', 'haiEffettuatoRitiri', 'mese'];
     const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'dataOraInizioViaggio';
     const validSortOrder = sortOrder === 'ASC' || sortOrder === 'DESC' ? sortOrder : 'DESC';
     
@@ -255,6 +257,11 @@ export async function getViaggiFiltrati(
       queryParams.push(filters.targaMezzoId);
     }
     
+    if (filters.mese) {
+      whereConditions.push('mese = ?');
+      queryParams.push(filters.mese);
+    }
+    
     const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
     
     // Query per ottenere i dati filtrati
@@ -263,7 +270,7 @@ export async function getViaggiFiltrati(
         id, deposito, numeroViaggio, nominativoId, affiancatoDaId, totaleColli,
         dataOraInizioViaggio, dataOraFineViaggio, targaMezzoId, kmIniziali, kmFinali,
         kmAlRifornimento, litriRiforniti, euroLitro, haiEffettuatoRitiri,
-        updatedAt, createdAt, kmEffettivi, oreEffettive
+        updatedAt, createdAt, kmEffettivi, oreEffettive, mese
       FROM travels 
       ${whereClause}
       ORDER BY ${validSortBy} ${validSortOrder}

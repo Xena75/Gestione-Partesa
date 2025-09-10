@@ -16,6 +16,7 @@ type Filters = {
   nominativoId: string;
   numeroViaggio: string;
   targaMezzoId: string;
+  mese: string;
 };
 
 export default function FiltriMonitoraggio() {
@@ -30,7 +31,8 @@ export default function FiltriMonitoraggio() {
     deposito: searchParams.get('deposito') || '',
     nominativoId: searchParams.get('nominativoId') || '',
     numeroViaggio: searchParams.get('numeroViaggio') || '',
-    targaMezzoId: searchParams.get('targaMezzoId') || ''
+    targaMezzoId: searchParams.get('targaMezzoId') || '',
+    mese: searchParams.get('mese') || ''
   });
 
   // Carica le opzioni dei filtri
@@ -70,7 +72,8 @@ export default function FiltriMonitoraggio() {
       deposito: '',
       nominativoId: '',
       numeroViaggio: '',
-      targaMezzoId: ''
+      targaMezzoId: '',
+      mese: ''
     });
     
     // Rimuovi tutti i parametri dei filtri dall'URL
@@ -158,7 +161,7 @@ export default function FiltriMonitoraggio() {
               </div>
               
               {/* Seconda riga */}
-              <div className="col-md-4">
+              <div className="col-md-3">
                 <label className="form-label">Targa</label>
                 <select
                   className="form-select"
@@ -172,7 +175,30 @@ export default function FiltriMonitoraggio() {
                 </select>
               </div>
               
-              <div className="col-md-4">
+              <div className="col-md-3">
+                <label className="form-label">Mese</label>
+                <select
+                  className="form-select"
+                  value={filters.mese}
+                  onChange={(e) => handleFilterChange('mese', e.target.value)}
+                >
+                  <option value="">Tutti</option>
+                  <option value="1">Gennaio</option>
+                  <option value="2">Febbraio</option>
+                  <option value="3">Marzo</option>
+                  <option value="4">Aprile</option>
+                  <option value="5">Maggio</option>
+                  <option value="6">Giugno</option>
+                  <option value="7">Luglio</option>
+                  <option value="8">Agosto</option>
+                  <option value="9">Settembre</option>
+                  <option value="10">Ottobre</option>
+                  <option value="11">Novembre</option>
+                  <option value="12">Dicembre</option>
+                </select>
+              </div>
+              
+              <div className="col-md-3">
                 <label className="form-label">Data Da</label>
                 <input
                   type="date"
@@ -182,7 +208,7 @@ export default function FiltriMonitoraggio() {
                 />
               </div>
               
-              <div className="col-md-4">
+              <div className="col-md-3">
                 <label className="form-label">Data A</label>
                 <input
                   type="date"

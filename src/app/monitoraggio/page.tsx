@@ -44,6 +44,7 @@ function MonitoraggioPageContent() {
   const nominativoId = searchParams.get('nominativoId');
   const numeroViaggio = searchParams.get('numeroViaggio');
   const targaMezzoId = searchParams.get('targaMezzoId');
+  const mese = searchParams.get('mese');
   
   const [data, setData] = useState<{ viaggi: Viaggio[], totalPages: number, totalRecords: number } | null>(null);
   const [stats, setStats] = useState<{ totalRecords: number, totalPages: number, recordsPerPage: number } | null>(null);
@@ -64,6 +65,7 @@ function MonitoraggioPageContent() {
     if (nominativoId) params.set('nominativoId', nominativoId);
     if (numeroViaggio) params.set('numeroViaggio', numeroViaggio);
     if (targaMezzoId) params.set('targaMezzoId', targaMezzoId);
+    if (mese) params.set('mese', mese);
     
     // Carica i dati della pagina corrente
     fetch(`/api/monitoraggio?${params.toString()}`)
@@ -79,7 +81,7 @@ function MonitoraggioPageContent() {
       .then(fetchedStats => {
         setStats(fetchedStats);
       });
-  }, [currentPage, sortBy, sortOrder, dataDa, dataA, deposito, nominativoId, numeroViaggio, targaMezzoId]);
+  }, [currentPage, sortBy, sortOrder, dataDa, dataA, deposito, nominativoId, numeroViaggio, targaMezzoId, mese]);
 
   if (isLoading) {
     return <div>Caricamento...</div>;
