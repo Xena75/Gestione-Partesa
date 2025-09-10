@@ -4,6 +4,35 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
 
+### 🔄 **Sistema Sincronizzazione Database Multipli - v2.12.0**
+
+**Sistema completo per sincronizzazione dati tra database multipli con query complesse**:
+
+#### 🗄️ **Gestione Database Multipli**
+- **Connessioni multiple**: Supporto simultaneo per `gestionelogistica` e `viaggi_db`
+- **Pool separati**: Connessioni ottimizzate per ogni database
+- **Verifica tabelle**: Controllo automatico esistenza tabelle prima dell'esecuzione
+- **Gestione errori**: Feedback dettagliato per problemi di connessione
+
+#### 🔄 **Sincronizzazione tab_viaggi**
+- **Query complessa**: JOIN tra 4 tabelle (`viaggi_pod`, `travels`, `tab_vettori`, `vehicles`)
+- **Filtro intelligente**: Esclusione automatica terzisti (`Tipo_Vettore <> 'Terzista'`)
+- **Mapping completo**: 32 campi sincronizzati tra database
+- **Performance ottimizzata**: Query singola per massima efficienza
+
+#### 🎯 **Interfaccia Utente**
+- **Pulsante dedicato**: "🔄 Sincronizza Dati" nella pagina viaggi
+- **Conferma utente**: Doppio controllo prima dell'esecuzione
+- **Feedback real-time**: Indicatore di caricamento durante sincronizzazione
+- **Messaggi dettagliati**: Numero righe inserite e stato operazione
+- **Auto-refresh**: Ricaricamento automatico pagina dopo sincronizzazione
+
+#### 🛡️ **Sicurezza e Robustezza**
+- **Validazione input**: Controlli su esistenza tabelle e database
+- **Gestione errori**: Try-catch completo con logging dettagliato
+- **Timeout gestione**: Prevenzione blocchi durante operazioni lunghe
+- **Rollback automatico**: In caso di errore, nessuna modifica permanente
+
 ### 🚀 **Sistema Import Terzisti con Filtri Mese/Anno - v2.11.0**
 
 **Sistema completo di import terzisti con filtri temporali e gestione intelligente dei duplicati**:
@@ -425,7 +454,7 @@ npm run dev
 - **Gestione**: `/gestione` - Sistema completo fatturazione delivery con export Excel e filtri ottimizzati
 - **Fatturazione Terzisti**: `/fatturazione-terzisti` - Sistema fatturazione terzisti con export Excel, filtri temporali avanzati e layout ottimizzato
 - **Monitoraggio**: `/monitoraggio` - Monitoraggio viaggi e consegne (ex-viaggi)
-- **Viaggi**: `/viaggi` - Gestione completa tabella tab_viaggi con filtri avanzati, modifica e supporto tasto Invio
+- **Viaggi**: `/viaggi` - Gestione completa tabella tab_viaggi con filtri avanzati, modifica, supporto tasto Invio e sincronizzazione database multipli
 - **Import**: `/import` - Sistema import Excel avanzato
 
 ### **3. Configurazione Database**

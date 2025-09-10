@@ -77,6 +77,7 @@ function ViaggiPageContent() {
   const [stats, setStats] = useState<Statistiche | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Apri automaticamente i filtri se ci sono parametri di filtro attivi
   useEffect(() => {
@@ -122,6 +123,38 @@ function ViaggiPageContent() {
       });
   }, [currentPage, sortBy, sortOrder, aziendaVettore, nominativo, trasportatore, numeroViaggio, targa, magazzino, mese, trimestre, dataDa, dataA]);
 
+  // Funzione per sincronizzare i dati
+  const handleSync = async () => {
+    if (!confirm('Sei sicuro di voler sincronizzare i dati? Questa operazione potrebbe richiedere alcuni minuti.')) {
+      return;
+    }
+
+    setIsSyncing(true);
+    try {
+      const response = await fetch('/api/viaggi/sync-tab-viaggi', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert(`✅ ${result.message}`);
+        // Ricarica la pagina per mostrare i nuovi dati
+        window.location.reload();
+      } else {
+        alert(`❌ Errore: ${result.error || 'Errore sconosciuto'}`);
+      }
+    } catch (error) {
+      console.error('Errore durante la sincronizzazione:', error);
+      alert('❌ Errore durante la sincronizzazione. Controlla la console per i dettagli.');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   if (isLoading) {
     return <div>Caricamento...</div>;
   }
@@ -136,9 +169,18 @@ function ViaggiPageContent() {
     <div className="vh-100 d-flex flex-column p-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1>🚚 Gestione Viaggi</h1>
-        <Link href="/" className="btn btn-outline-secondary">
-          ← Torna alla Dashboard
-        </Link>
+        <div className="d-flex gap-2">
+          <button 
+            onClick={handleSync}
+            disabled={isSyncing}
+            className={`btn ${isSyncing ? 'btn-secondary' : 'btn-success'}`}
+          >
+            {isSyncing ? '🔄 Sincronizzazione...' : '🔄 Sincronizza Dati'}
+          </button>
+          <Link href="/" className="btn btn-outline-secondary">
+            ← Torna alla Dashboard
+          </Link>
+        </div>
       </div>
       
       {/* Dashboard Statistiche */}
