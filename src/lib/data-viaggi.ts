@@ -35,7 +35,7 @@ export async function getViaggiData(
     const offset = (currentPage - 1) * recordsPerPage;
     
     // Validiamo i campi di ordinamento permessi
-    const allowedSortFields = ['numeroViaggio', 'deposito', 'dataOraInizioViaggio', 'dataOraFineViaggio', 'targaMezzoId'];
+    const allowedSortFields = ['numeroViaggio', 'deposito', 'nominativoId', 'dataOraInizioViaggio', 'dataOraFineViaggio', 'targaMezzoId', 'haiEffettuatoRitiri'];
     const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'dataOraInizioViaggio';
     const validSortOrder = sortOrder === 'ASC' || sortOrder === 'DESC' ? sortOrder : 'DESC';
     
@@ -217,7 +217,7 @@ export async function getViaggiFiltrati(
     const offset = (currentPage - 1) * recordsPerPage;
     
     // Validiamo i campi di ordinamento permessi
-    const allowedSortFields = ['numeroViaggio', 'deposito', 'dataOraInizioViaggio', 'dataOraFineViaggio', 'targaMezzoId'];
+    const allowedSortFields = ['numeroViaggio', 'deposito', 'nominativoId', 'dataOraInizioViaggio', 'dataOraFineViaggio', 'targaMezzoId', 'haiEffettuatoRitiri'];
     const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'dataOraInizioViaggio';
     const validSortOrder = sortOrder === 'ASC' || sortOrder === 'DESC' ? sortOrder : 'DESC';
     

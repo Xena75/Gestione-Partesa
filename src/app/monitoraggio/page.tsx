@@ -148,7 +148,13 @@ function MonitoraggioPageContent() {
         <table className="table table-striped table-sm table-hover mb-0">
           <thead>
             <tr>
-              <th>Deposito</th>
+              <SortableHeader 
+                field="deposito" 
+                label="Deposito" 
+                currentSortBy={sortBy} 
+                currentSortOrder={sortOrder}
+                basePath="/monitoraggio"
+              />
               <SortableHeader 
                 field="numeroViaggio" 
                 label="Viaggio" 
@@ -156,7 +162,13 @@ function MonitoraggioPageContent() {
                 currentSortOrder={sortOrder}
                 basePath="/monitoraggio"
               />
-              <th>Nominativo</th>
+              <SortableHeader 
+                field="nominativoId" 
+                label="Nominativo" 
+                currentSortBy={sortBy} 
+                currentSortOrder={sortOrder}
+                basePath="/monitoraggio"
+              />
               <th>Affiancato Da</th>
               <th>Totale Colli</th>
               <SortableHeader 
@@ -188,8 +200,14 @@ function MonitoraggioPageContent() {
               <th>Litri Riforniti</th>
               <th>€/Litro</th>
               <th>€ Rifornimento</th>
-              <th>Ritiri Effettuati</th>
-                              <th>Aggiornato</th>
+              <SortableHeader 
+                field="haiEffettuatoRitiri" 
+                label="Ritiri Effettuati" 
+                currentSortBy={sortBy} 
+                currentSortOrder={sortOrder}
+                basePath="/monitoraggio"
+              />
+              <th>Aggiornato</th>
               <th>Azioni</th>
             </tr>
           </thead>
