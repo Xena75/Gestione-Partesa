@@ -95,9 +95,19 @@ function MonitoraggioPageContent() {
     <div className="vh-100 d-flex flex-column p-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1>📊 Monitoraggio Viaggi</h1>
-        <Link href="/" className="btn btn-outline-secondary">
-          ← Torna alla Dashboard
-        </Link>
+        <div className="d-flex gap-2">
+          <a 
+            href="https://gestione-viaggi.vercel.app/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="btn btn-success"
+          >
+            ➕ Nuovo Viaggio
+          </a>
+          <Link href="/" className="btn btn-outline-secondary">
+            ← Torna alla Dashboard
+          </Link>
+        </div>
       </div>
       
       {/* Card Statistiche */}
