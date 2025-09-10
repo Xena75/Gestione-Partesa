@@ -177,3 +177,48 @@ export async function PUT(
     );
   }
 }
+
+// DELETE: Elimina un viaggio e le sue immagini associate
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await context.params;
+    
+    console.log('🗑️ Eliminazione viaggio con ID:', id);
+    
+    // Prima elimina le immagini associate
+    await pool.execute(
+      'DELETE FROM travel_images WHERE travelid = ?',
+      [id]
+    );
+    
+    // Poi elimina il viaggio
+    const [result] = await pool.execute(
+      'DELETE FROM travels WHERE id = ?',
+      [id]
+    ) as [any, any];
+    
+    if (result.affectedRows === 0) {
+      return NextResponse.json(
+        { error: 'Viaggio non trovato' },
+        { status: 404 }
+      );
+    }
+    
+    console.log('✅ Viaggio eliminato con successo');
+    
+    return NextResponse.json({
+      success: true,
+      message: 'Viaggio eliminato con successo'
+    });
+    
+  } catch (error) {
+    console.error('❌ Errore nell\'eliminazione del viaggio:', error);
+    return NextResponse.json(
+      { error: 'Errore interno del server' },
+      { status: 500 }
+    );
+  }
+}

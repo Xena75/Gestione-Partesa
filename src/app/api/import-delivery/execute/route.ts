@@ -25,11 +25,19 @@ import { updateImportProgress, cleanupImportProgress, getImportProgress } from '
 
 // Funzione per verificare e riconnettere la connessione se necessario
 async function ensureConnection(connection: mysql.Connection | null): Promise<mysql.Connection> {
-  if (!connection || connection.state === 'disconnected') {
+  if (!connection) {
     console.log('🔄 Riconnessione al database...');
     return await mysql.createConnection(dbConfig);
   }
-  return connection;
+  
+  // Verifica se la connessione è ancora attiva
+  try {
+    await connection.ping();
+    return connection;
+  } catch (error) {
+    console.log('🔄 Connessione persa, riconnessione al database...');
+    return await mysql.createConnection(dbConfig);
+  }
 }
 
 export async function POST(request: NextRequest) {
