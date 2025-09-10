@@ -85,20 +85,37 @@ export default function FiltriMonitoraggio() {
 
   return (
     <div className="mb-4">
-      {/* Pulsante Toggle Filtri */}
-      <button
-        onClick={() => setShowFilters(!showFilters)}
-        className="btn btn-outline-primary mb-3"
-      >
-        🔍 {showFilters ? 'Nascondi Filtri' : 'Mostra Filtri'} {showFilters ? '▲' : '▼'}
-      </button>
-
       {/* Sezione Filtri */}
-      {showFilters && (
-        <div className="card bg-light">
+      <div className="card bg-light">
+        <div className="card-header d-flex justify-content-between align-items-center">
+          <h5 className="card-title mb-0">Filtri</h5>
+          <div className="d-flex gap-2">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="btn btn-outline-primary btn-sm"
+            >
+              🔍 {showFilters ? 'Nascondi Filtri' : 'Mostra Filtri'} {showFilters ? '▲' : '▼'}
+            </button>
+            {showFilters && (
+              <>
+                <button
+                  onClick={resetFilters}
+                  className="btn btn-outline-secondary btn-sm"
+                >
+                  ✕ Reset
+                </button>
+                <button
+                  onClick={applyFilters}
+                  className="btn btn-primary btn-sm"
+                >
+                  🔍 Filtra
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+        {showFilters && (
           <div className="card-body">
-            <h5 className="card-title mb-3">Filtri</h5>
-            
             <div className="row g-3">
               {/* Prima riga */}
               <div className="col-md-4">
@@ -175,25 +192,9 @@ export default function FiltriMonitoraggio() {
                 />
               </div>
             </div>
-            
-            {/* Pulsanti Azione */}
-            <div className="d-flex justify-content-end gap-2 mt-3">
-              <button
-                onClick={resetFilters}
-                className="btn btn-outline-secondary"
-              >
-                ✕ Reset
-              </button>
-              <button
-                onClick={applyFilters}
-                className="btn btn-primary"
-              >
-                🔍 Filtra
-              </button>
-            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
