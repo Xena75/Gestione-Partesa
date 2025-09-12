@@ -35,7 +35,6 @@ export async function GET(request: NextRequest) {
       // Statistiche generali
       stats = await getViaggiStats(page, recordsPerPage);
     }
-    
     return NextResponse.json(stats);
     
   } catch (error) {

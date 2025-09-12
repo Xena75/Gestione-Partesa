@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 interface FilterOptions {
@@ -16,7 +16,12 @@ interface FiltriViaggiProps {
   onFiltersApplied?: () => void;
 }
 
-export default function FiltriViaggi({ onFiltersApplied }: FiltriViaggiProps) {
+export interface FiltriViaggiRef {
+  applyFilters: () => void;
+  clearFilters: () => void;
+}
+
+const FiltriViaggi = forwardRef<FiltriViaggiRef, FiltriViaggiProps>(({ onFiltersApplied }, ref) => {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -124,7 +129,18 @@ export default function FiltriViaggi({ onFiltersApplied }: FiltriViaggiProps) {
     }
     
     router.push(`/viaggi?${params.toString()}`);
+    
+    // Chiudi i filtri dopo averli puliti
+    if (onFiltersApplied) {
+      onFiltersApplied();
+    }
   };
+
+  // Espone le funzioni al componente padre tramite ref
+  useImperativeHandle(ref, () => ({
+    applyFilters,
+    clearFilters
+  }));
 
   // Gestisce il tasto Enter per applicare i filtri
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -139,8 +155,8 @@ export default function FiltriViaggi({ onFiltersApplied }: FiltriViaggiProps) {
 
   return (
     <div className="row g-3">
-      {/* Azienda Vettore */}
-      <div className="col-md-6 col-lg-4">
+      {/* Prima riga - 5 campi */}
+      <div className="col-md-2">
         <label className="form-label fw-bold">Azienda Vettore</label>
         <select 
           className="form-select"
@@ -154,8 +170,7 @@ export default function FiltriViaggi({ onFiltersApplied }: FiltriViaggiProps) {
         </select>
       </div>
 
-      {/* Nominativo */}
-      <div className="col-md-6 col-lg-4">
+      <div className="col-md-2">
         <label className="form-label fw-bold">Nominativo</label>
         <input
           type="text"
@@ -167,8 +182,7 @@ export default function FiltriViaggi({ onFiltersApplied }: FiltriViaggiProps) {
         />
       </div>
 
-      {/* Trasportatore */}
-      <div className="col-md-6 col-lg-4">
+      <div className="col-md-2">
         <label className="form-label fw-bold">Trasportatore</label>
         <select 
           className="form-select"
@@ -182,8 +196,7 @@ export default function FiltriViaggi({ onFiltersApplied }: FiltriViaggiProps) {
         </select>
       </div>
 
-      {/* Numero Viaggio */}
-      <div className="col-md-6 col-lg-4">
+      <div className="col-md-2">
         <label className="form-label fw-bold">Numero Viaggio</label>
         <input
           type="text"
@@ -195,8 +208,7 @@ export default function FiltriViaggi({ onFiltersApplied }: FiltriViaggiProps) {
         />
       </div>
 
-      {/* Targa */}
-      <div className="col-md-6 col-lg-4">
+      <div className="col-md-2">
         <label className="form-label fw-bold">Targa</label>
         <select 
           className="form-select"
@@ -210,9 +222,8 @@ export default function FiltriViaggi({ onFiltersApplied }: FiltriViaggiProps) {
         </select>
       </div>
 
-      {/* Magazzino di Partenza */}
-      <div className="col-md-6 col-lg-4">
-        <label className="form-label fw-bold">Magazzino di Partenza</label>
+      <div className="col-md-2">
+        <label className="form-label fw-bold">Magazzino</label>
         <select 
           className="form-select"
           value={magazzino}
@@ -225,8 +236,8 @@ export default function FiltriViaggi({ onFiltersApplied }: FiltriViaggiProps) {
         </select>
       </div>
 
-      {/* Mese */}
-      <div className="col-md-6 col-lg-4">
+      {/* Seconda riga - 4 campi */}
+      <div className="col-md-3">
         <label className="form-label fw-bold">Mese</label>
         <select 
           className="form-select"
@@ -242,8 +253,7 @@ export default function FiltriViaggi({ onFiltersApplied }: FiltriViaggiProps) {
         </select>
       </div>
 
-      {/* Trimestre */}
-      <div className="col-md-6 col-lg-4">
+      <div className="col-md-3">
         <label className="form-label fw-bold">Trimestre</label>
         <select 
           className="form-select"
@@ -257,8 +267,7 @@ export default function FiltriViaggi({ onFiltersApplied }: FiltriViaggiProps) {
         </select>
       </div>
 
-      {/* Data Da */}
-      <div className="col-md-6 col-lg-4">
+      <div className="col-md-3">
         <label className="form-label fw-bold">Data Da</label>
         <input
           type="date"
@@ -269,8 +278,7 @@ export default function FiltriViaggi({ onFiltersApplied }: FiltriViaggiProps) {
         />
       </div>
 
-      {/* Data A */}
-      <div className="col-md-6 col-lg-4">
+      <div className="col-md-3">
         <label className="form-label fw-bold">Data A</label>
         <input
           type="date"
@@ -281,27 +289,10 @@ export default function FiltriViaggi({ onFiltersApplied }: FiltriViaggiProps) {
         />
       </div>
 
-      {/* Pulsanti Azioni */}
-      <div className="col-12">
-        <div className="d-flex gap-2">
-          <button 
-            type="button" 
-            className="btn btn-primary"
-            onClick={applyFilters}
-          >
-            <i className="bi bi-search me-2"></i>
-            Applica Filtri
-          </button>
-          <button 
-            type="button" 
-            className="btn btn-outline-secondary"
-            onClick={clearFilters}
-          >
-            <i className="bi bi-x-circle me-2"></i>
-            Pulisci Filtri
-          </button>
-        </div>
-      </div>
     </div>
   );
-}
+});
+
+FiltriViaggi.displayName = 'FiltriViaggi';
+
+export default FiltriViaggi;

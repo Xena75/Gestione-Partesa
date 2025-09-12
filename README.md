@@ -4,6 +4,42 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
 
+### 🔄 **Sistema Import Monitoraggio e Sincronizzazione - v2.13.0**
+
+**Sistema completo di import dati monitoraggio e sincronizzazione database multipli**:
+
+#### 📊 **Import Monitoraggio Excel**
+- **Import automatico**: Script `import-monitoraggio-travels.js` per import dati da `monitoraggio_import.xlsx`
+- **Gestione ID manuale**: Generazione automatica ID come `"Viaggio - " + numeroViaggio` per evitare conflitti
+- **Vincoli foreign key**: Gestione automatica `nominativoId` e `targaMezzoId` con fallback a `NULL`
+- **Campi timestamp**: Impostazione automatica `createdAt` e `updatedAt`
+- **Validazione dati**: Controlli su esistenza record in tabelle correlate
+
+#### 🔄 **Sincronizzazione tab_viaggi Ottimizzata**
+- **INSERT IGNORE**: Prevenzione duplicati durante sincronizzazione
+- **Rimozione DELETE**: Eliminato comando `DELETE FROM tab_viaggi` per preservare dati esistenti
+- **Query JOIN complessa**: Sincronizzazione tra `viaggi_pod`, `travels`, `tab_vettori`, `vehicles`
+- **Filtro terzisti**: Esclusione automatica vettori con `Tipo_Vettore = 'Terzista'`
+- **32 campi mappati**: Sincronizzazione completa di tutti i campi rilevanti
+
+#### 🛡️ **Sistema Backup e Sicurezza**
+- **Backup automatici**: Script per backup tabelle critiche (`tab_viaggi`, `tab_delivery_terzisti`)
+- **Gestione errori**: Logging dettagliato e rollback automatico in caso di errori
+- **Validazione connessioni**: Controlli su esistenza database e tabelle
+- **File temporanei**: Pulizia automatica script e file temporanei
+
+#### 🎯 **Interfaccia Utente Migliorata**
+- **Eliminazione viaggi**: Aggiornamento immediato DOM con `data-viaggio-id` per rimozione istantanea
+- **Filtri ottimizzati**: Componente `FiltriMonitoraggio` con `forwardRef` per controllo esterno
+- **Preservazione filtri**: Filtri rimangono attivi dopo operazioni di modifica
+- **Ordinamento avanzato**: Supporto ordinamento su campi nominativo, targa, deposito, ritiri
+
+#### 🔧 **Correzioni Critiche**
+- **Formato orario**: Preservazione formato `HH:MM` per campi "Ora Inizio" e "Ora Fine"
+- **Calcolo trasporti**: Logica dinamica per `trasportiMese` basata su filtri applicati
+- **Gestione duplicati**: Sistema `INSERT IGNORE` per prevenire errori di chiave primaria
+- **Timeout Vercel**: Configurazione `maxDuration: 300s` per operazioni lunghe
+
 ### 🔄 **Sistema Sincronizzazione Database Multipli - v2.12.0**
 
 **Sistema completo per sincronizzazione dati tra database multipli con query complesse**:
@@ -529,7 +565,7 @@ DB_GESTIONE_NAME=gestionelogistica
 
 ---
 
-**Versione**: 2.11.0  
+**Versione**: 2.13.0  
 **Ultimo Aggiornamento**: Settembre 2025  
 **Stato**: ✅ **PRODUZIONE STABILE**  
 **Compatibilità**: Next.js 15+, Node.js 18+, MySQL 8.0+

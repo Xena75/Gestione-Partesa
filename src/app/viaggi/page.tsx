@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import FiltriViaggi from '@/components/FiltriViaggi';
+import FiltriViaggi, { FiltriViaggiRef } from '@/components/FiltriViaggi';
 import SortableHeader from '@/components/SortableHeader';
 
 // Tipo per i dati della tabella tab_viaggi
@@ -78,14 +78,17 @@ function ViaggiPageContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [filtersApplied, setFiltersApplied] = useState(false);
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
+  const filtriRef = useRef<FiltriViaggiRef>(null);
 
-  // Apri automaticamente i filtri se ci sono parametri di filtro attivi
+  // Apri automaticamente i filtri solo al primo caricamento se ci sono parametri di filtro attivi
   useEffect(() => {
     const hasActiveFilters = aziendaVettore || nominativo || trasportatore || numeroViaggio || targa || magazzino || mese || trimestre || dataDa || dataA;
-    if (hasActiveFilters) {
+    if (hasActiveFilters && !filtersApplied) {
       setShowFilters(true);
     }
-  }, [aziendaVettore, nominativo, trasportatore, numeroViaggio, targa, magazzino, mese, trimestre, dataDa, dataA]);
+  }, []); // Solo al primo caricamento
 
   useEffect(() => {
     setIsLoading(true);
@@ -116,10 +119,16 @@ function ViaggiPageContent() {
       });
     
     // Carica le statistiche
+    setIsLoadingStats(true);
     fetch(`/api/viaggi/stats?${params.toString()}`)
       .then(res => res.json())
       .then(fetchedStats => {
         setStats(fetchedStats);
+        setIsLoadingStats(false);
+      })
+      .catch(error => {
+        console.error('❌ Errore nel caricamento delle statistiche:', error);
+        setIsLoadingStats(false);
       });
   }, [currentPage, sortBy, sortOrder, aziendaVettore, nominativo, trasportatore, numeroViaggio, targa, magazzino, mese, trimestre, dataDa, dataA]);
 
@@ -155,6 +164,21 @@ function ViaggiPageContent() {
     }
   };
 
+  // Funzioni per i pulsanti dei filtri
+  const handleApplyFilters = () => {
+    if (filtriRef.current) {
+      setFiltersApplied(true); // Marca che i filtri sono stati applicati
+      filtriRef.current.applyFilters();
+    }
+  };
+
+  const handleClearFilters = () => {
+    if (filtriRef.current) {
+      setFiltersApplied(true); // Marca che i filtri sono stati applicati
+      filtriRef.current.clearFilters();
+    }
+  };
+
   if (isLoading) {
     return <div>Caricamento...</div>;
   }
@@ -170,13 +194,14 @@ function ViaggiPageContent() {
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1>🚚 Gestione Viaggi</h1>
         <div className="d-flex gap-2">
-          <button 
-            onClick={handleSync}
-            disabled={isSyncing}
-            className={`btn ${isSyncing ? 'btn-secondary' : 'btn-success'}`}
-          >
-            {isSyncing ? '🔄 Sincronizzazione...' : '🔄 Sincronizza Dati'}
-          </button>
+               <button
+                 onClick={handleSync}
+                 disabled={true}
+                 className="btn btn-secondary"
+                 title="Funzione disattivata temporaneamente"
+               >
+                 🔒 Sincronizza Dati (DISATTIVATO)
+               </button>
           <Link href="/" className="btn btn-outline-secondary">
             ← Torna alla Dashboard
           </Link>
@@ -188,15 +213,19 @@ function ViaggiPageContent() {
         <div className="col-md-3">
           <div className="card shadow-sm">
             <div className="card-body text-center">
-                             <h2 className="text-primary mb-0">{stats.totalTrasporti.toLocaleString()}</h2>
-               <p className="text-muted mb-0">Viaggi</p>
+              <h2 className="text-primary mb-0">
+                {isLoadingStats ? '⏳' : stats?.totalTrasporti?.toLocaleString() || '0'}
+              </h2>
+              <p className="text-muted mb-0">Viaggi</p>
             </div>
           </div>
         </div>
         <div className="col-md-3">
           <div className="card shadow-sm">
             <div className="card-body text-center">
-              <h2 className="text-info mb-0">{stats.totalKm.toLocaleString()}</h2>
+              <h2 className="text-info mb-0">
+                {isLoadingStats ? '⏳' : stats?.totalKm?.toLocaleString() || '0'}
+              </h2>
               <p className="text-muted mb-0">Km Totali</p>
             </div>
           </div>
@@ -204,7 +233,9 @@ function ViaggiPageContent() {
         <div className="col-md-3">
           <div className="card shadow-sm">
             <div className="card-body text-center">
-              <h2 className="text-success mb-0">{stats.totalColli.toLocaleString()}</h2>
+              <h2 className="text-success mb-0">
+                {isLoadingStats ? '⏳' : stats?.totalColli?.toLocaleString() || '0'}
+              </h2>
               <p className="text-muted mb-0">Colli Totali</p>
             </div>
           </div>
@@ -212,8 +243,10 @@ function ViaggiPageContent() {
         <div className="col-md-3">
           <div className="card shadow-sm">
             <div className="card-body text-center">
-                             <h2 className="text-warning mb-0">{stats.trasportiMese.toLocaleString()}</h2>
-               <p className="text-muted mb-0">Viaggi del Mese</p>
+              <h2 className="text-warning mb-0">
+                {isLoadingStats ? '⏳' : stats?.trasportiMese?.toLocaleString() || '0'}
+              </h2>
+              <p className="text-muted mb-0">Viaggi del Mese</p>
             </div>
           </div>
         </div>
@@ -226,17 +259,39 @@ function ViaggiPageContent() {
             <i className="bi bi-funnel me-2"></i>
             Filtri Avanzati
           </h5>
-          <button 
-            className="btn btn-outline-primary btn-sm"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <i className={`bi bi-chevron-${showFilters ? 'up' : 'down'}`}></i>
-            {showFilters ? 'Nascondi' : 'Mostra'} Filtri
-          </button>
+          <div className="d-flex gap-2">
+            {showFilters && (
+              <>
+                <button 
+                  type="button" 
+                  className="btn btn-primary btn-sm"
+                  onClick={handleApplyFilters}
+                >
+                  <i className="bi bi-search me-1"></i>
+                  Applica Filtri
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={handleClearFilters}
+                >
+                  <i className="bi bi-x-circle me-1"></i>
+                  Pulisci Filtri
+                </button>
+              </>
+            )}
+            <button 
+              className="btn btn-outline-primary btn-sm"
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              <i className={`bi bi-chevron-${showFilters ? 'up' : 'down'}`}></i>
+              {showFilters ? 'Nascondi' : 'Mostra'} Filtri
+            </button>
+          </div>
         </div>
         {showFilters && (
           <div className="card-body">
-            <FiltriViaggi onFiltersApplied={() => setShowFilters(false)} />
+            <FiltriViaggi ref={filtriRef} onFiltersApplied={() => setShowFilters(false)} />
           </div>
         )}
       </div>

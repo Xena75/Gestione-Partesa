@@ -288,18 +288,15 @@ export default function ModificaMonitoraggioPage({ params }: { params: Promise<{
       
       const [, day, month, year, hours, minutes] = match;
       
-      // Crea la data in formato ISO per il database
-      const date = new Date(
-        parseInt(year),
-        parseInt(month) - 1, // I mesi in JavaScript sono 0-based
-        parseInt(day),
-        parseInt(hours),
-        parseInt(minutes)
-      );
+      // Crea la data in formato ISO per il database SENZA conversione UTC
+      // Usa il formato YYYY-MM-DDTHH:mm:ss.000Z per evitare problemi di fuso orario
+      const isoString = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00.000Z`;
       
-      if (isNaN(date.getTime())) return null;
+      // Verifica che la data sia valida
+      const testDate = new Date(isoString);
+      if (isNaN(testDate.getTime())) return null;
       
-      return date.toISOString();
+      return isoString;
     } catch {
       return null;
     }

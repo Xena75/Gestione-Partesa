@@ -327,26 +327,52 @@ export async function getTotalsByFilters(filters: FiltriViaggi): Promise<Statist
     const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
     
     // Calcola statistiche con filtri applicati
-    const [totalsResult] = await pool.query(`
+    const query = `
       SELECT 
         COUNT(*) as totalTrasporti,
         SUM(COALESCE(\`Km Viaggio\`, 0)) as totalKm,
         SUM(COALESCE(\`Colli\`, 0)) as totalColli
       FROM tab_viaggi 
       ${whereClause}
-    `, queryParams);
+    `;
     
+    const [totalsResult] = await pool.query(query, queryParams);
     const totals = (totalsResult as any[])[0];
     
-    return {
+    // Calcola "Viaggi del Mese" - se c'è un filtro mese, usa quello, altrimenti usa il mese corrente
+    const currentMonth = new Date().getMonth() + 1;
+    const targetMonth = filters.mese && filters.mese !== '' ? Number(filters.mese) : currentMonth;
+    
+    const monthWhereConditions = [...whereConditions];
+    const monthQueryParams = [...queryParams];
+    
+    // Se non c'è già un filtro per il mese, aggiungi il mese target
+    if (!filters.mese || filters.mese === '') {
+      monthWhereConditions.push('`Mese` = ?');
+      monthQueryParams.push(targetMonth);
+    }
+    
+    const monthWhereClause = monthWhereConditions.length > 0 ? `WHERE ${monthWhereConditions.join(' AND ')}` : '';
+    
+    const [monthResult] = await pool.query(`
+      SELECT COUNT(*) as trasportiMese
+      FROM tab_viaggi 
+      ${monthWhereClause}
+    `, monthQueryParams);
+    
+    const monthTotals = (monthResult as any[])[0];
+    
+    const result = {
       totalRecords: totals.totalTrasporti || 0,
       totalPages: Math.ceil((totals.totalTrasporti || 0) / 20),
       recordsPerPage: 20,
       totalKm: totals.totalKm || 0,
       totalColli: totals.totalColli || 0,
       totalTrasporti: totals.totalTrasporti || 0,
-      trasportiMese: 0 // Non calcoliamo per i filtri
+      trasportiMese: monthTotals.trasportiMese || 0
     };
+    
+    return result;
   } catch (error) {
     console.error('Errore nel calcolare le statistiche filtrate:', error);
     return {
