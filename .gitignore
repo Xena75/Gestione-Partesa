@@ -48,4 +48,20 @@ next-env.d.ts
 
 # backup files
 backups/
+backup-system/
 *.sql
+*.log
+*.bat
+
+# File pesanti e cartelle di test
+uploads/
+import x test/
+*.xlsx
+*.xls
+*.csv
+
+# File temporanei e cache
+*.tmp
+*.temp
+.cache/
+temp/
