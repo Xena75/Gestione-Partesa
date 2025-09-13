@@ -17,10 +17,10 @@ function DeliveryMappingPageContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fileId = searchParams.get('fileId');
-  const filename = searchParams.get('filename');
-  const blobUrl = searchParams.get('blobUrl');
-  const originalName = searchParams.get('originalName');
+  const fileId = searchParams?.get('fileId');
+  const filename = searchParams?.get('filename');
+  const blobUrl = searchParams?.get('blobUrl');
+  const originalName = searchParams?.get('originalName');
 
   useEffect(() => {
     if (!fileId) {

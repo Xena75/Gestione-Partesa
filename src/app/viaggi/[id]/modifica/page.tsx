@@ -149,7 +149,7 @@ export default function ModificaViaggioPage({ params }: { params: Promise<{ id: 
       
       // Redirect dopo 2 secondi preservando i filtri
       setTimeout(() => {
-        const currentParams = searchParams.toString();
+        const currentParams = searchParams?.toString();
         const redirectUrl = currentParams ? `/viaggi?${currentParams}` : '/viaggi';
         router.push(redirectUrl);
       }, 2000);
@@ -221,7 +221,7 @@ export default function ModificaViaggioPage({ params }: { params: Promise<{ id: 
         <div className="alert alert-danger">
           <h4>Errore</h4>
           <p>{error}</p>
-          <Link href={`/viaggi?${searchParams.toString()}`} className="btn btn-primary">
+          <Link href={`/viaggi?${searchParams?.toString() || ''}`} className="btn btn-primary">
             ← Torna alla Gestione Viaggi
           </Link>
         </div>
@@ -235,7 +235,7 @@ export default function ModificaViaggioPage({ params }: { params: Promise<{ id: 
         <div className="alert alert-warning">
           <h4>Viaggio non trovato</h4>
           <p>Il viaggio richiesto non esiste.</p>
-          <Link href={`/viaggi?${searchParams.toString()}`} className="btn btn-primary">
+          <Link href={`/viaggi?${searchParams?.toString() || ''}`} className="btn btn-primary">
             ← Torna alla Gestione Viaggi
           </Link>
         </div>
@@ -250,7 +250,7 @@ export default function ModificaViaggioPage({ params }: { params: Promise<{ id: 
           {/* Header */}
           <div className="d-flex justify-content-between align-items-center mb-4">
             <h1 className="h2 mb-0">✏️ Modifica Viaggio</h1>
-            <Link href={`/viaggi?${searchParams.toString()}`} className="btn btn-outline-secondary">
+            <Link href={`/viaggi?${searchParams?.toString() || ''}`} className="btn btn-outline-secondary">
               ← Torna alla Gestione Viaggi
             </Link>
           </div>
@@ -738,7 +738,7 @@ export default function ModificaViaggioPage({ params }: { params: Promise<{ id: 
 
                            {/* Pulsanti di azione */}
              <div className="d-flex justify-content-between mt-5">
-               <Link href={`/viaggi?${searchParams.toString()}`} className="btn btn-secondary btn-lg px-4">
+               <Link href={`/viaggi?${searchParams?.toString() || ''}`} className="btn btn-secondary btn-lg px-4">
                  ← Annulla
                </Link>
                <button

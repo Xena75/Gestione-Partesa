@@ -26,13 +26,13 @@ export default function FiltriMonitoraggio() {
   const [showFilters, setShowFilters] = useState(false);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({ depositi: [], nominativi: [], targhe: [] });
   const [filters, setFilters] = useState<Filters>({
-    dataDa: searchParams.get('dataDa') || '',
-    dataA: searchParams.get('dataA') || '',
-    deposito: searchParams.get('deposito') || '',
-    nominativoId: searchParams.get('nominativoId') || '',
-    numeroViaggio: searchParams.get('numeroViaggio') || '',
-    targaMezzoId: searchParams.get('targaMezzoId') || '',
-    mese: searchParams.get('mese') || ''
+    dataDa: searchParams?.get('dataDa') || '',
+    dataA: searchParams?.get('dataA') || '',
+    deposito: searchParams?.get('deposito') || '',
+    nominativoId: searchParams?.get('nominativoId') || '',
+    numeroViaggio: searchParams?.get('numeroViaggio') || '',
+    targaMezzoId: searchParams?.get('targaMezzoId') || '',
+    mese: searchParams?.get('mese') || ''
   });
 
   // Carica le opzioni dei filtri
@@ -57,7 +57,7 @@ export default function FiltriMonitoraggio() {
     });
     
     // Mantieni la pagina corrente o vai alla prima
-    const currentPage = searchParams.get('page');
+    const currentPage = searchParams?.get('page');
     if (currentPage && currentPage !== '1') {
       params.set('page', '1');
     }
@@ -78,7 +78,7 @@ export default function FiltriMonitoraggio() {
     
     // Rimuovi tutti i parametri dei filtri dall'URL
     const params = new URLSearchParams();
-    const currentPage = searchParams.get('page');
+    const currentPage = searchParams?.get('page');
     if (currentPage) {
       params.set('page', currentPage);
     }

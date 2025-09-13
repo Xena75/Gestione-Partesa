@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{{subject}}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #fef2f2;
+            color: #334155;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            border: 2px solid #fecaca;
+        }
+        .header {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            color: white;
+            padding: 30px 25px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .header .icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+            display: block;
+        }
+        .content {
+            padding: 30px 25px;
+            line-height: 1.6;
+        }
+        .error-message {
+            background-color: #fef2f2;
+            border-left: 4px solid #dc2626;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .error-message h3 {
+            margin: 0 0 10px 0;
+            color: #dc2626;
+            font-size: 18px;
+        }
+        .alert-box {
+            background-color: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .alert-box h4 {
+            margin: 0 0 10px 0;
+            color: #92400e;
+            font-size: 16px;
+        }
+        .details-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .details-table th {
+            background-color: #fef2f2;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #7f1d1d;
+            border-bottom: 1px solid #fecaca;
+        }
+        .details-table td {
+            padding: 15px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .details-table tr:last-child td {
+            border-bottom: none;
+        }
+        .error-details {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #dc2626;
+            overflow-x: auto;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge-error {
+            background-color: #fecaca;
+            color: #7f1d1d;
+        }
+        .badge-warning {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        .priority-high {
+            background-color: #fef2f2;
+            border-left: 4px solid #dc2626;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .action-list {
+            background-color: #f0f9ff;
+            border-left: 4px solid #0ea5e9;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .action-list h4 {
+            margin: 0 0 15px 0;
+            color: #0369a1;
+        }
+        .action-list ol {
+            margin: 0;
+            padding-left: 20px;
+            color: #0369a1;
+        }
+        .action-list li {
+            margin-bottom: 8px;
+        }
+        .footer {
+            background-color: #fef2f2;
+            padding: 25px;
+            text-align: center;
+            border-top: 1px solid #fecaca;
+        }
+        .footer p {
+            margin: 5px 0;
+            color: #64748b;
+            font-size: 14px;
+        }
+        .footer .system-info {
+            font-weight: 600;
+            color: #7f1d1d;
+        }
+        .action-buttons {
+            margin: 25px 0;
+            text-align: center;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            margin: 0 10px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .btn-danger {
+            background-color: #dc2626;
+            color: white;
+        }
+        .btn-secondary {
+            background-color: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+        .highlight {
+            background-color: #fef3c7;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        .contact-info {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .contact-info h4 {
+            margin: 0 0 10px 0;
+            color: #475569;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <span class="icon">❌</span>
+            <h1>{{title}}</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">Backup non completato</p>
+        </div>
+        
+        <div class="content">
+            <div class="error-message">
+                <h3>🚨 Errore Durante il Backup</h3>
+                <p><strong>ATTENZIONE:</strong> Il processo di backup non è stato completato correttamente. È richiesta un'azione immediata per garantire la sicurezza dei dati.</p>
+            </div>
+
+            <div class="priority-high">
+                <h4 style="margin: 0 0 10px 0; color: #dc2626;">⚠️ PRIORITÀ ALTA</h4>
+                <p style="margin: 0; color: #dc2626; font-weight: 600;">Questo errore potrebbe compromettere la strategia di backup. Verificare immediatamente.</p>
+            </div>
+
+            <table class="details-table">
+                <thead>
+                    <tr>
+                        <th>Dettaglio</th>
+                        <th>Valore</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Tipo Backup</strong></td>
+                        <td><span class="badge badge-warning">{{job_type}}</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Database</strong></td>
+                        <td><span class="badge badge-warning">{{database_names}}</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Stato</strong></td>
+                        <td><span class="badge badge-error">{{status}}</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Ora Inizio</strong></td>
+                        <td>{{start_time_formatted}}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Ora Errore</strong></td>
+                        <td>{{error_time_formatted}}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Durata Tentativo</strong></td>
+                        <td>{{duration}}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="alert-box">
+                <h4>📋 Dettagli Errore</h4>
+                <div class="error-details">
+                    {{error_message}}
+                </div>
+                {{#if error_code}}
+                <p><strong>Codice Errore:</strong> <code>{{error_code}}</code></p>
+                {{/if}}
+            </div>
+
+            <div class="action-list">
+                <h4>🔧 Azioni Richieste</h4>
+                <ol>
+                    <li><strong>Verificare lo spazio disco</strong> - Assicurarsi che ci sia spazio sufficiente per il backup</li>
+                    <li><strong>Controllare la connessione al database</strong> - Verificare che il servizio MySQL sia attivo</li>
+                    <li><strong>Esaminare i log dettagliati</strong> - Consultare i file di log per informazioni aggiuntive</li>
+                    <li><strong>Ripetere il backup manualmente</strong> - Eseguire un backup manuale per verificare il problema</li>
+                    <li><strong>Contattare il supporto tecnico</strong> - Se il problema persiste, richiedere assistenza</li>
+                </ol>
+            </div>
+
+            <div style="background-color: #fffbeb; border-left: 4px solid #f59e0b; padding: 15px 20px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+                <h4 style="margin: 0 0 10px 0; color: #92400e;">💡 Suggerimenti</h4>
+                <ul style="margin: 0; padding-left: 20px; color: #92400e;">
+                    <li>Verificare che non ci siano processi che bloccano il database</li>
+                    <li>Controllare i permessi di scrittura nella directory di backup</li>
+                    <li>Assicurarsi che il servizio MySQL sia configurato correttamente</li>
+                </ul>
+            </div>
+
+            <div class="action-buttons">
+                <a href="http://localhost:3001/backup-dashboard" class="btn btn-danger">Dashboard Backup</a>
+                <a href="http://localhost:3001/backup-dashboard/logs" class="btn btn-secondary">Visualizza Log</a>
+            </div>
+
+            <div class="contact-info">
+                <h4>📞 Supporto Tecnico</h4>
+                <p>Per assistenza immediata contattare:</p>
+                <p><strong>Email:</strong> admin@company.com</p>
+                <p><strong>Telefono:</strong> +39 XXX XXX XXXX</p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p class="system-info">Sistema di Backup Automatico</p>
+            <p><strong>Gestione Partesa</strong> - Backup Management System</p>
+            <p>Errore rilevato il <span class="highlight">{{timestamp}}</span></p>
+            <p style="font-size: 12px; margin-top: 15px; color: #94a3b8;">
+                Questo è un messaggio automatico di errore. Azione richiesta entro 24 ore.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

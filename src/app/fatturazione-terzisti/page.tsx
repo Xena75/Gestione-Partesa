@@ -844,15 +844,22 @@ export default function FatturazioneTerzistiPage() {
                               basePath="/fatturazione-terzisti"
                             />
                             <SortableHeader 
-                              field="data_mov_merce" 
-                              label="Data"
+                              field="viaggio" 
+                              label="Viaggio"
                               currentSortBy={sortBy} 
                               currentSortOrder={sortOrder}
                               basePath="/fatturazione-terzisti"
                             />
                             <SortableHeader 
-                              field="viaggio" 
-                              label="Viaggio"
+                              field="data_viaggio" 
+                              label="Data Viaggio"
+                              currentSortBy={sortBy} 
+                              currentSortOrder={sortOrder}
+                              basePath="/fatturazione-terzisti"
+                            />
+                            <SortableHeader 
+                              field="ordine" 
+                              label="Ordine"
                               currentSortBy={sortBy} 
                               currentSortOrder={sortOrder}
                               basePath="/fatturazione-terzisti"
@@ -865,15 +872,15 @@ export default function FatturazioneTerzistiPage() {
                               basePath="/fatturazione-terzisti"
                             />
                             <SortableHeader 
-                              field="Descr_Vettore_Join" 
-                              label="Vettore"
+                              field="Azienda_Vettore" 
+                              label="Azienda"
                               currentSortBy={sortBy} 
                               currentSortOrder={sortOrder}
                               basePath="/fatturazione-terzisti"
                             />
                             <SortableHeader 
-                              field="Azienda_Vettore" 
-                              label="Azienda"
+                              field="Descr_Vettore_Join" 
+                              label="Vettore"
                               currentSortBy={sortBy} 
                               currentSortOrder={sortOrder}
                               basePath="/fatturazione-terzisti"

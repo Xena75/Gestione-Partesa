@@ -56,22 +56,22 @@ interface Statistiche {
 
 function ViaggiPageContent() {
   const searchParams = useSearchParams();
-  const page = searchParams.get('page');
+  const page = searchParams?.get('page');
   const currentPage = Number(page) || 1;
-  const sortBy = searchParams.get('sortBy') || 'Data';
-  const sortOrder = (searchParams.get('sortOrder') as 'ASC' | 'DESC') || 'DESC';
+  const sortBy = searchParams?.get('sortBy') || 'Data';
+  const sortOrder = (searchParams?.get('sortOrder') as 'ASC' | 'DESC') || 'DESC';
   
   // Parametri dei filtri
-  const aziendaVettore = searchParams.get('aziendaVettore');
-  const nominativo = searchParams.get('nominativo');
-  const trasportatore = searchParams.get('trasportatore');
-  const numeroViaggio = searchParams.get('numeroViaggio');
-  const targa = searchParams.get('targa');
-  const magazzino = searchParams.get('magazzino');
-  const mese = searchParams.get('mese');
-  const trimestre = searchParams.get('trimestre');
-  const dataDa = searchParams.get('dataDa');
-  const dataA = searchParams.get('dataA');
+  const aziendaVettore = searchParams?.get('aziendaVettore');
+  const nominativo = searchParams?.get('nominativo');
+  const trasportatore = searchParams?.get('trasportatore');
+  const numeroViaggio = searchParams?.get('numeroViaggio');
+  const targa = searchParams?.get('targa');
+  const magazzino = searchParams?.get('magazzino');
+  const mese = searchParams?.get('mese');
+  const trimestre = searchParams?.get('trimestre');
+  const dataDa = searchParams?.get('dataDa');
+  const dataA = searchParams?.get('dataA');
   
   const [data, setData] = useState<{ viaggi: ViaggioTab[], totalPages: number, totalRecords: number } | null>(null);
   const [stats, setStats] = useState<Statistiche | null>(null);
@@ -431,7 +431,7 @@ function ViaggiPageContent() {
                  <td>{viaggio.euro_rifornimento ? `€ ${Number(viaggio.euro_rifornimento).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}</td>
                  <td>
                    <Link 
-                     href={`/viaggi/${viaggio.Viaggio}/modifica?${searchParams.toString()}`}
+                     href={`/viaggi/${viaggio.Viaggio}/modifica?${searchParams?.toString() || ''}`}
                      className="btn btn-sm btn-outline-primary"
                    >
                      ✏️ Modifica
@@ -446,14 +446,14 @@ function ViaggiPageContent() {
       {/* Controlli di Paginazione */}
       <div className="d-flex justify-content-center gap-2 mt-3">
         <Link 
-          href={`/viaggi?page=${currentPage - 1}${searchParams.toString() ? `&${searchParams.toString()}` : ''}`}
+          href={`/viaggi?page=${currentPage - 1}${searchParams?.toString() ? `&${searchParams?.toString()}` : ''}`}
           className={`btn btn-primary ${currentPage <= 1 ? 'disabled' : ''}`}
         >
           Indietro
         </Link>
         <span className="d-flex align-items-center">Pagina {currentPage} di {totalPages}</span>
         <Link 
-          href={`/viaggi?page=${currentPage + 1}${searchParams.toString() ? `&${searchParams.toString()}` : ''}`}
+          href={`/viaggi?page=${currentPage + 1}${searchParams?.toString() ? `&${searchParams?.toString()}` : ''}`}
           className={`btn btn-primary ${currentPage >= totalPages ? 'disabled' : ''}`}
         >
           Avanti

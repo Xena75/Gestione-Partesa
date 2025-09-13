@@ -1,0 +1,6 @@
+LAST_DIFFERENTIAL_TIME=20250913_164845 
+LAST_FULL_BACKUP_TIME=20250913_154916 
+CURRENT_BINLOG_FILE= 
+CURRENT_BINLOG_POS= 
+BACKUP_FILE1=M:\Progetti\In produzione\gestione-partesa\backup-system\scripts\..\storage\differential-backups\viaggi_db_differential_20250913_164845.sql 
+BACKUP_FILE2=M:\Progetti\In produzione\gestione-partesa\backup-system\scripts\..\storage\differential-backups\gestionelogistica_differential_20250913_164845.sql 

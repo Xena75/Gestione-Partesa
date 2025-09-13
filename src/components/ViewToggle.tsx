@@ -7,10 +7,10 @@ export default function ViewToggle() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  const currentView = searchParams.get('viewType') || 'grouped';
+  const currentView = searchParams?.get('viewType') || 'grouped';
 
   const switchView = useCallback((viewType: 'grouped' | 'detailed') => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParams?.toString() || '');
     params.set('viewType', viewType);
     params.set('page', '1'); // Reset alla prima pagina quando si cambia vista
     

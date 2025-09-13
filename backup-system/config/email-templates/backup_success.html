@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{{subject}}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8fafc;
+            color: #334155;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 30px 25px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .header .icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+            display: block;
+        }
+        .content {
+            padding: 30px 25px;
+            line-height: 1.6;
+        }
+        .success-message {
+            background-color: #f0fdf4;
+            border-left: 4px solid #10b981;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .success-message h3 {
+            margin: 0 0 10px 0;
+            color: #059669;
+            font-size: 18px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+            margin: 25px 0;
+        }
+        .stat-card {
+            background-color: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #059669;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .details-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .details-table th {
+            background-color: #f1f5f9;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #475569;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .details-table td {
+            padding: 15px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .details-table tr:last-child td {
+            border-bottom: none;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge-success {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+        .badge-info {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+        .footer {
+            background-color: #f8fafc;
+            padding: 25px;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+        }
+        .footer p {
+            margin: 5px 0;
+            color: #64748b;
+            font-size: 14px;
+        }
+        .footer .system-info {
+            font-weight: 600;
+            color: #475569;
+        }
+        .action-buttons {
+            margin: 25px 0;
+            text-align: center;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            margin: 0 10px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background-color: #2563eb;
+            color: white;
+        }
+        .btn-secondary {
+            background-color: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+        .highlight {
+            background-color: #fef3c7;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <span class="icon">✅</span>
+            <h1>{{title}}</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">Backup completato con successo</p>
+        </div>
+        
+        <div class="content">
+            <div class="success-message">
+                <h3>🎉 Operazione Completata</h3>
+                <p>Il backup è stato eseguito correttamente e tutti i file sono stati salvati in modo sicuro.</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">{{backup_type}}</div>
+                    <div class="stat-label">Tipo Backup</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{file_count}}</div>
+                    <div class="stat-label">File Creati</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{total_size_formatted}}</div>
+                    <div class="stat-label">Dimensione</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{duration}}</div>
+                    <div class="stat-label">Durata</div>
+                </div>
+            </div>
+
+            <table class="details-table">
+                <thead>
+                    <tr>
+                        <th>Dettaglio</th>
+                        <th>Valore</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Database</strong></td>
+                        <td><span class="badge badge-info">{{database_names}}</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Stato</strong></td>
+                        <td><span class="badge badge-success">{{status}}</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Ora Inizio</strong></td>
+                        <td>{{start_time_formatted}}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Ora Fine</strong></td>
+                        <td>{{end_time_formatted}}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Percorso Backup</strong></td>
+                        <td><code style="background-color: #f1f5f9; padding: 4px 8px; border-radius: 4px; font-size: 12px;">{{backup_path}}</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Checksum</strong></td>
+                        <td><code style="background-color: #f1f5f9; padding: 4px 8px; border-radius: 4px; font-size: 12px;">{{checksum}}</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div style="background-color: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 15px 20px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+                <h4 style="margin: 0 0 10px 0; color: #0369a1;">📋 Prossimi Passi</h4>
+                <ul style="margin: 0; padding-left: 20px; color: #0369a1;">
+                    <li>Il backup è stato verificato e risulta integro</li>
+                    <li>I file sono disponibili nel sistema di storage</li>
+                    <li>Il prossimo backup è programmato secondo la schedulazione</li>
+                </ul>
+            </div>
+
+            <div class="action-buttons">
+                <a href="http://localhost:3001/backup-dashboard" class="btn btn-primary">Visualizza Dashboard</a>
+                <a href="http://localhost:3001/backup-dashboard/logs" class="btn btn-secondary">Vedi Log Completi</a>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p class="system-info">Sistema di Backup Automatico</p>
+            <p><strong>Gestione Partesa</strong> - Backup Management System</p>
+            <p>Generato automaticamente il <span class="highlight">{{timestamp}}</span></p>
+            <p style="font-size: 12px; margin-top: 15px; color: #94a3b8;">
+                Questo è un messaggio automatico. Per assistenza tecnica contattare l'amministratore di sistema.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

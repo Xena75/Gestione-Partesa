@@ -30,18 +30,18 @@ export default function DeliveryFilters() {
 
   // Stati per i filtri
   const [filters, setFilters] = useState<DeliveryFiltersType>({
-    viaggio: searchParams.get('viaggio') || '',
-    ordine: searchParams.get('ordine') || '',
-    bu: searchParams.get('bu') || 'Tutti',
-    divisione: searchParams.get('divisione') || 'Tutte',
-    deposito: searchParams.get('deposito') || 'Tutti',
-    vettore: searchParams.get('vettore') || 'Tutti',
-    tipologia: searchParams.get('tipologia') || 'Tutte',
-    codCliente: searchParams.get('codCliente') || '',
-    cliente: searchParams.get('cliente') || '',
-    dataDa: searchParams.get('dataDa') || '',
-    dataA: searchParams.get('dataA') || '',
-    mese: searchParams.get('mese') || 'Tutti'
+    viaggio: searchParams?.get('viaggio') || '',
+    ordine: searchParams?.get('ordine') || '',
+    bu: searchParams?.get('bu') || 'Tutti',
+    divisione: searchParams?.get('divisione') || 'Tutte',
+    deposito: searchParams?.get('deposito') || 'Tutti',
+    vettore: searchParams?.get('vettore') || 'Tutti',
+    tipologia: searchParams?.get('tipologia') || 'Tutte',
+    codCliente: searchParams?.get('codCliente') || '',
+    cliente: searchParams?.get('cliente') || '',
+    dataDa: searchParams?.get('dataDa') || '',
+    dataA: searchParams?.get('dataA') || '',
+    mese: searchParams?.get('mese') || 'Tutti'
   });
 
   // Carica le opzioni dei filtri
@@ -64,18 +64,18 @@ export default function DeliveryFilters() {
   // Aggiorna i filtri quando cambiano i parametri URL
   useEffect(() => {
     setFilters({
-      viaggio: searchParams.get('viaggio') || '',
-      ordine: searchParams.get('ordine') || '',
-      bu: searchParams.get('bu') || 'Tutti',
-      divisione: searchParams.get('divisione') || 'Tutte',
-      deposito: searchParams.get('deposito') || 'Tutti',
-      vettore: searchParams.get('vettore') || 'Tutti',
-      tipologia: searchParams.get('tipologia') || 'Tutte',
-      codCliente: searchParams.get('codCliente') || '',
-      cliente: searchParams.get('cliente') || '',
-      dataDa: searchParams.get('dataDa') || '',
-      dataA: searchParams.get('dataA') || '',
-      mese: searchParams.get('mese') || 'Tutti'
+      viaggio: searchParams?.get('viaggio') || '',
+      ordine: searchParams?.get('ordine') || '',
+      bu: searchParams?.get('bu') || 'Tutti',
+      divisione: searchParams?.get('divisione') || 'Tutte',
+      deposito: searchParams?.get('deposito') || 'Tutti',
+      vettore: searchParams?.get('vettore') || 'Tutti',
+      tipologia: searchParams?.get('tipologia') || 'Tutte',
+      codCliente: searchParams?.get('codCliente') || '',
+      cliente: searchParams?.get('cliente') || '',
+      dataDa: searchParams?.get('dataDa') || '',
+      dataA: searchParams?.get('dataA') || '',
+      mese: searchParams?.get('mese') || 'Tutti'
     });
   }, [searchParams]);
 
@@ -104,9 +104,9 @@ export default function DeliveryFilters() {
     });
 
     // Mantieni altri parametri
-    const viewType = searchParams.get('viewType') || 'grouped';
-    const sortBy = searchParams.get('sortBy') || 'data_mov_merce';
-    const sortOrder = searchParams.get('sortOrder') || 'DESC';
+    const viewType = searchParams?.get('viewType') || 'grouped';
+    const sortBy = searchParams?.get('sortBy') || 'data_mov_merce';
+    const sortOrder = searchParams?.get('sortOrder') || 'DESC';
 
     params.set('page', '1'); // Reset alla prima pagina
     params.set('viewType', viewType);
@@ -136,7 +136,7 @@ export default function DeliveryFilters() {
     // Mantieni solo i parametri essenziali
     const params = new URLSearchParams();
     params.set('page', '1');
-    params.set('viewType', searchParams.get('viewType') || 'grouped');
+    params.set('viewType', searchParams?.get('viewType') || 'grouped');
     params.set('sortBy', 'data_mov_merce');
     params.set('sortOrder', 'DESC');
 

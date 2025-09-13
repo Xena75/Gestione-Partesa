@@ -43,9 +43,9 @@ export default function DeliveryTable({ viewType }: DeliveryTableProps) {
   const [loadingDetails, setLoadingDetails] = useState<Set<string>>(new Set());
   const [rowDetails, setRowDetails] = useState<Record<string, FatturaDelivery[]>>({});
 
-  const currentPage = Number(searchParams.get('page')) || 1;
-  const sortBy = searchParams.get('sortBy') || 'data_mov_merce';
-  const sortOrder = searchParams.get('sortOrder') || 'DESC';
+  const currentPage = Number(searchParams?.get('page')) || 1;
+  const sortBy = searchParams?.get('sortBy') || 'data_mov_merce';
+  const sortOrder = searchParams?.get('sortOrder') || 'DESC';
 
   // Carica i dati
   useEffect(() => {
@@ -62,7 +62,7 @@ export default function DeliveryTable({ viewType }: DeliveryTableProps) {
         // Aggiungi tutti i parametri dei filtri
         const filterParams = ['viaggio', 'ordine', 'bu', 'divisione', 'deposito', 'vettore', 'tipologia', 'codCliente', 'cliente', 'dataDa', 'dataA'];
         filterParams.forEach(param => {
-          const value = searchParams.get(param);
+          const value = searchParams?.get(param);
           if (value) params.set(param, value);
         });
 
@@ -83,7 +83,7 @@ export default function DeliveryTable({ viewType }: DeliveryTableProps) {
 
   // Gestisci ordinamento
   const handleSort = useCallback((field: string) => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParams?.toString() || '');
     const newOrder = sortBy === field && sortOrder === 'ASC' ? 'DESC' : 'ASC';
     
     params.set('sortBy', field);
@@ -95,7 +95,7 @@ export default function DeliveryTable({ viewType }: DeliveryTableProps) {
 
   // Gestisci cambio pagina
   const handlePageChange = useCallback((page: number) => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParams?.toString() || '');
     params.set('page', page.toString());
     router.push(`/gestione?${params.toString()}`);
   }, [router, searchParams]);
@@ -193,12 +193,12 @@ export default function DeliveryTable({ viewType }: DeliveryTableProps) {
     <div className="card">
       <div className="card-body">
         {/* Messaggio informativo per performance */}
-        {!searchParams.get('dataDa') && !searchParams.get('dataA') && 
-         !searchParams.get('tipologia') && !searchParams.get('deposito') && 
-         !searchParams.get('vettore') && !searchParams.get('bu') && 
-         !searchParams.get('divisione') && !searchParams.get('viaggio') && 
-         !searchParams.get('ordine') && !searchParams.get('codCliente') && 
-         !searchParams.get('cliente') && (
+        {!searchParams?.get('dataDa') && !searchParams?.get('dataA') && 
+         !searchParams?.get('tipologia') && !searchParams?.get('deposito') && 
+         !searchParams?.get('vettore') && !searchParams?.get('bu') && 
+         !searchParams?.get('divisione') && !searchParams?.get('viaggio') && 
+         !searchParams?.get('ordine') && !searchParams?.get('codCliente') && 
+         !searchParams?.get('cliente') && (
           <div className="alert alert-info mb-3">
             <i className="fas fa-info-circle me-2"></i>
             <strong>Ottimizzazione Performance:</strong> Per migliorare i tempi di caricamento, 

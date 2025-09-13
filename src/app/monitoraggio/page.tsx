@@ -12,10 +12,10 @@ import Link from 'next/link';
 
 function MonitoraggioPageContent() {
   const searchParams = useSearchParams();
-  const page = searchParams.get('page');
+  const page = searchParams?.get('page');
   const currentPage = Number(page) || 1;
-  const sortBy = searchParams.get('sortBy') || 'dataOraInizioViaggio';
-  const sortOrder = (searchParams.get('sortOrder') as 'ASC' | 'DESC') || 'DESC';
+  const sortBy = searchParams?.get('sortBy') || 'dataOraInizioViaggio';
+  const sortOrder = (searchParams?.get('sortOrder') as 'ASC' | 'DESC') || 'DESC';
   
   // Funzione per convertire le date dal formato database al formato italiano
   const formatDateToItalian = (dateString: string | null): string => {
@@ -38,13 +38,13 @@ function MonitoraggioPageContent() {
   };
   
   // Parametri dei filtri
-  const dataDa = searchParams.get('dataDa');
-  const dataA = searchParams.get('dataA');
-  const deposito = searchParams.get('deposito');
-  const nominativoId = searchParams.get('nominativoId');
-  const numeroViaggio = searchParams.get('numeroViaggio');
-  const targaMezzoId = searchParams.get('targaMezzoId');
-  const mese = searchParams.get('mese');
+  const dataDa = searchParams?.get('dataDa');
+  const dataA = searchParams?.get('dataA');
+  const deposito = searchParams?.get('deposito');
+  const nominativoId = searchParams?.get('nominativoId');
+  const numeroViaggio = searchParams?.get('numeroViaggio');
+  const targaMezzoId = searchParams?.get('targaMezzoId');
+  const mese = searchParams?.get('mese');
   
   const [data, setData] = useState<{ viaggi: Viaggio[], totalPages: number, totalRecords: number } | null>(null);
   const [stats, setStats] = useState<{ totalRecords: number, totalPages: number, recordsPerPage: number } | null>(null);
@@ -239,7 +239,7 @@ function MonitoraggioPageContent() {
                 <td>{formatDateToItalian(viaggio.updatedAt)}</td>
                 <td className="d-flex gap-2">
                   <Link 
-                    href={`/monitoraggio/${viaggio.id}/modifica?${searchParams.toString()}`} 
+                    href={`/monitoraggio/${viaggio.id}/modifica?${searchParams?.toString() || ''}`} 
                     className="btn btn-secondary btn-sm"
                   >
                     Modifica
@@ -255,14 +255,14 @@ function MonitoraggioPageContent() {
       {/* Controlli di Paginazione */}
       <div className="d-flex justify-content-center gap-2 mt-3">
                  <Link 
-           href={`/monitoraggio?page=${currentPage - 1}${searchParams.toString() ? `&${searchParams.toString()}` : ''}`}
+           href={`/monitoraggio?page=${currentPage - 1}${searchParams?.toString() ? `&${searchParams?.toString()}` : ''}`}
            className={`btn btn-primary ${currentPage <= 1 ? 'disabled' : ''}`}
          >
            Indietro
          </Link>
         <span className="d-flex align-items-center">Pagina {currentPage} di {totalPages}</span>
                  <Link 
-           href={`/monitoraggio?page=${currentPage + 1}${searchParams.toString() ? `&${searchParams.toString()}` : ''}`}
+           href={`/monitoraggio?page=${currentPage + 1}${searchParams?.toString() ? `&${searchParams?.toString()}` : ''}`}
            className={`btn btn-primary ${currentPage >= totalPages ? 'disabled' : ''}`}
          >
            Avanti

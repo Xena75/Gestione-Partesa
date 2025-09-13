@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db-viaggi';
 import type { RowDataPacket, FieldPacket } from 'mysql2/promise';
+import { writeFile, mkdir } from 'fs/promises';
+import { join } from 'path';
+import { existsSync } from 'fs';
 
 // POST: Carica una nuova immagine per un viaggio
 export async function POST(
@@ -45,9 +48,20 @@ export async function POST(
     const timestamp = Date.now();
     const filename = `${type}_${timestamp}_${file.name}`;
     
-    // In un'implementazione reale, qui salveresti il file su Vercel Blob Storage
-    // Per ora, simuliamo il salvataggio
-    const url = `/uploads/${filename}`;
+    // Crea la cartella uploads se non esiste
+    const uploadsDir = join(process.cwd(), 'uploads');
+    if (!existsSync(uploadsDir)) {
+      await mkdir(uploadsDir, { recursive: true });
+    }
+    
+    // Salva il file nella cartella uploads
+    const filePath = join(uploadsDir, filename);
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    await writeFile(filePath, buffer);
+    
+    // URL per accedere al file tramite la nuova API route
+    const url = `/api/uploads/${filename}`;
     
     // Salva i metadati dell'immagine nel database
     await pool.execute(`

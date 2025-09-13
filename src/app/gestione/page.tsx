@@ -12,39 +12,39 @@ import ExportDeliveryButton from '@/components/ExportDeliveryButton';
 
 function GestioneContent() {
   const searchParams = useSearchParams();
-  const viewType = (searchParams.get('viewType') || 'grouped') as 'grouped' | 'detailed';
+  const viewType = (searchParams?.get('viewType') || 'grouped') as 'grouped' | 'detailed';
   
   // Stato per i filtri attivi (aggiornato in tempo reale)
   const [activeFilters, setActiveFilters] = useState({
-    viaggio: searchParams.get('viaggio') || undefined,
-    ordine: searchParams.get('ordine') || undefined,
-    bu: searchParams.get('bu') || undefined,
-    divisione: searchParams.get('divisione') || undefined,
-    deposito: searchParams.get('deposito') || undefined,
-    vettore: searchParams.get('vettore') || undefined,
-    tipologia: searchParams.get('tipologia') || undefined,
-    codCliente: searchParams.get('codCliente') || undefined,
-    cliente: searchParams.get('cliente') || undefined,
-    dataDa: searchParams.get('dataDa') || undefined,
-    dataA: searchParams.get('dataA') || undefined,
-    mese: searchParams.get('mese') || undefined
+    viaggio: searchParams?.get('viaggio') || undefined,
+    ordine: searchParams?.get('ordine') || undefined,
+    bu: searchParams?.get('bu') || undefined,
+    divisione: searchParams?.get('divisione') || undefined,
+    deposito: searchParams?.get('deposito') || undefined,
+    vettore: searchParams?.get('vettore') || undefined,
+    tipologia: searchParams?.get('tipologia') || undefined,
+    codCliente: searchParams?.get('codCliente') || undefined,
+    cliente: searchParams?.get('cliente') || undefined,
+    dataDa: searchParams?.get('dataDa') || undefined,
+    dataA: searchParams?.get('dataA') || undefined,
+    mese: searchParams?.get('mese') || undefined
   });
 
   // Aggiorna i filtri attivi quando cambiano i parametri URL
   useEffect(() => {
     setActiveFilters({
-      viaggio: searchParams.get('viaggio') || undefined,
-      ordine: searchParams.get('ordine') || undefined,
-      bu: searchParams.get('bu') || undefined,
-      divisione: searchParams.get('divisione') || undefined,
-      deposito: searchParams.get('deposito') || undefined,
-      vettore: searchParams.get('vettore') || undefined,
-      tipologia: searchParams.get('tipologia') || undefined,
-      codCliente: searchParams.get('codCliente') || undefined,
-      cliente: searchParams.get('cliente') || undefined,
-      dataDa: searchParams.get('dataDa') || undefined,
-      dataA: searchParams.get('dataA') || undefined,
-      mese: searchParams.get('mese') || undefined
+      viaggio: searchParams?.get('viaggio') || undefined,
+      ordine: searchParams?.get('ordine') || undefined,
+      bu: searchParams?.get('bu') || undefined,
+      divisione: searchParams?.get('divisione') || undefined,
+      deposito: searchParams?.get('deposito') || undefined,
+      vettore: searchParams?.get('vettore') || undefined,
+      tipologia: searchParams?.get('tipologia') || undefined,
+      codCliente: searchParams?.get('codCliente') || undefined,
+      cliente: searchParams?.get('cliente') || undefined,
+      dataDa: searchParams?.get('dataDa') || undefined,
+      dataA: searchParams?.get('dataA') || undefined,
+      mese: searchParams?.get('mese') || undefined
     });
   }, [searchParams]);
 

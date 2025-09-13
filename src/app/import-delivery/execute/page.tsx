@@ -21,10 +21,10 @@ function DeliveryExecutePageContent() {
   const [error, setError] = useState<string | null>(null);
   const isImportingRef = useRef(false);
 
-  const fileId = searchParams.get('fileId');
-  const mappingParam = searchParams.get('mapping');
-  const blobUrl = searchParams.get('blobUrl');
-  const originalName = searchParams.get('originalName');
+  const fileId = searchParams?.get('fileId');
+  const mappingParam = searchParams?.get('mapping');
+  const blobUrl = searchParams?.get('blobUrl');
+  const originalName = searchParams?.get('originalName');
 
   const startImport = useCallback(async () => {
     // Protezione contro importazioni multiple usando ref per evitare loop

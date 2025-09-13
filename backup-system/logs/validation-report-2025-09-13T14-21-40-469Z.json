@@ -1,0 +1,30 @@
+{
+  "timestamp": "2025-09-13T14:20:58.406Z",
+  "validation": {
+    "totalFiles": 20,
+    "validFiles": 20,
+    "corruptFiles": 0,
+    "missingFiles": 0,
+    "errors": []
+  },
+  "statistics": {
+    "totalSize": 5961918809,
+    "oldestBackup": "2025-09-13T10:35:41.088Z",
+    "newestBackup": "2025-09-13T13:51:28.513Z",
+    "backupTypes": {
+      "full": {
+        "count": 18,
+        "size": 5961915385
+      },
+      "incremental": {
+        "count": 0,
+        "size": 0
+      },
+      "differential": {
+        "count": 2,
+        "size": 3424
+      }
+    }
+  },
+  "recommendations": []
+}

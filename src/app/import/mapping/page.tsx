@@ -19,9 +19,9 @@ function MappingPageContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fileId = searchParams.get('fileId');
-  const filename = searchParams.get('filename');
-  const blobUrl = searchParams.get('blobUrl');
+  const fileId = searchParams?.get('fileId');
+  const filename = searchParams?.get('filename');
+  const blobUrl = searchParams?.get('blobUrl');
 
   useEffect(() => {
     if (!fileId) {

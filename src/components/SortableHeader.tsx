@@ -15,7 +15,7 @@ export default function SortableHeader({ field, label, currentSortBy, currentSor
   const searchParams = useSearchParams();
 
   const handleSort = () => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParams?.toString() || '');
     
     // Se clicchiamo sulla stessa colonna, invertiamo l'ordine
     if (currentSortBy === field) {

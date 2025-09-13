@@ -1,14 +1,61 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.13.0
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.15.0
 
 ## 📋 **PANORAMICA SISTEMA**
 
 Sistema completo di gestione logistica con funzionalità avanzate per:
+- **Sistema backup automatico** completo e funzionante
 - **Import dati monitoraggio** da file Excel
 - **Sincronizzazione database multipli** 
 - **Gestione terzisti** con fatturazione automatica
 - **Export Excel** multi-foglio
 - **Filtri avanzati** e ordinamento
-- **Backup automatici** e sicurezza dati
+- **Sicurezza dati** e integrità backup
+
+---
+
+## 🛡️ **SISTEMA BACKUP AUTOMATICO - v2.15.0**
+
+### 📦 **Sistema Backup Completo**
+- **3 tipologie backup**: Full, Differenziale, Incrementale
+- **Scripts Windows**: `.bat` files completamente funzionanti
+- **Database multipli**: `viaggi_db` e `gestionelogistica`
+- **Percorsi assoluti**: Risolti tutti i problemi di path Windows
+- **Zero dipendenze**: Nessun gzip o compressione esterna richiesta
+
+### 🔧 **Scripts Funzionanti**
+- **`backup-full.bat`**: Backup completo entrambi database
+- **`backup-differential.bat`**: Backup modifiche dall'ultimo full
+- **`backup-incremental.bat`**: Backup modifiche dall'ultimo incrementale
+- **`backup-validator.js`**: Validazione integrità backup
+- **`cleanup-old-backups.bat`**: Pulizia automatica backup vecchi
+
+### 🗄️ **Configurazione MySQL**
+- **Host**: localhost (XAMPP)
+- **Utente**: root con password vuota
+- **Connessioni**: Pool ottimizzati per ogni database
+- **Binary logs**: Configurazione per backup incrementali
+- **Registrazione**: Tracking completo nel database `backup_management`
+
+### 📁 **Struttura Organizzata**
+- **`backup-system/scripts/`**: Scripts eseguibili
+- **`backup-system/storage/`**: Archiviazione backup per tipo
+- **`backup-system/logs/`**: Log dettagliati operazioni
+- **`backup-system/config/`**: File stato e configurazione
+- **Separazione**: Directory dedicate full/differential/incremental
+
+### ⚡ **Correzioni Implementate**
+- **Percorsi Windows**: Corretti tutti i path assoluti
+- **Variabili batch**: Risolti problemi delayed expansion
+- **Connessioni MySQL**: Configurazione XAMPP funzionante
+- **Gestione errori**: Logging e rollback automatico
+- **Test completi**: Tutti gli scripts testati e funzionanti
+
+### 🎯 **Risultati Ottenuti**
+- **100% funzionante**: Nessun errore di percorso o dipendenze
+- **Backup automatici**: Sistema completamente operativo
+- **Logging completo**: Tracciabilità di tutte le operazioni
+- **Gestione spazio**: Cleanup automatico backup vecchi
+- **Integrità garantita**: Validazione automatica backup creati
 
 ---
 
@@ -261,6 +308,85 @@ DB_VIAGGI_USER=root
 DB_VIAGGI_PASS=
 DB_VIAGGI_NAME=viaggi_db
 ```
+
+---
+
+## 📋 **CRONOLOGIA VERSIONI**
+
+### 👥 **v2.14.0 - Sistema Gestione Utenti Admin e Logout Navbar**
+
+**Data rilascio**: Gennaio 2025
+
+#### 🔧 **Gestione Utenti Amministratori**
+
+**Funzionalità complete per la gestione degli utenti del sistema**:
+
+- **✏️ Modifica Utenti**:
+  - Modal interattivo con form pre-compilati
+  - Caricamento automatico dati utente esistenti
+  - Validazione real-time dei campi
+  - Controllo duplicati email e username
+  - Aggiornamento immediato della lista utenti
+
+- **🗑️ Eliminazione Utenti**:
+  - Conferma con doppio controllo di sicurezza
+  - Prevenzione cancellazioni accidentali
+  - Feedback visivo per conferma operazione
+  - Gestione errori con messaggi specifici
+
+- **🌐 API Endpoints Sicuri**:
+  - `/api/admin/update-user`: Aggiornamento dati utente
+  - `/api/admin/delete-user`: Eliminazione sicura utente
+  - Validazione JWT su ogni richiesta
+  - Controllo ruolo amministratore
+  - Gestione errori completa
+
+- **🎯 User Experience**:
+  - Interfaccia responsive per tutti i dispositivi
+  - Animazioni smooth per modal e transizioni
+  - Feedback visivo immediato per ogni azione
+  - Accessibilità completa (screen reader, tastiera)
+  - Messaggi di successo/errore con colori distintivi
+
+#### 🚪 **Sistema Logout Navbar Avanzato**
+
+**Dropdown funzionante con gestione React ottimizzata**:
+
+- **🔄 Dropdown Interattivo**:
+  - Gestione stato con React useState
+  - Event handlers per apertura/chiusura
+  - Click outside per chiusura automatica
+  - Integrazione Bootstrap JavaScript
+  - useRef per riferimenti DOM
+
+- **🛡️ Logout Sicuro**:
+  - Pulizia completa localStorage
+  - Svuotamento automatico cookies
+  - Invalidazione sessione utente
+  - Reindirizzamento automatico a login
+  - Gestione errori durante logout
+
+- **🎨 Design e Animazioni**:
+  - Hover effects per feedback visivo
+  - Transizioni CSS smooth
+  - Icone intuitive (avatar + freccia)
+  - Design responsive ottimizzato
+  - Animazioni fluide apertura/chiusura
+
+- **🔧 Correzioni Tecniche**:
+  - **Risolto errore React Hooks order**
+  - Riorganizzazione ordine hooks nel componente
+  - Eliminazione early returns condizionali
+  - useEffect posizionato correttamente
+  - Rendering consistente garantito
+
+**Benefici v2.14.0**:
+- ✅ Gestione utenti completa per amministratori
+- ✅ Logout sicuro e funzionale
+- ✅ Correzione errori React critici
+- ✅ User experience migliorata
+- ✅ Sicurezza rafforzata
+- ✅ Interfaccia più intuitiva
 
 ---
 

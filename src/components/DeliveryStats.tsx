@@ -21,40 +21,40 @@ export default function DeliveryStats({ className = '' }: DeliveryStatsProps) {
         // Costruisci l'URL con tutti i parametri dei filtri
         const params = new URLSearchParams();
         
-        const viaggio = searchParams.get('viaggio');
+        const viaggio = searchParams?.get('viaggio');
         if (viaggio) params.append('viaggio', viaggio);
         
-        const ordine = searchParams.get('ordine');
+        const ordine = searchParams?.get('ordine');
         if (ordine) params.append('ordine', ordine);
         
-        const bu = searchParams.get('bu');
+        const bu = searchParams?.get('bu');
         if (bu) params.append('bu', bu);
         
-        const divisione = searchParams.get('divisione');
+        const divisione = searchParams?.get('divisione');
         if (divisione) params.append('divisione', divisione);
         
-        const deposito = searchParams.get('deposito');
+        const deposito = searchParams?.get('deposito');
         if (deposito) params.append('deposito', deposito);
         
-        const vettore = searchParams.get('vettore');
+        const vettore = searchParams?.get('vettore');
         if (vettore) params.append('vettore', vettore);
         
-        const tipologia = searchParams.get('tipologia');
+        const tipologia = searchParams?.get('tipologia');
         if (tipologia) params.append('tipologia', tipologia);
         
-        const codCliente = searchParams.get('codCliente');
+        const codCliente = searchParams?.get('codCliente');
         if (codCliente) params.append('codCliente', codCliente);
         
-        const cliente = searchParams.get('cliente');
+        const cliente = searchParams?.get('cliente');
         if (cliente) params.append('cliente', cliente);
         
-        const dataDa = searchParams.get('dataDa');
+        const dataDa = searchParams?.get('dataDa');
         if (dataDa) params.append('dataDa', dataDa);
         
-        const dataA = searchParams.get('dataA');
+        const dataA = searchParams?.get('dataA');
         if (dataA) params.append('dataA', dataA);
         
-        const mese = searchParams.get('mese');
+        const mese = searchParams?.get('mese');
         if (mese) params.append('mese', mese);
 
         // 🚀 OTTIMIZZAZIONE: timeout per evitare attese infinite

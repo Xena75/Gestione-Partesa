@@ -26,16 +26,16 @@ const FiltriViaggi = forwardRef<FiltriViaggiRef, FiltriViaggiProps>(({ onFilters
   const searchParams = useSearchParams();
   
   // Stati per i valori dei filtri
-  const [aziendaVettore, setAziendaVettore] = useState(searchParams.get('aziendaVettore') || '');
-  const [nominativo, setNominativo] = useState(searchParams.get('nominativo') || '');
-  const [trasportatore, setTrasportatore] = useState(searchParams.get('trasportatore') || '');
-  const [numeroViaggio, setNumeroViaggio] = useState(searchParams.get('numeroViaggio') || '');
-  const [targa, setTarga] = useState(searchParams.get('targa') || '');
-  const [magazzino, setMagazzino] = useState(searchParams.get('magazzino') || '');
-  const [mese, setMese] = useState(searchParams.get('mese') || '');
-  const [trimestre, setTrimestre] = useState(searchParams.get('trimestre') || '');
-  const [dataDa, setDataDa] = useState(searchParams.get('dataDa') || '');
-  const [dataA, setDataA] = useState(searchParams.get('dataA') || '');
+  const [aziendaVettore, setAziendaVettore] = useState(searchParams?.get('aziendaVettore') || '');
+  const [nominativo, setNominativo] = useState(searchParams?.get('nominativo') || '');
+  const [trasportatore, setTrasportatore] = useState(searchParams?.get('trasportatore') || '');
+  const [numeroViaggio, setNumeroViaggio] = useState(searchParams?.get('numeroViaggio') || '');
+  const [targa, setTarga] = useState(searchParams?.get('targa') || '');
+  const [magazzino, setMagazzino] = useState(searchParams?.get('magazzino') || '');
+  const [mese, setMese] = useState(searchParams?.get('mese') || '');
+  const [trimestre, setTrimestre] = useState(searchParams?.get('trimestre') || '');
+  const [dataDa, setDataDa] = useState(searchParams?.get('dataDa') || '');
+  const [dataA, setDataA] = useState(searchParams?.get('dataA') || '');
   
   // Stati per le opzioni dei filtri
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
@@ -68,14 +68,14 @@ const FiltriViaggi = forwardRef<FiltriViaggiRef, FiltriViaggiProps>(({ onFilters
     const params = new URLSearchParams();
     
     // Mantieni la pagina corrente o vai alla prima
-    const currentPage = searchParams.get('page');
+    const currentPage = searchParams?.get('page');
     if (currentPage && currentPage !== '1') {
       params.set('page', '1');
     }
     
     // Preserva l'ordinamento attuale
-    const currentSortBy = searchParams.get('sortBy');
-    const currentSortOrder = searchParams.get('sortOrder');
+    const currentSortBy = searchParams?.get('sortBy');
+    const currentSortOrder = searchParams?.get('sortOrder');
     if (currentSortBy) params.set('sortBy', currentSortBy);
     if (currentSortOrder) params.set('sortOrder', currentSortOrder);
     
@@ -114,9 +114,9 @@ const FiltriViaggi = forwardRef<FiltriViaggiRef, FiltriViaggiProps>(({ onFilters
     
     // Rimuovi tutti i parametri dei filtri dall'URL ma preserva ordinamento e pagina
     const params = new URLSearchParams();
-    const currentPage = searchParams.get('page');
-    const currentSortBy = searchParams.get('sortBy');
-    const currentSortOrder = searchParams.get('sortOrder');
+    const currentPage = searchParams?.get('page');
+    const currentSortBy = searchParams?.get('sortBy');
+    const currentSortOrder = searchParams?.get('sortOrder');
     
     if (currentPage) {
       params.set('page', currentPage);

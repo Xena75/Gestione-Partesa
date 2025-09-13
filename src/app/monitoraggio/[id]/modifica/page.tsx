@@ -147,7 +147,7 @@ export default function ModificaMonitoraggioPage({ params }: { params: Promise<{
       setSuccess('Viaggio aggiornato con successo!');
       setTimeout(() => {
         // Preserva i filtri attivi quando si torna alla pagina monitoraggio
-        const filterParams = searchParams.toString();
+        const filterParams = searchParams?.toString();
         const returnUrl = filterParams ? `/monitoraggio?${filterParams}` : '/monitoraggio';
         router.push(returnUrl);
       }, 2000);
@@ -319,7 +319,7 @@ export default function ModificaMonitoraggioPage({ params }: { params: Promise<{
           <h2 className="text-danger mb-3">❌ Errore</h2>
           <p className="mb-3">{error}</p>
           <Link 
-            href={searchParams.toString() ? `/monitoraggio?${searchParams.toString()}` : '/monitoraggio'} 
+            href={searchParams?.toString() ? `/monitoraggio?${searchParams?.toString()}` : '/monitoraggio'} 
             className="btn btn-primary"
           >
             ← Torna al Monitoraggio
@@ -335,7 +335,7 @@ export default function ModificaMonitoraggioPage({ params }: { params: Promise<{
         <div className="text-center">
           <h2 className="text-warning mb-3">⚠️ Viaggio non trovato</h2>
           <Link 
-            href={searchParams.toString() ? `/monitoraggio?${searchParams.toString()}` : '/monitoraggio'} 
+            href={searchParams?.toString() ? `/monitoraggio?${searchParams?.toString()}` : '/monitoraggio'} 
             className="btn btn-primary"
           >
             ← Torna al Monitoraggio
@@ -357,7 +357,7 @@ export default function ModificaMonitoraggioPage({ params }: { params: Promise<{
         </div>
         <div className="d-flex gap-2">
           <Link 
-            href={searchParams.toString() ? `/monitoraggio?${searchParams.toString()}` : '/monitoraggio'} 
+            href={searchParams?.toString() ? `/monitoraggio?${searchParams?.toString()}` : '/monitoraggio'} 
             className="btn btn-secondary"
           >
             ← Torna alla lista
