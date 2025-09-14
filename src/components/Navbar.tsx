@@ -78,46 +78,7 @@ export default function Navbar() {
                 >
                   Dashboard
                 </Link>
-                <Link 
-                  className={`nav-link ${pathname === '/gestione' ? 'active' : ''}`} 
-                  href="/gestione"
-                >
-                  Gestione
-                </Link>
-                <Link 
-                  className={`nav-link ${pathname === '/viaggi' ? 'active' : ''}`} 
-                  href="/viaggi"
-                >
-                  Viaggi
-                </Link>
-                <Link 
-                  className={`nav-link ${pathname === '/monitoraggio' ? 'active' : ''}`} 
-                  href="/monitoraggio"
-                >
-                  Monitoraggio
-                </Link>
-                <Link 
-                  className={`nav-link ${pathname === '/viaggi-pod' ? 'active' : ''}`} 
-                  href="/viaggi-pod"
-                >
-                  📊 Viaggi PoD
-                </Link>
-                <Link 
-                  className={`nav-link ${pathname === '/fatturazione-terzisti' ? 'active' : ''}`} 
-                  href="/fatturazione-terzisti"
-                >
-                  💰 Fatturazione Terzisti
-                </Link>
-                {/* Link Sistema solo per admin */}
-                {user?.role === 'admin' && (
-                  <Link 
-                    className={`nav-link ${pathname === '/sistema' ? 'active' : ''}`} 
-                    href="/sistema"
-                  >
-                    <Settings className="me-1" size={16} />
-                    Sistema
-                  </Link>
-                )}
+
               </div>
               
               {/* Sezione utente e logout */}

@@ -253,13 +253,13 @@ const SectionSkeleton = () => (
       color: 'from-purple-500 to-pink-500',
       pages: [
         { name: 'Funzionalità', href: '/funzionalita', icon: HelpCircle },
-        { name: 'Guide', href: '/funzionalita', icon: FileText },
-        { name: 'FAQ', href: '/funzionalita', icon: Shield }
+        { name: 'Guide PRD', href: '/documents/prd', icon: FileText },
+        { name: 'Architettura Tecnica', href: '/documents/architettura', icon: Settings }
       ],
       stats: { 
         tickets: 0, 
         guide: 12, 
-        faq: 25 
+        docs: 2 
       }
     }
   ];
@@ -270,7 +270,7 @@ const SectionSkeleton = () => (
       <div className="dashboard-header">
         <div className="header-content">
           <div className="header-info">
-            <h1 className="dashboard-title">Dashboard Moderna</h1>
+            <h1 className="dashboard-title">Partesa Hub</h1>
             <p className="dashboard-subtitle">
               Benvenuto, <strong>{user?.username}</strong>! 
               <span className="user-role">{user?.role}</span>

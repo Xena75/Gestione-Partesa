@@ -1,8 +1,27 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.18.2
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
+
+### 🔄 **Redirect Automatico Dashboard e Correzioni UI - v2.18.2** ⭐ **NUOVO**
+
+#### 🏠 **Redirect Automatico alla Dashboard**
+- **Pagina principale automatica**: La home page (/) ora reindirizza automaticamente alla dashboard (/dashboard)
+- **Implementazione Next.js**: Utilizzato useRouter e useEffect per un redirect fluido
+- **UX migliorata**: Messaggio di caricamento durante il redirect
+- **Accesso diretto**: Gli utenti accedono immediatamente alle funzionalità principali
+
+#### 🔧 **Correzione Filtri Gestione**
+- **Allineamento corretto**: Risolto posizionamento filtri nella pagina gestione
+- **Consistenza UI**: Pulsanti filtro allineati a destra come nelle altre pagine
+- **Struttura header**: Implementato d-flex justify-content-between align-items-center
+- **Codice pulito**: Eliminato div interno superfluo e risolto errore di build
+
+#### 📚 **Documentazione Completa**
+- **PRD aggiornato**: Documento dei requisiti di prodotto completo
+- **Architettura tecnica**: Documentazione dell'architettura di sistema dettagliata
+- **Allineamento progetto**: Documentazione sincronizzata con lo stato attuale
 
 ### 🌙 **Sistema Dark Mode Globale e Ottimizzazioni UI - v2.18.0** ⭐ **NUOVO**
 
@@ -29,11 +48,12 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Coerenza**: Allineamento con le altre pagine del sistema
 - **Responsive**: Funziona correttamente su tutti i dispositivi
 
-### 📊 **Dashboard Moderna e Rinnovata - v2.18.1** ⭐ **NUOVO**
+### 📊 **Partesa Hub - Dashboard Rinnovata - v2.18.1** ⭐ **NUOVO**
 
-**Implementazione completa di una dashboard moderna con design rinnovato e funzionalità avanzate**
+**Implementazione completa di Partesa Hub con design rinnovato e funzionalità avanzate**
 
 #### 🎨 **Design Moderno e Layout Migliorato**
+- **Partesa Hub**: Nuovo nome che riflette l'identità del progetto di gestione logistica
 - **Interfaccia rinnovata**: Design completamente ridisegnato con estetica moderna e professionale
 - **Layout responsive**: Ottimizzato per tutti i dispositivi (desktop, tablet, mobile)
 - **Griglia flessibile**: Sistema di griglia Bootstrap 5 per disposizione ottimale dei componenti
@@ -54,12 +74,12 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Consistenza UI**: Design coerente con il resto dell'applicazione
 - **Performance ottimizzate**: Caricamento veloce e rendering efficiente
 
-#### 🚀 **Funzionalità Dashboard Avanzate**
+#### 🚀 **Funzionalità Partesa Hub Avanzate**
 - **Panoramica completa**: Vista d'insieme di tutti i dati principali del sistema
 - **Metriche aggregate**: Calcoli automatici di KPI e statistiche operative
 - **Aggiornamenti real-time**: Dati sempre aggiornati senza necessità di refresh manuale
-- **Collegamenti rapidi**: Accesso diretto alle sezioni principali dell'applicazione
-- **Dashboard personalizzabile**: Layout adattabile alle esigenze dell'utente
+- **Navigazione semplificata**: Navbar ottimizzata con solo il link Dashboard per accesso diretto
+- **Hub personalizzabile**: Layout adattabile alle esigenze dell'utente
 
 #### 🔧 **Ottimizzazioni Sistema e UI - v2.17.0**
 

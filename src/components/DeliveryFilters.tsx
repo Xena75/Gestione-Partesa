@@ -150,33 +150,37 @@ export default function DeliveryFilters() {
 
   return (
     <div className="card mb-4">
-      <div className="card-header bg-light">
-        <div className="d-flex justify-content-between align-items-center">
-          <h6 className="mb-0">Filtri Avanzati</h6>
-          <div className="d-flex gap-2 align-items-center">
+      <div className="card-header d-flex justify-content-between align-items-center">
+        <h6 className="mb-0">Filtri Avanzati</h6>
+        <div className="d-flex gap-2">
             <button
               type="button"
-              className="btn btn-primary btn-sm"
-              onClick={applyFilters}
-            >
-              🔍 Applica Filtri
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={resetFilters}
-            >
-              🔄 Reset
-            </button>
-            <button
-              type="button"
-              className="btn btn-link btn-sm p-0"
+              className="btn btn-outline-primary btn-sm"
               onClick={toggleExpanded}
             >
-              {isExpanded ? '▼ Nascondi Filtri' : '▶ Mostra Filtri'}
+              {isExpanded ? 'Nascondi' : 'Mostra'} Filtri
             </button>
+            {isExpanded && (
+              <>
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={resetFilters}
+                >
+                  <i className="bi bi-arrow-clockwise me-1"></i>
+                  Reset
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  onClick={applyFilters}
+                >
+                  <i className="bi bi-funnel me-1"></i>
+                  Applica Filtri
+                </button>
+              </>
+            )}
           </div>
-        </div>
       </div>
       
       {isExpanded && (
