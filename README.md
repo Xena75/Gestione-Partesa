@@ -1,10 +1,27 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.18.2
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.18.3
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
 
-### 🔄 **Redirect Automatico Dashboard e Correzioni UI - v2.18.2** ⭐ **NUOVO**
+### 🚚 **Ottimizzazioni Viaggi POD e Stabilità Sistema - v2.18.3** ⭐ **NUOVO**
+
+#### 🔧 **Correzioni Viaggi POD**
+- **Rimozione campo Ore POD**: Eliminato campo calcolato automaticamente dal database dal form di inserimento
+- **Ripristino calendar selector**: Ripristinati campi datetime-local per "Data Inizio" e "Data Fine" con selettore calendario nativo
+- **Correzione campo ID**: Risolto problema campo ID non popolato, ora viene impostato correttamente con il numero viaggio
+- **Null safety migliorata**: Aggiunti controlli di sicurezza per prevenire errori "Cannot read properties of null"
+- **Gestione campi generati**: Esclusi campi STORED GENERATED (Mese, Sett, Giorno, Trimestre) dalle query INSERT
+- **Stabilità form**: Form di inserimento nuovo viaggio POD completamente stabile e funzionante
+
+#### 🛡️ **Miglioramenti Stabilità**
+- **Controlli null safety**: Protezione contro valori null/undefined in tutti i punti critici
+- **Gestione errori database**: Risoluzione errori di inserimento per campi generati automaticamente
+- **Validazione dati**: Controlli migliorati su esistenza dati prima del rendering
+- **User experience**: Eliminazione errori runtime per esperienza utente fluida
+- **Build stabile**: Tutti i test di build superati con successo
+
+### 🔄 **Redirect Automatico Dashboard e Correzioni UI - v2.18.2**
 
 #### 🏠 **Redirect Automatico alla Dashboard**
 - **Pagina principale automatica**: La home page (/) ora reindirizza automaticamente alla dashboard (/dashboard)
