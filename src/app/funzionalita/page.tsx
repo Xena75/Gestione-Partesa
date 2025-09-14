@@ -319,7 +319,7 @@ export default function FunzionalitaPage() {
                 <li><strong>Eliminazione record</strong> per session_id specifico</li>
                 <li><strong>Workflow post-upload ottimizzato</strong> con scelta tra mapping salvato o nuovo</li>
               </ul>
-              <Link href="/import" className="btn btn-primary">Vai all'Import</Link>
+              <Link href="/import_viaggi_PoD" className="btn btn-primary">Vai all'Import</Link>
             </div>
           </div>
 

@@ -1,8 +1,12 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.17.0
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.18.1
 
 ## 📋 **PANORAMICA SISTEMA**
 
 Sistema completo di gestione logistica con funzionalità avanzate per:
+- **Dashboard moderna rinnovata** con design professionale e cards informative
+- **Modalità chiaro/scuro globale** con persistenza e transizioni smooth
+- **Leggibilità ottimizzata** per tabelle e input in dark mode
+- **Layout migliorato** con riposizionamento filtri e elementi UI
 - **Sistema log avanzato** per audit e monitoraggio
 - **Configurazioni sistema** centralizzate
 - **Sistema backup automatico** completo e funzionante
@@ -13,6 +17,198 @@ Sistema completo di gestione logistica con funzionalità avanzate per:
 - **Filtri avanzati** e ordinamento
 - **Sicurezza dati** e integrità backup
 - **Interfaccia utente ottimizzata**
+
+---
+
+## 📊 **DASHBOARD MODERNA E RINNOVATA - v2.18.1**
+
+### 🎨 **Design Moderno e Layout Migliorato**
+
+#### Interfaccia Completamente Rinnovata
+- **Design professionale**: Interfaccia completamente ridisegnata con estetica moderna e pulita
+- **Layout responsive**: Ottimizzazione completa per tutti i dispositivi (desktop, tablet, mobile)
+- **Griglia flessibile**: Sistema di griglia Bootstrap 5 per disposizione ottimale dei componenti
+- **Spacing calibrato**: Margini e padding ottimizzati per massima leggibilità e usabilità
+- **Tipografia migliorata**: Font e dimensioni calibrate per una migliore user experience
+
+#### Implementazione Tecnica
+- **Bootstrap 5**: Framework CSS moderno per layout responsive
+- **CSS Grid**: Sistema di griglia avanzato per disposizione componenti
+- **Flexbox**: Layout flessibile per allineamento perfetto
+- **Media queries**: Breakpoint ottimizzati per tutti i dispositivi
+- **Performance**: Caricamento veloce e rendering efficiente
+
+#### Benefici Ottenuti
+- ✅ **UX moderna**: Esperienza utente al passo con standard attuali
+- ✅ **Responsive perfetto**: Funziona perfettamente su tutti i dispositivi
+- ✅ **Leggibilità ottimale**: Layout studiato per massima chiarezza
+- ✅ **Professionalità**: Interfaccia di livello enterprise
+- ✅ **Accessibilità**: Design inclusivo per tutti gli utenti
+
+### 📈 **Cards Informative e Statistiche Visuali**
+
+#### Cards KPI Moderne
+- **Design rinnovato**: Cards completamente ridisegnate con colori distintivi e icone intuitive
+- **Statistiche real-time**: Dati aggiornati dinamicamente dal database senza refresh
+- **Visualizzazione immediata**: Presentazione chiara e immediata delle metriche principali
+- **Gradients professionali**: Effetti visivi moderni per distinguere tipologie di dati
+- **Responsive cards**: Adattamento automatico alle dimensioni dello schermo
+
+#### Metriche Implementate
+- **KPI operativi**: Viaggi, consegne, colli, fatturato in tempo reale
+- **Trend temporali**: Variazioni e tendenze dei dati principali
+- **Aggregazioni intelligenti**: Calcoli automatici di medie, totali, percentuali
+- **Comparazioni**: Confronti con periodi precedenti
+- **Drill-down**: Possibilità di approfondire i dettagli
+
+#### Benefici Ottenuti
+- ✅ **Visibilità immediata**: Panoramica istantanea dello stato sistema
+- ✅ **Decision making**: Dati chiari per decisioni informate
+- ✅ **Monitoraggio**: Controllo costante delle performance
+- ✅ **Efficienza**: Accesso rapido alle informazioni chiave
+- ✅ **Professionalità**: Presentazione dati di livello enterprise
+
+### 🎯 **Interfaccia Utente Rinnovata**
+
+#### Navigazione Ottimizzata
+- **Menu intuitivo**: Navigazione semplificata e logica
+- **Collegamenti rapidi**: Accesso diretto alle sezioni principali
+- **Breadcrumb**: Tracciamento posizione utente nel sistema
+- **Search globale**: Ricerca unificata in tutto il sistema
+- **Shortcuts**: Scorciatoie da tastiera per power user
+
+#### Feedback Visivo Avanzato
+- **Hover effects**: Effetti al passaggio del mouse per feedback immediato
+- **Transizioni smooth**: Animazioni fluide per interazioni naturali
+- **Loading states**: Indicatori di caricamento eleganti
+- **Success/Error states**: Feedback chiaro per tutte le operazioni
+- **Micro-interactions**: Dettagli che migliorano l'esperienza
+
+#### Accessibilità Completa
+- **Screen reader**: Supporto completo per lettori di schermo
+- **Navigazione tastiera**: Controllo completo da tastiera
+- **Contrasto**: Rispetto linee guida WCAG per contrasto colori
+- **Focus management**: Gestione focus per navigazione accessibile
+- **ARIA labels**: Etichette appropriate per tecnologie assistive
+
+#### Benefici Ottenuti
+- ✅ **Usabilità**: Interfaccia intuitiva per tutti gli utenti
+- ✅ **Efficienza**: Navigazione rapida e logica
+- ✅ **Inclusività**: Accessibile a utenti con disabilità
+- ✅ **Professionalità**: Standard enterprise per UI/UX
+- ✅ **Soddisfazione**: Esperienza utente piacevole e fluida
+
+### 🚀 **Funzionalità Dashboard Avanzate**
+
+#### Panoramica Completa
+- **Vista d'insieme**: Tutti i dati principali del sistema in un colpo d'occhio
+- **Metriche aggregate**: Calcoli automatici di KPI e statistiche operative
+- **Aggiornamenti real-time**: Dati sempre aggiornati senza necessità di refresh
+- **Personalizzazione**: Layout adattabile alle esigenze specifiche dell'utente
+- **Export dati**: Possibilità di esportare le metriche dashboard
+
+#### Collegamenti Intelligenti
+- **Quick actions**: Azioni rapide per operazioni frequenti
+- **Deep linking**: Collegamenti diretti a sezioni specifiche
+- **Context aware**: Suggerimenti basati sul contesto utente
+- **Recent activity**: Accesso rapido alle attività recenti
+- **Favorites**: Sistema di preferiti per accesso veloce
+
+#### Performance e Scalabilità
+- **Caricamento veloce**: Ottimizzazioni per tempi di caricamento minimi
+- **Caching intelligente**: Sistema di cache per dati frequenti
+- **Lazy loading**: Caricamento progressivo per performance ottimali
+- **Responsive data**: Adattamento quantità dati in base al dispositivo
+- **Scalabilità**: Architettura che scala con la crescita dei dati
+
+#### Benefici Ottenuti
+- ✅ **Controllo totale**: Panoramica completa di tutto il sistema
+- ✅ **Efficienza operativa**: Accesso rapido a tutte le funzionalità
+- ✅ **Performance**: Velocità e reattività ottimali
+- ✅ **Scalabilità**: Cresce con le esigenze aziendali
+- ✅ **ROI**: Miglioramento misurabile della produttività
+
+---
+
+## 🌙 **SISTEMA DARK MODE GLOBALE E OTTIMIZZAZIONI UI - v2.18.0**
+
+### 🌓 **Modalità Chiaro/Scuro Globale**
+
+#### Funzionalità Implementate
+- **Toggle globale**: Pulsante nella navbar per passare istantaneamente tra modalità chiaro e scuro
+- **Persistenza localStorage**: Preferenza utente salvata automaticamente e ripristinata ad ogni accesso
+- **CSS Variables dinamiche**: Sistema di variabili CSS per gestione colori centralizzata e dinamica
+- **Transizioni smooth**: Animazioni fluide e professionali durante il cambio modalità
+- **Compatibilità universale**: Funziona perfettamente su tutte le pagine del sistema
+
+#### Implementazione Tecnica
+- **Hook personalizzato**: `useDarkMode` per gestione stato globale
+- **Context API**: Condivisione stato tra tutti i componenti
+- **CSS Custom Properties**: Variabili per colori primari, secondari, background, testo
+- **Media Query**: Rispetto preferenze sistema operativo utente
+- **Performance ottimizzata**: Cambio modalità istantaneo senza refresh
+
+#### Benefici Ottenuti
+- ✅ **UX migliorata**: Esperienza utente personalizzabile e moderna
+- ✅ **Accessibilità**: Supporto per utenti con preferenze di contrasto
+- ✅ **Professionalità**: Interfaccia al passo con standard moderni
+- ✅ **Persistenza**: Preferenze mantenute tra sessioni
+- ✅ **Performance**: Transizioni fluide senza impatto prestazioni
+
+### 📊 **Miglioramenti Leggibilità Dark Mode**
+
+#### Ottimizzazioni Tabelle
+- **Contrasto migliorato**: Testo e bordi ottimizzati per modalità scura
+- **Colori dinamici**: Uso di variabili CSS per adattamento automatico
+- **Leggibilità garantita**: Contrasto conforme alle linee guida WCAG
+- **Consistenza visiva**: Stili uniformi su tutte le tabelle del sistema
+
+#### Input Fields Ottimizzati
+- **Colore testo**: `var(--text-primary)` per leggibilità ottimale in entrambe le modalità
+- **Placeholder migliorati**: Colore #a0aec0 per contrasto appropriato senza essere invasivo
+- **Tutti i tipi supportati**: text, select, date, number, email con stili uniformi
+- **Focus states**: Stati di focus chiari e visibili in dark mode
+- **Bordi adattivi**: Colori bordi che si adattano alla modalità attiva
+
+#### Filtri Universali
+- **Copertura completa**: Tutti i campi input dei filtri ora perfettamente leggibili
+- **Consistenza**: Stili uniformi su tutte le pagine (gestione, terzisti, viaggi, monitoraggio)
+- **Accessibilità**: Contrasto ottimale per utenti con difficoltà visive
+- **Responsive**: Funziona correttamente su tutti i dispositivi e risoluzioni
+
+#### Benefici Ottenuti
+- ✅ **Leggibilità perfetta**: Testo sempre leggibile in entrambe le modalità
+- ✅ **Accessibilità**: Conformità standard WCAG per contrasto
+- ✅ **Consistenza**: Esperienza uniforme su tutto il sistema
+- ✅ **Professionalità**: Interfaccia moderna e curata nei dettagli
+- ✅ **Usabilità**: Riduzione affaticamento visivo in condizioni di scarsa illuminazione
+
+### 🎯 **Riposizionamento Filtri Fatturazione Terzisti**
+
+#### Problema Risolto
+Risolto il problema di posizionamento dei pulsanti filtro nella pagina "fatturazione-terzisti" che causava sovrapposizioni e layout non ottimale.
+
+#### Soluzione Implementata
+- **Posizionamento completo a destra**: Pulsanti filtro spostati completamente a destra della pagina
+- **Layout Flexbox**: Implementazione `d-flex justify-content-between align-items-center`
+- **Eliminazione sovrapposizioni**: Risolti tutti i problemi di overlap con altri elementi
+- **Coerenza sistema**: Allineamento con il layout delle altre pagine
+- **Responsive design**: Funzionamento corretto su tutti i dispositivi
+
+#### Modifiche Tecniche
+```css
+.d-flex.justify-content-between.align-items-center {
+  /* Distribuzione ottimale degli elementi */
+  /* Titolo a sinistra, filtri a destra */
+}
+```
+
+#### Benefici Ottenuti
+- ✅ **Layout ottimale**: Distribuzione equilibrata degli elementi
+- ✅ **Eliminazione overlap**: Nessuna sovrapposizione tra elementi
+- ✅ **Coerenza**: Allineamento con standard del sistema
+- ✅ **Usabilità**: Accesso più intuitivo ai controlli filtro
+- ✅ **Responsive**: Funziona perfettamente su mobile e desktop
 
 ---
 

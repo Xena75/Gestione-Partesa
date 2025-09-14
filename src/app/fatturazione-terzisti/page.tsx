@@ -536,27 +536,27 @@ export default function FatturazioneTerzistiPage() {
 
           {/* Filtri */}
           <div className="card mb-4">
-            <div className="card-header">
-              <div className="d-flex justify-content-between align-items-center">
-                <h5 className="mb-0">🔍 Filtri</h5>
-                <div className="d-flex gap-2">
-                  <div className="btn-group">
-                    <button className="btn btn-primary btn-sm" onClick={applyFilters}>
-                      <i className="bi bi-funnel me-1"></i>
-                      Applica Filtri
-                    </button>
+            <div className="card-header d-flex justify-content-between align-items-center">
+              <h5 className="card-title mb-0">🔍 Filtri</h5>
+              <div className="d-flex gap-2">
+                <button
+                  className="btn btn-outline-primary btn-sm"
+                  onClick={() => setShowFilters(!showFilters)}
+                >
+                  {showFilters ? 'Nascondi' : 'Mostra'} Filtri
+                </button>
+                {showFilters && (
+                  <>
                     <button className="btn btn-outline-secondary btn-sm" onClick={clearFilters}>
                       <i className="bi bi-arrow-clockwise me-1"></i>
                       Reset
                     </button>
-                  </div>
-                  <button
-                    className="btn btn-outline-secondary btn-sm"
-                    onClick={() => setShowFilters(!showFilters)}
-                  >
-                    {showFilters ? 'Nascondi' : 'Mostra'} Filtri
-                  </button>
-                </div>
+                    <button className="btn btn-primary btn-sm" onClick={applyFilters}>
+                      <i className="bi bi-funnel me-1"></i>
+                      Applica Filtri
+                    </button>
+                  </>
+                )}
               </div>
             </div>
             {showFilters && (

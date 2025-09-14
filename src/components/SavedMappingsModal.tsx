@@ -34,7 +34,7 @@ export default function SavedMappingsModal({ isOpen, onClose, fileId, filename, 
   const loadSavedMappings = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/import/mappings');
+      const response = await fetch('/api/import_viaggi_PoD/mappings');
       if (response.ok) {
         const data = await response.json();
         setMappings(data.mappings || []);
@@ -50,7 +50,7 @@ export default function SavedMappingsModal({ isOpen, onClose, fileId, filename, 
     if (selectedMapping) {
       // Vai direttamente all'importazione con il mapping selezionato
       const mappingParam = encodeURIComponent(JSON.stringify(selectedMapping.mapping_data));
-      router.push(`/import/execute?fileId=${fileId}&mapping=${mappingParam}&blobUrl=${encodeURIComponent(blobUrl)}`);
+      router.push(`/import_viaggi_PoD/execute?fileId=${fileId}&mapping=${mappingParam}&blobUrl=${encodeURIComponent(blobUrl)}`);
       onClose();
     }
   };

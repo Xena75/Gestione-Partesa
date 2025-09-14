@@ -92,7 +92,7 @@ export default function MappingInterface({ headers, onMappingComplete }: Mapping
   useEffect(() => {
     const loadSavedMappings = async () => {
       try {
-        const response = await fetch('/api/import/mappings');
+        const response = await fetch('/api/import_viaggi_PoD/mappings');
         if (response.ok) {
           const data = await response.json();
           setSavedMappings(data.mappings || []);
@@ -134,7 +134,7 @@ export default function MappingInterface({ headers, onMappingComplete }: Mapping
     if (!mappingName) return;
 
     try {
-      const response = await fetch('/api/import/mappings', {
+      const response = await fetch('/api/import_viaggi_PoD/mappings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

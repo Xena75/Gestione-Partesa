@@ -33,7 +33,7 @@ function MappingPageContent() {
     // Carica informazioni del file
       const loadFileInfo = async () => {
     try {
-      const response = await fetch(`/api/import/file-info?fileId=${fileId}&blobUrl=${encodeURIComponent(blobUrl!)}`);
+      const response = await fetch(`/api/import_viaggi_PoD/file-info?fileId=${fileId}&blobUrl=${encodeURIComponent(blobUrl!)}`);
         if (!response.ok) {
           throw new Error('Errore nel caricamento delle informazioni del file');
         }
@@ -58,7 +58,7 @@ function MappingPageContent() {
     mappingParams.set('mapping', JSON.stringify(mapping));
     mappingParams.set('blobUrl', blobUrl!);
     
-    router.push(`/import/execute?${mappingParams.toString()}`);
+    router.push(`/import_viaggi_PoD/execute?${mappingParams.toString()}`);
   };
 
   if (isLoading) {
@@ -87,7 +87,7 @@ function MappingPageContent() {
                   </div>
                   <h3 className="text-danger">Errore</h3>
                   <p className="text-muted mb-4">{error || 'Informazioni file non disponibili'}</p>
-                  <Link href="/import" className="btn btn-primary">
+                  <Link href="/import_viaggi_PoD" className="btn btn-primary">
                     ← Torna all&apos;Upload
                   </Link>
                 </div>
@@ -112,7 +112,7 @@ function MappingPageContent() {
               </p>
             </div>
             <div className="d-flex gap-2">
-              <Link href="/import" className="btn btn-outline-light btn-sm">
+              <Link href="/import_viaggi_PoD" className="btn btn-outline-light btn-sm">
                 ← Torna all&apos;Upload
               </Link>
               <Link href="/" className="btn btn-outline-light btn-sm">

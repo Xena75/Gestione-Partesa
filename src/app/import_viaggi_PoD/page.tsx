@@ -23,7 +23,7 @@ export default function ImportPage() {
       formData.append('file', file);
 
       // Upload del file
-      const response = await fetch('/api/import/upload', {
+      const response = await fetch('/api/import_viaggi_PoD/upload', {
         method: 'POST',
         body: formData,
       });
@@ -113,7 +113,7 @@ export default function ImportPage() {
                          </button>
                          <button 
                            className="btn btn-outline-primary"
-                           onClick={() => router.push(`/import/mapping?fileId=${currentFileInfo.fileId}&filename=${encodeURIComponent(currentFileInfo.filename)}&blobUrl=${encodeURIComponent(currentFileInfo.blobUrl)}`)}
+                           onClick={() => router.push(`/import_viaggi_PoD/mapping?fileId=${currentFileInfo.fileId}&filename=${encodeURIComponent(currentFileInfo.filename)}&blobUrl=${encodeURIComponent(currentFileInfo.blobUrl)}`)}
                          >
                            📝 Crea Nuovo Mapping
                          </button>
@@ -148,7 +148,7 @@ export default function ImportPage() {
                 <p className="text-muted mb-3">
                   Storico delle ultime importazioni effettuate
                 </p>
-                <Link href="/import/history" className="btn btn-outline-info btn-sm">
+                <Link href="/import_viaggi_PoD/history" className="btn btn-outline-info btn-sm">
                   Visualizza Storico
                 </Link>
               </div>

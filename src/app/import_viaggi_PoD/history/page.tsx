@@ -35,7 +35,7 @@ function HistoryPageContent() {
       if (filters.status !== 'all') params.append('status', filters.status);
       if (filters.search) params.append('search', filters.search);
 
-      const response = await fetch(`/api/import/history?${params.toString()}`);
+      const response = await fetch(`/api/import_viaggi_PoD/history?${params.toString()}`);
       if (!response.ok) {
         throw new Error('Errore nel caricamento dello storico');
       }
@@ -78,7 +78,7 @@ function HistoryPageContent() {
                     <button onClick={refreshData} className="btn btn-primary">
                       🔄 Riprova
                     </button>
-                    <Link href="/import" className="btn btn-outline-secondary">
+                    <Link href="/import_viaggi_PoD" className="btn btn-outline-secondary">
                       ← Torna all&apos;Upload
                     </Link>
                   </div>
@@ -104,7 +104,7 @@ function HistoryPageContent() {
               </p>
             </div>
             <div className="d-flex gap-2">
-              <Link href="/import" className="btn btn-outline-light btn-sm">
+              <Link href="/import_viaggi_PoD" className="btn btn-outline-light btn-sm">
                 📤 Nuova Importazione
               </Link>
               <Link href="/" className="btn btn-outline-light btn-sm">
@@ -192,7 +192,7 @@ function HistoryPageContent() {
                 <p className="text-muted mb-4">
                   Non ci sono ancora importazioni nel sistema
                 </p>
-                <Link href="/import" className="btn btn-primary">
+                <Link href="/import_viaggi_PoD" className="btn btn-primary">
                   📤 Prima Importazione
                 </Link>
               </div>

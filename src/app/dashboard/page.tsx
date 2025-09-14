@@ -1,274 +1,433 @@
 'use client';
 
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import Link from 'next/link';
-import { Users, Truck, Package, DollarSign, Settings, FileText, BarChart3, Calendar, Shield } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { 
+  Users, Truck, Package, DollarSign, Settings, FileText, 
+  BarChart3, Calendar, Shield, Plus, Upload, Code, Clock, HelpCircle 
+} from 'lucide-react';
+
+// Interfaccia per le statistiche
+interface DashboardStats {
+  viaggi: {
+    active: number;
+    completed: number;
+    pending: number;
+    total: number;
+    today: number;
+    thisWeek: number;
+    thisMonth: number;
+  };
+  anagrafiche: {
+    clients: number;
+    suppliers: number;
+    users: number;
+  };
+  fatturazione: {
+    monthly: string;
+    pending: string;
+    completed: number;
+  };
+  import: {
+    files: number;
+    pending: number;
+    errors: number;
+  };
+  sistema: {
+    configs: number;
+    logs: string;
+    users: number;
+  };
+}
 
 export default function DashboardPage() {
   const { user, isLoading, isAuthenticated } = useAuth();
 
+  const [activeSection, setActiveSection] = useState<string | null>(null);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState<string | null>(null);
+  const [currentDateTime, setCurrentDateTime] = useState(new Date());
+
+
+
+  // Aggiorna data e ora ogni secondo
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentDateTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // Carica le statistiche dal database
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadStats();
+    }
+  }, [isAuthenticated]);
+
+  const loadStats = async () => {
+    try {
+      setStatsLoading(true);
+      setStatsError(null);
+      
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/dashboard/stats', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Errore nel caricamento delle statistiche');
+      }
+
+      const data = await response.json();
+      setStats(data);
+    } catch (error) {
+      console.error('Errore nel caricamento statistiche:', error);
+      setStatsError('Errore nel caricamento delle statistiche');
+      // Valori di fallback
+      setStats({
+        viaggi: { active: 0, completed: 0, pending: 0, total: 0, today: 0, thisWeek: 0, thisMonth: 0 },
+        anagrafiche: { clients: 0, suppliers: 0, users: 0 },
+        fatturazione: { monthly: '€0k', pending: '€0', completed: 0 },
+        import: { files: 0, pending: 0, errors: 0 },
+        sistema: { configs: 0, logs: '0', users: 0 }
+      });
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+
+
   if (isLoading) {
     return (
-      <div className="container mt-4">
-        <div className="d-flex justify-content-center">
-          <div className="spinner-border" role="status">
-            <span className="visually-hidden">Caricamento...</span>
-          </div>
+      <div className="dashboard-container">
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <span>Caricamento...</span>
         </div>
       </div>
     );
   }
 
+// Componente per il caricamento
+const LoadingSpinner = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
+  </div>
+);
+
+// Skeleton per le statistiche
+const StatsSkeleton = () => (
+  <div className="animate-pulse">
+    <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
+    <div className="h-6 bg-gray-300 rounded w-1/2"></div>
+  </div>
+);
+
+const SectionSkeleton = () => (
+  <div className="bg-white rounded-lg shadow-md p-6 animate-pulse">
+    <div className="flex items-center mb-4">
+      <div className="w-8 h-8 bg-gray-300 rounded mr-3"></div>
+      <div className="h-6 bg-gray-300 rounded w-1/3"></div>
+    </div>
+    <div className="grid grid-cols-3 gap-4 mb-6">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="text-center">
+          <StatsSkeleton />
+        </div>
+      ))}
+    </div>
+    <div className="grid grid-cols-2 gap-2">
+      {[1, 2, 3, 4].map((i) => (
+        <div key={i} className="h-10 bg-gray-300 rounded"></div>
+      ))}
+    </div>
+  </div>
+);
   if (!isAuthenticated) {
     return (
-      <div className="container mt-4">
-        <div className="alert alert-warning" role="alert">
-          Accesso non autorizzato. Effettua il login per continuare.
+      <div className="dashboard-container">
+        <div className="auth-warning">
+          <Shield size={48} />
+          <h3>Accesso non autorizzato</h3>
+          <p>Effettua il login per continuare.</p>
         </div>
       </div>
     );
   }
 
+  const sections = [
+    {
+      id: 'viaggi',
+      title: 'Viaggi',
+      icon: Truck,
+      color: 'from-blue-500 to-cyan-500',
+      pages: [
+        { name: 'Gestione Viaggi', href: '/viaggi', icon: Truck },
+        { name: 'Monitoraggio', href: '/monitoraggio', icon: BarChart3 },
+        { name: 'Viaggi POD', href: '/viaggi-pod', icon: Package }
+      ],
+      stats: { 
+        active: stats?.viaggi.active || 0, 
+        completed: stats?.viaggi.completed || 0, 
+        pending: stats?.viaggi.pending || 0 
+      }
+    },
+    {
+      id: 'fatturazione',
+      title: 'Fatturazione',
+      icon: DollarSign,
+      color: 'from-green-500 to-emerald-500',
+      pages: [
+        { name: 'Fatturazione Terzisti', href: '/fatturazione-terzisti', icon: DollarSign },
+        { name: 'Fatturazione Delivery', href: '/gestione', icon: Package },
+        { name: 'Report', href: '/report', icon: BarChart3 }
+      ],
+      stats: { 
+        monthly: stats?.fatturazione.monthly || '€0k', 
+        pending: stats?.fatturazione.pending || '€0', 
+        completed: stats?.fatturazione.completed || 0 
+      }
+    },
+    {
+      id: 'anagrafiche',
+      title: 'Anagrafiche',
+      icon: Users,
+      color: 'from-purple-500 to-pink-500',
+      pages: [
+        { name: 'Clienti', href: '/clienti', icon: Users },
+        { name: 'Fornitori', href: '/fornitori', icon: Users },
+        { name: 'Utenti Sistema', href: '/utenti', icon: Shield }
+      ],
+      stats: { 
+        clients: stats?.anagrafiche.clients || 0, 
+        suppliers: stats?.anagrafiche.suppliers || 0, 
+        users: stats?.anagrafiche.users || 0 
+      }
+    },
+
+    {
+      id: 'import',
+      title: 'Import',
+      icon: Upload,
+      color: 'from-green-500 to-emerald-500',
+      pages: [
+        { name: 'Import Viaggi PoD', href: '/import_viaggi_PoD', icon: Upload },
+        { name: 'Import Delivery', href: '/import-delivery', icon: Truck }
+      ],
+      stats: { 
+        files: stats?.import.files || 0, 
+        pending: stats?.import.pending || 0, 
+        errors: stats?.import.errors || 0 
+      }
+    },
+    {
+      id: 'sistema',
+      title: 'Sistema',
+      icon: Settings,
+      color: 'from-blue-500 to-indigo-500',
+      pages: [
+        { name: 'Configurazioni', href: '/sistema/configurazioni', icon: Settings },
+        { name: 'Log Sistema', href: '/sistema/logs', icon: FileText },
+        { name: 'Gestione Utenti', href: '/sistema', icon: Users },
+        { name: 'Backup Dashboard', href: '/backup-dashboard', icon: Shield }
+      ],
+      stats: { 
+        configs: stats?.sistema.configs || 0, 
+        logs: stats?.sistema.logs || '0', 
+        users: stats?.sistema.users || 0 
+      }
+    },
+    {
+      id: 'supporto',
+      title: 'Supporto',
+      icon: HelpCircle,
+      color: 'from-purple-500 to-pink-500',
+      pages: [
+        { name: 'Funzionalità', href: '/funzionalita', icon: HelpCircle },
+        { name: 'Guide', href: '/funzionalita', icon: FileText },
+        { name: 'FAQ', href: '/funzionalita', icon: Shield }
+      ],
+      stats: { 
+        tickets: 0, 
+        guide: 12, 
+        faq: 25 
+      }
+    }
+  ];
+
   return (
-    <div className="container mt-4">
-      <div className="row">
-        <div className="col-12">
-          <div className="d-flex justify-content-between align-items-center mb-4">
-            <div>
-              <h1 className="h2 mb-1">Dashboard</h1>
-              <p className="text-muted mb-0">
-                Benvenuto, <strong>{user?.username}</strong>! 
-                Ruolo: <span className="badge bg-primary">{user?.role}</span>
-              </p>
-            </div>
-            <div className="text-end">
-              <small className="text-muted">
-                Ultimo accesso: {new Date().toLocaleDateString('it-IT')}
-              </small>
+    <div className="dashboard-container">
+      {/* Header */}
+      <div className="dashboard-header">
+        <div className="header-content">
+          <div className="header-info">
+            <h1 className="dashboard-title">Dashboard Moderna</h1>
+            <p className="dashboard-subtitle">
+              Benvenuto, <strong>{user?.username}</strong>! 
+              <span className="user-role">{user?.role}</span>
+            </p>
+          </div>
+          <div className="header-right">
+            <div className="header-badges-large" style={{justifyContent: 'flex-end', marginLeft: 'auto'}}>
+              <span className="header-badge-large datetime">
+                <Calendar size={18} />
+                <span style={{fontSize: '1.1rem', fontWeight: '600'}}>{currentDateTime.toLocaleDateString('it-IT')}</span>
+              </span>
+              <span className="header-badge-large datetime">
+                <Clock size={18} />
+                <span style={{fontSize: '1.1rem', fontWeight: '600'}}>{currentDateTime.toLocaleTimeString('it-IT', { hour12: false })}</span>
+              </span>
             </div>
           </div>
         </div>
+
       </div>
 
-      {/* Cards statistiche */}
-      <div className="row g-4 mb-4">
-        <div className="col-xl-3 col-md-6">
-          <div className="card border-0 shadow-sm">
-            <div className="card-body">
-              <div className="d-flex align-items-center">
-                <div className="flex-shrink-0">
-                  <div className="bg-primary bg-opacity-10 p-3 rounded">
-                    <Truck className="text-primary" size={24} />
-                  </div>
-                </div>
-                <div className="flex-grow-1 ms-3">
-                  <h6 className="card-title mb-1">Viaggi Attivi</h6>
-                  <h4 className="mb-0">12</h4>
-                  <small className="text-success">+2 da ieri</small>
-                </div>
+      {/* Messaggio di errore */}
+      {statsError && (
+        <div className="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
+          <div className="flex">
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">
+                Errore nel caricamento delle statistiche
+              </h3>
+              <div className="mt-2 text-sm text-red-700">
+                <p>{statsError}</p>
+                <button 
+                  onClick={loadStats}
+                  className="mt-2 text-red-800 underline hover:text-red-900"
+                >
+                  Riprova
+                </button>
               </div>
             </div>
           </div>
         </div>
+      )}
 
-        <div className="col-xl-3 col-md-6">
-          <div className="card border-0 shadow-sm">
-            <div className="card-body">
-              <div className="d-flex align-items-center">
-                <div className="flex-shrink-0">
-                  <div className="bg-success bg-opacity-10 p-3 rounded">
-                    <Package className="text-success" size={24} />
+      {/* Sezioni Principali */}
+      <div className="section-grid">
+        {statsLoading ? (
+          // Mostra skeleton loading
+          Array.from({ length: 5 }).map((_, index) => (
+            <SectionSkeleton key={index} />
+          ))
+        ) : (
+          sections.map((section, index) => {
+            const Icon = section.icon;
+            return (
+              <div
+                key={section.id}
+                className={`dashboard-card ${activeSection === section.id ? 'active' : ''}`}
+                onMouseEnter={() => setActiveSection(section.id)}
+                onMouseLeave={() => setActiveSection(null)}
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                <div className="parallax-bg"></div>
+                
+                <div className="card-header">
+                  <div className={`card-icon ${section.color}`}>
+                    <Icon size={48} />
                   </div>
+                  <h3 className="card-title">{section.title}</h3>
                 </div>
-                <div className="flex-grow-1 ms-3">
-                  <h6 className="card-title mb-1">Partese Gestite</h6>
-                  <h4 className="mb-0">48</h4>
-                  <small className="text-success">+8 questa settimana</small>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <div className="col-xl-3 col-md-6">
-          <div className="card border-0 shadow-sm">
-            <div className="card-body">
-              <div className="d-flex align-items-center">
-                <div className="flex-shrink-0">
-                  <div className="bg-warning bg-opacity-10 p-3 rounded">
-                    <Users className="text-warning" size={24} />
+                <div className="card-content">
+                  <div className="page-links">
+                    {section.pages.map((page, idx) => {
+                      const PageIcon = page.icon;
+                      
+                      // Lista dei link da disabilitare
+                      const disabledLinks = ['/report', '/clienti', '/fornitori', '/utenti'];
+                      const isDisabled = disabledLinks.includes(page.href) || (page.name === 'FAQ');
+                      
+                      if (isDisabled) {
+                        return (
+                          <span
+                            key={page.name}
+                            className="page-link disabled-link"
+                            style={{ 
+                              transitionDelay: `${idx * 0.05}s`,
+                              color: '#ef4444',
+                              cursor: 'not-allowed',
+                              opacity: 0.7
+                            }}
+                          >
+                            <PageIcon size={16} />
+                            <span>{page.name}</span>
+                          </span>
+                        );
+                      }
+                      
+                      return (
+                        <Link
+                          key={page.name}
+                          href={page.href}
+                          className="page-link"
+                          style={{ transitionDelay: `${idx * 0.05}s` }}
+                        >
+                          <PageIcon size={16} />
+                          <span>{page.name}</span>
+                        </Link>
+                      );
+                    })}
                   </div>
-                </div>
-                <div className="flex-grow-1 ms-3">
-                  <h6 className="card-title mb-1">Clienti Attivi</h6>
-                  <h4 className="mb-0">156</h4>
-                  <small className="text-muted">Totale registrati</small>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <div className="col-xl-3 col-md-6">
-          <div className="card border-0 shadow-sm">
-            <div className="card-body">
-              <div className="d-flex align-items-center">
-                <div className="flex-shrink-0">
-                  <div className="bg-info bg-opacity-10 p-3 rounded">
-                    <DollarSign className="text-info" size={24} />
-                  </div>
-                </div>
-                <div className="flex-grow-1 ms-3">
-                  <h6 className="card-title mb-1">Fatturato Mensile</h6>
-                  <h4 className="mb-0">€24.5k</h4>
-                  <small className="text-success">+12% vs mese scorso</small>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Sezioni Principali - Link per tutti gli utenti */}
-      <div className="row mb-4">
-        <div className="col-12">
-          <div className="card border-0 shadow-sm">
-            <div className="card-header bg-transparent">
-              <h5 className="card-title mb-0">
-                <BarChart3 className="me-2" size={20} />
-                Sezioni Principali
-              </h5>
-            </div>
-            <div className="card-body">
-              <div className="row">
-                <div className="col-md-4 mb-3">
-                  <Link href="/gestione" className="text-decoration-none">
-                    <div className="card h-100 border-primary">
-                      <div className="card-body text-center">
-                        <Package className="mb-3 text-primary" size={48} />
-                        <h6 className="card-title">Gestione Partese</h6>
-                        <p className="card-text text-muted">Gestisci spedizioni e partese</p>
-                      </div>
-                    </div>
-                  </Link>
-                </div>
-                <div className="col-md-4 mb-3">
-                  <Link href="/backup-dashboard" className="text-decoration-none">
-                    <div className="card h-100 border-success">
-                      <div className="card-body text-center">
-                        <FileText className="mb-3 text-success" size={48} />
-                        <h6 className="card-title">Backup Database</h6>
-                        <p className="card-text text-muted">Gestione backup e ripristino</p>
-                      </div>
-                    </div>
-                  </Link>
-                </div>
-                {user?.role === 'admin' && (
-                  <div className="col-md-4 mb-3">
-                    <Link href="/sistema" className="text-decoration-none">
-                      <div className="card h-100 border-warning">
-                        <div className="card-body text-center">
-                          <Settings className="mb-3 text-warning" size={48} />
-                          <h6 className="card-title">Sistema</h6>
-                          <p className="card-text text-muted">Amministrazione e configurazioni</p>
+                  <div className="card-stats">
+                    {Object.entries(section.stats).map(([key, value]) => {
+                      // Colora in rosso le statistiche 'tickets' e 'faq' nella sezione supporto
+                      const isRedStat = section.id === 'supporto' && (key === 'tickets' || key === 'faq');
+                      
+                      return (
+                        <div key={key} className="stat-item">
+                          <span className="stat-label">{key}</span>
+                          <span 
+                            className="stat-value" 
+                            style={isRedStat ? { color: '#ef4444' } : {}}
+                          >
+                            {value}
+                          </span>
                         </div>
-                      </div>
-                    </Link>
+                      );
+                    })}
                   </div>
-                )}
+                </div>
+
+                <button className="quick-action">
+                  <Plus size={20} />
+                </button>
               </div>
-            </div>
+            );
+          })
+        )}
+
+
+      </div>
+
+      {/* Footer */}
+      <div className="dashboard-footer">
+        <div className="footer-content">
+          <div className="footer-badges">
+            <span className="footer-badge version">
+              <Code size={14} />
+              <span>Versione 2.17.0</span>
+            </span>
+            <span className="footer-badge status">
+              <Shield size={14} />
+              <span>Stato: Autenticato</span>
+            </span>
           </div>
         </div>
       </div>
-
-      {/* Sezione attività recenti */}
-      <div className="row">
-        <div className="col-lg-8">
-          <div className="card border-0 shadow-sm">
-            <div className="card-header bg-transparent">
-              <h5 className="card-title mb-0">Attività Recenti</h5>
-            </div>
-            <div className="card-body">
-              <div className="list-group list-group-flush">
-                <div className="list-group-item border-0 px-0">
-                  <div className="d-flex align-items-center">
-                    <div className="flex-shrink-0">
-                      <div className="bg-success bg-opacity-10 p-2 rounded-circle">
-                        <Package className="text-success" size={16} />
-                      </div>
-                    </div>
-                    <div className="flex-grow-1 ms-3">
-                      <h6 className="mb-1">Nuova partesa creata</h6>
-                      <p className="mb-0 text-muted small">Partesa #PS-2024-001 per cliente ABC Logistics</p>
-                    </div>
-                    <small className="text-muted">2 ore fa</small>
-                  </div>
-                </div>
-                
-                <div className="list-group-item border-0 px-0">
-                  <div className="d-flex align-items-center">
-                    <div className="flex-shrink-0">
-                      <div className="bg-primary bg-opacity-10 p-2 rounded-circle">
-                        <Truck className="text-primary" size={16} />
-                      </div>
-                    </div>
-                    <div className="flex-grow-1 ms-3">
-                      <h6 className="mb-1">Viaggio completato</h6>
-                      <p className="mb-0 text-muted small">Viaggio Milano-Roma completato con successo</p>
-                    </div>
-                    <small className="text-muted">4 ore fa</small>
-                  </div>
-                </div>
-                
-                <div className="list-group-item border-0 px-0">
-                  <div className="d-flex align-items-center">
-                    <div className="flex-shrink-0">
-                      <div className="bg-warning bg-opacity-10 p-2 rounded-circle">
-                        <DollarSign className="text-warning" size={16} />
-                      </div>
-                    </div>
-                    <div className="flex-grow-1 ms-3">
-                      <h6 className="mb-1">Fattura generata</h6>
-                      <p className="mb-0 text-muted small">Fattura #FT-2024-0156 per €2.450,00</p>
-                    </div>
-                    <small className="text-muted">6 ore fa</small>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div className="col-lg-4">
-          <div className="card border-0 shadow-sm">
-            <div className="card-header bg-transparent">
-              <h5 className="card-title mb-0">Informazioni Sistema</h5>
-            </div>
-            <div className="card-body">
-              <div className="mb-3">
-                <h6 className="text-muted mb-2">Stato Autenticazione</h6>
-                <span className="badge bg-success">✓ Autenticato</span>
-              </div>
-              
-              <div className="mb-3">
-                <h6 className="text-muted mb-2">Dettagli Utente</h6>
-                <p className="mb-1"><strong>ID:</strong> {user?.id}</p>
-                <p className="mb-1"><strong>Username:</strong> {user?.username}</p>
-                <p className="mb-1"><strong>Email:</strong> {user?.email}</p>
-                <p className="mb-0"><strong>Ruolo:</strong> {user?.role}</p>
-              </div>
-              
-              <div>
-                <h6 className="text-muted mb-2">Sistema</h6>
-                <p className="mb-1"><small>Versione: 1.0.0</small></p>
-                <p className="mb-0"><small>Ultimo aggiornamento: {new Date().toLocaleDateString('it-IT')}</small></p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
 
     </div>
   );

@@ -48,7 +48,7 @@ function ExecutePageContent() {
       setProgress(10);
 
       // Avvia l'importazione
-      const response = await fetch('/api/import/execute', {
+      const response = await fetch('/api/import_viaggi_PoD/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -65,7 +65,7 @@ function ExecutePageContent() {
            // Continua con il polling per monitorare l'importazione esistente
            const pollProgress = async () => {
              try {
-               const progressResponse = await fetch(`/api/import/progress?fileId=${fileId}`);
+               const progressResponse = await fetch(`/api/import_viaggi_PoD/progress?fileId=${fileId}`);
                
                if (progressResponse.status === 404) {
                  // Progresso non trovato, probabilmente l'importazione è completata
@@ -117,7 +117,7 @@ function ExecutePageContent() {
       // Polling per il progresso
       const pollProgress = async () => {
         try {
-          const progressResponse = await fetch(`/api/import/progress?fileId=${fileId}`);
+          const progressResponse = await fetch(`/api/import_viaggi_PoD/progress?fileId=${fileId}`);
           
           if (progressResponse.status === 404) {
             // Progresso non trovato, probabilmente l'importazione è completata
@@ -200,7 +200,7 @@ function ExecutePageContent() {
                     <button onClick={retryImport} className="btn btn-primary">
                       🔄 Riprova
                     </button>
-                    <Link href="/import" className="btn btn-outline-secondary">
+                    <Link href="/import_viaggi_PoD" className="btn btn-outline-secondary">
                       ← Torna all&apos;Upload
                     </Link>
                   </div>
@@ -327,10 +327,10 @@ function ExecutePageContent() {
               <div className="card shadow-sm border-0">
                 <div className="card-body text-center">
                   <div className="d-flex gap-2 justify-content-center flex-wrap">
-                    <Link href="/import" className="btn btn-primary">
+                    <Link href="/import_viaggi_PoD" className="btn btn-primary">
                       📤 Nuova Importazione
                     </Link>
-                    <Link href="/import/history" className="btn btn-outline-info">
+                    <Link href="/import_viaggi_PoD/history" className="btn btn-outline-info">
                       📈 Visualizza Storico
                     </Link>
                     <Link href="/" className="btn btn-outline-secondary">

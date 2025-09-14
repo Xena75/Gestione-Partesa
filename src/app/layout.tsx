@@ -2,6 +2,7 @@
 import './globals.css';
 import type { Metadata } from "next";
 import { AuthProvider } from '@/contexts/AuthContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 import { ToastProvider } from '@/components/ui/Toast';
 import Navbar from '@/components/Navbar';
 
@@ -22,14 +23,16 @@ export default function RootLayout({ children, }: { children: React.ReactNode; }
         ></script>
       </head>
       <body>
-        <AuthProvider>
-          <ToastProvider>
-            <Navbar />
-            <div className="w-100">
-              {children}
-            </div>
-          </ToastProvider>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <ToastProvider>
+              <Navbar />
+              <div className="w-100">
+                {children}
+              </div>
+            </ToastProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

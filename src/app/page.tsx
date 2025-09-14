@@ -215,7 +215,7 @@ export default function DashboardPage() {
                   <span className="badge bg-success">Excel</span>
                   <span className="badge bg-warning">Mapping</span>
                 </div>
-                <Link href="/import" className="btn btn-info w-100">
+                <Link href="/import_viaggi_PoD" className="btn btn-info w-100">
                   Inizia Importazione →
                 </Link>
               </div>

@@ -4,7 +4,64 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
 
-### 🔧 **Ottimizzazioni Sistema e UI - v2.17.0** ⭐ **NUOVO**
+### 🌙 **Sistema Dark Mode Globale e Ottimizzazioni UI - v2.18.0** ⭐ **NUOVO**
+
+**Implementazione modalità chiaro/scuro globale con miglioramenti significativi di leggibilità e usabilità**
+
+#### 🌓 **Modalità Chiaro/Scuro Globale**
+- **Toggle globale**: Pulsante nella navbar per passare tra modalità chiaro e scuro
+- **Persistenza**: Preferenza salvata in localStorage e mantenuta tra sessioni
+- **CSS Variables**: Sistema di variabili CSS per gestione colori dinamica
+- **Transizioni smooth**: Animazioni fluide durante il cambio modalità
+- **Compatibilità completa**: Funziona su tutte le pagine del sistema
+
+#### 📊 **Miglioramenti Leggibilità Dark Mode**
+- **Tabelle ottimizzate**: Contrasto migliorato per testo e bordi in modalità scura
+- **Input fields**: Colore testo `var(--text-primary)` per leggibilità ottimale
+- **Placeholder**: Colore #a0aec0 per contrasto appropriato
+- **Filtri**: Tutti i campi input dei filtri ora leggibili in dark mode
+- **Consistenza**: Stili uniformi su tutti i tipi di input (text, select, date)
+
+#### 🎯 **Riposizionamento Filtri Fatturazione Terzisti**
+- **Posizionamento ottimale**: Pulsanti filtro completamente a destra nella pagina
+- **Layout migliorato**: Uso di `d-flex justify-content-between align-items-center`
+- **Eliminazione sovrapposizioni**: Risolti problemi di overlap con altri elementi
+- **Coerenza**: Allineamento con le altre pagine del sistema
+- **Responsive**: Funziona correttamente su tutti i dispositivi
+
+### 📊 **Dashboard Moderna e Rinnovata - v2.18.1** ⭐ **NUOVO**
+
+**Implementazione completa di una dashboard moderna con design rinnovato e funzionalità avanzate**
+
+#### 🎨 **Design Moderno e Layout Migliorato**
+- **Interfaccia rinnovata**: Design completamente ridisegnato con estetica moderna e professionale
+- **Layout responsive**: Ottimizzato per tutti i dispositivi (desktop, tablet, mobile)
+- **Griglia flessibile**: Sistema di griglia Bootstrap 5 per disposizione ottimale dei componenti
+- **Spacing ottimizzato**: Margini e padding calibrati per massima leggibilità
+- **Tipografia migliorata**: Font e dimensioni ottimizzate per una migliore user experience
+
+#### 📈 **Cards Informative e Statistiche Visuali**
+- **Cards KPI moderne**: Design rinnovato con colori distintivi e icone intuitive
+- **Statistiche in tempo reale**: Dati aggiornati dinamicamente dal database
+- **Visualizzazione dati**: Presentazione chiara e immediata delle metriche principali
+- **Gradients professionali**: Effetti visivi moderni per distinguere le diverse tipologie di dati
+- **Responsive cards**: Adattamento automatico alle dimensioni dello schermo
+
+#### 🎯 **Interfaccia Utente Rinnovata**
+- **Navigazione intuitiva**: Menu e collegamenti ottimizzati per facilità d'uso
+- **Feedback visivo**: Hover effects e transizioni smooth per interazioni fluide
+- **Accessibilità migliorata**: Supporto completo per screen reader e navigazione da tastiera
+- **Consistenza UI**: Design coerente con il resto dell'applicazione
+- **Performance ottimizzate**: Caricamento veloce e rendering efficiente
+
+#### 🚀 **Funzionalità Dashboard Avanzate**
+- **Panoramica completa**: Vista d'insieme di tutti i dati principali del sistema
+- **Metriche aggregate**: Calcoli automatici di KPI e statistiche operative
+- **Aggiornamenti real-time**: Dati sempre aggiornati senza necessità di refresh manuale
+- **Collegamenti rapidi**: Accesso diretto alle sezioni principali dell'applicazione
+- **Dashboard personalizzabile**: Layout adattabile alle esigenze dell'utente
+
+#### 🔧 **Ottimizzazioni Sistema e UI - v2.17.0**
 
 **Miglioramenti sistema di log, configurazioni e interfaccia utente**
 

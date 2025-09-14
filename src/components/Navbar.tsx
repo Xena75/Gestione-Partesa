@@ -1,13 +1,15 @@
 'use client';
 
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LogOut, User, Settings } from 'lucide-react';
+import { LogOut, User, Settings, Sun, Moon } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 
 export default function Navbar() {
   const { user, isAuthenticated, logout, isLoading } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const pathname = usePathname();
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -43,6 +45,8 @@ export default function Navbar() {
   const toggleDropdown = () => {
     setShowDropdown(!showDropdown);
   };
+
+
 
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -118,6 +122,16 @@ export default function Navbar() {
               
               {/* Sezione utente e logout */}
               <div className="navbar-nav ms-auto">
+                {/* Toggle tema */}
+                <button
+                  className="nav-link btn btn-link text-light border-0 d-flex align-items-center me-2"
+                  onClick={toggleTheme}
+                  type="button"
+                  title={theme === 'light' ? 'Modalità scura' : 'Modalità chiara'}
+                >
+                  {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+                </button>
+                
                 <div className="nav-item dropdown position-relative" ref={dropdownRef}>
                   <button
                     className="nav-link dropdown-toggle d-flex align-items-center btn btn-link text-light border-0"

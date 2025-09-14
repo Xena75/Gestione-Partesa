@@ -149,7 +149,7 @@ export default function ImportHistoryTable({ sessions }: ImportHistoryTableProps
                       👁️
                     </button>
                     <Link
-                      href={`/import/details/${session.session_id}`}
+                      href={`/import_viaggi_PoD/details/${session.session_id}`}
                       className="btn btn-outline-info btn-sm"
                       title="Visualizza Dati"
                     >
