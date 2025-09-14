@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken, getTokenFromRequest, verifySession } from '@/lib/auth';
+import { getTokenFromRequest, verifySession } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 

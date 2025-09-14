@@ -12,17 +12,7 @@ const backupDbConfig = {
   charset: 'utf8mb4'
 };
 
-interface BackupConfig {
-  id?: number;
-  config_key: string;
-  config_value: string;
-  config_type: 'string' | 'number' | 'boolean' | 'json';
-  category: 'general' | 'storage' | 'notification' | 'security' | 'performance';
-  description?: string;
-  is_sensitive: boolean;
-  validation_rule?: string;
-  default_value?: string;
-}
+
 
 // GET - Recupera configurazioni
 export async function GET(request: NextRequest) {
@@ -96,7 +86,7 @@ export async function GET(request: NextRequest) {
             case 'json':
               try {
                 processedConfig.config_value = JSON.parse(config.config_value);
-              } catch (e) {
+              } catch (_) {
                 processedConfig.config_value = config.config_value;
               }
               break;
@@ -228,7 +218,7 @@ export async function POST(request: NextRequest) {
           processedValue = config_value.toString();
           break;
       }
-    } catch (error) {
+    } catch (_) {
       return NextResponse.json(
         { error: `Valore non valido per il tipo ${config_type}` },
         { status: 400 }
@@ -384,7 +374,7 @@ export async function PUT(request: NextRequest) {
             processedValue = config_value.toString();
             break;
         }
-      } catch (error) {
+      } catch (_) {
         return NextResponse.json(
           { error: `Valore non valido per il tipo ${existingConfig.config_type}` },
           { status: 400 }
@@ -401,7 +391,7 @@ export async function PUT(request: NextRequest) {
               { status: 400 }
             );
           }
-        } catch (e) {
+        } catch (_) {
           console.warn('Regola di validazione non valida:', existingConfig.validation_rule);
         }
       }

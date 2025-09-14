@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import mysql from 'mysql2/promise';
 import { getTokenFromRequest, verifyToken } from '@/lib/auth';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 // Configurazione database
 const dbConfig = {
@@ -33,7 +30,7 @@ async function verifyAdminToken(request: NextRequest) {
     }
 
     return { valid: true, user };
-  } catch (error) {
+  } catch (_) {
     return { valid: false, error: 'Token non valido' };
   }
 }

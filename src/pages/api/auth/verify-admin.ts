@@ -33,7 +33,7 @@ export default async function handler(
     
     try {
       decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
-    } catch (error) {
+    } catch (_) {
       return res.status(401).json({ message: 'Token non valido' });
     }
 

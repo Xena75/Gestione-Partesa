@@ -244,7 +244,7 @@ function MonitoraggioPageContent() {
                   >
                     Modifica
                   </Link>
-                  <DeleteButton id={viaggio.id} />
+                  <DeleteButton id={viaggio.id} apiEndpoint="/api/viaggi" />
                 </td>
               </tr>
             ))}

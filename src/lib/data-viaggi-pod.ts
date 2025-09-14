@@ -228,7 +228,7 @@ export async function updateViaggioPodData(id: number, viaggio: Partial<ViaggioP
     
     // Filtra solo i campi che possono essere aggiornati
     const fields = Object.keys(viaggioProcessed).filter(key => !excludedFields.includes(key));
-    const values = fields.map(field => viaggioProcessed[field]);
+    const values = fields.map(field => viaggioProcessed[field as keyof typeof viaggioProcessed]);
     const setClause = fields.map(field => `\`${field}\` = ?`).join(', ');
     
     console.log('updateViaggioPodData - Campi da aggiornare (esclusi i generated):', fields);

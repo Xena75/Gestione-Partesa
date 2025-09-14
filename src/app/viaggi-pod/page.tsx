@@ -253,7 +253,7 @@ function ViaggiPodPageContent() {
                   >
                     Modifica
                   </Link>
-                  <DeleteButton id={viaggio.ID} apiEndpoint="/api/viaggi-pod" />
+                  <DeleteButton id={viaggio.ID.toString()} apiEndpoint="/api/viaggi-pod" />
                 </td>
               </tr>
             ))}

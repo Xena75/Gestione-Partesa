@@ -13,24 +13,7 @@ const backupDbConfig = {
   charset: 'utf8mb4'
 };
 
-interface BackupJob {
-  id?: number;
-  job_uuid: string;
-  backup_type: 'full' | 'incremental' | 'differential' | 'manual';
-  status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
-  start_time: string;
-  end_time?: string;
-  duration_seconds?: number;
-  total_size_bytes: number;
-  compressed_size_bytes?: number;
-  databases: string[];
-  backup_path: string;
-  triggered_by: 'schedule' | 'manual' | 'api';
-  triggered_by_user?: string;
-  error_message?: string;
-  checksum_md5?: string;
-  retention_until?: string;
-}
+
 
 // GET - Recupera lista job di backup con filtri
 export async function GET(request: NextRequest) {
@@ -148,8 +131,7 @@ export async function POST(request: NextRequest) {
     const {
       backup_type,
       databases,
-      triggered_by = 'manual',
-      priority = 'normal'
+      triggered_by = 'manual'
     } = body;
 
     // Validazione input

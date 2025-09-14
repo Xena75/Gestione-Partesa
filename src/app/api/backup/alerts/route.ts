@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyUserAccess, verifyAdminAccess } from '@/lib/auth';
 import mysql from 'mysql2/promise';
-import { v4 as uuidv4 } from 'uuid';
 
 // Configurazione database backup_management
 const backupDbConfig = {
@@ -13,21 +12,7 @@ const backupDbConfig = {
   charset: 'utf8mb4'
 };
 
-interface BackupAlert {
-  id?: number;
-  alert_type: 'error' | 'warning' | 'info' | 'success';
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  title: string;
-  message: string;
-  source: 'backup_job' | 'schedule' | 'system' | 'storage' | 'database';
-  source_id?: number;
-  is_read: boolean;
-  is_resolved: boolean;
-  resolved_by?: string;
-  resolved_at?: string;
-  resolution_notes?: string;
-  metadata?: any;
-}
+
 
 // GET - Recupera tutti gli alert di backup
 export async function GET(request: NextRequest) {
@@ -452,9 +437,8 @@ export async function DELETE(request: NextRequest) {
     const connection = await mysql.createConnection(backupDbConfig);
 
     try {
-      let deleteQuery = '';
-      let deleteParams = [];
       let deletedCount = 0;
+      let deleteParams = [];
 
       if (alertId) {
         // Elimina alert specifico
