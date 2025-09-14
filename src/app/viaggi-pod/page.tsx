@@ -16,13 +16,34 @@ function ViaggiPodPageContent() {
   const sortBy = searchParams?.get('sortBy') || 'Data Inizio';
   const sortOrder = (searchParams?.get('sortOrder') as 'ASC' | 'DESC') || 'DESC';
   
+  // Stati per il form di inserimento
+  const [showForm, setShowForm] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
+  const [filterOptions, setFilterOptions] = useState<{
+    magazzini: string[];
+    trasportatori: string[];
+  }>({ magazzini: [], trasportatori: [] });
+  const [formData, setFormData] = useState({
+    Viaggio: '',
+    'Magazzino di partenza': '',
+    'Nome Trasportatore': '',
+    'Data Inizio': '',
+    'Data Fine': '',
+    Colli: '',
+    'Peso (Kg)': '',
+    Km: '',
+    Toccate: '',
+    Ordini: ''
+  });
+  
   // Funzione per convertire le date dal formato database al formato italiano con ora
   const formatDateTimeToItalian = (dateString: string | null): string => {
     if (!dateString) return '';
     
     try {
       const date = new Date(dateString);
-      if (isNaN(date.getTime())) return dateString;
+      if (isNaN(date.getTime())) return dateString || '';
       
       const day = date.getDate().toString().padStart(2, '0');
       const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -32,8 +53,35 @@ function ViaggiPodPageContent() {
       
       return `${day}-${month}-${year} ${hours}:${minutes}`;
     } catch {
-      return dateString;
+      return dateString || '';
     }
+  };
+  
+  // Funzione per convertire dal formato italiano al formato ISO per il database
+  const convertItalianToISO = (italianDate: string): string => {
+    if (!italianDate) return '';
+    
+    try {
+      // Formato atteso: gg-mm-aaaa hh:mm
+      const regex = /^(\d{2})-(\d{2})-(\d{4}) (\d{2}):(\d{2})$/;
+      const match = italianDate.match(regex);
+      
+      if (!match) return italianDate;
+      
+      const [, day, month, year, hours, minutes] = match;
+      // Converte in formato ISO: yyyy-mm-ddThh:mm
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
+    } catch {
+      return italianDate;
+    }
+  };
+  
+  // Funzione per validare il formato italiano
+  const validateItalianDateTime = (dateString: string): boolean => {
+    if (!dateString) return true; // Campo opzionale
+    
+    const regex = /^(\d{2})-(\d{2})-(\d{4}) (\d{2}):(\d{2})$/;
+    return regex.test(dateString);
   };
   
   // Parametri dei filtri
@@ -102,6 +150,110 @@ function ViaggiPodPageContent() {
       });
   }, [currentPage, sortBy, sortOrder, viaggio, magazzino, trasportatore, dataInizio, dataFine, mese, trimestre]);
 
+  // Carica le opzioni per i dropdown quando il form viene aperto
+  useEffect(() => {
+    if (showForm && filterOptions.magazzini.length === 0) {
+      fetch('/api/viaggi-pod?filterOptions=true')
+        .then(res => res.json())
+        .then(data => {
+          if (data.magazzini && data.trasportatori) {
+            setFilterOptions({
+              magazzini: data.magazzini,
+              trasportatori: data.trasportatori
+            });
+          }
+        })
+        .catch(error => {
+          console.error('Errore nel caricamento delle opzioni filtri:', error);
+        });
+    }
+  }, [showForm, filterOptions.magazzini.length]);
+
+  // Funzione per calcolare i campi derivati dalla data
+  const calculateDateFields = (dateString: string) => {
+    if (!dateString) return { Mese: null, Sett: null, Giorno: null, Trimestre: null };
+    
+    const date = new Date(dateString);
+    const mese = date.getMonth() + 1;
+    const giorno = date.getDate();
+    const trimestre = Math.ceil(mese / 3);
+    
+    // Calcolo della settimana dell'anno
+    const startOfYear = new Date(date.getFullYear(), 0, 1);
+    const pastDaysOfYear = (date.getTime() - startOfYear.getTime()) / 86400000;
+    const sett = Math.ceil((pastDaysOfYear + startOfYear.getDay() + 1) / 7);
+    
+    return { Mese: mese, Sett: sett, Giorno: giorno, Trimestre: trimestre };
+  };
+
+  // Funzione per gestire il submit del form
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitMessage(null);
+    
+    try {
+      // Calcola i campi derivati dalla Data Inizio (se presente)
+      let dateFields = {};
+      if (formData['Data Inizio']) {
+        dateFields = calculateDateFields(formData['Data Inizio']);
+      }
+      
+      // Prepara i dati per l'invio
+      const submitData = {
+        ...formData,
+        ...dateFields,
+        // Converte i campi numerici
+        Colli: formData.Colli ? Number(formData.Colli) : null,
+        'Peso (Kg)': formData['Peso (Kg)'] ? Number(formData['Peso (Kg)']) : null,
+        Km: formData.Km ? Number(formData.Km) : null,
+        Toccate: formData.Toccate ? Number(formData.Toccate) : null,
+        Ordini: formData.Ordini ? Number(formData.Ordini) : null
+      };
+      
+      const response = await fetch('/api/viaggi-pod', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(submitData)
+      });
+      
+      if (response.ok) {
+        setSubmitMessage({ type: 'success', text: 'Viaggio POD creato con successo!' });
+        // Reset del form
+        setFormData({
+          Viaggio: '',
+          'Magazzino di partenza': '',
+          'Nome Trasportatore': '',
+          'Data Inizio': '',
+          'Data Fine': '',
+          Colli: '',
+          'Peso (Kg)': '',
+          Km: '',
+          Toccate: '',
+          Ordini: ''
+        });
+        setShowForm(false);
+        
+        // Ricarica i dati
+        window.location.reload();
+      } else {
+        const errorData = await response.json();
+        setSubmitMessage({ type: 'error', text: errorData.error || 'Errore durante la creazione' });
+      }
+    } catch (error) {
+      setSubmitMessage({ type: 'error', text: 'Errore di connessione' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Funzione per gestire i cambiamenti nei campi del form
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
   if (isLoading) {
     return <div>Caricamento...</div>;
   }
@@ -117,6 +269,12 @@ function ViaggiPodPageContent() {
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1>🚛 Viaggi POD</h1>
         <div className="d-flex gap-2">
+          <button 
+            className="btn btn-success"
+            onClick={() => setShowForm(!showForm)}
+          >
+            {showForm ? '✕ Chiudi Form' : '+ Nuovo Viaggio POD'}
+          </button>
           <Link href="/" className="btn btn-outline-secondary">
             ← Torna alla Dashboard
           </Link>
@@ -130,6 +288,152 @@ function ViaggiPodPageContent() {
 
       {/* Statistiche KPI */}
       <ViaggiPodStats />
+
+      {/* Form per nuovo viaggio POD */}
+      {showForm && (
+        <div className="mb-4">
+          <div className="card">
+            <div className="card-header">
+              <h5 className="mb-0">Inserisci Nuovo Viaggio POD</h5>
+            </div>
+            <div className="card-body">
+              {submitMessage && (
+                <div className={`alert ${submitMessage.type === 'success' ? 'alert-success' : 'alert-danger'}`}>
+                  {submitMessage.text}
+                </div>
+              )}
+              
+              <form onSubmit={handleSubmit}>
+                <div className="row">
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">Viaggio *</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={formData.Viaggio}
+                      onChange={(e) => handleInputChange('Viaggio', e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">Magazzino di partenza</label>
+                    <select
+                      className="form-control"
+                      value={formData['Magazzino di partenza']}
+                      onChange={(e) => handleInputChange('Magazzino di partenza', e.target.value)}
+                    >
+                      <option value="">Seleziona magazzino...</option>
+                      {filterOptions.magazzini.filter(m => m != null).map((magazzino, index) => (
+                        <option key={index} value={magazzino}>{magazzino}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="row">
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">Nome Trasportatore</label>
+                    <select
+                      className="form-control"
+                      value={formData['Nome Trasportatore']}
+                      onChange={(e) => handleInputChange('Nome Trasportatore', e.target.value)}
+                    >
+                      <option value="">Seleziona trasportatore...</option>
+                      {filterOptions.trasportatori.filter(t => t != null).map((trasportatore, index) => (
+                        <option key={index} value={trasportatore}>{trasportatore}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="col-md-3 mb-3">
+                    <label className="form-label">Data Inizio</label>
+                    <input
+                      type="datetime-local"
+                      className="form-control"
+                      value={formData['Data Inizio']}
+                      onChange={(e) => handleInputChange('Data Inizio', e.target.value)}
+                    />
+                  </div>
+                  <div className="col-md-3 mb-3">
+                    <label className="form-label">Data Fine</label>
+                    <input
+                      type="datetime-local"
+                      className="form-control"
+                      value={formData['Data Fine']}
+                      onChange={(e) => handleInputChange('Data Fine', e.target.value)}
+                    />
+                  </div>
+                </div>
+                
+                <div className="row">
+                  <div className="col-md-2 mb-3">
+                    <label className="form-label">Colli</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={formData.Colli}
+                      onChange={(e) => handleInputChange('Colli', e.target.value)}
+                    />
+                  </div>
+                  <div className="col-md-2 mb-3">
+                    <label className="form-label">Peso (Kg)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="form-control"
+                      value={formData['Peso (Kg)']}
+                      onChange={(e) => handleInputChange('Peso (Kg)', e.target.value)}
+                    />
+                  </div>
+                  <div className="col-md-2 mb-3">
+                    <label className="form-label">Km</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={formData.Km}
+                      onChange={(e) => handleInputChange('Km', e.target.value)}
+                    />
+                  </div>
+                  <div className="col-md-2 mb-3">
+                    <label className="form-label">Toccate</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={formData.Toccate}
+                      onChange={(e) => handleInputChange('Toccate', e.target.value)}
+                    />
+                  </div>
+                  <div className="col-md-2 mb-3">
+                    <label className="form-label">Ordini</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={formData.Ordini}
+                      onChange={(e) => handleInputChange('Ordini', e.target.value)}
+                    />
+                  </div>
+                </div>
+                
+                <div className="d-flex gap-2">
+                  <button 
+                    type="submit" 
+                    className="btn btn-primary"
+                    disabled={isSubmitting || !formData.Viaggio}
+                  >
+                    {isSubmitting ? 'Creazione...' : 'Crea Viaggio POD'}
+                  </button>
+                  <button 
+                    type="button" 
+                    className="btn btn-secondary"
+                    onClick={() => setShowForm(false)}
+                  >
+                    Annulla
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tabella */}
       <div className="flex-grow-1 table-responsive h-100">
@@ -167,13 +471,6 @@ function ViaggiPodPageContent() {
               <SortableHeader 
                 field="Data Fine" 
                 label="Data Fine" 
-                currentSortBy={sortBy} 
-                currentSortOrder={sortOrder}
-                basePath="/viaggi-pod"
-              />
-              <SortableHeader 
-                field="Ore_Pod" 
-                label="Ore POD" 
                 currentSortBy={sortBy} 
                 currentSortOrder={sortOrder}
                 basePath="/viaggi-pod"
@@ -231,14 +528,13 @@ function ViaggiPodPageContent() {
             </tr>
           </thead>
           <tbody>
-            {viaggiPod.map((viaggio) => (
-                <tr key={viaggio.ID} data-viaggio-id={viaggio.ID}>
+            {viaggiPod && viaggiPod.length > 0 ? viaggiPod.map((viaggio) => (
+                <tr key={viaggio.ID || `temp-${Math.random()}`} data-viaggio-id={viaggio.ID || ''}>
                   <td>{viaggio.Viaggio || '-'}</td>
                 <td>{viaggio['Magazzino di partenza'] || '-'}</td>
                 <td>{viaggio['Nome Trasportatore'] || '-'}</td>
                 <td>{formatDateTimeToItalian(viaggio['Data Inizio'])}</td>
                 <td>{formatDateTimeToItalian(viaggio['Data Fine'])}</td>
-                <td>{viaggio.Ore_Pod || '-'}</td>
                 <td>{viaggio.Colli || '-'}</td>
                 <td>{viaggio['Peso (Kg)'] || '-'}</td>
                 <td>{viaggio.Km || '-'}</td>
@@ -248,15 +544,19 @@ function ViaggiPodPageContent() {
                 <td>{viaggio.Trimestre || '-'}</td>
                 <td className="d-flex gap-2">
                   <Link 
-                    href={`/viaggi-pod/${viaggio.ID}/modifica?${searchParams?.toString() || ''}`} 
+                    href={`/viaggi-pod/${viaggio.ID || 'new'}/modifica?${searchParams?.toString() || ''}`} 
                     className="btn btn-secondary btn-sm"
                   >
                     Modifica
                   </Link>
-                  <DeleteButton id={viaggio.ID.toString()} apiEndpoint="/api/viaggi-pod" />
+                  <DeleteButton id={viaggio.ID?.toString() || ''} apiEndpoint="/api/viaggi-pod" />
                 </td>
               </tr>
-            ))}
+            )) : (
+              <tr>
+                <td colSpan={13} className="text-center">Nessun dato disponibile</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

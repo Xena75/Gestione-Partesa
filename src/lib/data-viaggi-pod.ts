@@ -142,8 +142,23 @@ export async function getViaggiPodData(
 // --- FUNZIONE PER CREARE UN NUOVO VIAGGIO POD ---
 export async function createViaggioPodData(viaggio: Partial<ViaggioPod>) {
   try {
-    const fields = Object.keys(viaggio).filter(key => key !== 'ID').map(key => `\`${key}\``);
-    const values = Object.values(viaggio).filter((_, index) => Object.keys(viaggio)[index] !== 'ID');
+    // Lista dei campi che NON devono essere inclusi nella INSERT (campi generati automaticamente e calcolati)
+    const excludedFields = ['Mese', 'Sett', 'Giorno', 'Trimestre', 'Ore_Pod'];
+    
+    // Prepara i dati includendo il campo ID con il valore del numero viaggio
+    const viaggioData = { ...viaggio };
+    if (viaggioData.Viaggio) {
+      viaggioData.ID = parseInt(viaggioData.Viaggio) || 0;
+    }
+    
+    const fields = Object.keys(viaggioData)
+      .filter(key => !excludedFields.includes(key))
+      .map(key => `\`${key}\``);
+    
+    const values = Object.keys(viaggioData)
+      .filter(key => !excludedFields.includes(key))
+      .map(key => viaggioData[key as keyof typeof viaggioData]);
+    
     const placeholders = values.map(() => '?').join(', ');
     
     const sql = `INSERT INTO viaggi_pod (${fields.join(', ')}) VALUES (${placeholders})`;
