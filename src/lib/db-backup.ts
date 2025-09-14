@@ -3,10 +3,10 @@ import mysql from 'mysql2/promise';
 
 // Configurazione connessione database backup_management
 const backupDbConfig = {
-  host: 'bore.pub',
-  port: 54000,
-  user: 'backup_user',
-  password: 'SecureBackupPass2024!',
+  host: process.env.MYSQL_HOST || 'localhost',
+  port: parseInt(process.env.MYSQL_PORT || '3306'),
+  user: process.env.MYSQL_USER || 'root',
+  password: process.env.MYSQL_PASSWORD || '',
   database: 'backup_management',
   charset: 'utf8mb4',
   timezone: '+00:00',
