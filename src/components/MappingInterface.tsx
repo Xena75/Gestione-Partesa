@@ -10,7 +10,6 @@ interface MappingInterfaceProps {
 // Campi del database viaggi_pod
 const DATABASE_FIELDS = [
   { key: 'ID', label: 'ID', required: false, type: 'string' },
-  { key: 'Source#Name', label: 'Source#Name', required: false, type: 'string' },
   { key: 'Viaggio', label: 'Viaggio', required: true, type: 'string' },
   { key: 'Magazzino di partenza', label: 'Magazzino di partenza', required: false, type: 'string' },
   { key: 'Data Inizio', label: 'Data Inizio', required: false, type: 'datetime' },

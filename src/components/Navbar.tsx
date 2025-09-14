@@ -93,6 +93,12 @@ export default function Navbar() {
                   Monitoraggio
                 </Link>
                 <Link 
+                  className={`nav-link ${pathname === '/viaggi-pod' ? 'active' : ''}`} 
+                  href="/viaggi-pod"
+                >
+                  📊 Viaggi PoD
+                </Link>
+                <Link 
                   className={`nav-link ${pathname === '/fatturazione-terzisti' ? 'active' : ''}`} 
                   href="/fatturazione-terzisti"
                 >

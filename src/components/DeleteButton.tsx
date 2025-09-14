@@ -4,7 +4,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-export default function DeleteButton({ id }: { id: string }) {
+export default function DeleteButton({ id, apiEndpoint }: { id: string; apiEndpoint: string }) {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -17,7 +17,7 @@ export default function DeleteButton({ id }: { id: string }) {
     setIsDeleting(true);
 
     try {
-      const response = await fetch(`/api/monitoraggio/${id}`, {
+      const response = await fetch(`${apiEndpoint}/${id}`, {
         method: 'DELETE',
       });
 

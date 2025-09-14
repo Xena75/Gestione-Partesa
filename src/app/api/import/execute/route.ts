@@ -392,11 +392,10 @@ function validateAndConvertValue(field: string, value: string | number | null): 
 
   switch (field) {
     case 'ID':
-    case 'Source#Name':
     case 'Magazzino di partenza':
-    case 'Nome Trasportatore':
-    case 'Giorno':
-      return String(value);
+        case 'Nome Trasportatore':
+        case 'Giorno':
+          return String(value);
     
     case 'Viaggio': {
       // Rimuovi gli zeri iniziali dal campo Viaggio
