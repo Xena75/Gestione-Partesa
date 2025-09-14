@@ -4,7 +4,15 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
 
-### 🛡️ **Sistema Backup Automatico Completo - v2.15.0** ⭐ **NUOVO**
+### 🚀 **Sistema Viaggi POD - v2.16.0** ⭐ **NUOVO**
+
+**Risoluzione errore aggiornamento viaggi POD con correzione campi STORED GENERATED**
+
+### 📊 **Dashboard Backup - v2.16.1** ⭐ **NUOVO**
+
+**Risoluzione errori API backup per dashboard completamente funzionante**
+
+### 🛡️ **Sistema Backup Automatico Completo - v2.15.0**
 
 **Sistema di backup professionale completamente funzionante con risoluzione di tutti i problemi di percorsi e dipendenze**
 

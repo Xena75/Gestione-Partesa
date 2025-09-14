@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.15.0
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.16.1
 
 ## 📋 **PANORAMICA SISTEMA**
 
@@ -10,6 +10,65 @@ Sistema completo di gestione logistica con funzionalità avanzate per:
 - **Export Excel** multi-foglio
 - **Filtri avanzati** e ordinamento
 - **Sicurezza dati** e integrità backup
+
+---
+
+## 🚀 **SISTEMA VIAGGI POD - v2.16.0**
+
+### 🚀 **Risoluzione Errore Aggiornamento Viaggi POD**
+
+#### Problema Risolto
+Risolto l'errore "Impossibile aggiornare il viaggio POD" che impediva il salvataggio delle modifiche ai viaggi POD.
+
+#### Analisi del Problema
+- **Causa**: Tentativo di aggiornare campi **STORED GENERATED** nel database MySQL
+- **Campi interessati**: `Ore_Pod`, `Data`, `Mese`, `Giorno`, `Sett`, `Trimestre`
+- **Errore**: I campi generati automaticamente non possono essere modificati tramite UPDATE
+
+#### Soluzione Implementata
+```javascript
+// Modifica nella funzione updateViaggioPodData
+// Esclusione dei campi STORED GENERATED dalla query UPDATE
+const updateFields = {
+  // Solo campi modificabili dall'utente
+  // Esclusi: Ore_Pod, Data, Mese, Giorno, Sett, Trimestre
+};
+```
+
+#### Benefici Ottenuti
+- ✅ **Salvataggio funzionante**: Le modifiche vengono salvate correttamente
+- ✅ **API stabile**: Endpoint `/api/viaggi-pod/[id]` senza errori 500
+- ✅ **Dati consistenti**: Aggiornamento corretto nel database
+- ✅ **UX migliorata**: Messaggi di successo nell'interfaccia
+- ✅ **Campi automatici**: Aggiornamento automatico dei campi calcolati
+
+---
+
+## 📊 **DASHBOARD BACKUP - v2.16.1**
+
+### 📊 **Risoluzione Errori API Backup**
+
+#### Problema Risolto
+Risolti gli errori 500 nelle API di backup che impedivano il caricamento della dashboard backup.
+
+#### API Interessate
+- `GET /api/backup/schedules` - Lista backup programmati
+- `GET /api/backup/jobs` - Lista job di backup
+- `GET /api/backup/summary` - Riepilogo stato backup
+- `GET /api/backup/alerts` - Alert e notifiche
+
+#### Processo di Risoluzione
+1. **Verifica endpoint**: Confermata esistenza di tutti gli endpoint
+2. **Analisi log**: Identificazione cause specifiche errori 500
+3. **Debug codice**: Esame dettagliato del codice delle API
+4. **Implementazione fix**: Correzione problemi identificati
+5. **Testing**: Verifica funzionamento completo
+
+#### Benefici Ottenuti
+- ✅ **Dashboard operativa**: Caricamento corretto della dashboard backup
+- ✅ **API funzionanti**: Tutte le API rispondono senza errori
+- ✅ **Monitoraggio attivo**: Sistema di backup completamente operativo
+- ✅ **Gestione completa**: Controllo totale su backup e job
 
 ---
 
