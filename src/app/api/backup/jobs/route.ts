@@ -87,6 +87,7 @@ export async function GET(request: NextRequest) {
 
       const jobs = (jobRows as any[]).map(job => ({
         ...job,
+        total_size_bytes: job.file_size_bytes || 0,
         databases: JSON.parse(job.database_list || '[]')
       }));
 

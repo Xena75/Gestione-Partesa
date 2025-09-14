@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyUserAccess, verifyAdminAccess } from '@/lib/auth';
 import mysql from 'mysql2/promise';
 import { v4 as uuidv4 } from 'uuid';
+// import * as cronParser from 'cron-parser';
 
 // Configurazione database backup_management
 const backupDbConfig = {
@@ -517,8 +518,17 @@ function isValidCronExpression(cron: string): boolean {
 }
 
 function calculateNextRun(cronExpression: string): string {
-  // Implementazione semplificata - in produzione usare libreria come node-cron
-  const now = new Date();
-  const nextRun = new Date(now.getTime() + 24 * 60 * 60 * 1000); // +24 ore per esempio
-  return nextRun.toISOString();
+  try {
+    // Implementazione semplificata per calcolare la prossima esecuzione
+    // Per ora usa un fallback di 24 ore, in futuro si può implementare il parsing completo
+    const now = new Date();
+    const nextRun = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    return nextRun.toISOString();
+  } catch (error) {
+    console.error('Errore nel calcolo della prossima esecuzione:', error);
+    // Fallback: prossima esecuzione tra 24 ore
+    const now = new Date();
+    const nextRun = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    return nextRun.toISOString();
+  }
 }

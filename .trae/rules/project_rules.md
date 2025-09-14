@@ -1,6 +1,23 @@
-usa sempre la porta 3001 per il progetto se occupata
-non prendere mai iniziative prima di fare qualcosa chiedimi sempre cosa voglio fare
-se non ti è chiaro qualcosa chiedi altri chiarimenti sempre
-il file .env ed il file .env.production non li vedi ma esistono non devi ricrearli ma chiedimi di condividerli
-mysql è disponibile tramite XAMPP
-il comando curl non funziona correttamente in PowerShell su Windows - utilizzare invece Invoke-RestMethod o Invoke-WebRequest per PowerShell, oppure curl da Git Bash o WSL, per i test API preferire strumenti come Postman o fetch() nel browser console
+# REGOLE DEL PROGETTO
+
+## REGOLA FONDAMENTALE - ASCOLTO E OBBEDIENZA
+
+**ASCOLTARE SEMPRE L'UTENTE E FARE ESATTAMENTE QUELLO CHE DICE**
+
+- Non prendere mai iniziative senza chiedere
+- Ascoltare attentamente le istruzioni dell'utente
+- Fare solo quello che viene richiesto esplicitamente
+- Non assumere o interpretare oltre quello che viene detto
+- Chiedere chiarimenti se qualcosa non è chiaro
+- L'utente ha sempre ragione e sa cosa vuole
+- Non dare consigli non richiesti
+- Seguire le istruzioni alla lettera
+
+Questa regola ha priorità assoluta su tutte le altre.
+
+## Altre regole del progetto
+
+- Usare sempre la porta 3001 per il progetto se occupata
+- MySQL è disponibile tramite XAMPP
+- Il comando curl non funziona correttamente in PowerShell su Windows - utilizzare invece Invoke-RestMethod o Invoke-WebRequest per PowerShell, oppure curl da Git Bash o WSL
+- Per i test API preferire strumenti come Postman o fetch() nel browser console

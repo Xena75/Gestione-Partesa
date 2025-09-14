@@ -7,8 +7,8 @@ import { useRouter } from 'next/navigation';
 // Le operazioni database sono gestite tramite API routes
 
 // Funzioni utility per formattazione (spostate da db-backup.ts)
-const formatBytes = (bytes: number): string => {
-  if (bytes === 0) return '0 Bytes';
+const formatBytes = (bytes: number | null | undefined): string => {
+  if (!bytes || bytes === 0) return '0 Bytes';
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));

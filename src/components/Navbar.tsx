@@ -3,7 +3,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LogOut, User, Database } from 'lucide-react';
+import { LogOut, User, Settings } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 
 export default function Navbar() {
@@ -104,14 +104,14 @@ export default function Navbar() {
                 >
                   💰 Fatturazione Terzisti
                 </Link>
-                {/* Link Backup solo per admin */}
+                {/* Link Sistema solo per admin */}
                 {user?.role === 'admin' && (
                   <Link 
-                    className={`nav-link ${pathname === '/backup-dashboard' ? 'active' : ''}`} 
-                    href="/backup-dashboard"
+                    className={`nav-link ${pathname === '/sistema' ? 'active' : ''}`} 
+                    href="/sistema"
                   >
-                    <Database className="me-1" size={16} />
-                    Backup
+                    <Settings className="me-1" size={16} />
+                    Sistema
                   </Link>
                 )}
               </div>
