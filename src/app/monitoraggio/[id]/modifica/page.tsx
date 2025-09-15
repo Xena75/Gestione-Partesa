@@ -70,7 +70,16 @@ export default function ModificaMonitoraggioPage({ params }: { params: Promise<{
       const { id } = await params;
       const response = await fetch(`/api/monitoraggio/${id}`);
       if (!response.ok) {
-        throw new Error('Viaggio non trovato');
+        let errorMessage = 'Viaggio non trovato';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (jsonError) {
+          console.error('❌ Errore nel parsing della risposta fetch:', jsonError);
+          console.error('❌ Status:', response.status, 'StatusText:', response.statusText);
+          errorMessage = `Errore ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
       const data = await response.json();
       setViaggio(data.viaggio);
@@ -139,9 +148,17 @@ export default function ModificaMonitoraggioPage({ params }: { params: Promise<{
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('❌ Errore API:', errorData);
-        throw new Error(errorData.error || 'Errore nell\'aggiornamento');
+        let errorMessage = 'Errore nell\'aggiornamento';
+        try {
+          const errorData = await response.json();
+          console.error('❌ Errore API:', errorData);
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch (jsonError) {
+          console.error('❌ Errore nel parsing della risposta:', jsonError);
+          console.error('❌ Status:', response.status, 'StatusText:', response.statusText);
+          errorMessage = `Errore ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
       setSuccess('Viaggio aggiornato con successo!');
@@ -237,8 +254,16 @@ export default function ModificaMonitoraggioPage({ params }: { params: Promise<{
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Errore nel caricamento dell\'immagine');
+        let errorMessage = 'Errore nel caricamento dell\'immagine';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (jsonError) {
+          console.error('❌ Errore nel parsing della risposta immagine:', jsonError);
+          console.error('❌ Status:', response.status, 'StatusText:', response.statusText);
+          errorMessage = `Errore ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
       // Ricarica i dati del viaggio per mostrare la nuova immagine
@@ -288,15 +313,14 @@ export default function ModificaMonitoraggioPage({ params }: { params: Promise<{
       
       const [, day, month, year, hours, minutes] = match;
       
-      // Crea la data in formato ISO per il database SENZA conversione UTC
-      // Usa il formato YYYY-MM-DDTHH:mm:ss.000Z per evitare problemi di fuso orario
-      const isoString = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00.000Z`;
+      // Crea la data in formato MySQL DATETIME (YYYY-MM-DD HH:mm:ss)
+      const mysqlDateTime = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')} ${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`;
       
       // Verifica che la data sia valida
-      const testDate = new Date(isoString);
+      const testDate = new Date(`${year}-${month}-${day}T${hours}:${minutes}:00`);
       if (isNaN(testDate.getTime())) return null;
       
-      return isoString;
+      return mysqlDateTime;
     } catch {
       return null;
     }

@@ -36,56 +36,67 @@ graph TD
 
 ## 2. Technology Description
 
-- **Frontend**: React@18 + Next.js@15.5.2 + Bootstrap@5.3.2 + TypeScript@5
-- **Backend**: Next.js API Routes + Node.js@24.4.1
-- **Database**: MySQL@8.0+ (via XAMPP)
-- **Authentication**: JWT + bcryptjs
-- **File Processing**: multer + xlsx + react-dropzone
-- **State Management**: Zustand@5.0.2 + React Context
-- **UI Components**: Lucide React icons + Custom Bootstrap components
-- **Development**: ESLint + TypeScript + Turbopack
+* **Frontend**: React\@18 + Next.js\@15.5.2 + Bootstrap\@5.3.2 + TypeScript\@5
+
+* **Backend**: Next.js API Routes + Node.js\@24.4.1
+
+* **Database**: MySQL\@8.0+ (via XAMPP)
+
+* **Authentication**: JWT + bcryptjs
+
+* **File Processing**: multer + xlsx + react-dropzone
+
+* **State Management**: Zustand\@5.0.2 + React Context
+
+* **UI Components**: Lucide React icons + Custom Bootstrap components
+
+* **Development**: ESLint + TypeScript + Turbopack
 
 ## 3. Route Definitions
 
-| Route | Purpose |
-|-------|----------|
-| / | Home page - redirects automatically to /dashboard |
-| /dashboard | Main dashboard with statistics and navigation cards |
-| /login | User authentication page |
-| /viaggi | Travel management with advanced filtering |
-| /monitoraggio | Real-time travel monitoring and tracking |
-| /viaggi-pod | Proof of Delivery management |
-| /fatturazione-terzisti | Third-party billing management |
-| /gestione | Delivery billing and management |
-| /import_viaggi_PoD | POD data import with Excel file processing |
-| /import-delivery | Delivery data import and mapping |
-| /sistema | System administration and user management |
-| /backup-dashboard | Database backup management |
-| /funzionalita | Features and help documentation |
+| Route                  | Purpose                                             |
+| ---------------------- | --------------------------------------------------- |
+| /                      | Home page - redirects automatically to /dashboard   |
+| /dashboard             | Main dashboard with statistics and navigation cards |
+| /login                 | User authentication page                            |
+| /viaggi                | Travel management with advanced filtering           |
+| /monitoraggio          | Real-time travel monitoring and tracking            |
+| /viaggi-pod            | Proof of Delivery management                        |
+| /fatturazione-terzisti | Third-party billing management                      |
+| /gestione              | Delivery billing and management                     |
+| /import\_viaggi\_PoD   | POD data import with Excel file processing          |
+| /import-delivery       | Delivery data import and mapping                    |
+| /sistema               | System administration and user management           |
+| /backup-dashboard      | Database backup management                          |
+| /funzionalita          | Features and help documentation                     |
 
 ## 4. API Definitions
 
 ### 4.1 Authentication APIs
 
 **User Login**
+
 ```
 POST /api/auth/login
 ```
 
 Request:
-| Param Name | Param Type | isRequired | Description |
-|------------|------------|------------|-------------|
-| username | string | true | User login name |
-| password | string | true | User password (plain text) |
+
+| Param Name | Param Type | isRequired | Description                |
+| ---------- | ---------- | ---------- | -------------------------- |
+| username   | string     | true       | User login name            |
+| password   | string     | true       | User password (plain text) |
 
 Response:
-| Param Name | Param Type | Description |
-|------------|------------|-------------|
-| success | boolean | Login success status |
-| token | string | JWT authentication token |
-| user | object | User information (id, username, role) |
+
+| Param Name | Param Type | Description                           |
+| ---------- | ---------- | ------------------------------------- |
+| success    | boolean    | Login success status                  |
+| token      | string     | JWT authentication token              |
+| user       | object     | User information (id, username, role) |
 
 **Token Verification**
+
 ```
 POST /api/auth/verify
 ```
@@ -93,32 +104,37 @@ POST /api/auth/verify
 ### 4.2 Dashboard APIs
 
 **Dashboard Statistics**
+
 ```
 GET /api/dashboard/stats
 ```
 
 Response:
-| Param Name | Param Type | Description |
-|------------|------------|-------------|
-| viaggi | object | Travel statistics (active, completed, pending, total) |
-| anagrafiche | object | Registry statistics (clients, suppliers, users) |
-| fatturazione | object | Billing statistics (monthly, pending, completed) |
-| import | object | Import statistics (files, pending, errors) |
-| sistema | object | System statistics (configs, logs, users) |
+
+| Param Name   | Param Type | Description                                           |
+| ------------ | ---------- | ----------------------------------------------------- |
+| viaggi       | object     | Travel statistics (active, completed, pending, total) |
+| anagrafiche  | object     | Registry statistics (clients, suppliers, users)       |
+| fatturazione | object     | Billing statistics (monthly, pending, completed)      |
+| import       | object     | Import statistics (files, pending, errors)            |
+| sistema      | object     | System statistics (configs, logs, users)              |
 
 ### 4.3 Travel Management APIs
 
 **Get Travels**
+
 ```
 GET /api/viaggi
 ```
 
 **Get Travel Details**
+
 ```
 GET /api/viaggi/[id]
 ```
 
 **Update Travel**
+
 ```
 PUT /api/viaggi/[id]
 ```
@@ -126,16 +142,19 @@ PUT /api/viaggi/[id]
 ### 4.4 Import APIs
 
 **Upload POD File**
+
 ```
 POST /api/import_viaggi_PoD/upload
 ```
 
 **Execute POD Import**
+
 ```
 POST /api/import_viaggi_PoD/execute
 ```
 
 **Get Import Progress**
+
 ```
 GET /api/import_viaggi_PoD/progress
 ```
@@ -143,11 +162,13 @@ GET /api/import_viaggi_PoD/progress
 ### 4.5 Export APIs
 
 **Export Travels**
+
 ```
 GET /api/gestione/export
 ```
 
 **Export Third-party Billing**
+
 ```
 GET /api/terzisti/export
 ```
@@ -299,6 +320,7 @@ erDiagram
 ### 6.2 Data Definition Language
 
 **Users Table**
+
 ```sql
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -315,6 +337,7 @@ CREATE INDEX idx_users_role ON users(role);
 ```
 
 **User Sessions Table**
+
 ```sql
 CREATE TABLE user_sessions (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -330,6 +353,7 @@ CREATE INDEX idx_sessions_user_id ON user_sessions(user_id);
 ```
 
 **Viaggi Table**
+
 ```sql
 CREATE TABLE viaggi (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -349,6 +373,7 @@ CREATE INDEX idx_viaggi_cliente ON viaggi(cliente);
 ```
 
 **Import History Table**
+
 ```sql
 CREATE TABLE import_history (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -370,6 +395,7 @@ CREATE INDEX idx_import_history_type ON import_history(import_type);
 ```
 
 **Initial Data**
+
 ```sql
 -- Create default admin user
 INSERT INTO users (username, password_hash, email, role) VALUES 
@@ -384,6 +410,7 @@ INSERT INTO viaggi (numero_viaggio, data_viaggio, cliente, destinazione, stato, 
 ## 7. Security Architecture
 
 ### 7.1 Authentication Flow
+
 1. User submits credentials to `/api/auth/login`
 2. Server validates against database using bcryptjs
 3. JWT token generated with user info and expiration
@@ -392,14 +419,24 @@ INSERT INTO viaggi (numero_viaggio, data_viaggio, cliente, destinazione, stato, 
 6. Automatic token refresh on expiration
 
 ### 7.2 Authorization Levels
-- **Public Routes**: Login page, static assets
-- **Authenticated Routes**: Dashboard, data views
-- **Admin Routes**: User management, system configuration
-- **API Protection**: JWT middleware on all API routes
+
+* **Public Routes**: Login page, static assets
+
+* **Authenticated Routes**: Dashboard, data views
+
+* **Admin Routes**: User management, system configuration
+
+* **API Protection**: JWT middleware on all API routes
 
 ### 7.3 Data Protection
-- Input validation on all forms
-- SQL injection prevention with parameterized queries
-- XSS protection with input sanitization
-- File upload validation and size limits
-- HTTPS enforcement in production
+
+* Input validation on all forms
+
+* SQL injection prevention with parameterized queries
+
+* XSS protection with input sanitization
+
+* File upload validation and size limits
+
+* HTTPS enforcement in production
+
