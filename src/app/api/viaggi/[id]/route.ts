@@ -102,8 +102,7 @@ export async function PUT(
         \`Mese\` = ?,
         \`Trimestre\` = ?,
         \`Sett\` = ?,
-        \`Giorno\` = ?,
-        \`euro_rifornimento\` = ?
+        \`Giorno\` = ?
       WHERE Viaggio = ?
     `;
 
@@ -139,7 +138,6 @@ export async function PUT(
       body['Trimestre'] || null,
       body['Sett'] || null,
       body['Giorno'] || null,
-      body['euro_rifornimento'] || null,
       id
     ];
 

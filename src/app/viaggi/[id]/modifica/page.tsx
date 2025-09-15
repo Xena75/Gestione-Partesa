@@ -484,20 +484,20 @@ export default function ModificaViaggioPage({ params }: { params: Promise<{ id: 
                      <div className="card-body p-3">
                       <div className="row g-2">
                         <div className="col-md-6">
-                          <label className="form-label small mb-1">Data Inizio</label>
+                          <label className="form-label small mb-1">Ora Inizio PoD</label>
                           <input
-                            type="date"
+                            type="time"
                             className="form-control form-control-sm"
-                            value={viaggio['Data Inizio'] ? viaggio['Data Inizio'].split('T')[0] : ''}
+                            value={viaggio['Data Inizio'] || ''}
                             onChange={(e) => handleInputChange('Data Inizio', e.target.value)}
                           />
                         </div>
                         <div className="col-md-6">
-                          <label className="form-label small mb-1">Data Fine</label>
+                          <label className="form-label small mb-1">Ora Fine PoD</label>
                           <input
-                            type="date"
+                            type="time"
                             className="form-control form-control-sm"
-                            value={viaggio['Data Fine'] ? viaggio['Data Fine'].split('T')[0] : ''}
+                            value={viaggio['Data Fine'] || ''}
                             onChange={(e) => handleInputChange('Data Fine', e.target.value)}
                           />
                         </div>
