@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir, readFile } from 'fs/promises';
+import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -68,26 +68,5 @@ export async function POST(request: NextRequest) {
       { error: 'Errore durante l\'upload del file' },
       { status: 500 }
     );
-  }
-}
-
-// Funzione per leggere il file dal blob URL
-export async function getFileFromBlob(blobUrl: string): Promise<Buffer> {
-  try {
-    // Estrai il nome del file dall'URL blob
-    const fileName = blobUrl.split('/').pop();
-    if (!fileName) {
-      throw new Error('Nome file non valido');
-    }
-
-    // Costruisci il percorso del file
-    const filePath = join(process.cwd(), 'uploads', 'delivery', fileName);
-    
-    // Leggi il file
-    const fileBuffer = await readFile(filePath);
-    return fileBuffer;
-  } catch (error) {
-    console.error('Errore nel leggere il file dal blob:', error);
-    throw new Error('Errore nel leggere il file');
   }
 }

@@ -68,7 +68,9 @@ const BackupConfigManager: React.FC = () => {
   const loadConfigs = async () => {
     try {
       setError(null);
-      const response = await fetch('/api/backup/config');
+      const response = await fetch('/api/backup/config', {
+          credentials: 'include'
+        });
       if (!response.ok) {
         throw new Error('Errore nel caricamento delle configurazioni');
       }

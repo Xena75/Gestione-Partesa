@@ -29,7 +29,9 @@ const BackupProgress: React.FC<BackupProgressProps> = ({ jobId, onComplete, onEr
 
     const pollJobStatus = async () => {
       try {
-        const response = await fetch(`/api/backup/jobs?job_id=${jobId}`);
+        const response = await fetch(`/api/backup/jobs?job_id=${jobId}`, {
+          credentials: 'include'
+        });
         if (!response.ok) {
           throw new Error('Errore nel recupero stato job');
         }

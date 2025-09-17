@@ -36,11 +36,11 @@ graph TD
 
 ## 2. Technology Description
 
-* **Frontend**: React\@18 + Next.js\@15.5.2 + Bootstrap\@5.3.2 + TypeScript\@5
+* **Frontend**: React\@18 + Next.js\@15.5.3 + Bootstrap\@5.3.2 + TypeScript\@5
 
 * **Backend**: Next.js API Routes + Node.js\@24.4.1
 
-* **Database**: MySQL\@8.0+ (via XAMPP)
+* **Database**: MySQL\@8.0+ (via XAMPP) + Dual Database Architecture
 
 * **Authentication**: JWT + bcryptjs
 
@@ -50,7 +50,9 @@ graph TD
 
 * **UI Components**: Lucide React icons + Custom Bootstrap components
 
-* **Development**: ESLint + TypeScript + Turbopack
+* **Backup System**: Windows Batch Scripts + MySQL Dump + Automated Scheduling
+
+* **Development**: ESLint + TypeScript + Turbopack (Hot Reload)
 
 ## 3. Route Definitions
 
@@ -67,7 +69,7 @@ graph TD
 | /import\_viaggi\_PoD   | POD data import with Excel file processing          |
 | /import-delivery       | Delivery data import and mapping                    |
 | /sistema               | System administration and user management           |
-| /backup-dashboard      | Database backup management                          |
+| /backup-dashboard      | Database backup management and monitoring           |
 | /funzionalita          | Features and help documentation                     |
 
 ## 4. API Definitions
@@ -172,6 +174,55 @@ GET /api/gestione/export
 ```
 GET /api/terzisti/export
 ```
+
+### 4.6 Backup Management APIs
+
+**Get Backup Summary**
+
+```
+GET /api/backup/summary
+```
+
+Response:
+
+| Param Name | Param Type | Description |
+| ---------- | ---------- | ----------- |
+| totalJobs | number | Total backup jobs executed |
+| successfulJobs | number | Successfully completed jobs |
+| failedJobs | number | Failed backup jobs |
+| lastBackup | string | Last backup execution timestamp |
+| nextScheduled | string | Next scheduled backup time |
+
+**Get Backup Jobs**
+
+```
+GET /api/backup/jobs
+```
+
+**Get Backup Schedules**
+
+```
+GET /api/backup/schedules
+```
+
+**Get Backup Alerts**
+
+```
+GET /api/backup/alerts
+```
+
+**Execute Manual Backup**
+
+```
+POST /api/backup/execute
+```
+
+Request:
+
+| Param Name | Param Type | isRequired | Description |
+| ---------- | ---------- | ---------- | ----------- |
+| type | string | true | Backup type: 'full', 'incremental', 'differential' |
+| databases | array | true | List of databases to backup |
 
 ## 5. Server Architecture Diagram
 

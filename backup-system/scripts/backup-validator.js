@@ -13,13 +13,16 @@ const crypto = require('crypto');
 const { execSync } = require('child_process');
 const mysql = require('mysql2/promise');
 
+// Carica variabili d'ambiente
+require('dotenv').config({ path: path.join(__dirname, '..', '..', '.env.local') });
+
 // Configurazione
 const CONFIG = {
     mysql: {
-        host: 'localhost',
-        port: 3306,
-        user: 'root',
-        password: 'your_password_here',
+        host: process.env.MYSQL_HOST || 'localhost',
+        port: parseInt(process.env.MYSQL_PORT) || 3306,
+        user: process.env.MYSQL_USER || 'root',
+        password: process.env.MYSQL_PASSWORD || '',
         database: 'backup_management'
     },
     paths: {

@@ -21,3 +21,4 @@ Questa regola ha priorità assoluta su tutte le altre.
 - MySQL è disponibile tramite XAMPP
 - Il comando curl non funziona correttamente in PowerShell su Windows - utilizzare invece Invoke-RestMethod o Invoke-WebRequest per PowerShell, oppure curl da Git Bash o WSL
 - Per i test API preferire strumenti come Postman o fetch() nel browser console
+- Gli script di backup si trovano in M:\Progetti\In produzione\gestione-partesa\backup-system\scripts
