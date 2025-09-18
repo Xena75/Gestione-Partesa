@@ -1,0 +1,147 @@
+{
+  "timestamp": "2025-09-18T11:14:58.837Z",
+  "summary": {
+    "testDatabasesCreated": 2,
+    "backupFilesFound": 10,
+    "successfulRestores": 2,
+    "failedRestores": 0,
+    "verificationsPassed": 2,
+    "totalErrors": 0
+  },
+  "details": {
+    "timestamp": "2025-09-18T11:14:58.837Z",
+    "testDatabases": [
+      {
+        "name": "viaggi_db_test",
+        "original": "viaggi_db",
+        "created": true,
+        "timestamp": "2025-09-18T11:14:58.872Z"
+      },
+      {
+        "name": "gestionelogistica_test",
+        "original": "gestionelogistica",
+        "created": true,
+        "timestamp": "2025-09-18T11:14:58.875Z"
+      }
+    ],
+    "backupFiles": [
+      {
+        "path": "M:\\Progetti\\In produzione\\gestione-partesa\\backup-system\\storage\\full-backups\\gestionelogistica_full_2025-18-09_12-28-22.sql",
+        "size": 774540793,
+        "jobId": 48,
+        "type": "full",
+        "exists": true,
+        "database": "gestionelogistica"
+      },
+      {
+        "path": "M:\\Progetti\\In produzione\\gestione-partesa\\backup-system\\storage\\full-backups\\viaggi_db_full_2025-18-09_12-28-22.sql",
+        "size": 1778333,
+        "jobId": 48,
+        "type": "full",
+        "exists": true,
+        "database": "viaggi_db"
+      },
+      {
+        "path": "M:\\Progetti\\In produzione\\gestione-partesa\\backup-system\\scripts\\..\\storage\\full-backups\\gestionelogistica_full_2025-18-09_12-28-22.sql",
+        "size": 774540793,
+        "jobId": 50,
+        "type": "full",
+        "exists": true,
+        "database": "gestionelogistica"
+      },
+      {
+        "path": "M:\\Progetti\\In produzione\\gestione-partesa\\backup-system\\scripts\\..\\storage\\full-backups\\viaggi_db_full_2025-18-09_12-28-22.sql",
+        "size": 1778333,
+        "jobId": 49,
+        "type": "full",
+        "exists": true,
+        "database": "viaggi_db"
+      },
+      {
+        "path": "M:\\Progetti\\In produzione\\gestione-partesa\\backup-system\\scripts\\..\\storage\\full-backups\\gestionelogistica_full_2025-18-09_12-22-36.sql",
+        "size": 774540793,
+        "jobId": 47,
+        "type": "full",
+        "exists": true,
+        "database": "gestionelogistica"
+      },
+      {
+        "path": "M:\\Progetti\\In produzione\\gestione-partesa\\backup-system\\scripts\\..\\storage\\full-backups\\viaggi_db_full_2025-18-09_12-22-36.sql",
+        "size": 1778333,
+        "jobId": 46,
+        "type": "full",
+        "exists": true,
+        "database": "viaggi_db"
+      },
+      {
+        "path": "M:\\Progetti\\In produzione\\gestione-partesa\\backup-system\\scripts\\..\\storage\\full-backups\\gestionelogistica_full_2025-18-09_10-50-05.sql",
+        "size": 774532395,
+        "jobId": 44,
+        "type": "full",
+        "exists": true,
+        "database": "gestionelogistica"
+      },
+      {
+        "path": "M:\\Progetti\\In produzione\\gestione-partesa\\backup-system\\scripts\\..\\storage\\full-backups\\viaggi_db_full_2025-18-09_10-50-05.sql",
+        "size": 1777263,
+        "jobId": 43,
+        "type": "full",
+        "exists": true,
+        "database": "viaggi_db"
+      },
+      {
+        "path": "M:\\Progetti\\In produzione\\gestione-partesa\\backup-system\\storage\\differential-backups\\gestionelogistica_diff_20250917_215002.sql",
+        "size": 774529589,
+        "jobId": 41,
+        "type": "differential",
+        "exists": true,
+        "database": "gestionelogistica"
+      },
+      {
+        "path": "M:\\Progetti\\In produzione\\gestione-partesa\\backup-system\\storage\\differential-backups\\viaggi_db_diff_20250917_215002.sql",
+        "size": 1770021,
+        "jobId": 40,
+        "type": "differential",
+        "exists": true,
+        "database": "viaggi_db"
+      }
+    ],
+    "restoreResults": [
+      {
+        "originalDatabase": "gestionelogistica",
+        "testDatabase": "gestionelogistica_test",
+        "backupFile": "M:\\Progetti\\In produzione\\gestione-partesa\\backup-system\\storage\\full-backups\\gestionelogistica_full_2025-18-09_12-28-22.sql",
+        "success": true,
+        "duration": 140191,
+        "timestamp": "2025-09-18T11:17:19.075Z"
+      },
+      {
+        "originalDatabase": "viaggi_db",
+        "testDatabase": "viaggi_db_test",
+        "backupFile": "M:\\Progetti\\In produzione\\gestione-partesa\\backup-system\\storage\\full-backups\\viaggi_db_full_2025-18-09_12-28-22.sql",
+        "success": true,
+        "duration": 2687,
+        "timestamp": "2025-09-18T11:17:21.763Z"
+      }
+    ],
+    "verificationResults": [
+      {
+        "originalDatabase": "viaggi_db",
+        "testDatabase": "viaggi_db_test",
+        "originalTables": 7,
+        "testTables": 7,
+        "tablesMatch": true,
+        "timestamp": "2025-09-18T11:17:21.766Z"
+      },
+      {
+        "originalDatabase": "gestionelogistica",
+        "testDatabase": "gestionelogistica_test",
+        "originalTables": 23,
+        "testTables": 23,
+        "tablesMatch": true,
+        "timestamp": "2025-09-18T11:17:21.768Z"
+      }
+    ],
+    "errors": []
+  }
+}

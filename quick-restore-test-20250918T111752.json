@@ -1,0 +1,44 @@
+{
+  "timestamp": "2025-09-18T11:17:50.036Z",
+  "testDatabase": "viaggi_db_test",
+  "originalDatabase": "viaggi_db",
+  "backupFile": "M:\\Progetti\\In produzione\\gestione-partesa\\backup-system\\storage\\full-backups\\viaggi_db_full_2025-18-09_12-28-22.sql",
+  "steps": [
+    {
+      "step": "connect",
+      "success": true,
+      "message": "Connessione MySQL stabilita",
+      "timestamp": "2025-09-18T11:17:50.075Z"
+    },
+    {
+      "step": "create_test_db",
+      "success": true,
+      "message": "Database di test creato",
+      "timestamp": "2025-09-18T11:17:50.129Z"
+    },
+    {
+      "step": "find_backup",
+      "success": true,
+      "message": "Backup trovato: viaggi_db_full_2025-18-09_12-28-22.sql",
+      "timestamp": "2025-09-18T11:17:50.137Z"
+    },
+    {
+      "step": "restore",
+      "success": true,
+      "message": "Ripristino completato in 2663ms",
+      "timestamp": "2025-09-18T11:17:52.801Z"
+    },
+    {
+      "step": "verify",
+      "success": true,
+      "message": "7 tabelle ripristinate correttamente",
+      "timestamp": "2025-09-18T11:17:52.805Z"
+    },
+    {
+      "step": "cleanup",
+      "success": true,
+      "message": "Database di test eliminato",
+      "timestamp": "2025-09-18T11:17:52.849Z"
+    }
+  ]
+}
