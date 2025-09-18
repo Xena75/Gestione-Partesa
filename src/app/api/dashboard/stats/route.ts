@@ -64,18 +64,42 @@ async function getViaggiStats() {
     const [viaggiPodRows] = await poolViaggi.execute(`
       SELECT 
         COUNT(*) as total,
-        COUNT(CASE WHEN \`Data Inizio\` >= CURDATE() THEN 1 END) as active,
-        COUNT(CASE WHEN \`Data Fine\` < CURDATE() THEN 1 END) as completed
+        COUNT(CASE WHEN \`Data Inizio\` >= CURDATE() THEN 1 END) as active
       FROM viaggi_pod
     `) as [any[], any];
 
+    // Conta viaggi completati dalla tabella tab_viaggi del database gestionelogistica
+    const [viaggiCompletatiRows] = await poolGestione.execute(`
+      SELECT COUNT(*) as completed
+      FROM tab_viaggi
+    `) as [any[], any];
+
+    // Calcola viaggi_pod non presenti in tab_viaggi (aggiornato)
+    const [viaggiPodPendingRows] = await poolViaggi.execute(`
+      SELECT COUNT(*) as viaggi_pod_mancanti
+      FROM viaggi_pod vp
+      LEFT JOIN gestionelogistica.tab_viaggi tv ON vp.\`Viaggio\` = tv.\`Viaggio\`
+      WHERE tv.\`Viaggio\` IS NULL
+    `) as [any[], any];
+
+    // Calcola viaggi in monitoraggio (travels) non ancora presenti in tab_viaggi
+    const [monitoraggioRows] = await poolViaggi.execute(`
+      SELECT COUNT(*) as monitoraggi_aperti
+      FROM travels t
+      LEFT JOIN gestionelogistica.tab_viaggi tv ON t.numeroViaggio = tv.\`Viaggio\`
+      WHERE tv.\`Viaggio\` IS NULL
+    `) as [any[], any];
+
     const tabViaggi = tabViaggiRows[0] || { total: 0, today: 0, thisWeek: 0, thisMonth: 0 };
-    const viaggiPod = viaggiPodRows[0] || { total: 0, active: 0, completed: 0 };
+    const viaggiPod = viaggiPodRows[0] || { total: 0, active: 0 };
+    const viaggiCompletati = viaggiCompletatiRows[0] || { completed: 0 };
+    const monitoraggio = monitoraggioRows[0] || { monitoraggi_aperti: 0 };
+    const viaggiPodPending = viaggiPodPendingRows[0] || { viaggi_pod_mancanti: 0 };
 
     return {
-      active: viaggiPod.active || 0,
-      completed: viaggiPod.completed || 0,
-      pending: viaggiPod.active || 0,
+      active: monitoraggio.monitoraggi_aperti || 0,
+      completed: viaggiCompletati.completed || 0,
+      pending: viaggiPodPending.viaggi_pod_mancanti || 0,
       total: tabViaggi.total || 0,
       today: tabViaggi.today || 0,
       thisWeek: tabViaggi.thisWeek || 0,

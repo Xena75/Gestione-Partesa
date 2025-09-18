@@ -176,9 +176,9 @@ const SectionSkeleton = () => (
         { name: 'Viaggi POD', href: '/viaggi-pod', icon: Package }
       ],
       stats: { 
-        active: stats?.viaggi.active || 0, 
+        'Monitoraggi pending': stats?.viaggi.active || 0, 
         completed: stats?.viaggi.completed || 0, 
-        pending: stats?.viaggi.pending || 0 
+        'Viaggi PoD mancanti': stats?.viaggi.pending || 0 
       }
     },
     {
@@ -387,9 +387,15 @@ const SectionSkeleton = () => (
                       // Colora in rosso le statistiche 'tickets' e 'faq' nella sezione supporto
                       const isRedStat = section.id === 'supporto' && (key === 'tickets' || key === 'faq');
                       
+                      // Mappa le chiavi alle label italiane
+                      const getStatLabel = (key: string) => {
+                        if (key === 'completed') return 'Viaggi completati';
+                        return key;
+                      };
+                      
                       return (
                         <div key={key} className="stat-item">
-                          <span className="stat-label">{key}</span>
+                          <span className="stat-label">{getStatLabel(key)}</span>
                           <span 
                             className="stat-value" 
                             style={isRedStat ? { color: '#ef4444' } : {}}

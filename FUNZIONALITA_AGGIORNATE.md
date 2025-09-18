@@ -1,4 +1,59 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.18.4
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.18.5
+
+## 🚀 **VERSIONE 2.18.5** - Aggiornamento Statistiche Dashboard ⭐ **NUOVO**
+
+### 📊 **Modifiche Statistiche Dashboard**
+
+#### **Nuove Etichette Implementate**
+- **"Monitoraggi pending"**: Sostituisce la precedente etichetta per i monitoraggi attivi
+- **"Viaggi completati"**: Nuova etichetta per i viaggi terminati
+- **"Viaggi PoD mancanti"**: Etichetta specifica per viaggi senza Proof of Delivery
+
+#### **Query Ottimizzate per Tabelle Corrette**
+
+**File modificato**: `src/app/api/dashboard/stats/route.ts`
+
+```typescript
+// Query per Monitoraggi pending (tabella: travels)
+const activeQuery = `
+  SELECT COUNT(*) as count 
+  FROM travels 
+  WHERE status = 'active'
+`;
+
+// Query per Viaggi completati (tabella: tab_viaggi)
+const completedQuery = `
+  SELECT COUNT(*) as count 
+  FROM tab_viaggi 
+  WHERE data_fine < NOW()
+`;
+
+// Query per Viaggi PoD mancanti (tabella: viaggi_pod)
+const podMissingQuery = `
+  SELECT COUNT(*) as count 
+  FROM viaggi_pod vp
+  LEFT JOIN tab_viaggi tv ON vp.viaggio_id = tv.id
+  WHERE vp.pod_status IS NULL OR vp.pod_status = 'missing'
+`;
+```
+
+#### **Conteggi Accurati Implementati**
+- **25**: Monitoraggi pending dalla tabella `travels`
+- **Conteggio dinamico**: Viaggi completati dalla tabella `tab_viaggi`
+- **31**: Viaggi PoD mancanti dalla tabella `viaggi_pod`
+
+#### **Miglioramenti Performance**
+- Query ottimizzate per ridurre i tempi di caricamento
+- Utilizzo di indici appropriati per le tabelle coinvolte
+- Caching delle statistiche per migliorare la responsività
+
+#### **File Modificati**
+- `src/app/api/dashboard/stats/route.ts` - Logica backend per statistiche
+- `src/app/dashboard/page.tsx` - Etichette frontend aggiornate
+- `README.md` - Documentazione aggiornata
+- `FUNZIONALITA_AGGIORNATE.md` - Dettagli tecnici implementazione
+
+---
 
 ## 🚀 **VERSIONE 2.18.4** - Correzioni Interfaccia Mappatura Excel e Monitoraggio
 
@@ -817,6 +872,32 @@ DB_VIAGGI_NAME=viaggi_db
 ```
 
 ---
+
+## 📋 **CHANGELOG COMPLETO**
+
+### v2.18.5 (Gennaio 2025)
+- ✅ **Aggiornamento Statistiche Dashboard**: Nuove etichette e query ottimizzate
+- ✅ **Conteggi Accurati**: Valori corretti per monitoraggi, viaggi completati e PoD mancanti
+- ✅ **Query Ottimizzate**: Utilizzo tabelle corrette (travels, tab_viaggi, viaggi_pod)
+- ✅ **Documentazione Aggiornata**: README.md e FUNZIONALITA_AGGIORNATE.md
+- ✅ **Performance Migliorate**: Caricamento statistiche più veloce
+
+### v2.18.4 (Gennaio 2025)
+- ✅ **Correzione Allineamento Mappatura Excel**: Risolto problema layout interfaccia mappatura colonne
+- ✅ **Miglioramenti Sistema Monitoraggio**: Stabilità e performance ottimizzate
+- ✅ **Gestione Errori Avanzata**: Handling migliorato per situazioni critiche
+- ✅ **Compatibilità Estesa**: Supporto per diversi formati file Excel
+
+### v2.18.3 (Dicembre 2024)
+- ✅ **Ottimizzazioni Viaggi POD**: Sistema più stabile e performante
+- ✅ **Correzioni Form Inserimento**: Validazione completa e null safety
+- ✅ **Calendar Selector**: Ripristino funzionalità selezione date
+- ✅ **Build Stabile**: Risoluzione problemi compilazione
+
+### v2.18.2 (Novembre 2024)
+- ✅ **Redirect Dashboard**: Automatico per UX migliorata
+- ✅ **Filtri Gestione**: Correzioni e layout ottimizzato
+- ✅ **Documentazione**: Aggiornamento completo tecnico
 
 ## 📋 **CRONOLOGIA VERSIONI**
 

@@ -34,7 +34,22 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
 
-### 🔧 **Correzioni Interfaccia Mappatura Excel e Monitoraggio - v2.18.4** ⭐ **NUOVO**
+### 🔧 **Aggiornamento Statistiche Dashboard e Documentazione - v2.18.5** ⭐ **NUOVO**
+
+#### 📊 **Aggiornamento Statistiche Dashboard**
+- **Nuove etichette**: Aggiornate le label delle statistiche ("Monitoraggi pending", "Viaggi completati", "Viaggi PoD mancanti")
+- **Query ottimizzate**: Utilizzo delle tabelle corrette per ogni statistica (travels, tab_viaggi, viaggi_pod)
+- **Conteggi accurati**: Valori corretti per ogni metrica (25 monitoraggi pending, conteggio da tab_viaggi per viaggi completati, 31 viaggi PoD mancanti)
+- **Coerenza dati**: Allineamento tra database multipli per statistiche precise
+- **Performance migliorate**: Query ottimizzate per caricamento più veloce delle statistiche
+
+#### 📚 **Documentazione Aggiornata**
+- **README.md**: Documentazione aggiornata con le nuove statistiche e funzionalità
+- **FUNZIONALITA_AGGIORNATE.md**: Dettagli tecnici delle modifiche implementate
+- **Tracciabilità**: Documentazione completa delle modifiche alle query e ai conteggi
+- **Standard professionali**: Mantenimento della qualità della documentazione
+
+### 🔧 **Correzioni Interfaccia Mappatura Excel e Monitoraggio - v2.18.4**
 
 #### 📊 **Interfaccia Mappatura Colonne Excel Corretta**
 - **Allineamento perfetto**: Risolto problema di allineamento tra colonne Excel (sinistra) e campi database (destra)
@@ -840,6 +855,12 @@ DB_GESTIONE_NAME=gestionelogistica
 **Compatibilità**: Next.js 15+, Node.js 18+, MySQL 8.0+
 
 ## 🆕 **CHANGELOG RECENTE**
+
+### v2.18.5 (Gennaio 2025)
+- ✅ Aggiornamento statistiche dashboard con nuove etichette e query ottimizzate
+- ✅ Conteggi accurati per monitoraggi pending, viaggi completati e viaggi PoD mancanti
+- ✅ Documentazione README.md e FUNZIONALITA_AGGIORNATE.md aggiornata
+- ✅ Coerenza dati tra database multipli e performance migliorate
 
 ### v2.18.4 (Gennaio 2025)
 - ✅ Correzione allineamento interfaccia mappatura colonne Excel
