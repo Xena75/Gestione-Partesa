@@ -103,9 +103,14 @@ function ViaggiPageContent() {
   }, []); // Solo al primo caricamento
 
   useEffect(() => {
+    console.log('🔄 === INIZIO useEffect principale ===');
     console.log('🔄 useEffect principale - Caricamento dati viaggi');
     console.log('🌍 Environment:', process.env.NODE_ENV);
     console.log('🔗 Base URL:', window.location.origin);
+    console.log('🔄 Stato attuale imageCounts prima del caricamento:', {
+      totalKeys: Object.keys(imageCounts).length,
+      keys: Object.keys(imageCounts)
+    });
     
     setIsLoading(true);
     
@@ -166,15 +171,27 @@ function ViaggiPageContent() {
         console.error('❌ Errore nel caricamento delle statistiche:', error);
         setIsLoadingStats(false);
       });
+    
+    console.log('🔄 === FINE useEffect principale ===');
   }, [currentPage, sortBy, sortOrder, aziendaVettore, nominativo, trasportatore, numeroViaggio, targa, magazzino, mese, trimestre, dataDa, dataA]);
 
   // Effetto per monitorare i cambiamenti di imageCounts
   useEffect(() => {
-    console.log('📊 imageCounts aggiornato:', {
-      totalCounts: Object.keys(imageCounts).length,
-      viaggiConImmagini: Object.values(imageCounts).filter(count => count > 0).length,
-      imageCounts: imageCounts
-    });
+    const totalKeys = Object.keys(imageCounts).length;
+    const viaggiConImmagini = Object.values(imageCounts).filter(count => count > 0).length;
+    
+    console.log('📊 === AGGIORNAMENTO imageCounts ===');
+    console.log('📊 Numero totale chiavi:', totalKeys);
+    console.log('📊 Viaggi con immagini:', viaggiConImmagini);
+    console.log('📊 Dettaglio imageCounts:', imageCounts);
+    
+    if (totalKeys === 0) {
+      console.warn('⚠️ imageCounts è vuoto! Questo potrebbe essere il problema.');
+      console.trace('⚠️ Stack trace per imageCounts vuoto:');
+    } else {
+      console.log('✅ imageCounts contiene', totalKeys, 'viaggi');
+    }
+    console.log('📊 === FINE AGGIORNAMENTO imageCounts ===');
   }, [imageCounts]);
 
   // Funzione per sincronizzare i dati
@@ -343,7 +360,8 @@ function ViaggiPageContent() {
       setImageCounts(fallbackCounts);
     } finally {
       console.log('🖼️ === FINE fetchImageCounts ===');
-      console.log('🖼️ Stato finale imageCounts keys:', Object.keys(imageCounts));
+      // Nota: imageCounts qui mostra ancora il valore precedente perché setImageCounts è asincrono
+      // Il valore aggiornato sarà visibile nel useEffect che monitora imageCounts
     }
   };
 
