@@ -29,7 +29,8 @@ Il sistema Gestione Partesa è composto dalle seguenti pagine principali:
 7. **Import Viaggi POD**: caricamento file Excel, mapping colonne, validazione dati
 8. **Import Delivery**: import dati delivery, configurazione mapping
 9. **Sistema**: configurazioni, gestione utenti, log sistema, backup
-10. **Login**: autenticazione utenti, gestione sessioni
+10. **Dashboard Backup**: monitoraggio backup automatici, gestione job, alert sistema
+11. **Login**: autenticazione utenti, gestione sessioni
 
 ### 2.3 Page Details
 
@@ -54,6 +55,10 @@ Il sistema Gestione Partesa è composto dalle seguenti pagine principali:
 | Import Delivery | Configurazione Import | Setup parametri import delivery personalizzati |
 | Sistema | Gestione Utenti | Crea, modifica, elimina utenti sistema |
 | Sistema | Configurazioni | Gestisce parametri sistema, backup, log |
+| Dashboard Backup | Monitoraggio Job | Visualizza stato backup in tempo reale, progress tracking |
+| Dashboard Backup | Gestione Schedule | Configura backup automatici full/incrementali/differenziali |
+| Dashboard Backup | Alert Sistema | Notifiche backup falliti, spazio disco, errori critici |
+| Dashboard Backup | Statistiche Backup | Report dimensioni, tempi esecuzione, successo/fallimento |
 | Login | Autenticazione | Login sicuro con JWT, gestione sessioni |
 
 ## 3. Core Process
@@ -83,11 +88,14 @@ graph TD
   B --> H[Import Viaggi POD]
   B --> I[Import Delivery]
   B --> J[Sistema]
-  C --> K[Export Dati]
-  E --> L[Import POD]
-  F --> M[Report Mensili]
-  H --> N[Validazione Import]
-  J --> O[Gestione Utenti]
+  B --> K[Dashboard Backup]
+  C --> L[Export Dati]
+  E --> M[Import POD]
+  F --> N[Report Mensili]
+  H --> O[Validazione Import]
+  J --> P[Gestione Utenti]
+  K --> Q[Monitoraggio Job]
+  K --> R[Alert Sistema]
 ```
 
 ## 4. User Interface Design

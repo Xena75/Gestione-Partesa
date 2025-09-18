@@ -108,7 +108,9 @@ const BackupMonitor: React.FC<BackupMonitorProps> = ({
       setError(null);
       
       // Carica statistiche
-      const statsResponse = await fetch('/api/backup/summary');
+      const statsResponse = await fetch('/api/backup/summary', {
+          credentials: 'include'
+        });
       if (!statsResponse.ok) {
         throw new Error('Errore nel caricamento delle statistiche');
       }
@@ -117,7 +119,9 @@ const BackupMonitor: React.FC<BackupMonitorProps> = ({
 
       // Carica job recenti
       if (showJobs) {
-        const jobsResponse = await fetch(`/api/backup/jobs?limit=${maxJobs}&status=all`);
+        const jobsResponse = await fetch(`/api/backup/jobs?limit=${maxJobs}&status=all`, {
+          credentials: 'include'
+        });
         if (!jobsResponse.ok) {
           throw new Error('Errore nel caricamento dei job');
         }
@@ -127,7 +131,9 @@ const BackupMonitor: React.FC<BackupMonitorProps> = ({
 
       // Carica alert attivi
       if (showAlerts) {
-        const alertsResponse = await fetch('/api/backup/alerts?status=active&limit=5');
+        const alertsResponse = await fetch('/api/backup/alerts?status=active&limit=5', {
+          credentials: 'include'
+        });
         if (!alertsResponse.ok) {
           throw new Error('Errore nel caricamento degli alert');
         }

@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx';
 import mysql from 'mysql2/promise';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
-import { getFileFromBlob } from '../upload/route';
+
 
 // Configurazione database gestionelogistica con timeout estesi
 const dbConfig = {
@@ -111,7 +111,7 @@ async function executeDeliveryImport(fileId: string, mapping: Record<string, str
 
     // Leggi il file Excel
     await updateImportProgress(fileId, 10, 'Lettura file Excel...');
-    const fileBuffer = await getFileFromBlob(blobUrl);
+    const fileBuffer = await readFile(blobUrl);
     const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];

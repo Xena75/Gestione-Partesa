@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
 import mysql from 'mysql2/promise';
-import { getFileFromBlob } from '../upload/route';
+import { readFile } from 'fs/promises';
 
 // Configurazione database
 const dbConfig = {
@@ -69,14 +69,14 @@ async function executeImport(fileId: string, mapping: Record<string, string>, bl
     // Aggiorna progresso
     await updateProgress(fileId, 10, 'Lettura file Excel...');
 
-    // Ottieni il file dal Blob Storage
-    const fileData = await getFileFromBlob(blobUrl);
-    if (!fileData) {
-      throw new Error('File non trovato nel Blob Storage');
+    // Ottieni il file dal filesystem
+    const buffer = await readFile(blobUrl);
+    if (!buffer) {
+      throw new Error('File non trovato');
     }
 
-    const { buffer, filename } = fileData;
-    console.log('📁 File trovato nel Blob Storage:', filename);
+    const filename = blobUrl.split('/').pop() || 'unknown';
+    console.log('📁 File letto dal filesystem:', filename);
     
     await updateProgress(fileId, 20, 'Parsing dati Excel...');
 

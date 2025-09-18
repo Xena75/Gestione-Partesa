@@ -167,27 +167,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-// Funzione helper per creare log di sistema (da usare in altre API)
-export async function createSystemLog(
-  type: 'access' | 'backup' | 'error' | 'import' | 'system',
-  user: string,
-  action: string,
-  details: string = '',
-  ip_address?: string,
-  status: 'success' | 'error' | 'warning' = 'success'
-) {
-  try {
-    const connection = await mysql.createConnection(dbConfig);
-    
-    await connection.execute(
-      `INSERT INTO system_logs (type, user, action, details, ip_address, status, timestamp) 
-       VALUES (?, ?, ?, ?, ?, ?, NOW())`,
-      [type, user, action, details, ip_address || null, status]
-    );
-    
-    await connection.end();
-  } catch (error) {
-    console.error('Errore nella creazione del log di sistema:', error);
-  }
-}

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
-import { getFileFromBlob } from '../upload/route';
+import { readFile } from 'fs/promises';
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,14 +17,14 @@ export async function GET(request: NextRequest) {
 
     console.log('🔍 File Info - Richiesta per fileId:', fileId, 'blobUrl:', blobUrl);
 
-    // Ottieni il file dal Blob Storage
-    const fileData = await getFileFromBlob(blobUrl);
+    // Ottieni il file dal filesystem
+    const buffer = await readFile(blobUrl);
     
-    if (!fileData) {
-      console.log('❌ File non trovato nel Blob Storage per fileId:', fileId);
+    if (!buffer) {
+      console.log('❌ File non trovato per fileId:', fileId);
       return NextResponse.json(
         { 
-          error: 'File non trovato nel Blob Storage. Il file potrebbe essere scaduto o non essere stato caricato correttamente.',
+          error: 'File non trovato. Il file potrebbe essere scaduto o non essere stato caricato correttamente.',
           fileId,
           suggestion: 'Ricarica il file e riprova.'
         },
@@ -32,9 +32,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log('✅ File trovato nel Blob Storage:', fileData.filename);
-
-    const { buffer, filename } = fileData;
+    const filename = blobUrl.split('/').pop() || 'unknown';
+    console.log('✅ File letto dal filesystem:', filename);
 
     // Leggi il file Excel
     const workbook = XLSX.read(buffer, { type: 'buffer' });

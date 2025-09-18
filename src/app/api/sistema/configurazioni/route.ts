@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mysql from 'mysql2/promise';
-import { createSystemLog } from '../logs/route';
+
 
 const dbConfig = {
   host: process.env.MYSQL_HOST || 'localhost',
@@ -105,14 +105,7 @@ export async function POST(request: NextRequest) {
       await connection.end();
 
       // Log dell'operazione
-      await createSystemLog(
-        'system',
-        user,
-        'Aggiornamento configurazioni sistema',
-        `Aggiornate configurazioni: ${configsToSave.map(c => `${c.category}.${c.key}`).join(', ')}`,
-        userIp,
-        'success'
-      );
+      console.log(`Sistema: ${user} ha aggiornato configurazioni: ${configsToSave.map(c => `${c.category}.${c.key}`).join(', ')} da IP ${userIp}`);
 
       return NextResponse.json({
         success: true,
@@ -133,14 +126,7 @@ export async function POST(request: NextRequest) {
     const user = userHeader ? JSON.parse(userHeader).username : 'system';
     const userIp = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
     
-    await createSystemLog(
-      'error',
-      user,
-      'Errore aggiornamento configurazioni',
-      `Errore: ${error instanceof Error ? error.message : 'Errore sconosciuto'}`,
-      userIp,
-      'error'
-    );
+    console.error(`Errore configurazioni: ${user} da IP ${userIp} - ${error instanceof Error ? error.message : 'Errore sconosciuto'}`);
 
     return NextResponse.json(
       { error: 'Errore interno del server' },
@@ -182,14 +168,7 @@ export async function PUT(request: NextRequest) {
     await connection.end();
 
     // Log dell'operazione
-    await createSystemLog(
-      'system',
-      user,
-      'Aggiornamento configurazione singola',
-      `Aggiornata configurazione: ${category}.${key} = ${value}`,
-      userIp,
-      'success'
-    );
+    console.log(`Sistema: ${user} ha aggiornato configurazione ${category}.${key} = ${value} da IP ${userIp}`);
 
     return NextResponse.json({
       success: true,
@@ -240,14 +219,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Log dell'operazione
-    await createSystemLog(
-      'system',
-      user,
-      'Eliminazione configurazione',
-      `Eliminata configurazione: ${category}.${key}`,
-      userIp,
-      'success'
-    );
+    console.log(`Sistema: ${user} ha eliminato configurazione ${category}.${key} da IP ${userIp}`);
 
     return NextResponse.json({
       success: true,
@@ -260,53 +232,5 @@ export async function DELETE(request: NextRequest) {
       { error: 'Errore interno del server' },
       { status: 500 }
     );
-  }
-}
-
-// Funzione helper per ottenere una configurazione specifica
-export async function getSystemConfig(category: string, key: string): Promise<string | null> {
-  try {
-    const connection = await mysql.createConnection(dbConfig);
-    
-    const [rows] = await connection.execute(
-      'SELECT value FROM system_config WHERE category = ? AND `key` = ?',
-      [category, key]
-    );
-    
-    await connection.end();
-    
-    const result = rows as any[];
-    return result.length > 0 ? result[0].value : null;
-  } catch (error) {
-    console.error('Errore nel recupero della configurazione:', error);
-    return null;
-  }
-}
-
-// Funzione helper per impostare una configurazione
-export async function setSystemConfig(
-  category: string, 
-  key: string, 
-  value: string, 
-  user: string = 'system'
-): Promise<boolean> {
-  try {
-    const connection = await mysql.createConnection(dbConfig);
-    
-    await connection.execute(
-      `INSERT INTO system_config (category, \`key\`, value, updated_by, updated_at) 
-       VALUES (?, ?, ?, ?, NOW()) 
-       ON DUPLICATE KEY UPDATE 
-       value = VALUES(value), 
-       updated_by = VALUES(updated_by), 
-       updated_at = VALUES(updated_at)`,
-      [category, key, value, user]
-    );
-    
-    await connection.end();
-    return true;
-  } catch (error) {
-    console.error('Errore nell\'impostazione della configurazione:', error);
-    return false;
   }
 }

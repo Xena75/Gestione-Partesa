@@ -160,6 +160,24 @@ export class BackupDatabase {
     return rows as BackupFile[];
   }
 
+  // Aggiungi file backup
+  static async addBackupFile(file: Partial<BackupFile>): Promise<string> {
+    const [result] = await backupPool.execute(
+      `INSERT INTO backup_files (backup_job_id, file_path, file_name, file_size, checksum_md5, encrypted, storage_location) 
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        file.backup_job_id, 
+        file.file_path, 
+        file.file_name, 
+        file.file_size || 0, 
+        file.checksum_md5 || '', 
+        file.encrypted || false, 
+        file.storage_location || 'local'
+      ]
+    );
+    return (result as any).insertId;
+  }
+
   // Aggiungi log backup
   static async addBackupLog(log: Partial<BackupLog>): Promise<void> {
     await backupPool.execute(

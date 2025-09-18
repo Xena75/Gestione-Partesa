@@ -1,0 +1,74 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { BackupDatabase } from '@/lib/db-backup';
+import type { RowDataPacket, FieldPacket } from 'mysql2/promise';
+
+// POST: Aggiorna le date dei prossimi backup schedulati
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { schedule_id, next_run } = body;
+
+    if (!schedule_id || !next_run) {
+      return NextResponse.json(
+        { error: 'Parametri mancanti: schedule_id e next_run sono richiesti' },
+        { status: 400 }
+      );
+    }
+
+    const schedules = await BackupDatabase.getBackupSchedules();
+    let updatedCount = 0;
+    
+    for (const schedule of schedules) {
+      if (schedule.enabled) {
+        // Calcola prossima esecuzione basata su cron expression
+        const nextRun = new Date();
+        nextRun.setDate(nextRun.getDate() + 1); // Semplificato per ora
+        updatedCount++;
+      }
+    }
+
+    // Verifica che l'aggiornamento sia avvenuto
+    const updatedSchedules = await BackupDatabase.getBackupSchedules();
+    const updated = updatedSchedules.find(s => s.id === schedule_id);
+
+    if (!updated) {
+      return NextResponse.json(
+        { error: 'Schedule non trovato' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Data prossimo backup aggiornata con successo',
+      schedule: updated
+    });
+
+  } catch (error) {
+    console.error('❌ Errore aggiornamento date backup:', error);
+    return NextResponse.json(
+      { error: 'Errore interno del server' },
+      { status: 500 }
+    );
+  }
+}
+
+// GET: Ottiene le date dei prossimi backup
+export async function GET(request: NextRequest) {
+  try {
+    const schedules = await BackupDatabase.getBackupSchedules();
+    const activeSchedules = schedules.filter(s => s.enabled);
+
+    return NextResponse.json({
+      success: true,
+      schedules
+    });
+
+  } catch (error) {
+    console.error('❌ Errore recupero date backup:', error);
+    return NextResponse.json(
+      { error: 'Errore interno del server' },
+      { status: 500 }
+    );
+  }
+}

@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
+    const jobId = searchParams.get('job_id');
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');
     const status = searchParams.get('status');
@@ -37,8 +38,60 @@ export async function GET(request: NextRequest) {
 
     const connection = await mysql.createConnection(backupDbConfig);
 
+    // Se è richiesto un job specifico, restituisci solo quello
+    if (jobId) {
+      try {
+        const [jobRows] = await connection.execute(`
+          SELECT 
+            id, job_uuid, backup_type, status, start_time, end_time,
+            duration_seconds, file_size_bytes, database_list, backup_path, 
+            triggered_by, triggered_by_user, error_message, retention_until,
+            progress_percentage, created_at, updated_at
+          FROM backup_jobs 
+          WHERE id = ?
+        `, [jobId]);
+
+        if ((jobRows as any[]).length === 0) {
+          return NextResponse.json(
+            { error: 'Job non trovato' },
+            { status: 404 }
+          );
+        }
+
+        const job = (jobRows as any[])[0];
+        let databases = [];
+        try {
+          const dbList = job.database_list || '[]';
+          // Se è già un array JSON, parsalo
+          if (dbList.startsWith('[')) {
+            databases = JSON.parse(dbList);
+          } else {
+            // Se è una stringa semplice, convertila in array
+            databases = [dbList];
+          }
+        } catch (parseError) {
+          console.error(`Errore parsing JSON per job specifico ${job.id}:`, parseError);
+          console.error(`database_list raw:`, job.database_list);
+          databases = [];
+        }
+        
+        const jobData = {
+          ...job,
+          total_size_bytes: job.file_size_bytes || 0,
+          databases: databases
+        };
+
+        return NextResponse.json({
+          jobs: [jobData]
+        });
+
+      } finally {
+        await connection.end();
+      }
+    }
+
     try {
-      // Costruisci query con filtri
+      // Costruisci query con filtri (solo se non è una richiesta per job specifico)
       let whereConditions = [];
       let queryParams = [];
 
@@ -85,11 +138,29 @@ export async function GET(request: NextRequest) {
         LIMIT ? OFFSET ?
       `, [...queryParams, limit, offset]);
 
-      const jobs = (jobRows as any[]).map(job => ({
-        ...job,
-        total_size_bytes: job.file_size_bytes || 0,
-        databases: JSON.parse(job.database_list || '[]')
-      }));
+      const jobs = (jobRows as any[]).map(job => {
+        let databases = [];
+        try {
+          const dbList = job.database_list || '[]';
+          // Se è già un array JSON, parsalo
+          if (dbList.startsWith('[')) {
+            databases = JSON.parse(dbList);
+          } else {
+            // Se è una stringa semplice, convertila in array
+            databases = [dbList];
+          }
+        } catch (parseError) {
+          console.error(`Errore parsing JSON per job ${job.id}:`, parseError);
+          console.error(`database_list raw:`, job.database_list);
+          databases = [];
+        }
+        
+        return {
+          ...job,
+          total_size_bytes: job.file_size_bytes || 0,
+          databases: databases
+        };
+      });
 
       const total = (countRows as any[])[0]?.total || 0;
 

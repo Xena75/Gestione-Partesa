@@ -8,7 +8,7 @@ set MYSQL_USER=root
 set MYSQL_PASSWORD=
 
 REM Percorsi assoluti
-set BACKUP_DIR=M:\Progetti\In produzione\gestione-partesa\backup-system\storage
+set BACKUP_DIR=M:\Progetti\In produzione\gestione-partesa\backup-system\storage\incremental-backups
 set LOG_DIR=M:\Progetti\In produzione\gestione-partesa\backup-system\logs
 set MYSQL_BIN=C:\xampp\mysql\bin
 
@@ -70,25 +70,21 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM Registra nel database di gestione
-echo [%date% %time%] Registrazione nel database di gestione... >> "%LOG_FILE%"
-echo Registrazione nel database di gestione...
+REM Calcola dimensioni file
+for %%a in ("%BACKUP_FILE_1%") do set SIZE1=%%~za
+for %%a in ("%BACKUP_FILE_2%") do set SIZE2=%%~za
+set /a TOTAL_SIZE=%SIZE1%+%SIZE2%
 
-REM Prima crea un job per il backup incrementale
-"%MYSQL_BIN%\mysql.exe" -h %MYSQL_HOST% -P %MYSQL_PORT% -u %MYSQL_USER% -e "INSERT INTO backup_management.backup_jobs (backup_type, status, started_at) VALUES ('incremental', 'completed', NOW());" 2>> "%LOG_FILE%"
+echo.
+echo Dimensioni totali backup: %TOTAL_SIZE% bytes
 
-REM Ottieni l'ID del job appena creato
-for /f "skip=1 tokens=*" %%j in ('"%MYSQL_BIN%\mysql.exe" -h %MYSQL_HOST% -P %MYSQL_PORT% -u %MYSQL_USER% -e "SELECT LAST_INSERT_ID();" 2^>nul') do (
-    set "JOB_ID=%%j"
-    goto :got_job_id
-)
-
-:got_job_id
-for %%f in ("%BACKUP_FILE_1%" "%BACKUP_FILE_2%") do (
-    for %%a in ("%%f") do set size=%%~za
-    set "sql=INSERT INTO backup_management.backup_files (job_id, file_path, file_name, file_size_bytes, compression_type, created_at) VALUES (!JOB_ID!, '%%f', '%%~nxf', !size!, 'none', NOW());"
-    
-    "%MYSQL_BIN%\mysql.exe" -h %MYSQL_HOST% -P %MYSQL_PORT% -u %MYSQL_USER% -e "!sql!" 2>> "%LOG_FILE%"
+REM Registra backup nel database
+echo Registrazione backup nel database...
+node "%~dp0register-backup.js" "incremental" "%BACKUP_FILE_1%" "%BACKUP_FILE_2%"
+if %ERRORLEVEL% neq 0 (
+    echo Avviso: Errore nella registrazione del backup nel database
+) else (
+    echo Backup registrato con successo nel database
 )
 
 echo [%date% %time%] Backup incrementale completato con successo >> "%LOG_FILE%"

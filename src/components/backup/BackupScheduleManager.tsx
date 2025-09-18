@@ -57,7 +57,9 @@ const BackupScheduleManager: React.FC = () => {
   const loadSchedules = async () => {
     try {
       setError(null);
-      const response = await fetch('/api/backup/schedules');
+      const response = await fetch('/api/backup/schedules', {
+          credentials: 'include'
+        });
       if (!response.ok) {
         throw new Error('Errore nel caricamento degli schedule');
       }
