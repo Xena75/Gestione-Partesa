@@ -1,4 +1,42 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.18.3
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.18.4
+
+## 🚀 **VERSIONE 2.18.4** - Correzioni Interfaccia Mappatura Excel e Monitoraggio
+
+### 🔧 **CORREZIONI INTERFACCIA MAPPATURA COLONNE EXCEL**
+
+#### ✅ **Allineamento Layout**
+- **Problema risolto**: Disallineamento tra colonne Excel e campi database
+- **Miglioramento**: Layout perfettamente allineato e responsive
+- **Beneficio**: Mappatura più intuitiva e precisa
+
+#### ✅ **Ottimizzazione Visualizzazione**
+- **Interfaccia migliorata**: Visualizzazione chiara delle corrispondenze
+- **UX ottimizzata**: Processo di mappatura più fluido
+- **Feedback visivo**: Indicatori chiari per mappature corrette/errate
+
+### 🔍 **MIGLIORAMENTI SISTEMA MONITORAGGIO**
+
+#### ✅ **Stabilità Sistema**
+- **Performance**: Ottimizzazioni query database per monitoraggio
+- **Affidabilità**: Riduzione errori e timeout durante operazioni
+- **Robustezza**: Gestione migliorata delle eccezioni
+
+#### ✅ **Interfaccia Utente**
+- **Layout**: Miglioramenti layout pagina monitoraggio
+- **Responsività**: Ottimizzazione per dispositivi mobili
+- **Usabilità**: Navigazione più intuitiva
+
+#### ✅ **Gestione Errori**
+- **Error handling**: Gestione robusta degli errori di sistema
+- **Logging**: Sistema di log migliorato per debugging
+- **Recovery**: Meccanismi di recupero automatico
+
+#### ✅ **Compatibilità**
+- **Browser**: Compatibilità migliorata con tutti i browser moderni
+- **Dispositivi**: Ottimizzazione per tablet e smartphone
+- **Performance**: Caricamento più veloce delle pagine
+
+---
 
 ## 📋 **PANORAMICA SISTEMA**
 

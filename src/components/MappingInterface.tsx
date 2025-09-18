@@ -250,74 +250,75 @@ export default function MappingInterface({ headers, onMappingComplete }: Mapping
           <h5 className="mb-0">🔗 Mappatura Colonne</h5>
         </div>
         <div className="card-body">
-          <div className="row">
-            {/* Colonne Excel */}
+          {/* Header delle colonne */}
+          <div className="row mb-3">
             <div className="col-md-6">
-              <h6 className="text-primary mb-3">📊 Colonne Excel</h6>
-              <div className="excel-columns">
-                {headers.map((header, index) => (
-                  <div key={index} className="excel-column mb-2">
-                    <div className="d-flex align-items-center p-2 border rounded bg-light">
-                      <span className="badge bg-secondary me-2">{String.fromCharCode(65 + index)}</span>
-                      <span className="flex-grow-1">{header}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <h6 className="text-primary mb-0">📊 Colonne Excel</h6>
             </div>
-
-            {/* Campi Database */}
             <div className="col-md-6">
-              <h6 className="text-success mb-3">🗄️ Campi Database</h6>
-              <div className="database-fields">
-                {headers.map((header, index) => (
-                  <div key={index} className="database-field mb-2">
-                    <select
-                      className="form-select"
-                      value={mapping[header] || ''}
-                      onChange={(e) => handleMappingChange(header, e.target.value)}
-                    >
-                      <option value="">-- Seleziona campo --</option>
-                      
-                      {/* Campi database */}
-                      <optgroup label="Campi Database">
-                        {DATABASE_FIELDS.map(field => (
-                          <option key={field.key} value={field.key}>
-                            {field.label} {field.required ? '(Obbligatorio)' : ''} {field.auto ? '(Auto)' : ''}
-                          </option>
-                        ))}
-                      </optgroup>
-                      
-                      {/* Valori speciali */}
-                      <optgroup label="Valori Speciali">
-                        {SPECIAL_VALUES.map(special => (
-                          <option key={special.key} value={special.key}>
-                            {special.label}
-                          </option>
-                        ))}
-                      </optgroup>
-                    </select>
+              <h6 className="text-success mb-0">🗄️ Campi Database</h6>
+            </div>
+          </div>
+          
+          {/* Mapping allineato riga per riga */}
+          <div className="mapping-rows">
+            {headers.map((header, index) => (
+              <div key={index} className="row align-items-start mb-3 p-2 border rounded bg-light">
+                {/* Colonna Excel */}
+                <div className="col-md-6">
+                  <div className="d-flex align-items-center">
+                    <span className="badge bg-secondary me-2">{String.fromCharCode(65 + index)}</span>
+                    <span className="flex-grow-1 text-dark fw-medium">{header}</span>
+                  </div>
+                </div>
+                
+                {/* Campo Database corrispondente */}
+                <div className="col-md-6">
+                  <select
+                    className="form-select"
+                    value={mapping[header] || ''}
+                    onChange={(e) => handleMappingChange(header, e.target.value)}
+                  >
+                    <option value="">-- Seleziona campo --</option>
                     
-                    {/* Suggerimenti */}
-                    {suggestions[header] && suggestions[header].length > 0 && !mapping[header] && (
-                      <div className="mt-1">
-                        <small className="text-muted">Suggerimenti: </small>
-                        {suggestions[header].map((suggestion, idx) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            className="btn btn-sm btn-outline-info me-1"
-                            onClick={() => handleMappingChange(header, suggestion)}
-                          >
-                            {DATABASE_FIELDS.find(f => f.key === suggestion)?.label || suggestion}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                    {/* Campi database */}
+                    <optgroup label="Campi Database">
+                      {DATABASE_FIELDS.map(field => (
+                        <option key={field.key} value={field.key}>
+                          {field.label} {field.required ? '(Obbligatorio)' : ''} {field.auto ? '(Auto)' : ''}
+                        </option>
+                      ))}
+                    </optgroup>
+                    
+                    {/* Valori speciali */}
+                    <optgroup label="Valori Speciali">
+                      {SPECIAL_VALUES.map(special => (
+                        <option key={special.key} value={special.key}>
+                          {special.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                  </select>
+                  
+                  {/* Suggerimenti */}
+                  {suggestions[header] && suggestions[header].length > 0 && !mapping[header] && (
+                    <div className="mt-1">
+                      <small className="text-muted">Suggerimenti: </small>
+                      {suggestions[header].map((suggestion, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          className="btn btn-sm btn-outline-info me-1"
+                          onClick={() => handleMappingChange(header, suggestion)}
+                        >
+                          {DATABASE_FIELDS.find(f => f.key === suggestion)?.label || suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            ))}
           </div>
         </div>
       </div>

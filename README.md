@@ -1,10 +1,56 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.18.3
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.18.4
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
+## 🎯 **FUNZIONALITÀ PRINCIPALI**
+
+### 📊 **Gestione Viaggi e Monitoraggio**
+- **Viaggi POD**: Sistema completo per gestione viaggi con Proof of Delivery
+- **Monitoraggio avanzato**: Tracciamento in tempo reale di tutti i viaggi
+- **Import Excel**: Importazione automatica dati da file Excel con mappatura intelligente
+- **Sincronizzazione database**: Allineamento automatico tra database multipli
+- **Filtri avanzati**: Sistema di filtri per ricerca e analisi dati
+
+### 💰 **Fatturazione e Gestione Terzisti**
+- **Fatturazione automatica**: Calcolo automatico compensi e fatturazione terzisti
+- **Export multi-foglio**: Esportazione dati in Excel con fogli multipli
+- **Gestione delivery**: Tracciamento consegne e calcolo compensi
+- **Backup automatico**: Sistema di backup completo per sicurezza dati
+- **Audit trail**: Tracciamento completo di tutte le operazioni
+
+### 🎨 **Interfaccia e User Experience**
+- **Dashboard moderna**: Partesa Hub con design rinnovato e cards informative
+- **Dark mode globale**: Modalità chiaro/scuro con persistenza preferenze
+- **Responsive design**: Ottimizzato per tutti i dispositivi
+- **Navigazione intuitiva**: Interfaccia semplificata e user-friendly
+- **Performance ottimizzate**: Caricamento veloce e operazioni fluide
+
+### 🛡️ **Sicurezza e Amministrazione**
+- **Sistema log avanzato**: Registrazione completa di tutte le operazioni
+- **Gestione utenti**: Funzionalità admin per gestione utenti sistema
+- **Configurazioni centralizzate**: Gestione configurazioni sistema
+- **Autenticazione sicura**: Sistema di login con JWT e controllo sessioni
+- **Backup e recovery**: Sistema completo di backup e ripristino dati
+
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
 
-### 🚚 **Ottimizzazioni Viaggi POD e Stabilità Sistema - v2.18.3** ⭐ **NUOVO**
+### 🔧 **Correzioni Interfaccia Mappatura Excel e Monitoraggio - v2.18.4** ⭐ **NUOVO**
+
+#### 📊 **Interfaccia Mappatura Colonne Excel Corretta**
+- **Allineamento perfetto**: Risolto problema di allineamento tra colonne Excel (sinistra) e campi database (destra)
+- **Layout orizzontale**: Ogni riga mostra chiaramente la corrispondenza tra colonna Excel e campo database
+- **Visualizzazione migliorata**: Interfaccia più intuitiva per mappatura dati import
+- **Corrispondenza chiara**: Associazione visiva evidente tra elementi sorgente e destinazione
+- **User experience**: Processo di mappatura più semplice e comprensibile
+
+#### 🛠️ **Miglioramenti Sistema Monitoraggio**
+- **Stabilità aumentata**: Correzioni per maggiore affidabilità del sistema
+- **Performance ottimizzate**: Velocità di caricamento e elaborazione migliorate
+- **Interfaccia raffinata**: Aggiornamenti UI per migliore usabilità
+- **Gestione errori**: Handling migliorato per situazioni di errore
+- **Compatibilità**: Supporto esteso per diversi formati di file
+
+### 🚚 **Ottimizzazioni Viaggi POD e Stabilità Sistema - v2.18.3**
 
 #### 🔧 **Correzioni Viaggi POD**
 - **Rimozione campo Ore POD**: Eliminato campo calcolato automaticamente dal database dal form di inserimento
@@ -788,7 +834,34 @@ DB_GESTIONE_NAME=gestionelogistica
 
 ---
 
-**Versione**: 2.13.0  
-**Ultimo Aggiornamento**: Settembre 2025  
+**Versione**: 2.18.4  
+**Ultimo Aggiornamento**: Gennaio 2025  
 **Stato**: ✅ **PRODUZIONE STABILE**  
 **Compatibilità**: Next.js 15+, Node.js 18+, MySQL 8.0+
+
+## 🆕 **CHANGELOG RECENTE**
+
+### v2.18.4 (Gennaio 2025)
+- ✅ Correzione allineamento interfaccia mappatura colonne Excel
+- ✅ Miglioramenti sistema monitoraggio e stabilità
+- ✅ Ottimizzazioni performance e user experience
+
+### v2.18.3 (Dicembre 2024)
+- ✅ Ottimizzazioni viaggi POD con stabilità sistema
+- ✅ Correzioni campi generati e null safety avanzata
+- ✅ Ripristino calendar selector e correzione campo ID
+
+### v2.18.2 (Dicembre 2024)
+- ✅ Redirect automatico dashboard per UX migliorata
+- ✅ Correzioni filtri gestione e layout ottimizzato
+- ✅ Documentazione tecnica completa aggiornata
+
+### v2.18.1 (Novembre 2024)
+- ✅ Partesa Hub - Dashboard completamente rinnovata
+- ✅ Design moderno con cards informative e layout responsive
+- ✅ Interfaccia utente ottimizzata e navigazione semplificata
+
+### v2.18.0 (Novembre 2024)
+- ✅ Sistema dark mode globale con persistenza
+- ✅ Miglioramenti leggibilità e ottimizzazioni UI
+- ✅ Riposizionamento filtri e transizioni smooth
