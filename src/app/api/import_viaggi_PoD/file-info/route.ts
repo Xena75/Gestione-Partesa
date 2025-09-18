@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
-import { readFile } from 'fs/promises';
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,8 +16,13 @@ export async function GET(request: NextRequest) {
 
     console.log('🔍 File Info - Richiesta per fileId:', fileId, 'blobUrl:', blobUrl);
 
-    // Ottieni il file dal filesystem
-    const buffer = await readFile(blobUrl);
+    // Ottieni il file da Vercel Blob Storage
+    const response = await fetch(blobUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch file: ${response.status}`);
+    }
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
     
     if (!buffer) {
       console.log('❌ File non trovato per fileId:', fileId);

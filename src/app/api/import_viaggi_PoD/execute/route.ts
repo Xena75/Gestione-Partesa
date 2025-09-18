@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
 import mysql from 'mysql2/promise';
-import { readFile } from 'fs/promises';
 
 // Configurazione database
 const dbConfig = {
@@ -69,8 +68,13 @@ async function executeImport(fileId: string, mapping: Record<string, string>, bl
     // Aggiorna progresso
     await updateProgress(fileId, 10, 'Lettura file Excel...');
 
-    // Ottieni il file dal filesystem
-    const buffer = await readFile(blobUrl);
+    // Ottieni il file da Vercel Blob Storage
+    const response = await fetch(blobUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch file: ${response.status}`);
+    }
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
     if (!buffer) {
       throw new Error('File non trovato');
     }
