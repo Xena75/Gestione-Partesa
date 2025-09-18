@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.18.4
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.19.2
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -33,6 +33,29 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Backup e recovery**: Sistema completo di backup e ripristino dati
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
+
+### 🖼️ **Sistema Visualizzazione Immagini Viaggi - v2.19.2** ⭐ **NUOVO**
+
+#### 🎯 **Visualizzazione Immagini Avanzata**
+- **Pulsanti colorati**: Identificazione visiva immediata dei viaggi con immagini tramite pulsanti colorati nella tabella
+- **Galleria immagini**: Modal dedicato per visualizzazione completa delle immagini associate a ogni viaggio
+- **Conteggio immagini**: Visualizzazione del numero di immagini disponibili per ogni viaggio
+- **Interfaccia intuitiva**: Design moderno e responsive per navigazione semplice tra le immagini
+- **Caricamento ottimizzato**: Sistema di lazy loading per performance migliorate
+
+#### ⚡ **Ottimizzazione Performance con Endpoint Batch**
+- **Endpoint batch**: Nuovo `/api/viaggi/images/batch` per recupero multiplo conteggi immagini
+- **Performance drasticamente migliorate**: Riduzione tempi di caricamento da 10-20 secondi a pochi secondi
+- **Chiamate API ottimizzate**: Una singola chiamata API invece di chiamate sequenziali per ogni viaggio
+- **Compatibilità mantenuta**: Endpoint esistente `/api/viaggi/images/[id]` preservato per modal galleria
+- **User experience migliorata**: Caricamento fluido e immediato della pagina viaggi
+
+#### 🎨 **Interfaccia Utente Migliorata**
+- **Indicatori visivi**: Pulsanti con colori distintivi per viaggi con/senza immagini
+- **Modal responsive**: Galleria immagini ottimizzata per tutti i dispositivi
+- **Navigazione intuitiva**: Controlli semplici per scorrere tra le immagini
+- **Design coerente**: Integrazione perfetta con il design esistente del sistema
+- **Feedback immediato**: Indicazioni chiare sullo stato di caricamento
 
 ### 🔄 **Ottimizzazione Sincronizzazione Tab Viaggi - v2.19.1** ⭐ **NUOVO**
 

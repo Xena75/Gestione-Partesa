@@ -43,6 +43,13 @@ interface ViaggioTab {
   'euro_rifornimento': number;
 }
 
+interface TravelImage {
+  id: number;
+  filename: string;
+  url: string;
+  type: string;
+}
+
 // Tipo per le statistiche
 interface Statistiche {
   totalRecords: number;
@@ -80,6 +87,11 @@ function ViaggiPageContent() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [filtersApplied, setFiltersApplied] = useState(false);
   const [isLoadingStats, setIsLoadingStats] = useState(false);
+  const [selectedViaggio, setSelectedViaggio] = useState<string | null>(null);
+  const [viaggioImages, setViaggioImages] = useState<TravelImage[]>([]);
+  const [isLoadingImages, setIsLoadingImages] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [imageCounts, setImageCounts] = useState<Record<string, number>>({});
   const filtriRef = useRef<FiltriViaggiRef>(null);
 
   // Apri automaticamente i filtri solo al primo caricamento se ci sono parametri di filtro attivi
@@ -116,6 +128,10 @@ function ViaggiPageContent() {
       .then(fetchedData => {
         setData(fetchedData);
         setIsLoading(false);
+        // Carica i conteggi delle immagini per ogni viaggio
+        if (fetchedData.viaggi) {
+          fetchImageCounts(fetchedData.viaggi);
+        }
       });
     
     // Carica le statistiche
@@ -162,6 +178,94 @@ function ViaggiPageContent() {
     } finally {
       setIsSyncing(false);
     }
+  };
+
+  const fetchViaggioImages = async (numeroViaggio: string) => {
+    setIsLoadingImages(true);
+    setImageError(null);
+    try {
+      const response = await fetch(`/api/viaggi/images/${numeroViaggio}`);
+      if (response.ok) {
+        const data = await response.json();
+        setViaggioImages(data.images || []);
+      } else {
+        const errorData = await response.json();
+        setImageError(errorData.error || 'Errore nel caricamento delle immagini');
+        setViaggioImages([]);
+      }
+    } catch (error) {
+      console.error('Errore nel caricamento delle immagini:', error);
+      setImageError('Errore di connessione');
+      setViaggioImages([]);
+    } finally {
+      setIsLoadingImages(false);
+    }
+  };
+
+  const fetchImageCounts = async (viaggi: ViaggioTab[]) => {
+    try {
+      // Estrae i numeri viaggio
+      const numeroViaggi = viaggi.map(viaggio => viaggio.Viaggio);
+      
+      if (numeroViaggi.length === 0) {
+        setImageCounts({});
+        return;
+      }
+
+      console.log('🔍 Recupero conteggi immagini per', numeroViaggi.length, 'viaggi');
+      
+      // Chiamata batch al nuovo endpoint
+      const response = await fetch('/api/viaggi/images/batch', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ viaggi: numeroViaggi }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          console.log('📸 Conteggi ricevuti per', data.viaggiConImmagini, 'viaggi con immagini');
+          setImageCounts(data.counts);
+        } else {
+          console.error('Errore nella risposta batch:', data.error);
+          // Fallback: inizializza tutti i conteggi a 0
+          const fallbackCounts: Record<string, number> = {};
+          numeroViaggi.forEach(numero => {
+            fallbackCounts[numero] = 0;
+          });
+          setImageCounts(fallbackCounts);
+        }
+      } else {
+        console.error('Errore HTTP nella chiamata batch:', response.status);
+        // Fallback: inizializza tutti i conteggi a 0
+        const fallbackCounts: Record<string, number> = {};
+        numeroViaggi.forEach(numero => {
+          fallbackCounts[numero] = 0;
+        });
+        setImageCounts(fallbackCounts);
+      }
+    } catch (error) {
+      console.error('❌ Errore nel recupero batch dei conteggi immagini:', error);
+      // Fallback: inizializza tutti i conteggi a 0
+      const fallbackCounts: Record<string, number> = {};
+      viaggi.forEach(viaggio => {
+        fallbackCounts[viaggio.Viaggio] = 0;
+      });
+      setImageCounts(fallbackCounts);
+    }
+  };
+
+  const handleShowImages = (numeroViaggio: string) => {
+    setSelectedViaggio(numeroViaggio);
+    fetchViaggioImages(numeroViaggio);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedViaggio(null);
+    setViaggioImages([]);
+    setImageError(null);
   };
 
   // Funzioni per i pulsanti dei filtri
@@ -405,8 +509,9 @@ function ViaggiPageContent() {
                 currentSortOrder={sortOrder}
                 basePath="/viaggi"
               />
-                             <th>€ Rifornimento</th>
-               <th>Azioni</th>
+              <th>€ Rifornimento</th>
+              <th>Immagini</th>
+              <th>Azioni</th>
              </tr>
            </thead>
            <tbody>
@@ -428,6 +533,20 @@ function ViaggiPageContent() {
                  <td>{viaggio['Km Finali Viaggio'] || '-'}</td>
                  <td>{viaggio['Km Viaggio'] || '-'}</td>
                  <td>{viaggio.euro_rifornimento ? `€ ${Number(viaggio.euro_rifornimento).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}</td>
+                 <td>
+                   <button
+                     type="button"
+                     className={`btn btn-sm ${(imageCounts[viaggio.Viaggio] || 0) > 0 ? 'btn-success' : 'btn-secondary'}`}
+                     onClick={() => handleShowImages(viaggio.Viaggio)}
+                     data-bs-toggle="modal"
+                     data-bs-target="#imagesModal"
+                   >
+                     {(imageCounts[viaggio.Viaggio] || 0) > 0 
+                       ? `${imageCounts[viaggio.Viaggio]} Immagini` 
+                       : 'Nessuna immagine'
+                     }
+                   </button>
+                 </td>
                  <td>
                    <Link 
                      href={`/viaggi/${viaggio.Viaggio}/modifica?${searchParams?.toString() || ''}`}
@@ -457,6 +576,84 @@ function ViaggiPageContent() {
         >
           Avanti
         </Link>
+      </div>
+
+      {/* Modal per le immagini */}
+      <div className="modal fade" id="imagesModal" tabIndex={-1} aria-labelledby="imagesModalLabel" aria-hidden="true">
+        <div className="modal-dialog modal-lg">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h5 className="modal-title" id="imagesModalLabel">
+                📷 Immagini del Viaggio {selectedViaggio}
+              </h5>
+              <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close" onClick={handleCloseModal}></button>
+            </div>
+            <div className="modal-body">
+              {isLoadingImages ? (
+                <div className="text-center py-4">
+                  <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Caricamento...</span>
+                  </div>
+                  <p className="mt-2">Caricamento immagini...</p>
+                </div>
+              ) : imageError ? (
+                <div className="alert alert-warning text-center" role="alert">
+                  <i className="bi bi-exclamation-triangle me-2"></i>
+                  {imageError}
+                </div>
+              ) : viaggioImages.length === 0 ? (
+                <div className="text-center py-4">
+                  <i className="bi bi-image" style={{ fontSize: '3rem', color: '#6c757d' }}></i>
+                  <p className="mt-2 text-muted">Nessuna immagine disponibile per questo viaggio</p>
+                </div>
+              ) : (
+                <div className="row g-3">
+                  {viaggioImages.map((image, index) => (
+                    <div key={image.id} className="col-md-6 col-lg-4">
+                      <div className="card h-100">
+                        <div className="position-relative">
+                          <img
+                            src={image.url}
+                            alt={image.filename}
+                            className="card-img-top"
+                            style={{ height: '200px', objectFit: 'cover' }}
+                            loading="lazy"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltbWFnaW5lIG5vbiBkaXNwb25pYmlsZTwvdGV4dD48L3N2Zz4=';
+                            }}
+                          />
+                        </div>
+                        <div className="card-body p-2">
+                          <p className="card-text small mb-1">
+                            <strong>File:</strong> {image.filename}
+                          </p>
+                          <p className="card-text small mb-1">
+                            <strong>Tipo:</strong> {image.type}
+                          </p>
+                          <a
+                            href={image.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-sm btn-outline-primary w-100"
+                          >
+                            <i className="bi bi-eye me-1"></i>
+                            Visualizza
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button type="button" className="btn btn-secondary" data-bs-dismiss="modal" onClick={handleCloseModal}>
+                Chiudi
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
