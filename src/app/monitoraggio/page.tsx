@@ -22,14 +22,15 @@ function MonitoraggioPageContent() {
     if (!dateString) return '';
     
     try {
-      const date = new Date(dateString);
+      const date = new Date(dateString + 'Z');
       if (isNaN(date.getTime())) return dateString; // Se non è una data valida, ritorna la stringa originale
       
-      const day = date.getDate().toString().padStart(2, '0');
-      const month = (date.getMonth() + 1).toString().padStart(2, '0');
-      const year = date.getFullYear();
-      const hours = date.getHours().toString().padStart(2, '0');
-      const minutes = date.getMinutes().toString().padStart(2, '0');
+      const localDate = new Date(date.toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
+      const day = localDate.getDate().toString().padStart(2, '0');
+      const month = (localDate.getMonth() + 1).toString().padStart(2, '0');
+      const year = localDate.getFullYear();
+      const hours = localDate.getHours().toString().padStart(2, '0');
+      const minutes = localDate.getMinutes().toString().padStart(2, '0');
       
       return `${day}-${month}-${year} ${hours}:${minutes}`;
     } catch {

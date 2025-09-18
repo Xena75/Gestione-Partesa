@@ -100,7 +100,7 @@ export default function BackupStatusCard({ database, className = '' }: BackupSta
     if (diffMins < 60) return `${diffMins} min fa`;
     if (diffHours < 24) return `${diffHours} ore fa`;
     if (diffDays < 7) return `${diffDays} giorni fa`;
-    return date.toLocaleDateString('it-IT');
+    return date.toLocaleDateString('it-IT', { timeZone: 'Europe/Rome' });
   };
 
   return (

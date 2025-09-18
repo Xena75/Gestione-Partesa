@@ -867,7 +867,14 @@ export default function BackupDashboard() {
                           </td>
                           <td>
                             <small className="text-muted">
-                              {schedule.next_run ? new Date(schedule.next_run).toLocaleString('it-IT') : 'N/A'}
+                              {schedule.next_run ? new Date(schedule.next_run).toLocaleString('it-IT', {
+                                timeZone: 'Europe/Rome',
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              }) : 'N/A'}
                             </small>
                           </td>
                           <td>
@@ -962,7 +969,15 @@ export default function BackupDashboard() {
                           {formatBytes(job.total_size_bytes)}
                         </td>
                         <td>
-                          {new Date(job.start_time).toLocaleString('it-IT')}
+                          {new Date(job.start_time).toLocaleString('it-IT', {
+                            timeZone: 'Europe/Rome',
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                          })}
                         </td>
                       </tr>
                     ))}

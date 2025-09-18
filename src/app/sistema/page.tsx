@@ -520,7 +520,7 @@ export default function SistemaPage() {
                                 {user.role === 'admin' ? 'Admin' : 'Utente'}
                               </span>
                             </td>
-                            <td>{new Date(user.created_at).toLocaleDateString('it-IT')}</td>
+                            <td>{new Date(user.created_at + 'Z').toLocaleDateString('it-IT', { timeZone: 'Europe/Rome' })}</td>
                             <td>
                               <button 
                                 className="btn btn-sm btn-outline-primary me-2"
@@ -598,7 +598,8 @@ export default function SistemaPage() {
                               </span>
                             </td>
                             <td>
-                              {new Date(login.login_time).toLocaleString('it-IT', {
+                              {new Date(login.login_time + 'Z').toLocaleString('it-IT', {
+                                timeZone: 'Europe/Rome',
                                 day: '2-digit',
                                 month: '2-digit',
                                 year: 'numeric',
@@ -805,6 +806,7 @@ export default function SistemaPage() {
                                   <div className="d-flex justify-content-between align-items-center">
                                     <small className="text-muted">
                                       {new Date(backup.created_at).toLocaleString('it-IT', {
+                                        timeZone: 'Europe/Rome',
                                         day: '2-digit',
                                         month: '2-digit',
                                         year: 'numeric',

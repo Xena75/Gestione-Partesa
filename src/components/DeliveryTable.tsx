@@ -156,8 +156,8 @@ export default function DeliveryTable({ viewType }: DeliveryTableProps) {
 
   // Funzione per formattare le date
   const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('it-IT');
+    const date = new Date(dateString + 'Z');
+    return date.toLocaleDateString('it-IT', { timeZone: 'Europe/Rome' });
   };
 
   // Funzione per formattare le valute

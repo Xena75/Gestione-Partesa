@@ -270,7 +270,14 @@ const BackupMonitor: React.FC<BackupMonitorProps> = ({
                   <div className="flex-grow-1">
                     <p className="mb-1">{alert.message}</p>
                     <small className="text-muted">
-                      {new Date(alert.created_at).toLocaleString()}
+                      {new Date(alert.created_at).toLocaleString('it-IT', {
+                        timeZone: 'Europe/Rome',
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
                     </small>
                   </div>
                 </div>
@@ -308,7 +315,14 @@ const BackupMonitor: React.FC<BackupMonitorProps> = ({
                           </span>
                         </div>
                         <small className="text-muted">
-                          Iniziato: {new Date(job.start_time).toLocaleString()}
+                          Iniziato: {new Date(job.start_time).toLocaleString('it-IT', {
+                            timeZone: 'Europe/Rome',
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
                         </small>
                       </div>
                     </div>
