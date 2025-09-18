@@ -8,7 +8,7 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Viaggi POD**: Sistema completo per gestione viaggi con Proof of Delivery
 - **Monitoraggio avanzato**: Tracciamento in tempo reale di tutti i viaggi
 - **Import Excel**: Importazione automatica dati da file Excel con mappatura intelligente
-- **Sincronizzazione database**: Allineamento automatico tra database multipli
+- **Sincronizzazione database**: Allineamento automatico tra database multipli con controllo corrispondenze
 - **Filtri avanzati**: Sistema di filtri per ricerca e analisi dati
 
 ### 💰 **Fatturazione e Gestione Terzisti**
@@ -33,6 +33,17 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Backup e recovery**: Sistema completo di backup e ripristino dati
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
+
+### 🔄 **Ottimizzazione Sincronizzazione Tab Viaggi - v2.19.1** ⭐ **NUOVO**
+
+#### 🎯 **Sincronizzazione Selettiva Migliorata**
+- **Controllo corrispondenze**: La sincronizzazione tab_viaggi ora inserisce SOLO i viaggi che hanno corrispondenza nella tabella travels
+- **Logica ottimizzata**: Condizione modificata da `if (vettore)` a `if (vettore && travel)` per garantire integrità dati
+- **Qualità dati**: Prevenzione inserimento viaggi orfani senza riferimenti nella tabella principale
+- **Performance migliorate**: Riduzione dati non necessari e miglioramento efficienza sincronizzazione
+- **Pulsante UI**: Sincronizzazione attivabile direttamente dall'interfaccia con il pulsante "Sincronizza Dati"
+- **Filtro temporale**: Sincronizzazione ottimizzata degli ultimi 3 giorni per performance ottimali
+- **Feedback real-time**: Messaggi informativi e aggiornamento automatico dopo sincronizzazione
 
 ### 🛡️ **Sistema Backup Database Completo e Test Ripristino - v2.19.0** ⭐ **NUOVO**
 

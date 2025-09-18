@@ -1,66 +1,49 @@
 const mysql = require('mysql2/promise');
 
-// Configurazione database backup_management
-const backupDbConfig = {
-  host: process.env.MYSQL_HOST || 'localhost',
-  port: parseInt(process.env.MYSQL_PORT || '3306'),
-  user: process.env.MYSQL_USER || 'root',
-  password: process.env.MYSQL_PASSWORD || '',
-  database: 'backup_management',
-  charset: 'utf8mb4'
-};
-
-async function testConnection() {
+async function testDatabaseConnection() {
+  console.log('🔄 Testing database connections...');
+  
+  // Test database VIAGGI
   try {
-    console.log('🔍 Testing database connection...');
-    console.log('Config:', {
-      host: backupDbConfig.host,
-      port: backupDbConfig.port,
-      user: backupDbConfig.user,
-      database: backupDbConfig.database
+    console.log('Testing VIAGGI database...');
+    const poolViaggi = mysql.createPool({
+      host: 'bore.pub',
+      port: 54000,
+      user: 'root',
+      password: '',
+      database: 'viaggi_db',
+      connectionLimit: 10,
+      acquireTimeout: 10000,
+      timeout: 10000
     });
     
-    const connection = await mysql.createConnection(backupDbConfig);
-    console.log('✅ Connected to backup_management database');
-    
-    // Test query to check tables
-    const [tables] = await connection.execute('SHOW TABLES');
-    console.log('📋 Tables found:', tables);
-    
-    // Check specific tables
-    const requiredTables = ['backup_jobs', 'backup_schedules', 'backup_alerts', 'backup_activity_log'];
-    const existingTables = tables.map(row => Object.values(row)[0]);
-    
-    console.log('\n🔍 Checking required tables:');
-    requiredTables.forEach(table => {
-      const exists = existingTables.includes(table);
-      console.log(`  ${exists ? '✅' : '❌'} ${table}`);
-    });
-    
-    await connection.end();
-    console.log('\n✅ Database connection test completed');
-    
+    const [result] = await poolViaggi.execute('SELECT 1 as test');
+    console.log('✅ VIAGGI database connection successful:', result);
+    await poolViaggi.end();
   } catch (error) {
-    console.error('❌ Database connection failed:', error.message);
+    console.error('❌ VIAGGI database connection failed:', error.message);
+  }
+  
+  // Test database GESTIONE
+  try {
+    console.log('Testing GESTIONE database...');
+    const poolGestione = mysql.createPool({
+      host: 'bore.pub',
+      port: 54000,
+      user: 'root',
+      password: '',
+      database: 'gestionelogistica',
+      connectionLimit: 10,
+      acquireTimeout: 10000,
+      timeout: 10000
+    });
     
-    // Try to connect without specifying database
-    try {
-      console.log('\n🔍 Testing connection without database...');
-      const basicConfig = { ...backupDbConfig };
-      delete basicConfig.database;
-      
-      const connection = await mysql.createConnection(basicConfig);
-      console.log('✅ Connected to MySQL server');
-      
-      const [databases] = await connection.execute('SHOW DATABASES');
-      console.log('📋 Available databases:', databases.map(row => Object.values(row)[0]));
-      
-      await connection.end();
-      
-    } catch (basicError) {
-      console.error('❌ Basic MySQL connection also failed:', basicError.message);
-    }
+    const [result] = await poolGestione.execute('SELECT 1 as test');
+    console.log('✅ GESTIONE database connection successful:', result);
+    await poolGestione.end();
+  } catch (error) {
+    console.error('❌ GESTIONE database connection failed:', error.message);
   }
 }
 
-testConnection();
+testDatabaseConnection();

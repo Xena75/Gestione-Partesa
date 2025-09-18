@@ -134,13 +134,13 @@ function ViaggiPageContent() {
 
   // Funzione per sincronizzare i dati
   const handleSync = async () => {
-    if (!confirm('Sei sicuro di voler sincronizzare i dati? Questa operazione potrebbe richiedere alcuni minuti.')) {
+    if (!confirm('Questa operazione sincronizzerà i dati degli ultimi 3 giorni e richiederà pochi secondi. Continuare?')) {
       return;
     }
-
+    
     setIsSyncing(true);
     try {
-      const response = await fetch('/api/viaggi/sync-tab-viaggi', {
+      const response = await fetch('/api/viaggi/sync-tab-viaggi?days=3', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -196,11 +196,10 @@ function ViaggiPageContent() {
         <div className="d-flex gap-2">
                <button
                  onClick={handleSync}
-                 disabled={true}
-                 className="btn btn-secondary"
-                 title="Funzione disattivata temporaneamente"
+                 disabled={isSyncing}
+                 className="btn btn-primary"
                >
-                 🔒 Sincronizza Dati (DISATTIVATO)
+                 {isSyncing ? '⏳ Sincronizzando...' : '🔄 Sincronizza Dati'}
                </button>
           <Link href="/" className="btn btn-outline-secondary">
             ← Torna alla Dashboard

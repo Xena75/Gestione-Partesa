@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
 import mysql from 'mysql2/promise';
+import fetch from 'node-fetch';
+import * as fs from 'fs/promises';
 
 // Configurazione database
 const dbConfig = {
@@ -68,13 +70,24 @@ async function executeImport(fileId: string, mapping: Record<string, string>, bl
     // Aggiorna progresso
     await updateProgress(fileId, 10, 'Lettura file Excel...');
 
-    // Ottieni il file da Vercel Blob Storage
-    const response = await fetch(blobUrl);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch file: ${response.status}`);
+    // Ottieni il file (locale o remoto)
+    let buffer: Buffer;
+    
+    if (blobUrl.startsWith('file://') || (!blobUrl.startsWith('http://') && !blobUrl.startsWith('https://'))) {
+      // File locale - usa fs.readFile
+      const localPath = blobUrl.startsWith('file://') ? blobUrl.replace('file://', '') : blobUrl;
+      console.log('📁 Lettura file locale:', localPath);
+      buffer = await fs.readFile(localPath);
+    } else {
+      // URL remoto - usa fetch
+      console.log('🌐 Download file remoto:', blobUrl);
+      const response = await fetch(blobUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch file: ${response.status}`);
+      }
+      const arrayBuffer = await response.arrayBuffer();
+      buffer = Buffer.from(arrayBuffer);
     }
-    const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
     if (!buffer) {
       throw new Error('File non trovato');
     }
@@ -124,15 +137,68 @@ async function executeImport(fileId: string, mapping: Record<string, string>, bl
     });
     
     const placeholders = fieldsToInsert.map(() => '?').join(', ');
-    const insertSql = `INSERT IGNORE INTO viaggi_pod (\`${fieldsToInsert.join('`, `')}\`, session_id) VALUES (${placeholders}, ?)`;
+    const insertSql = `INSERT INTO viaggi_pod (\`${fieldsToInsert.join('`, `')}\`, session_id) VALUES (${placeholders}, ?)`;
     
     console.log('🔍 Campi da inserire:', fieldsToInsert);
     console.log('🔍 SQL Query:', insertSql);
 
-    await updateProgress(fileId, 50, 'Inserimento dati nel database...');
+    await updateProgress(fileId, 50, 'Controllo duplicati...');
 
-    // Inserisci i dati con timeout e gestione errori migliorata
+    // Controlla duplicati prima dell'inserimento
+    const duplicates: number[] = [];
+    const duplicateDetails: string[] = [];
+    
     for (let i = 0; i < dataRows.length; i++) {
+      const row = dataRows[i];
+      
+      // Trova i valori chiave per il controllo duplicati
+      const viaggioHeader = Object.keys(mapping).find(key => mapping[key] === 'Viaggio');
+      const dataInizioHeader = Object.keys(mapping).find(key => mapping[key] === 'Data Inizio');
+      const dataFineHeader = Object.keys(mapping).find(key => mapping[key] === 'Data Fine');
+      
+      if (viaggioHeader && dataInizioHeader && dataFineHeader) {
+        const viaggioIndex = headers.indexOf(viaggioHeader);
+        const dataInizioIndex = headers.indexOf(dataInizioHeader);
+        const dataFineIndex = headers.indexOf(dataFineHeader);
+        
+        const viaggio = viaggioIndex >= 0 ? row[viaggioIndex] : null;
+        const dataInizio = dataInizioIndex >= 0 ? row[dataInizioIndex] : null;
+        const dataFine = dataFineIndex >= 0 ? row[dataFineIndex] : null;
+        
+        if (viaggio && dataInizio && dataFine) {
+          // Converti le date per il confronto
+          const dataInizioConverted = validateAndConvertValue('Data Inizio', dataInizio);
+          const dataFineConverted = validateAndConvertValue('Data Fine', dataFine);
+          const viaggioConverted = validateAndConvertValue('Viaggio', viaggio);
+          
+          // Controlla se esiste già nel database
+          const checkSql = `SELECT COUNT(*) as count FROM viaggi_pod WHERE Viaggio = ? AND \`Data Inizio\` = ? AND \`Data Fine\` = ?`;
+          const [checkResult] = await connection.execute(checkSql, [viaggioConverted, dataInizioConverted, dataFineConverted]) as any;
+          
+          if (checkResult[0].count > 0) {
+            duplicates.push(i + 1);
+            duplicateDetails.push(`Riga ${i + 1}: Viaggio ${viaggioConverted} dal ${dataInizioConverted} al ${dataFineConverted}`);
+            continue; // Salta questa riga
+          }
+        }
+      }
+    }
+    
+    // Se ci sono duplicati, informa l'utente
+    if (duplicates.length > 0) {
+      const duplicateMessage = `Trovati ${duplicates.length} record duplicati che verranno saltati: ${duplicateDetails.slice(0, 5).join(', ')}${duplicates.length > 5 ? '...' : ''}`;
+      console.log('⚠️ Duplicati trovati:', duplicateMessage);
+      errors.push(duplicateMessage);
+    }
+
+    await updateProgress(fileId, 60, 'Inserimento dati nel database...');
+
+    // Inserisci i dati con timeout e gestione errori migliorata (saltando i duplicati)
+    for (let i = 0; i < dataRows.length; i++) {
+      // Salta le righe duplicate
+      if (duplicates.includes(i + 1)) {
+        continue;
+      }
       try {
         const row = dataRows[i];
         const values: (string | number | null)[] = [];
@@ -200,8 +266,9 @@ async function executeImport(fileId: string, mapping: Record<string, string>, bl
 
         // Aggiorna progresso ogni 10 righe
         if (i % 10 === 0) {
-          const progress = 50 + Math.floor((i / dataRows.length) * 40);
-          await updateProgress(fileId, progress, `Importazione riga ${i + 1} di ${dataRows.length}...`);
+          const progress = 60 + Math.floor((i / dataRows.length) * 30);
+          const skippedCount = duplicates.filter(dupIndex => dupIndex <= i + 1).length;
+          await updateProgress(fileId, progress, `Importazione riga ${i + 1} di ${dataRows.length} (${skippedCount} duplicate saltate)...`);
         }
 
         // Pausa breve per evitare sovraccarico
@@ -230,17 +297,26 @@ async function executeImport(fileId: string, mapping: Record<string, string>, bl
 
     // Risultato finale
     const result = {
-      success: errors.length === 0,
+      success: errors.length === 0 || (errors.length === 1 && duplicates.length > 0), // Successo se solo duplicati
       totalRows,
       importedRows,
+      skippedRows: duplicates.length,
+      duplicateRows: duplicates,
+      duplicateDetails,
       errors,
       sessionId,
-      duration
+      duration,
+      message: duplicates.length > 0 
+        ? `Importazione completata. ${importedRows} righe importate, ${duplicates.length} righe duplicate saltate.`
+        : `Importazione completata. ${importedRows} righe importate.`
     };
 
     // Salva il risultato
     console.log('✅ Importazione completata con successo!', result);
-    await updateProgress(fileId, 100, 'Importazione completata', true, result);
+    const finalMessage = duplicates.length > 0 
+      ? `Importazione completata: ${importedRows} righe importate, ${duplicates.length} duplicate saltate`
+      : 'Importazione completata con successo';
+    await updateProgress(fileId, 100, finalMessage, true, result);
 
   } catch (error) {
     console.error('❌ Errore durante l\'importazione:', error);
