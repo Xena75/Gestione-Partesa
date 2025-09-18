@@ -263,6 +263,7 @@ function ViaggiPageContent() {
       
       if (numeroViaggi.length === 0) {
         console.warn('⚠️ Nessun viaggio da processare');
+        console.log('🔄 RESET imageCounts: Nessun viaggio da processare');
         setImageCounts({});
         return;
       }
@@ -308,6 +309,7 @@ function ViaggiPageContent() {
             // Verifica che counts sia un oggetto valido
             if (data.counts && typeof data.counts === 'object') {
               console.log('✅ Counts è un oggetto valido, aggiorno imageCounts');
+              console.log('🔄 AGGIORNAMENTO imageCounts con:', Object.keys(data.counts).length, 'chiavi');
               setImageCounts(data.counts);
               console.log('✅ ImageCounts aggiornato con successo');
             } else {
@@ -317,6 +319,7 @@ function ViaggiPageContent() {
               numeroViaggi.forEach(numero => {
                 fallbackCounts[numero] = 0;
               });
+              console.log('🔄 FALLBACK imageCounts (data.counts non valido) con:', Object.keys(fallbackCounts).length, 'chiavi');
               setImageCounts(fallbackCounts);
             }
           } else {
@@ -326,6 +329,7 @@ function ViaggiPageContent() {
             numeroViaggi.forEach(numero => {
               fallbackCounts[numero] = 0;
             });
+            console.log('🔄 FALLBACK imageCounts (errore risposta) con:', Object.keys(fallbackCounts).length, 'chiavi');
             setImageCounts(fallbackCounts);
           }
         } catch (parseError) {
@@ -336,6 +340,7 @@ function ViaggiPageContent() {
           numeroViaggi.forEach(numero => {
             fallbackCounts[numero] = 0;
           });
+          console.log('🔄 FALLBACK imageCounts (errore parsing) con:', Object.keys(fallbackCounts).length, 'chiavi');
           setImageCounts(fallbackCounts);
         }
       } else {
@@ -347,6 +352,7 @@ function ViaggiPageContent() {
         numeroViaggi.forEach(numero => {
           fallbackCounts[numero] = 0;
         });
+        console.log('🔄 FALLBACK imageCounts (errore HTTP) con:', Object.keys(fallbackCounts).length, 'chiavi');
         setImageCounts(fallbackCounts);
       }
     } catch (error) {
@@ -357,6 +363,7 @@ function ViaggiPageContent() {
       viaggi.forEach(viaggio => {
         fallbackCounts[viaggio.Viaggio] = 0;
       });
+      console.log('🔄 FALLBACK imageCounts (catch generale) con:', Object.keys(fallbackCounts).length, 'chiavi');
       setImageCounts(fallbackCounts);
     } finally {
       console.log('🖼️ === FINE fetchImageCounts ===');
