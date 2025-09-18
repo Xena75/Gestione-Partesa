@@ -103,6 +103,10 @@ function ViaggiPageContent() {
   }, []); // Solo al primo caricamento
 
   useEffect(() => {
+    console.log('🔄 useEffect principale - Caricamento dati viaggi');
+    console.log('🌍 Environment:', process.env.NODE_ENV);
+    console.log('🔗 Base URL:', window.location.origin);
+    
     setIsLoading(true);
     
     // Costruisci l'URL con i parametri dei filtri e ordinamento
@@ -122,16 +126,32 @@ function ViaggiPageContent() {
     if (dataDa) params.set('dataDa', dataDa);
     if (dataA) params.set('dataA', dataA);
     
+    console.log('📡 Chiamata API viaggi con parametri:', params.toString());
+    
     // Carica i dati della pagina corrente
     fetch(`/api/viaggi?${params.toString()}`)
-      .then(res => res.json())
+      .then(res => {
+        console.log('📡 Risposta API viaggi - Status:', res.status, 'OK:', res.ok);
+        return res.json();
+      })
       .then(fetchedData => {
+        console.log('📦 Dati viaggi ricevuti:', {
+          totalViaggi: fetchedData.viaggi?.length || 0,
+          primiTreViaggi: fetchedData.viaggi?.slice(0, 3).map(v => v.Viaggio) || []
+        });
         setData(fetchedData);
         setIsLoading(false);
         // Carica i conteggi delle immagini per ogni viaggio
         if (fetchedData.viaggi) {
+          console.log('🖼️ Avvio fetchImageCounts per', fetchedData.viaggi.length, 'viaggi');
           fetchImageCounts(fetchedData.viaggi);
+        } else {
+          console.warn('⚠️ Nessun viaggio trovato per fetchImageCounts');
         }
+      })
+      .catch(error => {
+        console.error('❌ Errore nel caricamento viaggi:', error);
+        setIsLoading(false);
       });
     
     // Carica le statistiche
@@ -147,6 +167,15 @@ function ViaggiPageContent() {
         setIsLoadingStats(false);
       });
   }, [currentPage, sortBy, sortOrder, aziendaVettore, nominativo, trasportatore, numeroViaggio, targa, magazzino, mese, trimestre, dataDa, dataA]);
+
+  // Effetto per monitorare i cambiamenti di imageCounts
+  useEffect(() => {
+    console.log('📊 imageCounts aggiornato:', {
+      totalCounts: Object.keys(imageCounts).length,
+      viaggiConImmagini: Object.values(imageCounts).filter(count => count > 0).length,
+      imageCounts: imageCounts
+    });
+  }, [imageCounts]);
 
   // Funzione per sincronizzare i dati
   const handleSync = async () => {
@@ -203,18 +232,33 @@ function ViaggiPageContent() {
   };
 
   const fetchImageCounts = async (viaggi: ViaggioTab[]) => {
+    console.log('🖼️ === INIZIO fetchImageCounts ===');
+    console.log('🌍 Environment:', process.env.NODE_ENV);
+    console.log('🔗 Current URL:', window.location.href);
+    console.log('🏠 Origin:', window.location.origin);
+    
     try {
       // Estrae i numeri viaggio
       const numeroViaggi = viaggi.map(viaggio => viaggio.Viaggio);
       
+      console.log('📋 Viaggi ricevuti:', viaggi.length);
+      console.log('📋 Numeri viaggio estratti:', numeroViaggi.slice(0, 5), numeroViaggi.length > 5 ? '...' : '');
+      
       if (numeroViaggi.length === 0) {
+        console.warn('⚠️ Nessun viaggio da processare');
         setImageCounts({});
         return;
       }
 
       console.log('🔍 Recupero conteggi immagini per', numeroViaggi.length, 'viaggi');
+      console.log('🌐 URL corrente:', window.location.href);
+      console.log('🔗 Endpoint che verrà chiamato:', '/api/viaggi/images/batch');
+      console.log('📤 Payload da inviare:', { viaggi: numeroViaggi });
       
       // Chiamata batch al nuovo endpoint
+      const startTime = Date.now();
+      console.log('⏱️ Inizio chiamata API batch alle:', new Date().toISOString());
+      
       const response = await fetch('/api/viaggi/images/batch', {
         method: 'POST',
         headers: {
@@ -223,13 +267,53 @@ function ViaggiPageContent() {
         body: JSON.stringify({ viaggi: numeroViaggi }),
       });
 
+      const endTime = Date.now();
+      console.log('⏱️ Chiamata API completata in:', endTime - startTime, 'ms');
+      console.log('📡 Risposta HTTP status:', response.status);
+      console.log('📡 Risposta HTTP ok:', response.ok);
+      console.log('📡 Risposta HTTP headers:', Object.fromEntries(response.headers.entries()));
+
       if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          console.log('📸 Conteggi ricevuti per', data.viaggiConImmagini, 'viaggi con immagini');
-          setImageCounts(data.counts);
-        } else {
-          console.error('Errore nella risposta batch:', data.error);
+        const responseText = await response.text();
+        console.log('📦 Risposta raw ricevuta:', responseText);
+        
+        try {
+          const data = JSON.parse(responseText);
+          console.log('📦 Dati JSON parsati:', data);
+          console.log('📦 Tipo di data.success:', typeof data.success, 'Valore:', data.success);
+          console.log('📦 Tipo di data.counts:', typeof data.counts, 'Keys:', Object.keys(data.counts || {}));
+          
+          if (data.success) {
+            console.log('📸 Conteggi ricevuti per', data.viaggiConImmagini, 'viaggi con immagini');
+            console.log('📊 Dati conteggi completi:', data.counts);
+            console.log('🎯 Esempio conteggio primo viaggio:', numeroViaggi[0], '=', data.counts[numeroViaggi[0]]);
+            
+            // Verifica che counts sia un oggetto valido
+            if (data.counts && typeof data.counts === 'object') {
+              console.log('✅ Counts è un oggetto valido, aggiorno imageCounts');
+              setImageCounts(data.counts);
+              console.log('✅ ImageCounts aggiornato con successo');
+            } else {
+              console.error('❌ data.counts non è un oggetto valido:', data.counts);
+              // Fallback: inizializza tutti i conteggi a 0
+              const fallbackCounts: Record<string, number> = {};
+              numeroViaggi.forEach(numero => {
+                fallbackCounts[numero] = 0;
+              });
+              setImageCounts(fallbackCounts);
+            }
+          } else {
+            console.error('❌ Errore nella risposta batch:', data.error);
+            // Fallback: inizializza tutti i conteggi a 0
+            const fallbackCounts: Record<string, number> = {};
+            numeroViaggi.forEach(numero => {
+              fallbackCounts[numero] = 0;
+            });
+            setImageCounts(fallbackCounts);
+          }
+        } catch (parseError) {
+          console.error('❌ Errore nel parsing JSON della risposta:', parseError);
+          console.error('❌ Risposta che ha causato l\'errore:', responseText);
           // Fallback: inizializza tutti i conteggi a 0
           const fallbackCounts: Record<string, number> = {};
           numeroViaggi.forEach(numero => {
@@ -238,7 +322,9 @@ function ViaggiPageContent() {
           setImageCounts(fallbackCounts);
         }
       } else {
-        console.error('Errore HTTP nella chiamata batch:', response.status);
+        console.error('❌ Errore HTTP nella chiamata batch:', response.status);
+        const errorText = await response.text();
+        console.error('❌ Dettagli errore:', errorText);
         // Fallback: inizializza tutti i conteggi a 0
         const fallbackCounts: Record<string, number> = {};
         numeroViaggi.forEach(numero => {
@@ -248,12 +334,16 @@ function ViaggiPageContent() {
       }
     } catch (error) {
       console.error('❌ Errore nel recupero batch dei conteggi immagini:', error);
+      console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
       // Fallback: inizializza tutti i conteggi a 0
       const fallbackCounts: Record<string, number> = {};
       viaggi.forEach(viaggio => {
         fallbackCounts[viaggio.Viaggio] = 0;
       });
       setImageCounts(fallbackCounts);
+    } finally {
+      console.log('🖼️ === FINE fetchImageCounts ===');
+      console.log('🖼️ Stato finale imageCounts keys:', Object.keys(imageCounts));
     }
   };
 
@@ -298,6 +388,114 @@ function ViaggiPageContent() {
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1>🚚 Gestione Viaggi</h1>
         <div className="d-flex gap-2">
+          <button
+            type="button"
+            className="btn btn-warning btn-sm me-2"
+            onClick={async () => {
+              try {
+                console.log('🧪 Test Frontend Debug - Inizio');
+                const response = await fetch('/api/debug/frontend', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ test: 'frontend-debug' }),
+                });
+                
+                console.log('📡 Response status:', response.status);
+                console.log('📡 Response ok:', response.ok);
+                
+                const data = await response.json();
+                console.log('📦 Response data:', data);
+                
+                alert(`Test completato! Status: ${response.status}. Controlla la console per i dettagli.`);
+              } catch (error) {
+                console.error('❌ Errore nel test:', error);
+                alert('Errore nel test. Controlla la console.');
+              }
+            }}
+          >
+            🧪 Test Frontend
+          </button>
+          
+          <button
+             type="button"
+             className="btn btn-info btn-sm me-2"
+             onClick={async () => {
+               try {
+                 console.log('🖼️ Test Batch Images - Inizio');
+                 
+                 // Usa i primi 3 viaggi della pagina corrente per il test
+                 const testViaggi = data?.viaggi?.slice(0, 3).map(v => v.Viaggio) || ['1', '2', '3'];
+                 console.log('🧪 Test con viaggi:', testViaggi);
+                 
+                 const response = await fetch('/api/viaggi/images/batch', {
+                   method: 'POST',
+                   headers: {
+                     'Content-Type': 'application/json',
+                   },
+                   body: JSON.stringify({ viaggi: testViaggi }),
+                 });
+                 
+                 console.log('📡 Batch Response status:', response.status);
+                 console.log('📡 Batch Response ok:', response.ok);
+                 console.log('📡 Batch Response headers:', Object.fromEntries(response.headers.entries()));
+                 
+                 const responseText = await response.text();
+                 console.log('📦 Batch Response text:', responseText);
+                 
+                 try {
+                   const data = JSON.parse(responseText);
+                   console.log('📦 Batch Response data:', data);
+                   alert(`Test Batch completato! Status: ${response.status}. Success: ${data.success}. Controlla la console.`);
+                 } catch (parseError) {
+                   console.error('❌ Errore parsing JSON:', parseError);
+                   alert(`Test Batch completato! Status: ${response.status}. Risposta non JSON. Controlla la console.`);
+                 }
+               } catch (error) {
+                 console.error('❌ Errore nel test batch:', error);
+                 alert('Errore nel test batch. Controlla la console.');
+               }
+             }}
+           >
+             🖼️ Test Batch
+           </button>
+           
+           <button
+             type="button"
+             className="btn btn-success btn-sm"
+             onClick={async () => {
+               try {
+                 console.log('🔍 Test Production Debug - Inizio');
+                 
+                 const response = await fetch('/api/debug/production', {
+                   method: 'GET',
+                   headers: {
+                     'Content-Type': 'application/json',
+                   },
+                 });
+                 
+                 console.log('📡 Production Debug Response status:', response.status);
+                 console.log('📡 Production Debug Response ok:', response.ok);
+                 
+                 const data = await response.json();
+                 console.log('📦 Production Debug Response data:', data);
+                 
+                 if (data.success) {
+                   const dbStatus = data.debug.databaseConnection.status;
+                   const tableStatus = data.debug.travelImagesTest?.status;
+                   alert(`Debug Production completato!\n\nDatabase: ${dbStatus}\nTabella travel_images: ${tableStatus}\n\nControlla la console per dettagli completi.`);
+                 } else {
+                   alert(`Debug Production fallito: ${data.error}\n\nControlla la console.`);
+                 }
+               } catch (error) {
+                 console.error('❌ Errore nel test production debug:', error);
+                 alert('Errore nel test production debug. Controlla la console.');
+               }
+             }}
+           >
+             🔍 Debug Prod
+           </button>
                <button
                  onClick={handleSync}
                  disabled={isSyncing}
@@ -537,7 +735,16 @@ function ViaggiPageContent() {
                    <button
                      type="button"
                      className={`btn btn-sm ${(imageCounts[viaggio.Viaggio] || 0) > 0 ? 'btn-success' : 'btn-secondary'}`}
-                     onClick={() => handleShowImages(viaggio.Viaggio)}
+                     onClick={() => {
+                       console.log('🖼️ Debug pulsante immagini:', {
+                         viaggioId: viaggio.Viaggio,
+                         imageCount: imageCounts[viaggio.Viaggio],
+                         allImageCounts: imageCounts,
+                         hasImages: imageCounts[viaggio.Viaggio] > 0,
+                         buttonClass: imageCounts[viaggio.Viaggio] > 0 ? 'btn-success' : 'btn-secondary'
+                       });
+                       handleShowImages(viaggio.Viaggio);
+                     }}
                      data-bs-toggle="modal"
                      data-bs-target="#imagesModal"
                    >
