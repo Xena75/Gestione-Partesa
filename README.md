@@ -906,12 +906,19 @@ DB_GESTIONE_NAME=gestionelogistica
 
 ---
 
-**Versione**: 2.18.4  
+**Versione**: 2.19.3  
 **Ultimo Aggiornamento**: Gennaio 2025  
 **Stato**: ✅ **PRODUZIONE STABILE**  
 **Compatibilità**: Next.js 15+, Node.js 18+, MySQL 8.0+
 
 ## 🆕 **CHANGELOG RECENTE**
+
+### v2.19.3 (Gennaio 2025)
+- ✅ Pulizia completa pagina viaggi: rimossi tutti i test e debug
+- ✅ Eliminati pulsanti "Test Frontend", "Test Batch", "Debug Prod"
+- ✅ Rimossi console.log e alert di debug non necessari
+- ✅ Preservate funzionalità produzione: tabella viaggi, filtri, paginazione, modal immagini
+- ✅ Interfaccia pulita e professionale per ambiente produzione
 
 ### v2.18.5 (Gennaio 2025)
 - ✅ Aggiornamento statistiche dashboard con nuove etichette e query ottimizzate
