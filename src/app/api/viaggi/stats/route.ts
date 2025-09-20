@@ -21,7 +21,8 @@ export async function GET(request: NextRequest) {
       mese: searchParams.get('mese'),
       trimestre: searchParams.get('trimestre'),
       dataDa: searchParams.get('dataDa'),
-      dataA: searchParams.get('dataA')
+      dataA: searchParams.get('dataA'),
+      haiEffettuatoRitiri: searchParams.get('haiEffettuatoRitiri')
     };
     
     // Verifica se ci sono filtri attivi

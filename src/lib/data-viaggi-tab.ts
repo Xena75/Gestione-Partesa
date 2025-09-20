@@ -57,6 +57,7 @@ export interface FiltriViaggi {
   numeroViaggio?: string | null;
   targa?: string | null;
   magazzino?: string | null;
+  haiEffettuatoRitiri?: string | null;
   mese?: string | null;
   trimestre?: string | null;
   dataDa?: string | null;
@@ -90,6 +91,12 @@ export async function getViaggiData(
     `;
     const [rows] = await pool.query(dataSql, [recordsPerPage, offset]);
     
+    // Converti i valori numerici di haiEffettuatoRitiri in boolean
+    const viaggiConvertiti = (rows as any[]).map(viaggio => ({
+      ...viaggio,
+      haiEffettuatoRitiri: viaggio.haiEffettuatoRitiri === 1 ? true : viaggio.haiEffettuatoRitiri === 0 ? false : null
+    }));
+    
     // Query per contare il numero totale di record
     const countSql = 'SELECT COUNT(*) as total FROM tab_viaggi';
     const [countResult] = await pool.query(countSql);
@@ -97,7 +104,7 @@ export async function getViaggiData(
     const totalPages = Math.ceil(totalRecords / recordsPerPage);
     
     return {
-      viaggi: rows as ViaggioTab[],
+      viaggi: viaggiConvertiti as ViaggioTab[],
       totalPages,
       totalRecords
     };
@@ -165,6 +172,14 @@ export async function getViaggiFiltrati(
       queryParams.push(filters.magazzino);
     }
     
+    if (filters.haiEffettuatoRitiri !== null && filters.haiEffettuatoRitiri !== '') {
+      console.log('📊 DB - Filtro haiEffettuatoRitiri ricevuto:', filters.haiEffettuatoRitiri, typeof filters.haiEffettuatoRitiri);
+      const ritiriValue = filters.haiEffettuatoRitiri === 'true' ? 1 : 0;
+      console.log('📊 DB - Valore convertito per query:', ritiriValue);
+      whereConditions.push('haiEffettuatoRitiri = ?');
+      queryParams.push(ritiriValue);
+    }
+    
     if (filters.mese) {
       whereConditions.push('`Mese` = ?');
       queryParams.push(Number(filters.mese));
@@ -195,7 +210,18 @@ export async function getViaggiFiltrati(
       LIMIT ? OFFSET ?
     `;
     
+    console.log('📊 DB - Query SQL:', dataSql);
+    console.log('📊 DB - Parametri query:', [...queryParams, recordsPerPage, offset]);
+    
     const [rows] = await pool.query(dataSql, [...queryParams, recordsPerPage, offset]);
+    
+    console.log('📊 DB - Risultati trovati:', (rows as any[]).length);
+    
+    // Converti i valori numerici di haiEffettuatoRitiri in boolean
+    const viaggiConvertiti = (rows as any[]).map(viaggio => ({
+      ...viaggio,
+      haiEffettuatoRitiri: viaggio.haiEffettuatoRitiri === 1 ? true : viaggio.haiEffettuatoRitiri === 0 ? false : null
+    }));
     
     // Query per contare i record filtrati
     const countSql = `SELECT COUNT(*) as total FROM tab_viaggi ${whereClause}`;
@@ -204,7 +230,7 @@ export async function getViaggiFiltrati(
     const totalPages = Math.ceil(totalRecords / recordsPerPage);
     
     return {
-      viaggi: rows as ViaggioTab[],
+      viaggi: viaggiConvertiti as ViaggioTab[],
       totalPages,
       totalRecords
     };
@@ -302,6 +328,14 @@ export async function getTotalsByFilters(filters: FiltriViaggi): Promise<Statist
     if (filters.magazzino) {
       whereConditions.push('`Magazzino di partenza` = ?');
       queryParams.push(filters.magazzino);
+    }
+    
+    if (filters.haiEffettuatoRitiri) {
+      const ritiriValue = filters.haiEffettuatoRitiri === 'true' ? 1 : filters.haiEffettuatoRitiri === 'false' ? 0 : null;
+      if (ritiriValue !== null) {
+        whereConditions.push('`haiEffettuatoRitiri` = ?');
+        queryParams.push(ritiriValue);
+      }
     }
     
     if (filters.mese) {

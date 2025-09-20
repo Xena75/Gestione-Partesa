@@ -22,6 +22,7 @@ export interface FiltriViaggiRef {
 }
 
 const FiltriViaggi = forwardRef<FiltriViaggiRef, FiltriViaggiProps>(({ onFiltersApplied }, ref) => {
+  console.log('🚀 COMPONENTE FiltriViaggi MONTATO!');
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -32,6 +33,7 @@ const FiltriViaggi = forwardRef<FiltriViaggiRef, FiltriViaggiProps>(({ onFilters
   const [numeroViaggio, setNumeroViaggio] = useState(searchParams?.get('numeroViaggio') || '');
   const [targa, setTarga] = useState(searchParams?.get('targa') || '');
   const [magazzino, setMagazzino] = useState(searchParams?.get('magazzino') || '');
+  const [haiEffettuatoRitiri, setHaiEffettuatoRitiri] = useState(searchParams?.get('haiEffettuatoRitiri') || '');
   const [mese, setMese] = useState(searchParams?.get('mese') || '');
   const [trimestre, setTrimestre] = useState(searchParams?.get('trimestre') || '');
   const [dataDa, setDataDa] = useState(searchParams?.get('dataDa') || '');
@@ -65,6 +67,21 @@ const FiltriViaggi = forwardRef<FiltriViaggiRef, FiltriViaggiProps>(({ onFilters
 
   // Applica i filtri
   const applyFilters = () => {
+    console.log('🔍 FILTRI - Applicazione filtri:', {
+      haiEffettuatoRitiri,
+      aziendaVettore,
+      nominativo,
+      trasportatore,
+      numeroViaggio,
+      targa,
+      magazzino,
+      mese,
+      trimestre,
+      dataDa,
+      dataA
+    });
+    console.log('🔍 FILTRI - Valore haiEffettuatoRitiri prima della condizione:', haiEffettuatoRitiri, 'tipo:', typeof haiEffettuatoRitiri);
+    
     const params = new URLSearchParams();
     
     // Mantieni la pagina corrente o vai alla prima
@@ -86,10 +103,17 @@ const FiltriViaggi = forwardRef<FiltriViaggiRef, FiltriViaggiProps>(({ onFilters
     if (numeroViaggio) params.set('numeroViaggio', numeroViaggio);
     if (targa) params.set('targa', targa);
     if (magazzino) params.set('magazzino', magazzino);
+    if (haiEffettuatoRitiri !== '') {
+      console.log('🔍 FILTRI - Aggiungendo haiEffettuatoRitiri:', haiEffettuatoRitiri);
+      params.set('haiEffettuatoRitiri', haiEffettuatoRitiri);
+    }
     if (mese) params.set('mese', mese);
     if (trimestre) params.set('trimestre', trimestre);
     if (dataDa) params.set('dataDa', dataDa);
     if (dataA) params.set('dataA', dataA);
+    
+    console.log('🔍 FILTRI - URL finale:', `/viaggi?${params.toString()}`);
+    console.log('🔍 FILTRI - Parametri URL completi:', params.toString());
     
     router.push(`/viaggi?${params.toString()}`);
     
@@ -107,6 +131,7 @@ const FiltriViaggi = forwardRef<FiltriViaggiRef, FiltriViaggiProps>(({ onFilters
     setNumeroViaggio('');
     setTarga('');
     setMagazzino('');
+    setHaiEffettuatoRitiri('');
     setMese('');
     setTrimestre('');
     setDataDa('');
@@ -236,8 +261,21 @@ const FiltriViaggi = forwardRef<FiltriViaggiRef, FiltriViaggiProps>(({ onFilters
         </select>
       </div>
 
-      {/* Seconda riga - 4 campi */}
-      <div className="col-md-3">
+      {/* Seconda riga - 5 campi */}
+      <div className="col-md-2">
+        <label className="form-label fw-bold">Hai Effettuato Ritiri</label>
+        <select 
+          className="form-select"
+          value={haiEffettuatoRitiri}
+          onChange={(e) => setHaiEffettuatoRitiri(e.target.value)}
+        >
+          <option value="">Tutti</option>
+          <option value="true">Sì</option>
+          <option value="false">No</option>
+        </select>
+      </div>
+
+      <div className="col-md-2">
         <label className="form-label fw-bold">Mese</label>
         <select 
           className="form-select"
@@ -253,7 +291,7 @@ const FiltriViaggi = forwardRef<FiltriViaggiRef, FiltriViaggiProps>(({ onFilters
         </select>
       </div>
 
-      <div className="col-md-3">
+      <div className="col-md-2">
         <label className="form-label fw-bold">Trimestre</label>
         <select 
           className="form-select"

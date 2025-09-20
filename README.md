@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.19.2
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.19.4
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -33,6 +33,52 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Backup e recovery**: Sistema completo di backup e ripristino dati
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
+
+### 🧹 **Pulizia Progetto e Ottimizzazioni - v2.19.4** ⭐ **NUOVO**
+
+#### 🗂️ **Pulizia File Sistema**
+- **Rimozione script obsoleti**: Eliminati 7 file SQL non più necessari dalla root del progetto
+- **Sistema backup operativo**: Confermato funzionamento completo del sistema di backup automatico
+- **Progetto ottimizzato**: Spazio liberato e struttura progetto più pulita
+- **File essenziali mantenuti**: Conservati solo documenti e file necessari per il funzionamento
+- **Performance migliorate**: Riduzione overhead e miglioramento velocità operazioni
+
+#### 📋 **File Rimossi**
+- `test_backup.sql`: Dump di test già utilizzato e non più necessario
+- `access-query.sql`: Query di accesso non più utilizzate
+- `add-travelid-column.sql`: Modifica colonna già applicata al database
+- `create-indexes.sql`: Indici già creati e funzionanti
+- `backup-schema-updates.sql`: Aggiornamenti schema già implementati
+- `database-update-script.sql`: Script di aggiornamento già eseguito
+- `fix-backup-schema.sql`: Fix schema già applicato con successo
+
+#### ✅ **Risultati Ottenuti**
+- **Sistema backup funzionante**: Confermato attraverso analisi del codice e documentazione
+- **Progetto più pulito**: Eliminazione file obsoleti e non necessari
+- **Spazio ottimizzato**: Riduzione dimensioni progetto e miglioramento organizzazione
+- **Documentazione mantenuta**: File essenziali come `REPORT-ANALISI-BACKUP-DATABASE.md` conservati
+
+### 🔧 **Correzione Filtro "Hai Effettuato Ritiri" - v2.19.3**
+
+#### 🎯 **Risoluzione Bug Filtro Completa**
+- **Logica condizione corretta**: Modificata condizione da `if (haiEffettuatoRitiri)` a `if (haiEffettuatoRitiri !== '')` in `applyFilters`
+- **Parametro URL incluso**: Il filtro ora aggiunge correttamente il parametro all'URL per valori "true" e "false"
+- **Lettura parametri**: Aggiunta lettura del parametro `haiEffettuatoRitiri` dai `searchParams` nella pagina viaggi
+- **API statistiche**: Incluso il parametro `haiEffettuatoRitiri` nell'oggetto `filters` dell'API `/api/viaggi/stats`
+- **Sincronizzazione completa**: Filtro funzionante sia per la tabella viaggi che per le card delle statistiche
+
+#### ✅ **Funzionalità Verificate**
+- **Filtro "Sì"**: Mostra correttamente 37 record di viaggi con ritiri effettuati
+- **Filtro "No"**: Visualizza 4.924 record di viaggi senza ritiri
+- **Filtro "Tutti"**: Ripristina visualizzazione completa senza filtri
+- **Card statistiche**: Aggiornamento in tempo reale delle statistiche nelle card dashboard
+- **URL parametri**: Gestione corretta dei parametri nell'URL per condivisione e bookmark
+
+#### 🛠️ **Correzioni Tecniche Implementate**
+- **Condizione JavaScript**: Risolto problema con stringa "false" che è truthy in JavaScript
+- **Gestione parametri**: Inclusione parametro nelle chiamate API per coerenza dati
+- **Debug e test**: Aggiunto logging per verifica funzionamento e test nel browser
+- **Consistenza UI**: Filtro funzionante uniformemente in tutta l'applicazione
 
 ### 🖼️ **Sistema Visualizzazione Immagini Viaggi - v2.19.2** ⭐ **NUOVO**
 

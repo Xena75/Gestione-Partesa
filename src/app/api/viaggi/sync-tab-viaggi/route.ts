@@ -88,7 +88,8 @@ export async function POST(request: NextRequest) {
         kmEffettivi,
         kmAlRifornimento,
         litriRiforniti,
-        euroLitro
+        euroLitro,
+        haiEffettuatoRitiri
       FROM travels
     `;
     
@@ -184,8 +185,8 @@ export async function POST(request: NextRequest) {
               \`Ora Inizio\`, \`Ora Fine\`, Ore, Colli, \`Peso (Kg)\`, Targa,
               \`Tipo Patente\`, Km, \`Km Iniziali Viaggio\`, \`Km Finali Viaggio\`,
               \`Km Viaggio\`, \`Km al Rifornimento\`, \`Litri Riforniti\`, \`€/lt\`,
-              Toccate, Ordini, Mese, Sett, Giorno, Trimestre
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              Toccate, Ordini, Mese, Sett, Giorno, Trimestre, haiEffettuatoRitiri
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `;
           
           const values = [
@@ -220,7 +221,8 @@ export async function POST(request: NextRequest) {
             viaggio.Mese,
             viaggio.Sett,
             viaggio.Giorno,
-            viaggio.Trimestre
+            viaggio.Trimestre,
+            travel?.haiEffettuatoRitiri || null
           ];
           
           const [result] = await poolGestione.execute(insertQuery, values) as [any, any];

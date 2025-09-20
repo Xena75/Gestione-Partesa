@@ -22,14 +22,23 @@ export async function GET(request: NextRequest) {
       numeroViaggio: searchParams.get('numeroViaggio'),
       targa: searchParams.get('targa'),
       magazzino: searchParams.get('magazzino'),
+      haiEffettuatoRitiri: searchParams.get('haiEffettuatoRitiri'),
       mese: searchParams.get('mese'),
       trimestre: searchParams.get('trimestre'),
       dataDa: searchParams.get('dataDa'),
-      dataA: searchParams.get('dataA')
+      dataA: searchParams.get('dataA'),
     };
+    
+    console.log('🚀 API - Parametri ricevuti:', {
+      url: request.url,
+      filters,
+      haiEffettuatoRitiri: searchParams.get('haiEffettuatoRitiri')
+    });
     
     // Verifica se ci sono filtri attivi
     const hasActiveFilters = Object.values(filters).some(value => value !== null && value !== '');
+    
+    console.log('🚀 API - Filtri attivi:', hasActiveFilters, filters);
     
     let result;
     if (hasActiveFilters) {

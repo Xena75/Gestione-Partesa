@@ -42,6 +42,7 @@ interface ViaggioTab {
   'Sett': number;
   'Giorno': string;
   'euro_rifornimento': number;
+  'haiEffettuatoRitiri': boolean | null;
 }
 
 interface TravelImage {
@@ -76,6 +77,7 @@ function ViaggiPageContent() {
   const numeroViaggio = searchParams?.get('numeroViaggio');
   const targa = searchParams?.get('targa');
   const magazzino = searchParams?.get('magazzino');
+  const haiEffettuatoRitiri = searchParams?.get('haiEffettuatoRitiri');
   const mese = searchParams?.get('mese');
   const trimestre = searchParams?.get('trimestre');
   const dataDa = searchParams?.get('dataDa');
@@ -97,7 +99,7 @@ function ViaggiPageContent() {
 
   // Apri automaticamente i filtri solo al primo caricamento se ci sono parametri di filtro attivi
   useEffect(() => {
-    const hasActiveFilters = aziendaVettore || nominativo || trasportatore || numeroViaggio || targa || magazzino || mese || trimestre || dataDa || dataA;
+    const hasActiveFilters = aziendaVettore || nominativo || trasportatore || numeroViaggio || targa || magazzino || haiEffettuatoRitiri || mese || trimestre || dataDa || dataA;
     if (hasActiveFilters && !filtersApplied) {
       setShowFilters(true);
     }
@@ -119,6 +121,7 @@ function ViaggiPageContent() {
     if (numeroViaggio) params.set('numeroViaggio', numeroViaggio);
     if (targa) params.set('targa', targa);
     if (magazzino) params.set('magazzino', magazzino);
+    if (haiEffettuatoRitiri) params.set('haiEffettuatoRitiri', haiEffettuatoRitiri);
     if (mese) params.set('mese', mese);
     if (trimestre) params.set('trimestre', trimestre);
     if (dataDa) params.set('dataDa', dataDa);
@@ -151,7 +154,7 @@ function ViaggiPageContent() {
         setIsLoadingStats(false);
       });
 
-  }, [currentPage, sortBy, sortOrder, aziendaVettore, nominativo, trasportatore, numeroViaggio, targa, magazzino, mese, trimestre, dataDa, dataA]);
+  }, [currentPage, sortBy, sortOrder, aziendaVettore, nominativo, trasportatore, numeroViaggio, targa, magazzino, haiEffettuatoRitiri, mese, trimestre, dataDa, dataA]);
 
 
 
@@ -465,6 +468,7 @@ function ViaggiPageContent() {
                 basePath="/viaggi"
               />
               <th>€ Rifornimento</th>
+              <th>Hai Effettuato Ritiri</th>
               <th>Immagini</th>
               <th>Azioni</th>
              </tr>
@@ -488,6 +492,10 @@ function ViaggiPageContent() {
                  <td>{viaggio['Km Finali Viaggio'] || '-'}</td>
                  <td>{viaggio['Km Viaggio'] || '-'}</td>
                  <td>{viaggio.euro_rifornimento ? `€ ${Number(viaggio.euro_rifornimento).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}</td>
+                 <td>
+                   {viaggio.haiEffettuatoRitiri === true ? 'Sì' : 
+                    viaggio.haiEffettuatoRitiri === false ? 'No' : '-'}
+                 </td>
                  <td>
                    <ImageButton 
                      numeroViaggio={viaggio.Viaggio}
