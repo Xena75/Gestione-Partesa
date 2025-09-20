@@ -193,6 +193,7 @@ const SectionSkeleton = () => (
       pages: [
         { name: 'Fatturazione Terzisti', href: '/fatturazione-terzisti', icon: DollarSign },
         { name: 'Fatturazione Delivery', href: '/gestione', icon: Package },
+        { name: 'Fatturazione Handling', href: '/handling', icon: Package },
         { name: 'Report', href: '/report', icon: BarChart3 }
       ],
       stats: { 

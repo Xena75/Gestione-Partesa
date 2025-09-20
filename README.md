@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.19.5
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.19.6
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -34,7 +34,30 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
 
-### 🎯 **Card Cliccabili Dashboard e UX Migliorata - v2.19.5** ⭐ **NUOVO**
+### 🎯 **Ripristino Filtri Avanzati e Ottimizzazione UI - v2.19.6** ⭐ **NUOVO**
+
+#### 🔍 **Ripristino Filtri Avanzati Gestione**
+- **Filtri completi ripristinati**: Ripristinati tutti i filtri avanzati nella pagina gestione per ricerca dettagliata
+- **Tabella sempre visibile**: Rimosso toggle "Mostra/Nascondi Tabella" per accesso diretto ai dati
+- **Interfaccia semplificata**: Eliminazione elementi UI non necessari per esperienza più fluida
+- **Performance migliorate**: Caricamento diretto della tabella senza passaggi intermedi
+- **Usabilità ottimizzata**: Accesso immediato a filtri e dati senza click aggiuntivi
+
+#### 🛠️ **Correzioni Tecniche**
+- **ViewToggle ottimizzato**: Rimossa logica di toggle tabella dal componente ViewToggle
+- **Client Component corretto**: Risolto errore "useEffect is not defined" con direttiva 'use client'
+- **Importazioni corrette**: Sistemate importazioni React per componenti client
+- **Stato semplificato**: Eliminato stato showTable non più necessario
+- **Codice pulito**: Rimossi riferimenti e props obsoleti
+
+#### ✅ **Risultati Ottenuti**
+- **Esperienza utente migliorata**: Accesso diretto ai filtri e alla tabella gestione
+- **Codice ottimizzato**: Eliminazione logica non necessaria e semplificazione componenti
+- **Stabilità aumentata**: Risoluzione errori JavaScript e miglioramento affidabilità
+- **Interfaccia coerente**: Design uniforme senza elementi di distrazione
+- **Funzionalità complete**: Tutti i filtri avanzati disponibili per ricerca dettagliata
+
+### 🎯 **Card Cliccabili Dashboard e UX Migliorata - v2.19.5**
 
 #### 🖱️ **Indicatori Visivi per Card Interattive**
 - **Cursore pointer**: Le card della dashboard mostrano chiaramente che sono cliccabili

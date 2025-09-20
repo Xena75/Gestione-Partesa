@@ -2,19 +2,20 @@
 'use client';
 
 import { Suspense, useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import DeliveryStats from '@/components/DeliveryStats';
 import ViewToggle from '@/components/ViewToggle';
 import DeliveryFilters from '@/components/DeliveryFilters';
 import DeliveryTable from '@/components/DeliveryTable';
 import ExportDeliveryButton from '@/components/ExportDeliveryButton';
+import ImportProgress from '@/components/ImportProgress';
 
 function GestioneContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const viewType = (searchParams?.get('viewType') || 'grouped') as 'grouped' | 'detailed';
-  
-  // Stato per i filtri attivi (aggiornato in tempo reale)
+
+  const [viewType, setViewType] = useState<'grouped' | 'detailed'>('grouped');
   const [activeFilters, setActiveFilters] = useState({
     viaggio: searchParams?.get('viaggio') || undefined,
     ordine: searchParams?.get('ordine') || undefined,
@@ -53,34 +54,34 @@ function GestioneContent() {
       <div className="row">
         <div className="col-12">
           <h1 className="h3 mb-4">Gestione Fatturazione Delivery</h1>
-          
+
           {/* Pulsanti Export e Import */}
           <div className="card mb-4">
             <div className="card-body">
               <div className="d-flex justify-content-between align-items-center">
                 <h5 className="card-title mb-0">📊 Gestione Dati</h5>
                 <div className="btn-group">
-                  <Link href="/import-delivery" className="btn btn-success">
+                  <ExportDeliveryButton filters={activeFilters} />
+                  <Link href="/import-delivery" className="btn btn-success" style={{ pointerEvents: 'none', opacity: 0.6 }}>
                     <i className="fas fa-file-import me-1"></i>
                     Import Excel
                   </Link>
-                  <ExportDeliveryButton filters={activeFilters} />
                 </div>
               </div>
             </div>
           </div>
-          
+
           {/* Statistiche Dashboard */}
           <DeliveryStats />
-          
-          {/* Toggle Vista */}
-          <ViewToggle />
-          
+
           {/* Filtri Avanzati */}
-          <DeliveryFilters />
-          
+          <DeliveryFilters activeFilters={activeFilters} setActiveFilters={setActiveFilters} />
+
+          {/* Toggle Vista */}
+          <ViewToggle viewType={viewType} setViewType={setViewType} />
+
           {/* Tabella Dati */}
-          <DeliveryTable viewType={viewType} />
+          <DeliveryTable viewType={viewType} filters={activeFilters} />
         </div>
       </div>
     </div>
