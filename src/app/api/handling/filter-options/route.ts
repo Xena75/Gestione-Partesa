@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import mysql from 'mysql2/promise';
 
 const dbConfig = {
-  host: 'localhost',
-  user: 'root',
-  password: '',
-  database: 'gestionelogistica',
-  port: 3306
+  host: process.env.DB_GESTIONE_HOST || 'localhost',
+  port: parseInt(process.env.DB_GESTIONE_PORT || '3306'),
+  user: process.env.DB_GESTIONE_USER || 'root',
+  password: process.env.DB_GESTIONE_PASS || '',
+  database: process.env.DB_GESTIONE_NAME || 'gestionelogistica'
 };
 
 export async function GET(request: NextRequest) {
