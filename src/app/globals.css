@@ -594,6 +594,46 @@ body {
   color: var(--text-primary);
 }
 
+/* Clickable Stats */
+.clickable-stat {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.clickable-stat:hover {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.clickable-stat .stat-number {
+  font-weight: 700;
+  transition: all 0.3s ease;
+}
+
+.clickable-stat:hover .stat-number {
+  transform: scale(1.05);
+}
+
+.clickable-stat .stat-icon {
+  opacity: 0.7;
+  transition: all 0.3s ease;
+  color: #3b82f6;
+}
+
+.clickable-stat:hover .stat-icon {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
 /* Quick Action Button */
 .quick-action {
   position: absolute;

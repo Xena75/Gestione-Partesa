@@ -6,8 +6,10 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { 
   Users, Truck, Package, DollarSign, Settings, FileText, 
-  BarChart3, Calendar, Shield, Plus, Upload, Code, Clock, HelpCircle 
+  BarChart3, Calendar, Shield, Plus, Upload, Code, Clock, HelpCircle, Eye, ChevronRight 
 } from 'lucide-react';
+import PendingViaggiModal from '@/components/PendingViaggiModal';
+import PodMancantiModal from '@/components/PodMancantiModal';
 
 // Interfaccia per le statistiche
 interface DashboardStats {
@@ -50,6 +52,8 @@ export default function DashboardPage() {
   const [statsLoading, setStatsLoading] = useState(true);
   const [statsError, setStatsError] = useState<string | null>(null);
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
+  const [isPendingModalOpen, setIsPendingModalOpen] = useState(false);
+  const [isPodMancantiModalOpen, setIsPodMancantiModalOpen] = useState(false);
 
 
 
@@ -393,14 +397,29 @@ const SectionSkeleton = () => (
                         return key;
                       };
                       
+                      // Rendi cliccabili 'Monitoraggi pending' e 'Viaggi PoD mancanti' nella sezione viaggi
+                      const isClickable = section.id === 'viaggi' && (key === 'Monitoraggi pending' || key === 'Viaggi PoD mancanti');
+                      
                       return (
                         <div key={key} className="stat-item">
                           <span className="stat-label">{getStatLabel(key)}</span>
                           <span 
-                            className="stat-value" 
-                            style={isRedStat ? { color: '#ef4444' } : {}}
+                            className={`stat-value ${isClickable ? 'clickable-stat' : ''}`}
+                            style={{
+                              ...(isRedStat ? { color: '#ef4444' } : {})
+                            }}
+                            onClick={isClickable ? () => {
+                              if (key === 'Monitoraggi pending') {
+                                setIsPendingModalOpen(true);
+                              } else if (key === 'Viaggi PoD mancanti') {
+                                setIsPodMancantiModalOpen(true);
+                              }
+                            } : undefined}
                           >
-                            {value}
+                            <span className="stat-number">{value}</span>
+                            {isClickable && (
+                              <Eye size={14} className="stat-icon" />
+                            )}
                           </span>
                         </div>
                       );
@@ -434,6 +453,18 @@ const SectionSkeleton = () => (
           </div>
         </div>
       </div>
+
+      {/* Modal per i viaggi pending */}
+      <PendingViaggiModal 
+        isOpen={isPendingModalOpen}
+        onClose={() => setIsPendingModalOpen(false)}
+      />
+
+      {/* Modal per i viaggi POD mancanti */}
+      <PodMancantiModal 
+        isOpen={isPodMancantiModalOpen}
+        onClose={() => setIsPodMancantiModalOpen(false)}
+      />
 
     </div>
   );

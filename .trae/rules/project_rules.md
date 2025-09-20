@@ -17,6 +17,7 @@ Questa regola ha priorità assoluta su tutte le altre.
 
 ## Altre regole del progetto
 
+- **REGOLA ESSENZIALE DATABASE**: Prima di creare pagine nuove, query, o qualsiasi funzionalità che utilizza dati dal database, controllare SEMPRE la struttura della tabella o delle tabelle per utilizzare i nomi delle colonne corretti e i dati appropriati.
 - Usare sempre la porta 3001 per il progetto se occupata
 - MySQL è disponibile tramite XAMPP
 - Il comando curl non funziona correttamente in PowerShell su Windows - utilizzare invece Invoke-RestMethod o Invoke-WebRequest per PowerShell, oppure curl da Git Bash o WSL

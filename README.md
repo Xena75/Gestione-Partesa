@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.19.4
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.19.5
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -34,7 +34,30 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
 
-### 🧹 **Pulizia Progetto e Ottimizzazioni - v2.19.4** ⭐ **NUOVO**
+### 🎯 **Card Cliccabili Dashboard e UX Migliorata - v2.19.5** ⭐ **NUOVO**
+
+#### 🖱️ **Indicatori Visivi per Card Interattive**
+- **Cursore pointer**: Le card della dashboard mostrano chiaramente che sono cliccabili
+- **Effetti hover**: Animazioni smooth al passaggio del mouse per feedback visivo immediato
+- **Icone intuitive**: Piccole icone aggiunte ai numeri per indicare l'interattività
+- **Scaling effect**: Leggero ingrandimento delle card al hover per migliorare l'esperienza utente
+- **Feedback visivo**: Transizioni fluide che guidano l'utente verso le azioni disponibili
+
+#### 📊 **Modal Interattivi Ottimizzati**
+- **Monitoraggi Pending**: Card "29" apre modal con lista dettagliata dei monitoraggi in attesa
+- **Viaggi POD Mancanti**: Card "13" mostra modal con viaggi che necessitano documentazione POD
+- **Navigazione intuitiva**: Accesso diretto ai dettagli tramite click sulle statistiche
+- **Design coerente**: Modal responsive e ottimizzati per tutti i dispositivi
+- **Performance**: Caricamento veloce dei dati e interfaccia fluida
+
+#### 🎨 **Miglioramenti User Experience**
+- **Chiarezza interazioni**: Gli utenti comprendono immediatamente quali elementi sono cliccabili
+- **Consistenza UI**: Stile uniforme per tutti gli elementi interattivi
+- **Accessibilità**: Supporto completo per navigazione da tastiera e screen reader
+- **Design moderno**: Interfaccia aggiornata con le migliori pratiche UX
+- **Riduzione learning curve**: Interfaccia più intuitiva che non richiede spiegazioni
+
+### 🧹 **Pulizia Progetto e Ottimizzazioni - v2.19.4**
 
 #### 🗂️ **Pulizia File Sistema**
 - **Rimozione script obsoleti**: Eliminati 7 file SQL non più necessari dalla root del progetto
