@@ -20,10 +20,19 @@ function HandlingContent() {
     return filters;
   });
 
-  const [showTable, setShowTable] = useState(false);
+  const [showTable, setShowTable] = useState(true);
+  const [viewType, setViewType] = useState<'grouped' | 'detailed'>('detailed');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Sincronizza i filtri con l'URL
+  // Inizializza viewType dal parametro URL
+  useEffect(() => {
+    const urlViewType = searchParams?.get('viewType') as 'grouped' | 'detailed' | null;
+    if (urlViewType) {
+      setViewType(urlViewType);
+    }
+  }, [searchParams]);
+
+  // Sincronizza i filtri e viewType con l'URL
   useEffect(() => {
     const params = new URLSearchParams();
     Object.entries(activeFilters).forEach(([key, value]) => {
@@ -32,9 +41,12 @@ function HandlingContent() {
       }
     });
     
+    // Aggiungi il parametro viewType all'URL
+    params.set('viewType', viewType);
+    
     const newUrl = params.toString() ? `?${params.toString()}` : '/handling';
     router.replace(newUrl, { scroll: false });
-  }, [activeFilters, router]);
+  }, [activeFilters, viewType, router]);
 
   const handleFiltersChange = (newFilters: any) => {
     setActiveFilters(newFilters);
@@ -94,12 +106,13 @@ function HandlingContent() {
           </div>
 
           {/* Statistiche */}
-          <HandlingStats filters={activeFilters} />
+          <HandlingStats filters={activeFilters} viewType={viewType} />
 
           {/* Filtri */}
           <HandlingFilters 
             onFiltersChange={handleFiltersChange}
             initialFilters={activeFilters}
+            viewType={viewType}
           />
 
           {/* Toggle Vista */}
@@ -107,17 +120,47 @@ function HandlingContent() {
             <div className="card-body">
               <div className="d-flex justify-content-between align-items-center">
                 <h6 className="mb-0">Vista Dati</h6>
-                <div className="form-check form-switch">
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    id="showTableSwitch"
-                    checked={showTable}
-                    onChange={(e) => setShowTable(e.target.checked)}
-                  />
-                  <label className="form-check-label" htmlFor="showTableSwitch">
-                    {showTable ? 'Nascondi Tabella' : 'Mostra Tabella'}
-                  </label>
+                <div className="d-flex align-items-center gap-3">
+                  <div className="btn-group" role="group" aria-label="Tipo di vista">
+                    <button
+                      type="button"
+                      className={`btn ${viewType === 'grouped' ? 'btn-primary' : 'btn-outline-primary'}`}
+                      onClick={() => {
+                        setViewType('grouped');
+                        // Aggiorna l'URL con il nuovo tipo di vista
+                        const params = new URLSearchParams(searchParams?.toString());
+                        params.set('viewType', 'grouped');
+                        router.push(`?${params.toString()}`, { scroll: false });
+                      }}
+                    >
+                      Vista Raggruppata
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn ${viewType === 'detailed' ? 'btn-primary' : 'btn-outline-primary'}`}
+                      onClick={() => {
+                        setViewType('detailed');
+                        // Aggiorna l'URL con il nuovo tipo di vista
+                        const params = new URLSearchParams(searchParams?.toString());
+                        params.set('viewType', 'detailed');
+                        router.push(`?${params.toString()}`, { scroll: false });
+                      }}
+                    >
+                      Vista Dettagliata
+                    </button>
+                  </div>
+                  <div className="form-check form-switch">
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      id="showTableSwitch"
+                      checked={showTable}
+                      onChange={(e) => setShowTable(e.target.checked)}
+                    />
+                    <label className="form-check-label" htmlFor="showTableSwitch">
+                      {showTable ? 'Nascondi Tabella' : 'Mostra Tabella'}
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>
@@ -125,7 +168,7 @@ function HandlingContent() {
 
           {/* Tabella */}
           {showTable && (
-            <HandlingTable filters={activeFilters} />
+            <HandlingTable filters={activeFilters} viewType={viewType} />
           )}
         </div>
       </div>

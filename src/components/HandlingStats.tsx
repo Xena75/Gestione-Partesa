@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 
 interface HandlingStatsProps {
   filters: Record<string, any>;
+  viewType: 'grouped' | 'detailed';
 }
 
 interface StatsData {
@@ -16,7 +17,7 @@ interface StatsData {
   imp_doc_sum: number;
 }
 
-export default function HandlingStats({ filters }: HandlingStatsProps) {
+export default function HandlingStats({ filters, viewType }: HandlingStatsProps) {
   const [stats, setStats] = useState<StatsData>({
     doc_mat_count: 0,
     qta_uma_sum: 0,
@@ -40,6 +41,9 @@ export default function HandlingStats({ filters }: HandlingStatsProps) {
             params.set(key, value);
           }
         });
+        
+        // Aggiungi il parametro viewType
+        params.set('viewType', viewType);
         
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000);

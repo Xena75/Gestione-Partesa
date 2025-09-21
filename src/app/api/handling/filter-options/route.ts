@@ -13,6 +13,11 @@ export async function GET(request: NextRequest) {
   let connection;
   
   try {
+    const { searchParams } = new URL(request.url);
+    
+    // Ottieni il tipo di vista (raggruppata o dettagliata)
+    const viewType = searchParams.get('viewType') || 'grouped';
+    
     connection = await mysql.createConnection(dbConfig);
     
     // Query per ottenere i valori distinti per ogni filtro
@@ -22,6 +27,7 @@ export async function GET(request: NextRequest) {
       depositi: 'SELECT DISTINCT dep FROM fatt_handling WHERE dep IS NOT NULL AND dep != "" ORDER BY dep',
       tipiMovimento: 'SELECT DISTINCT tipo_movimento FROM fatt_handling WHERE tipo_movimento IS NOT NULL AND tipo_movimento != "" ORDER BY tipo_movimento',
       docAcq: 'SELECT DISTINCT doc_acq FROM fatt_handling WHERE doc_acq IS NOT NULL AND doc_acq != "" ORDER BY doc_acq LIMIT 100',
+      docMat: 'SELECT DISTINCT doc_mat FROM fatt_handling WHERE doc_mat IS NOT NULL AND doc_mat != "" ORDER BY doc_mat LIMIT 100',
       tipiImb: 'SELECT DISTINCT tipo_imb FROM fatt_handling WHERE tipo_imb IS NOT NULL AND tipo_imb != "" ORDER BY tipo_imb',
       mesi: 'SELECT DISTINCT mese FROM fatt_handling WHERE mese IS NOT NULL AND mese != "" ORDER BY mese'
     };
@@ -43,6 +49,8 @@ export async function GET(request: NextRequest) {
           results.tipiMovimento = (rows as any[]).map(row => row.tipo_movimento);
         } else if (key === 'docAcq') {
           results.docAcq = (rows as any[]).map(row => row.doc_acq);
+        } else if (key === 'docMat') {
+          results.docMat = (rows as any[]).map(row => row.doc_mat);
         } else if (key === 'tipiImb') {
           results.tipiImb = (rows as any[]).map(row => row.tipo_imb);
         } else if (key === 'mesi') {
@@ -70,6 +78,7 @@ export async function GET(request: NextRequest) {
         else if (key === 'depositi') results.depositi = [];
         else if (key === 'tipiMovimento') results.tipiMovimento = [];
         else if (key === 'docAcq') results.docAcq = [];
+        else if (key === 'docMat') results.docMat = [];
         else if (key === 'tipiImb') results.tipiImb = [];
         else if (key === 'mesi') results.mesi = [];
       }
@@ -87,6 +96,7 @@ export async function GET(request: NextRequest) {
         depositi: [],
         tipiMovimento: [],
         docAcq: [],
+        docMat: [],
         tipiImb: [],
         mesi: []
       },

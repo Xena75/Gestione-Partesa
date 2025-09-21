@@ -15,6 +15,9 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     
+    // Ottieni il tipo di vista (raggruppata o dettagliata)
+    const viewType = searchParams.get('viewType') || 'grouped';
+    
     // Costruisci la query WHERE basata sui filtri
     const whereConditions: string[] = [];
     const queryParams: any[] = [];

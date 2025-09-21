@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 interface HandlingFiltersProps {
   onFiltersChange: (filters: any) => void;
   initialFilters: any;
+  viewType: 'grouped' | 'detailed';
 }
 
 interface FilterOptions {
@@ -14,11 +15,12 @@ interface FilterOptions {
   depositi: string[];
   tipiMovimento: string[];
   docAcq: string[];
+  docMat: string[];
   tipiImb: string[];
   mesi: string[];
 }
 
-export default function HandlingFilters({ onFiltersChange, initialFilters }: HandlingFiltersProps) {
+export default function HandlingFilters({ onFiltersChange, initialFilters, viewType }: HandlingFiltersProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   
@@ -28,6 +30,7 @@ export default function HandlingFilters({ onFiltersChange, initialFilters }: Han
     dep: initialFilters.dep || 'Tutti',
     tipo_movimento: initialFilters.tipo_movimento || 'Tutti',
     doc_acq: initialFilters.doc_acq || '',
+    doc_mat: initialFilters.doc_mat || '',
     data_mov_m: initialFilters.data_mov_m || '',
     tipo_imb: initialFilters.tipo_imb || 'Tutti',
     mese: initialFilters.mese || 'Tutti'
@@ -39,6 +42,7 @@ export default function HandlingFilters({ onFiltersChange, initialFilters }: Han
     depositi: [],
     tipiMovimento: [],
     docAcq: [],
+    docMat: [],
     tipiImb: [],
     mesi: []
   });
@@ -59,7 +63,10 @@ export default function HandlingFilters({ onFiltersChange, initialFilters }: Han
   useEffect(() => {
     const fetchFilterOptions = async () => {
       try {
-        const response = await fetch('/api/handling/filter-options');
+        const params = new URLSearchParams();
+        params.set('viewType', viewType);
+        
+        const response = await fetch(`/api/handling/filter-options?${params}`);
         if (response.ok) {
           const data = await response.json();
           setFilterOptions(data);
@@ -70,7 +77,7 @@ export default function HandlingFilters({ onFiltersChange, initialFilters }: Han
     };
 
     fetchFilterOptions();
-  }, []);
+  }, [viewType]);
 
   // Salva lo stato di espansione
   useEffect(() => {
@@ -97,6 +104,7 @@ export default function HandlingFilters({ onFiltersChange, initialFilters }: Han
       dep: 'Tutti',
       tipo_movimento: 'Tutti',
       doc_acq: '',
+      doc_mat: '',
       data_mov_m: '',
       tipo_imb: 'Tutti',
       mese: 'Tutti'
@@ -146,12 +154,12 @@ export default function HandlingFilters({ onFiltersChange, initialFilters }: Han
       
       {isExpanded && (
         <div className="card-body">
-          <div className="row g-3">
-            {/* Prima riga - 4 filtri */}
+          {/* Prima riga di filtri - 4 filtri */}
+          <div className="row g-2 mb-2">
             <div className="col-md-3">
-              <label className="form-label">BU</label>
+              <label className="form-label small">BU</label>
               <select
-                className="form-select"
+                className="form-select form-select-sm"
                 value={filters.bu}
                 onChange={(e) => handleInputChange('bu', e.target.value)}
               >
@@ -165,9 +173,9 @@ export default function HandlingFilters({ onFiltersChange, initialFilters }: Han
             </div>
 
             <div className="col-md-3">
-              <label className="form-label">Divisione</label>
+              <label className="form-label small">Divisione</label>
               <select
-                className="form-select"
+                className="form-select form-select-sm"
                 value={filters.div}
                 onChange={(e) => handleInputChange('div', e.target.value)}
               >
@@ -181,9 +189,9 @@ export default function HandlingFilters({ onFiltersChange, initialFilters }: Han
             </div>
 
             <div className="col-md-3">
-              <label className="form-label">Deposito</label>
+              <label className="form-label small">Deposito</label>
               <select
-                className="form-select"
+                className="form-select form-select-sm"
                 value={filters.dep}
                 onChange={(e) => handleInputChange('dep', e.target.value)}
               >
@@ -197,9 +205,9 @@ export default function HandlingFilters({ onFiltersChange, initialFilters }: Han
             </div>
 
             <div className="col-md-3">
-              <label className="form-label">Tipo Movimento</label>
+              <label className="form-label small">Tipo Movimento</label>
               <select
-                className="form-select"
+                className="form-select form-select-sm"
                 value={filters.tipo_movimento}
                 onChange={(e) => handleInputChange('tipo_movimento', e.target.value)}
               >
@@ -211,33 +219,46 @@ export default function HandlingFilters({ onFiltersChange, initialFilters }: Han
                 ))}
               </select>
             </div>
-
-            {/* Seconda riga - 4 filtri */}
+          </div>
+          
+          {/* Seconda riga di filtri - 5 filtri */}
+          <div className="row g-2">
             <div className="col-md-3">
-              <label className="form-label">Documento Acquisto</label>
+              <label className="form-label small">Doc. Materiale</label>
               <input
                 type="text"
-                className="form-control"
-                placeholder="Cerca documento..."
-                value={filters.doc_acq}
-                onChange={(e) => handleInputChange('doc_acq', e.target.value)}
+                className="form-control form-control-sm"
+                placeholder="Cerca..."
+                value={filters.doc_mat}
+                onChange={(e) => handleInputChange('doc_mat', e.target.value)}
               />
             </div>
 
             <div className="col-md-3">
-              <label className="form-label">Data Movimento</label>
+              <label className="form-label small">Doc. Acquisto</label>
+              <input
+                type="text"
+                className="form-control form-control-sm"
+                placeholder="Cerca..."
+                value={filters.doc_acq}
+                onChange={(e) => handleInputChange('doc_acq', e.target.value)}
+              />
+            </div>
+            
+            <div className="col-md-2">
+              <label className="form-label small">Data Movimento</label>
               <input
                 type="date"
-                className="form-control"
+                className="form-control form-control-sm"
                 value={filters.data_mov_m}
                 onChange={(e) => handleInputChange('data_mov_m', e.target.value)}
               />
             </div>
 
-            <div className="col-md-3">
-              <label className="form-label">Tipo Imballo</label>
+            <div className="col-md-2">
+              <label className="form-label small">Tipo Imballo</label>
               <select
-                className="form-select"
+                className="form-select form-select-sm"
                 value={filters.tipo_imb}
                 onChange={(e) => handleInputChange('tipo_imb', e.target.value)}
               >
@@ -250,10 +271,10 @@ export default function HandlingFilters({ onFiltersChange, initialFilters }: Han
               </select>
             </div>
 
-            <div className="col-md-3">
-              <label className="form-label">Mese</label>
+            <div className="col-md-2">
+              <label className="form-label small">Mese</label>
               <select
-                className="form-select"
+                className="form-select form-select-sm"
                 value={filters.mese}
                 onChange={(e) => handleInputChange('mese', e.target.value)}
               >

@@ -1,8 +1,16 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.19.5
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.19.6
 
-## 🚀 **VERSIONE 2.19.5** - Card Cliccabili Dashboard e UX Migliorata ⭐ **NUOVO**
+## 🚀 **VERSIONE 2.19.6** - Ottimizzazione Layout Filtri e UX Migliorata ⭐ **NUOVO**
 
 ### 🎯 **IMPLEMENTAZIONI PRINCIPALI**
+
+#### 🔍 **Ottimizzazione Layout Filtri Handling**
+- **File modificato**: `src/components/HandlingFilters.tsx`
+- **Layout migliorato**: Ridistribuzione filtri su due righe con spaziatura ottimizzata
+- **Prima riga**: 4 filtri (BU, Divisione, Deposito, Tipo Movimento) in colonne col-md-3
+- **Seconda riga**: 5 filtri con distribuzione ottimizzata (2 in col-md-3, 3 in col-md-2)
+- **Rimozione duplicati**: Eliminati pulsanti "Reset" e "Applica Filtri" duplicati
+- **Usabilità migliorata**: Interfaccia più pulita e intuitiva
 
 #### 🖱️ **Indicatori Visivi per Card Interattive**
 - **File modificato**: `src/app/dashboard/page.tsx`

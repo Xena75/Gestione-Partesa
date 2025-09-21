@@ -24,11 +24,14 @@ export async function GET(request: NextRequest) {
     const sortField = searchParams.get('sortField') || 'id';
     const sortDirection = searchParams.get('sortDirection') || 'asc';
     
+    // Tipo di vista (raggruppata o dettagliata)
+    const viewType = searchParams.get('viewType') || 'detailed';
+    
     // Validazione del campo di ordinamento per sicurezza
     const allowedSortFields = [
       'id', 'bu', 'div', 'dep', 'tipo_movimento', 'doc_acq', 
       'data_mov_m', 'tipo_imb', 'mese', 'doc_mat', 'qta_uma', 
-      'tot_hand', 'rag_soc'
+      'tot_hand', 'rag_soc', 't_hf_umv', 'imp_hf_um', 'imp_resi_v', 'imp_doc', 'articoli_count'
     ];
     
     const validSortField = allowedSortFields.includes(sortField) ? sortField : 'id';
@@ -70,27 +73,44 @@ export async function GET(request: NextRequest) {
     
     connection = await mysql.createConnection(dbConfig);
     
-    // Query per il conteggio totale
-    const countQuery = `
-      SELECT COUNT(*) as total 
-      FROM \`fatt_handling\` 
-      ${whereClause}
-    `;
+    // Query per il conteggio totale in base al tipo di vista
+    const countQuery = viewType === 'grouped' 
+      ? `
+        SELECT COUNT(DISTINCT \`doc_mat\`) as total 
+        FROM \`fatt_handling\` 
+        ${whereClause}
+      `
+      : `
+        SELECT COUNT(*) as total 
+        FROM \`fatt_handling\` 
+        ${whereClause}
+      `;
     
     const [countRows] = await connection.execute(countQuery, queryParams);
     const total = Array.isArray(countRows) ? countRows[0].total : countRows.total;
     
-    // Query per i dati con paginazione e ordinamento
-    const dataQuery = `
-      SELECT 
-        \`id\`, \`bu\`, \`div\`, \`dep\`, \`tipo_movimento\`, \`doc_acq\`, 
-        \`data_mov_m\`, \`tipo_imb\`, \`mese\`, \`doc_mat\`, \`qta_uma\`, 
-        \`tot_hand\`, \`rag_soc\`
-      FROM \`fatt_handling\` 
-      ${whereClause}
-      ORDER BY \`${validSortField}\` ${validSortDirection}
-      LIMIT ? OFFSET ?
-    `;
+    // Query per i dati con paginazione e ordinamento, in base al tipo di vista
+    const dataQuery = viewType === 'grouped'
+      ? `
+        SELECT 
+          MIN(\`id\`) as id, \`bu\`, \`div\`, \`dep\`, \`tipo_movimento\`, \`doc_acq\`, 
+          \`data_mov_m\`, \`tipo_imb\`, \`mese\`, \`doc_mat\`, SUM(\`qta_uma\`) as qta_uma, 
+          SUM(\`tot_hand\`) as tot_hand, \`rag_soc\`, AVG(\`t_hf_umv\`) as t_hf_umv, 
+          SUM(\`imp_hf_um\`) as imp_hf_um, SUM(\`imp_resi_v\`) as imp_resi_v, SUM(\`imp_doc\`) as imp_doc,
+          COUNT(DISTINCT \`materiale\`) as articoli_count
+        FROM \`fatt_handling\` 
+        ${whereClause}
+        GROUP BY \`doc_mat\`
+        ORDER BY \`${validSortField}\` ${validSortDirection}
+        LIMIT ? OFFSET ?
+      `
+      : `
+        SELECT * 
+        FROM \`fatt_handling\` 
+        ${whereClause}
+        ORDER BY \`${validSortField}\` ${validSortDirection}
+        LIMIT ? OFFSET ?
+      `;
     
     const dataParams = [...queryParams, limit, offset];
     const [dataRows] = await connection.execute(dataQuery, dataParams);
