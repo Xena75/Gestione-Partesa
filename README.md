@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.19.6
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.20.0
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -20,9 +20,10 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 
 ### 🎨 **Interfaccia e User Experience**
 - **Dashboard moderna**: Partesa Hub con design rinnovato e cards informative
+- **Analytics avanzati**: Dashboard completo con grafici interattivi e heatmap
+- **Navbar semplificata**: Navigazione essenziale con Dashboard, Monitoraggio e Analytics
 - **Dark mode globale**: Modalità chiaro/scuro con persistenza preferenze
 - **Responsive design**: Ottimizzato per tutti i dispositivi
-- **Navigazione intuitiva**: Interfaccia semplificata e user-friendly
 - **Performance ottimizzate**: Caricamento veloce e operazioni fluide
 
 ### 🛡️ **Sicurezza e Amministrazione**
@@ -34,14 +35,22 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
 
-### 🎯 **Ripristino Filtri Avanzati e Ottimizzazione UI - v2.19.6** ⭐ **NUOVO**
+### 📊 **Sistema Analytics Avanzato - v2.20.0** ⭐ **NUOVO**
 
-#### 🔍 **Ripristino Filtri Avanzati Gestione**
-- **Filtri completi ripristinati**: Ripristinati tutti i filtri avanzati nella pagina gestione per ricerca dettagliata
-- **Tabella sempre visibile**: Rimosso toggle "Mostra/Nascondi Tabella" per accesso diretto ai dati
-- **Interfaccia semplificata**: Eliminazione elementi UI non necessari per esperienza più fluida
-- **Performance migliorate**: Caricamento diretto della tabella senza passaggi intermedi
-- **Usabilità ottimizzata**: Accesso immediato a filtri e dati senza click aggiuntivi
+#### 📈 **Delivery Analytics Dashboard**
+- **Dashboard completo**: Pagina analytics dedicata con KPI, grafici e heatmap interattivi
+- **Grafici dinamici**: Time series adattivo (giornaliero/settimanale/mensile) basato sul periodo
+- **Heatmap depositi**: Visualizzazione intensità operativa per deposito e giorno settimana
+- **Tabella vettori interattiva**: Performance completa di tutti i vettori con ricerca e ordinamento
+- **Filtri avanzati**: Sistema di filtri Bootstrap con date range e selezioni multiple
+- **Toggle grafici**: Sistema di controllo visibilità per personalizzare la dashboard
+
+#### 🎛️ **Sistema Toggle Grafici**
+- **Header intelligenti**: Ogni grafico ha header con titolo, sottotitolo e controlli
+- **Mostra/Nascondi**: Pulsanti per nascondere grafici non necessari
+- **Comprimi/Espandi**: Modalità compatta per ottimizzare lo spazio
+- **Preferenze persistenti**: Stato salvato in localStorage per sessioni future
+- **Hover effects**: Interazioni fluide con animazioni moderne
 
 #### 🔍 **Ottimizzazione Layout Filtri Handling**
 - **Layout migliorato**: Ridistribuzione filtri su due righe con spaziatura ottimizzata

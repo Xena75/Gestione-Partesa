@@ -78,7 +78,18 @@ export default function Navbar() {
                 >
                   Dashboard
                 </Link>
-
+                <Link 
+                  className={`nav-link ${pathname === '/monitoraggio' ? 'active' : ''}`} 
+                  href="/monitoraggio"
+                >
+                  📋 Monitoraggio
+                </Link>
+                <Link 
+                  className={`nav-link ${pathname === '/delivery-analytics' ? 'active' : ''}`} 
+                  href="/delivery-analytics"
+                >
+                  📊 Analytics
+                </Link>
               </div>
               
               {/* Sezione utente e logout */}

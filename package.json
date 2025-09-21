@@ -1,6 +1,6 @@
 {
   "name": "gestione-partesa",
-  "version": "2.18.2",
+  "version": "2.20.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack -p 3001",
@@ -30,6 +30,7 @@
     "react-dropzone": "^14.3.8",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^6.28.0",
+    "recharts": "^3.2.1",
     "sonner": "^1.7.1",
     "uuid": "^13.0.0",
     "xlsx": "^0.18.5",

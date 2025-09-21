@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { 
   Users, Truck, Package, DollarSign, Settings, FileText, 
-  BarChart3, Calendar, Shield, Plus, Upload, Code, Clock, HelpCircle, Eye, ChevronRight 
+  BarChart3, Calendar, Shield, Plus, Upload, Code, Clock, HelpCircle, Eye, ChevronRight, TrendingUp 
 } from 'lucide-react';
 import PendingViaggiModal from '@/components/PendingViaggiModal';
 import PodMancantiModal from '@/components/PodMancantiModal';
@@ -193,13 +193,29 @@ const SectionSkeleton = () => (
       pages: [
         { name: 'Fatturazione Terzisti', href: '/fatturazione-terzisti', icon: DollarSign },
         { name: 'Fatturazione Delivery', href: '/gestione', icon: Package },
-        { name: 'Fatturazione Handling', href: '/handling', icon: Package },
-        { name: 'Report', href: '/report', icon: BarChart3 }
+        { name: 'Fatturazione Handling', href: '/handling', icon: Package }
       ],
       stats: { 
         monthly: stats?.fatturazione.monthly || '€0k', 
         pending: stats?.fatturazione.pending || '€0', 
         completed: stats?.fatturazione.completed || 0 
+      }
+    },
+    {
+      id: 'analytics',
+      title: 'Analytics',
+      icon: BarChart3,
+      color: 'from-indigo-500 to-purple-500',
+      pages: [
+        { name: 'Delivery Analytics', href: '/delivery-analytics', icon: BarChart3 },
+        { name: 'Viaggi Analytics', href: '/viaggi-analytics', icon: TrendingUp },
+        { name: 'Performance Analytics', href: '/performance-analytics', icon: BarChart3 },
+        { name: 'Report Avanzati', href: '/report-avanzati', icon: FileText }
+      ],
+      stats: { 
+        'Delivery Reports': 1, 
+        'Viaggi Reports': 1, 
+        'Performance Reports': 1 
       }
     },
     {
@@ -352,7 +368,7 @@ const SectionSkeleton = () => (
                       const PageIcon = page.icon;
                       
                       // Lista dei link da disabilitare
-                      const disabledLinks = ['/report', '/clienti', '/fornitori', '/utenti'];
+                      const disabledLinks = ['/clienti', '/fornitori', '/utenti', '/viaggi-analytics', '/performance-analytics', '/report-avanzati'];
                       const isDisabled = disabledLinks.includes(page.href) || (page.name === 'FAQ');
                       
                       if (isDisabled) {
