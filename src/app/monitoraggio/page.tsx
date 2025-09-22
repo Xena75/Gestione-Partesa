@@ -18,19 +18,21 @@ function MonitoraggioPageContent() {
   const sortOrder = (searchParams?.get('sortOrder') as 'ASC' | 'DESC') || 'DESC';
   
   // Funzione per convertire le date dal formato database al formato italiano
+  // IMPORTANTE: Mostra esattamente l'ora presente nel database senza conversioni timezone
   const formatDateToItalian = (dateString: string | null): string => {
     if (!dateString) return '';
     
     try {
-      const date = new Date(dateString + 'Z');
-      if (isNaN(date.getTime())) return dateString; // Se non è una data valida, ritorna la stringa originale
+      // NON aggiungere 'Z' per evitare conversioni UTC
+      // Interpreta la data come locale (stesso timezone del database)
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return dateString;
       
-      const localDate = new Date(date.toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
-      const day = localDate.getDate().toString().padStart(2, '0');
-      const month = (localDate.getMonth() + 1).toString().padStart(2, '0');
-      const year = localDate.getFullYear();
-      const hours = localDate.getHours().toString().padStart(2, '0');
-      const minutes = localDate.getMinutes().toString().padStart(2, '0');
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
       
       return `${day}-${month}-${year} ${hours}:${minutes}`;
     } catch {

@@ -283,12 +283,14 @@ export default function ModificaMonitoraggioPage({ params }: { params: Promise<{
   };
 
   // Funzione per convertire le date dal formato database al formato italiano
+  // IMPORTANTE: Mostra esattamente l'ora presente nel database senza conversioni timezone
   const formatDateToItalian = (dateString: string | null): string => {
     if (!dateString) return '';
     
     try {
+      // NON aggiungere 'Z' per evitare conversioni UTC
       const date = new Date(dateString);
-      if (isNaN(date.getTime())) return dateString; // Se non è una data valida, ritorna la stringa originale
+      if (isNaN(date.getTime())) return dateString;
       
       const day = date.getDate().toString().padStart(2, '0');
       const month = (date.getMonth() + 1).toString().padStart(2, '0');

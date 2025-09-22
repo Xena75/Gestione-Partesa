@@ -48,8 +48,8 @@ export default function ImportHistoryTable({ sessions }: ImportHistoryTableProps
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString + 'Z').toLocaleString('it-IT', {
-      timeZone: 'Europe/Rome',
+    // IMPORTANTE: Mostra esattamente la data/ora presente nel database senza conversioni timezone
+    return new Date(dateString).toLocaleString('it-IT', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',

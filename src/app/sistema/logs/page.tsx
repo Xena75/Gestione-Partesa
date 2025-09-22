@@ -329,7 +329,7 @@ export default function LogsPage() {
                       <tr key={log.id}>
                         <td>
                           <small className="text-muted">
-                            {new Date(log.timestamp + 'Z').toLocaleString('it-IT', { timeZone: 'Europe/Rome' })}
+                            {new Date(log.timestamp).toLocaleString('it-IT')}
                           </small>
                         </td>
                         <td>

@@ -129,10 +129,12 @@ export default function ModificaViaggioPodPage({ params }: { params: Promise<{ i
   };
 
   // Funzione per convertire le date dal formato database al formato italiano
+  // IMPORTANTE: Mostra esattamente l'ora presente nel database senza conversioni timezone
   const formatDateToItalian = (dateString: string | null): string => {
     if (!dateString) return '';
     
     try {
+      // NON aggiungere 'Z' per evitare conversioni UTC
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return dateString;
       
