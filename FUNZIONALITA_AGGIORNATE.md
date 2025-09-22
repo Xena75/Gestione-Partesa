@@ -1,4 +1,15 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.20.0
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.20.1
+
+## 🚀 **VERSIONE 2.20.1** - Fix Timezone Offset ⭐ **CORREZIONE CRITICA**
+
+### 🔧 **CORREZIONE TIMEZONE OFFSET**
+- **Problema risolto**: Date/ore mostrate con +2 ore di offset rispetto al database
+- **Causa**: Aggiunta di `'Z'` che forzava conversione UTC → Europe/Rome
+- **Soluzione**: Rimossa conversione timezone, date mostrate esattamente come nel database
+- **File corretti**: 7 file con funzioni di formattazione date
+- **Risultato**: Database 08:30 → App 08:30 (non più 10:30)
+
+---
 
 ## 🚀 **VERSIONE 2.20.0** - Sistema Analytics Avanzato e Dashboard Interattiva ⭐ **NUOVO**
 
