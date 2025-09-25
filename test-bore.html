@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Bore Service</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            margin-bottom: 20px;
+            font-size: 2.5em;
+        }
+        .status {
+            background: #4CAF50;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 1.2em;
+        }
+        .info {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .timestamp {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Test Bore Service</h1>
+        <div class="status">
+            ✅ Server HTTP attivo e funzionante!
+        </div>
+        <div class="info">
+            <strong>Porta:</strong> 8080
+        </div>
+        <div class="info">
+            <strong>Servizio:</strong> Bore Tunnel Test
+        </div>
+        <div class="info">
+            <strong>Timestamp:</strong> <span class="timestamp" id="timestamp"></span>
+        </div>
+        <div class="info">
+            <strong>IP Client:</strong> <span id="client-ip">Rilevamento in corso...</span>
+        </div>
+    </div>
+
+    <script>
+        // Aggiorna timestamp
+        document.getElementById('timestamp').textContent = new Date().toLocaleString('it-IT');
+        
+        // Rileva IP del client
+        fetch('https://api.ipify.org?format=json')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('client-ip').textContent = data.ip;
+            })
+            .catch(() => {
+                document.getElementById('client-ip').textContent = 'Non disponibile';
+            });
+    </script>
+</body>
+</html>

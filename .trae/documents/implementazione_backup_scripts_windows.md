@@ -84,8 +84,10 @@ set TIMESTAMP=%date:~-4,4%%date:~-10,2%%date:~-7,2%_%time:~0,2%%time:~3,2%%time:
 set TIMESTAMP=%TIMESTAMP: =0%
 
 REM Configurazione Database
-set DB_HOST=bore.pub
-set DB_PORT=54000
+set DB_HOST=localhost
+REM NOTA: Database ora esposto tramite ngrok TCP tunnel a pagamento invece di bore
+REM Comando ngrok: ngrok tcp 3306 --authtoken YOUR_TOKEN
+set DB_PORT=3306
 set DB_USER=root
 set DB_PASS=
 set DB1_NAME=viaggi_db
@@ -192,8 +194,10 @@ set TIMESTAMP=%date:~-4,4%%date:~-10,2%%date:~-7,2%_%time:~0,2%%time:~3,2%%time:
 set TIMESTAMP=%TIMESTAMP: =0%
 
 REM Configurazione Database
-set DB_HOST=bore.pub
-set DB_PORT=54000
+set DB_HOST=localhost
+REM NOTA: Database ora esposto tramite ngrok TCP tunnel a pagamento invece di bore
+REM Comando ngrok: ngrok tcp 3306 --authtoken YOUR_TOKEN
+set DB_PORT=3306
 set DB_USER=root
 set DB_PASS=
 set DB1_NAME=viaggi_db
@@ -393,8 +397,9 @@ const nodemailer = require('nodemailer');
 
 // Configurazione database di monitoraggio
 const DB_CONFIG = {
-    host: 'bore.pub',
-    port: 54000,
+    host: 'localhost', // Database esposto tramite ngrok TCP tunnel a pagamento
+   // NOTA: bore tunnel non più funzionante - server pubblici non raggiungibili
+     port: 3306,
     user: 'root',
     password: '',
     database: 'backup_management'
@@ -1126,7 +1131,8 @@ export default function BackupDashboard() {
 - [ ] MySQL Client installato e configurato
 - [ ] Node.js 18+ installato
 - [ ] Privilegi amministratore sistema
-- [ ] Accesso ai database bore.pub:54000
+- [ ] Accesso ai database tramite ngrok TCP tunnel a pagamento (porta 3306)
+- [ ] NOTA: bore tunnel dismesso - server pubblici bore non più raggiungibili
 - [ ] Spazio disco sufficiente (minimo 50GB)
 
 ## Fase 1: Preparazione Ambiente
@@ -1223,12 +1229,14 @@ echo    ✓ Dipendenze installate
 
 echo.
 echo 3. Configurazione database backup_management...
-mysql --host=bore.pub --port=54000 --user=root -e "CREATE DATABASE IF NOT EXISTS backup_management CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql --host=localhost --port=3306 --user=root -e "CREATE DATABASE IF NOT EXISTS backup_management CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+REM Database ora accessibile tramite ngrok TCP tunnel a pagamento
 echo    ✓ Database creato
 
 echo.
 echo 4. Test connessione database...
-mysql --host=bore.pub --port=54000 --user=root -e "SELECT 'Connessione OK' as status;" backup_management
+mysql --host=localhost --port=3306 --user=root -e "SELECT 'Connessione OK' as status;" backup_management
+REM Test connessione tramite ngrok TCP tunnel a pagamento
 if %ERRORLEVEL% EQU 0 (
     echo    ✓ Connessione database OK
 ) else (
@@ -1259,7 +1267,8 @@ echo ============================================
 echo.
 echo Sistema backup configurato per:
 echo - Database: viaggi_db + gestionelogistica
-echo - Host: bore.pub:54000
+echo - Host: localhost:3306 (tramite ngrok TCP tunnel a pagamento)
+echo - NOTA: bore tunnel dismesso - server pubblici non raggiungibili
 echo - Storage: %BACKUP_ROOT%\storage
 echo - Dashboard: http://localhost:3001/backup-dashboard
 echo.

@@ -16,6 +16,12 @@ Il sistema "Gestione Partesa" è una piattaforma logistica critica costruita con
 - Sistema di monitoraggio job real-time attivo
 - Correzioni bug parsing JSON database_list applicate
 
+**⚠️ AGGIORNAMENTO CONFIGURAZIONE DATABASE (2024):**
+- **Bore tunnel dismesso**: I server pubblici bore.pub non sono più raggiungibili
+- **Nuova soluzione**: ngrok versione a pagamento per esposizione porta 3306 MySQL
+- **Vantaggi ngrok TCP**: Supporto nativo TCP, stabilità enterprise, autenticazione sicura
+- **Configurazione**: `ngrok tcp 3306 --authtoken YOUR_TOKEN` per esposizione database
+
 ## 2. Core Features
 
 ### 2.1 User Roles
@@ -121,8 +127,8 @@ Design mobile-first con breakpoints Bootstrap 5, ottimizzato per tablet e deskto
 graph TD
     A[Next.js Dashboard :3001] --> B[Backup API Routes]
     B --> C[MySQL Backup Service]
-    C --> D[viaggi_db @bore.pub:54000]
-    C --> E[gestionelogistica @bore.pub:54000]
+    C --> D[viaggi_db @localhost:3306 via ngrok TCP]
+    C --> E[gestionelogistica @localhost:3306 via ngrok TCP]
     C --> F[Windows Task Scheduler]
     C --> G[Encryption Service AES-256]
     G --> H[Local Storage]

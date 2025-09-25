@@ -42,6 +42,8 @@ graph TD
 
 * **Database**: MySQL\@8.0+ (via XAMPP) + Dual Database Architecture
 
+* **Database Tunneling**: ngrok TCP tunnel a pagamento (porta 3306) - sostituisce bore tunnel dismesso
+
 * **Authentication**: JWT + bcryptjs
 
 * **File Processing**: multer + xlsx + react-dropzone
@@ -51,6 +53,8 @@ graph TD
 * **UI Components**: Lucide React icons + Custom Bootstrap components
 
 * **Backup System**: Windows Batch Scripts + MySQL Dump + Automated Scheduling
+
+* **Database Exposure**: ngrok TCP tunnel a pagamento per accesso remoto MySQL (porta 3306)
 
 * **Development**: ESLint + TypeScript + Turbopack (Hot Reload)
 
