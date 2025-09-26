@@ -9,13 +9,19 @@ const nextConfig: NextConfig = {
     MAX_FILE_SIZE: '50mb',
   },
   
-  // 🎨 OTTIMIZZAZIONI CSS per ridurre warning preload
+  // 🎨 OTTIMIZZAZIONI CSS per eliminare warning preload
   experimental: {
     optimizeCss: true,
     cssChunking: 'strict',
+    optimizePackageImports: ['react-big-calendar', 'lucide-react'],
+  },
+
+  // 🔧 CONFIGURAZIONE PRELOAD per eliminare warning CSS
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
   },
   
-  // 📦 OTTIMIZZAZIONI WEBPACK per CSS chunks
+  // 📦 OTTIMIZZAZIONI WEBPACK per CSS chunks e preload
   webpack: (config, { dev, isServer }) => {
     if (!dev && !isServer) {
       config.optimization.splitChunks = {
@@ -29,8 +35,20 @@ const nextConfig: NextConfig = {
             enforce: true,
             priority: 20,
           },
+          // Chunk specifico per react-big-calendar CSS
+          calendar: {
+            name: 'calendar-styles',
+            test: /react-big-calendar.*\.(css|scss|sass)$/,
+            chunks: 'all',
+            enforce: true,
+            priority: 30,
+          },
         },
       };
+      
+      // Configurazione per preload ottimizzato
+      config.optimization.usedExports = true;
+      config.optimization.sideEffects = false;
     }
     return config;
   },
