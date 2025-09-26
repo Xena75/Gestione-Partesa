@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { 
   Users, Truck, Package, DollarSign, Settings, FileText, 
-  BarChart3, Calendar, Shield, Plus, Upload, Code, Clock, HelpCircle, Eye, ChevronRight, TrendingUp 
+  BarChart3, Calendar, Shield, Plus, Upload, Code, Clock, HelpCircle, Eye, ChevronRight, TrendingUp, Car, Tag 
 } from 'lucide-react';
 import PendingViaggiModal from '@/components/PendingViaggiModal';
 import PodMancantiModal from '@/components/PodMancantiModal';
@@ -41,6 +41,11 @@ interface DashboardStats {
     configs: number;
     logs: string;
     users: number;
+  };
+  veicoli: {
+    total: number;
+    activeSchedules: number;
+    openQuotes: number;
   };
 }
 
@@ -101,7 +106,8 @@ export default function DashboardPage() {
         anagrafiche: { clients: 0, suppliers: 0, users: 0 },
         fatturazione: { monthly: '€0k', pending: '€0', completed: 0 },
         import: { files: 0, pending: 0, errors: 0 },
-        sistema: { configs: 0, logs: '0', users: 0 }
+        sistema: { configs: 0, logs: '0', users: 0 },
+        veicoli: { total: 0, activeSchedules: 0, openQuotes: 0 }
       });
     } finally {
       setStatsLoading(false);
@@ -170,35 +176,20 @@ const SectionSkeleton = () => (
 
   const sections = [
     {
-      id: 'viaggi',
-      title: 'Viaggi',
-      icon: Truck,
-      color: 'from-blue-500 to-cyan-500',
+      id: 'anagrafiche',
+      title: 'Anagrafiche',
+      icon: Users,
+      color: 'from-purple-500 to-pink-500',
       pages: [
-        { name: 'Gestione Viaggi', href: '/viaggi', icon: Truck },
-        { name: 'Monitoraggio', href: '/monitoraggio', icon: BarChart3 },
-        { name: 'Viaggi POD', href: '/viaggi-pod', icon: Package }
+        { name: 'Clienti', href: '/clienti', icon: Users },
+        { name: 'Fornitori', href: '/vehicles/suppliers', icon: Users },
+        { name: 'Categorie', href: '/vehicles/categories', icon: Tag },
+        { name: 'Utenti Sistema', href: '/utenti', icon: Shield }
       ],
       stats: { 
-        'Monitoraggi pending': stats?.viaggi.active || 0, 
-        completed: stats?.viaggi.completed || 0, 
-        'Viaggi PoD mancanti': stats?.viaggi.pending || 0 
-      }
-    },
-    {
-      id: 'fatturazione',
-      title: 'Fatturazione',
-      icon: DollarSign,
-      color: 'from-green-500 to-emerald-500',
-      pages: [
-        { name: 'Fatturazione Terzisti', href: '/fatturazione-terzisti', icon: DollarSign },
-        { name: 'Fatturazione Delivery', href: '/gestione', icon: Package },
-        { name: 'Fatturazione Handling', href: '/handling', icon: Package }
-      ],
-      stats: { 
-        monthly: stats?.fatturazione.monthly || '€0k', 
-        pending: stats?.fatturazione.pending || '€0', 
-        completed: stats?.fatturazione.completed || 0 
+        clients: stats?.anagrafiche.clients || 0, 
+        suppliers: stats?.anagrafiche.suppliers || 0, 
+        users: stats?.anagrafiche.users || 0 
       }
     },
     {
@@ -219,22 +210,21 @@ const SectionSkeleton = () => (
       }
     },
     {
-      id: 'anagrafiche',
-      title: 'Anagrafiche',
-      icon: Users,
-      color: 'from-purple-500 to-pink-500',
+      id: 'fatturazione',
+      title: 'Fatturazione',
+      icon: DollarSign,
+      color: 'from-green-500 to-emerald-500',
       pages: [
-        { name: 'Clienti', href: '/clienti', icon: Users },
-        { name: 'Fornitori', href: '/fornitori', icon: Users },
-        { name: 'Utenti Sistema', href: '/utenti', icon: Shield }
+        { name: 'Fatturazione Terzisti', href: '/fatturazione-terzisti', icon: DollarSign },
+        { name: 'Fatturazione Delivery', href: '/gestione', icon: Package },
+        { name: 'Fatturazione Handling', href: '/handling', icon: Package }
       ],
       stats: { 
-        clients: stats?.anagrafiche.clients || 0, 
-        suppliers: stats?.anagrafiche.suppliers || 0, 
-        users: stats?.anagrafiche.users || 0 
+        monthly: stats?.fatturazione.monthly || '€0k', 
+        pending: stats?.fatturazione.pending || '€0', 
+        completed: stats?.fatturazione.completed || 0 
       }
     },
-
     {
       id: 'import',
       title: 'Import',
@@ -281,6 +271,40 @@ const SectionSkeleton = () => (
         tickets: 0, 
         guide: 12, 
         docs: 2 
+      }
+    },
+    {
+      id: 'veicoli',
+      title: 'Veicoli',
+      icon: Car,
+      color: 'from-orange-500 to-red-500',
+      pages: [
+        { name: 'Lista Veicoli', href: '/vehicles/list', icon: Car },
+        { name: 'Gestione Scadenze', href: '/vehicles/schedules', icon: Calendar },
+        { name: 'Calendario Veicoli', href: '/vehicles/schedules/calendar', icon: Calendar },
+        { name: 'Preventivi Manutenzione', href: '/vehicles/quotes', icon: DollarSign },
+        { name: 'Dashboard Veicoli', href: '/vehicles', icon: Car }
+      ],
+      stats: { 
+        'Scadenze attive': stats?.veicoli?.activeSchedules || 0, 
+        'Preventivi aperti': stats?.veicoli?.openQuotes || 0, 
+        'Veicoli totali': stats?.veicoli?.total || 0 
+      }
+    },
+    {
+      id: 'viaggi',
+      title: 'Viaggi',
+      icon: Truck,
+      color: 'from-blue-500 to-cyan-500',
+      pages: [
+        { name: 'Gestione Viaggi', href: '/viaggi', icon: Truck },
+        { name: 'Monitoraggio', href: '/monitoraggio', icon: BarChart3 },
+        { name: 'Viaggi POD', href: '/viaggi-pod', icon: Package }
+      ],
+      stats: { 
+        'Monitoraggi pending': stats?.viaggi.active || 0, 
+        completed: stats?.viaggi.completed || 0, 
+        'Viaggi PoD mancanti': stats?.viaggi.pending || 0 
       }
     }
   ];
@@ -411,6 +435,7 @@ const SectionSkeleton = () => (
                       // Mappa le chiavi alle label italiane
                       const getStatLabel = (key: string) => {
                         if (key === 'completed') return 'Viaggi completati';
+                        if (key === 'suppliers') return 'Fornitori';
                         return key;
                       };
                       

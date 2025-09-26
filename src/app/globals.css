@@ -1123,3 +1123,281 @@ body {
     font-size: 0.8rem;
   }
 }
+
+/* React Big Calendar Dark Mode Styles */
+.dark .rbc-calendar {
+  background-color: var(--card-bg) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Calendar Header */
+.dark .rbc-header {
+  background-color: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  font-weight: 600;
+  padding: 0.75rem 0.5rem;
+}
+
+/* Calendar Toolbar */
+.dark .rbc-toolbar {
+  background-color: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  padding: 1rem;
+  margin-bottom: 0;
+}
+
+.dark .rbc-toolbar button {
+  background-color: var(--button-bg) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+  transition: all 0.2s ease;
+}
+
+.dark .rbc-toolbar button:hover {
+  background-color: var(--hover-bg) !important;
+  border-color: #667eea !important;
+  color: #667eea !important;
+}
+
+.dark .rbc-toolbar button.rbc-active {
+  background-color: #667eea !important;
+  border-color: #667eea !important;
+  color: white !important;
+}
+
+/* Calendar Month View */
+.dark .rbc-month-view {
+  background-color: var(--card-bg) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+/* Calendar Date Cells */
+.dark .rbc-date-cell {
+  color: var(--text-primary) !important;
+  background-color: var(--card-bg) !important;
+  border-right: 1px solid var(--border-color) !important;
+  padding: 0.5rem;
+}
+
+.dark .rbc-date-cell:hover {
+  background-color: var(--hover-bg) !important;
+}
+
+/* Calendar Day Background */
+.dark .rbc-day-bg {
+  background-color: var(--card-bg) !important;
+  border-right: 1px solid var(--border-color) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+.dark .rbc-day-bg:hover {
+  background-color: var(--hover-bg) !important;
+}
+
+/* Today's date highlighting */
+.dark .rbc-today {
+  background-color: rgba(102, 126, 234, 0.1) !important;
+  border: 2px solid rgba(102, 126, 234, 0.3) !important;
+}
+
+/* Off-range dates (previous/next month) */
+.dark .rbc-off-range {
+  color: var(--text-secondary) !important;
+  background-color: rgba(255, 255, 255, 0.02) !important;
+}
+
+.dark .rbc-off-range-bg {
+  background-color: rgba(255, 255, 255, 0.02) !important;
+}
+
+/* Calendar Events */
+.dark .rbc-event {
+  background-color: #667eea !important;
+  border: none !important;
+  color: white !important;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.dark .rbc-event:hover {
+  background-color: #5a67d8 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.dark .rbc-event.rbc-selected {
+  background-color: #4c51bf !important;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.5);
+}
+
+/* Show More Link */
+.dark .rbc-show-more {
+  color: #667eea !important;
+  background-color: var(--hover-bg) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+}
+
+.dark .rbc-show-more:hover {
+  background-color: rgba(102, 126, 234, 0.1) !important;
+  color: #5a67d8 !important;
+}
+
+/* Calendar Row */
+.dark .rbc-row {
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+/* Calendar Month Row */
+.dark .rbc-month-row {
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+/* Calendar Week View */
+.dark .rbc-time-view {
+  background-color: var(--card-bg) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+.dark .rbc-time-header {
+  background-color: var(--bg-secondary) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+.dark .rbc-time-content {
+  background-color: var(--card-bg) !important;
+}
+
+.dark .rbc-time-slot {
+  border-top: 1px solid var(--border-color) !important;
+  color: var(--text-secondary) !important;
+}
+
+.dark .rbc-timeslot-group {
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+/* Calendar Agenda View */
+.dark .rbc-agenda-view {
+  background-color: var(--card-bg) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+.dark .rbc-agenda-view table {
+  background-color: var(--card-bg) !important;
+}
+
+.dark .rbc-agenda-view tbody tr {
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+/* Fix for priority badges - force white text on blue background */
+.badge.bg-info {
+  color: white !important;
+}
+
+.dark .badge.bg-info {
+  color: white !important;
+  background-color: #0dcaf0 !important;
+}
+
+.dark .rbc-agenda-view tbody tr:hover {
+  background-color: var(--hover-bg) !important;
+}
+
+.dark .rbc-agenda-view tbody td {
+  color: var(--text-primary) !important;
+  border-right: 1px solid var(--border-color) !important;
+}
+
+/* Calendar Navigation Labels */
+.dark .rbc-toolbar-label {
+  color: var(--text-primary) !important;
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+/* Calendar Button Group */
+.dark .rbc-btn-group {
+  border: 1px solid var(--border-color) !important;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.dark .rbc-btn-group button {
+  border-radius: 0 !important;
+  border-right: 1px solid var(--border-color) !important;
+}
+
+.dark .rbc-btn-group button:last-child {
+  border-right: none !important;
+}
+
+/* Calendar Popup/Overlay */
+.dark .rbc-overlay {
+  background-color: var(--card-bg) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+  border-radius: 8px;
+}
+
+.dark .rbc-overlay-header {
+  background-color: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  padding: 0.75rem;
+  font-weight: 600;
+}
+
+/* Calendar Current Time Indicator */
+.dark .rbc-current-time-indicator {
+  background-color: #f56565 !important;
+  height: 2px;
+}
+
+/* Calendar Slot Selection */
+.dark .rbc-slot-selection {
+  background-color: rgba(102, 126, 234, 0.2) !important;
+  border: 1px solid rgba(102, 126, 234, 0.4) !important;
+}
+
+/* Calendar Drag and Drop */
+.dark .rbc-addons-dnd .rbc-addons-dnd-drag-preview {
+  background-color: rgba(102, 126, 234, 0.8) !important;
+  border: 1px solid #667eea !important;
+  color: white !important;
+}
+
+.dark .rbc-addons-dnd .rbc-addons-dnd-over {
+  background-color: rgba(102, 126, 234, 0.1) !important;
+}
+
+/* Responsive Calendar */
+@media (max-width: 768px) {
+  .dark .rbc-toolbar {
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem;
+  }
+  
+  .dark .rbc-toolbar-label {
+    font-size: 1.1rem;
+    margin: 0.5rem 0;
+  }
+  
+  .dark .rbc-btn-group {
+    width: 100%;
+  }
+  
+  .dark .rbc-btn-group button {
+    flex: 1;
+    padding: 0.5rem;
+    font-size: 0.875rem;
+  }
+}

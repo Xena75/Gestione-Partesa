@@ -10,7 +10,33 @@ Estensione del sistema di gestione veicoli per includere il monitoraggio automat
 
 ## 2. Funzionalità Principali
 
-### 2.1 Ruoli Utente
+### 2.1 Implementazioni Recenti (Completate)
+
+#### 2.1.1 Nuovi Campi Database Veicoli
+- **km_ultimo_tagliando**: Tracciamento chilometraggio ultimo tagliando effettuato
+- **data_ultimo_tagliando**: Data ultimo tagliando con formattazione italiana (gg/mm/aaaa)
+- **data_ultima_revisione**: Data ultima revisione con formattazione italiana (gg/mm/aaaa)
+- Visualizzazione automatica con fallback "-" per valori nulli
+
+#### 2.1.2 Filtri Dropdown Intelligenti
+- **Marca**: Selezione da valori unici presenti nel database
+- **Modello**: Selezione da valori unici presenti nel database  
+- **Proprietà**: Selezione da valori unici presenti nel database
+- **Tipo Patente**: Selezione da valori unici presenti nel database
+- Opzione "Tutti" per reset filtri
+- Filtri combinabili per ricerca avanzata
+
+#### 2.1.3 Gestione Stato Veicoli
+- **Disattivazione logica**: Campo `attivo` per soft delete
+- **Filtro stato**: Visualizzazione veicoli attivi/disattivati
+- **Preservazione dati**: Mantenimento storico veicoli disattivati
+
+#### 2.1.4 Esportazione Dati Avanzata
+- **Export CSV completo**: Include tutti i nuovi campi implementati
+- **Formattazione date**: Date in formato italiano nell'export
+- **Gestione valori nulli**: Campi vuoti gestiti correttamente nell'export
+
+### 2.2 Ruoli Utente
 
 | Ruolo | Metodo di Registrazione | Permessi Principali |
 |-------|------------------------|---------------------|
@@ -23,7 +49,7 @@ Estensione del sistema di gestione veicoli per includere il monitoraggio automat
 Il sistema di gestione scadenze veicoli comprende le seguenti pagine principali:
 
 1. **Dashboard Scadenze**: panoramica generale, alert critici, statistiche scadenze
-2. **Gestione Veicoli**: elenco veicoli con stato scadenze, filtri avanzati
+2. **Gestione Veicoli**: elenco veicoli con nuovi campi manutenzione (km_ultimo_tagliando, data_ultimo_tagliando, data_ultima_revisione), filtri dropdown intelligenti per marca/modello/proprietà/tipo_patente, disattivazione logica, esportazione CSV avanzata
 3. **Calendario Scadenze**: vista calendario con tutte le scadenze programmate
 4. **Gestione Preventivi**: caricamento, confronto e approvazione preventivi manutenzione
 5. **Configurazione Notifiche**: impostazione alert e promemoria automatici
@@ -35,7 +61,7 @@ Il sistema di gestione scadenze veicoli comprende le seguenti pagine principali:
 |-------------|-------------|-------------------------|
 | Dashboard Scadenze | Panoramica Alert | Visualizza scadenze critiche (entro 30 giorni), contatori per tipo scadenza, grafici trend |
 | Dashboard Scadenze | Widget Statistiche | Mostra totale veicoli, scadenze del mese, costi previsti manutenzione |
-| Gestione Veicoli | Lista Veicoli Estesa | Visualizza veicoli con colonne aggiuntive per stato scadenze, filtri per tipo scadenza e urgenza |
+| Gestione Veicoli | Lista Veicoli Estesa | Visualizza veicoli con colonne aggiuntive: km_ultimo_tagliando, data_ultimo_tagliando, data_ultima_revisione. Filtri dropdown per marca, modello, proprietà, tipo_patente. Disattivazione logica veicoli. Esportazione CSV completa |
 | Gestione Veicoli | Dettaglio Veicolo | Scheda completa con tutte le scadenze del veicolo, storico manutenzioni, documenti allegati |
 | Gestione Preventivi | Caricamento Preventivi | Upload file PDF/immagini, inserimento dati preventivo (fornitore, importo, validità) |
 | Gestione Preventivi | Confronto Preventivi | Tabella comparativa preventivi per stessa manutenzione, evidenziazione migliore offerta |

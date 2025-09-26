@@ -1,4 +1,91 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.20.1
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.21.0
+
+## 🚀 **VERSIONE 2.21.0** - Sistema Gestione Veicoli Avanzato ⭐ **NUOVO**
+
+### 🚗 **GESTIONE VEICOLI COMPLETA**
+- **Nuovi campi database**: Implementati `km_ultimo_tagliando`, `data_ultimo_tagliando`, `data_ultima_revisione`, `attivo`
+- **Filtri dropdown intelligenti**: Conversione filtri testo in selezioni per marca, modello, proprietà, tipo patente
+- **Disattivazione logica**: Sistema soft-delete per preservare storico veicoli dismessi
+- **Export CSV avanzato**: Esportazione completa con tutti i campi inclusi i nuovi per manutenzioni
+- **Interfaccia ottimizzata**: Visualizzazione date formato italiano e gestione elegante valori null
+- **API estese**: Endpoint `/api/vehicles` aggiornato con supporto nuovi campi e filtri stato
+
+### 🔧 **DETTAGLI TECNICI IMPLEMENTAZIONE**
+- **Database schema**: Estensione tabella `vehicles` con 4 nuove colonne
+- **TypeScript interface**: Aggiornamento `Vehicle` interface con nuovi campi tipizzati
+- **Frontend React**: Componenti dropdown dinamici popolati da valori unici database
+- **Backend API**: Query SQL ottimizzate per performance e gestione filtri avanzati
+- **Export functionality**: CSV generator esteso con formattazione date italiana
+- **UI/UX**: Indicatori visivi per stato veicoli e gestione responsive
+
+### ✅ **BENEFICI OPERATIVI OTTENUTI**
+- **Tracciamento manutenzioni**: Visibilità immediata scadenze tagliandi e revisioni
+- **Ricerca efficiente**: Filtri dropdown per selezione rapida e precisa
+- **Storico completo**: Veicoli dismessi preservati per analisi storiche
+- **Analisi offline**: Export CSV completo per elaborazioni esterne
+- **User experience**: Interfaccia intuitiva con controlli user-friendly
+- **Scalabilità**: Architettura estendibile per future funzionalità
+
+### 🛠️ **FILE MODIFICATI**
+- `src/app/vehicles/list/page.tsx` - Interfaccia principale con nuovi filtri e campi
+- `src/app/api/vehicles/route.ts` - API endpoint esteso con nuovi campi
+- Database `viaggi_db.vehicles` - Schema esteso con colonne manutenzione
+- TypeScript interfaces - Aggiornamento tipizzazione per type safety
+
+### 📋 **FUNZIONALITÀ TESTATE**
+- ✅ **Visualizzazione campi**: Nuovi campi manutenzione mostrati correttamente
+- ✅ **Filtri dropdown**: Popolamento dinamico e funzionamento selezioni
+- ✅ **Toggle stato**: Filtro attivo/disattivato/tutti operativo
+- ✅ **Export CSV**: Generazione file con tutti i campi inclusi
+- ✅ **Formattazione date**: Formato italiano gg/mm/aaaa implementato
+- ✅ **Gestione null**: Visualizzazione "-" per valori mancanti
+- ✅ **Responsività**: Interfaccia ottimizzata per tutti i dispositivi
+
+---
+
+## 🚀 **VERSIONE 2.20.2** - Risoluzione Errori 500 Backup Dashboard ⭐ **CORREZIONE CRITICA**
+
+### 🔧 **MIGRAZIONE DATABASE DA BORE A NGROK**
+- **Problema risolto**: Errori 500 persistenti su tutti gli endpoint API del backup dashboard
+- **Causa identificata**: Configurazione database backup ancora su `bore.pub:54000` (servizio non più funzionante)
+- **Soluzione implementata**: Aggiornamento completo `.env.production` con configurazione ngrok
+- **Migrazione completata**: Transizione da `bore.pub:54000` a `10.tcp.eu.ngrok.io:24345`
+- **Allineamento configurazione**: Database backup ora coerente con VIAGGI e GESTIONE
+
+### 🛠️ **DETTAGLI TECNICI CORREZIONE**
+- **File modificato**: `.env.production` - Sezione BACKUP MANAGEMENT
+- **MYSQL_HOST**: Aggiornato da `bore.pub` a `10.tcp.eu.ngrok.io`
+- **MYSQL_PORT**: Modificato da `54000` a `24345`
+- **Documentazione**: Migrazione documentata in `migrazione_bore_to_ngrok.md` e `configurazione_ngrok_mysql.md`
+- **Commit**: Modifiche committate e pushate in produzione
+
+### ✅ **RISULTATI OTTENUTI**
+- **API operative**: Tutti gli endpoint `/api/backup/*` ora restituiscono 200 OK invece di 500
+- **Dashboard funzionale**: Backup dashboard completamente accessibile e operativo
+- **Stabilità migliorata**: Connessione database stabile e affidabile tramite ngrok
+- **Sicurezza**: Connessione TCP sicura con autenticazione MySQL
+- **Monitoraggio attivo**: Sistema di backup completamente operativo in produzione
+- **Troubleshooting**: Risoluzione definitiva degli errori 500 segnalati
+
+### 🔧 **CONFIGURAZIONE FINALE PRODUZIONE**
+```env
+# BACKUP MANAGEMENT - Configurazione Ngrok
+MYSQL_HOST=10.tcp.eu.ngrok.io
+MYSQL_PORT=24345
+MYSQL_USER=root
+MYSQL_PASSWORD=
+MYSQL_DATABASE=backup_management
+```
+
+### 📋 **CHECKLIST TROUBLESHOOTING**
+- ✅ **Configurazione ngrok**: Verificata e funzionante
+- ✅ **Database connectivity**: Connessione stabile a `10.tcp.eu.ngrok.io:24345`
+- ✅ **API endpoints**: Tutti gli endpoint backup restituiscono 200 OK
+- ✅ **Dashboard UI**: Interfaccia completamente operativa
+- ✅ **Documentazione**: Aggiornata con nuova configurazione
+- ✅ **Commit produzione**: Modifiche deployate e attive
+
+---
 
 ## 🚀 **VERSIONE 2.20.1** - Fix Timezone Offset ⭐ **CORREZIONE CRITICA**
 

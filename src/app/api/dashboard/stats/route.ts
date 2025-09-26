@@ -17,13 +17,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Statistiche parallele per performance
-    const [viaggiStats, clientiStats, fornitoriStats, fatturazioneStats, importStats, sistemaStats] = await Promise.all([
+    const [viaggiStats, clientiStats, fornitoriStats, fatturazioneStats, importStats, sistemaStats, veicoliStats] = await Promise.all([
       getViaggiStats(),
       getClientiStats(),
       getFornitoriStats(),
       getFatturazioneStats(),
       getImportStats(),
-      getSistemaStats()
+      getSistemaStats(),
+      getVeicoliStats()
     ]);
 
     return NextResponse.json({
@@ -35,7 +36,8 @@ export async function GET(request: NextRequest) {
       },
       fatturazione: fatturazioneStats,
       import: importStats,
-      sistema: sistemaStats
+      sistema: sistemaStats,
+      veicoli: veicoliStats
     });
 
   } catch (error) {
@@ -147,31 +149,32 @@ async function getClientiStats() {
 // Statistiche fornitori
 async function getFornitoriStats() {
   try {
-    // Verifica se esiste una tabella fornitori
-    const [tables] = await poolGestione.execute(
-      "SHOW TABLES LIKE 'fornitori'"
-    ) as [any[], any];
-
-    if (tables.length > 0) {
-      const [rows] = await poolGestione.execute(`
-        SELECT COUNT(*) as total
-        FROM fornitori
-      `) as [any[], any];
-      
-      return rows[0] || { total: 0 };
-    }
-
-    // Fallback: conta vettori distinti
-    const [rows] = await poolGestione.execute(`
-      SELECT COUNT(DISTINCT \`Azienda_Vettore\`) as total
-      FROM tab_viaggi 
-      WHERE \`Azienda_Vettore\` IS NOT NULL AND \`Azienda_Vettore\` != ''
+    // Usa la tabella suppliers dal database VIAGGI_DB
+    const [rows] = await poolViaggi.execute(`
+      SELECT 
+        COUNT(*) as total,
+        COUNT(CASE WHEN active = 1 THEN 1 END) as active,
+        COUNT(CASE WHEN active = 0 THEN 1 END) as inactive
+      FROM suppliers
     `) as [any[], any];
-
-    return { total: rows[0]?.total || 0 };
+    
+    return rows[0] || { total: 0, active: 0, inactive: 0 };
   } catch (error) {
     console.error('Errore nel recuperare statistiche fornitori:', error);
-    return { total: 0 };
+    
+    // Fallback: conta vettori distinti da tab_viaggi
+    try {
+      const [fallbackRows] = await poolGestione.execute(`
+        SELECT COUNT(DISTINCT \`Azienda_Vettore\`) as total
+        FROM tab_viaggi 
+        WHERE \`Azienda_Vettore\` IS NOT NULL AND \`Azienda_Vettore\` != ''
+      `) as [any[], any];
+
+      return { total: fallbackRows[0]?.total || 0, active: 0, inactive: 0 };
+    } catch (fallbackError) {
+      console.error('Errore nel fallback statistiche fornitori:', fallbackError);
+      return { total: 0, active: 0, inactive: 0 };
+    }
   }
 }
 
@@ -285,5 +288,39 @@ async function getSistemaStats() {
   } catch (error) {
     console.error('Errore nel recuperare statistiche sistema:', error);
     return { configs: 0, logs: '0', users: 0 };
+  }
+}
+
+// Statistiche veicoli
+async function getVeicoliStats() {
+  try {
+    // Conta veicoli totali dal database VIAGGI_DB
+    const [veicoliRows] = await poolViaggi.execute(`
+      SELECT COUNT(*) as total
+      FROM vehicles
+    `) as [any[], any];
+
+    // Conta scadenze attive
+    const [scadenzeRows] = await poolViaggi.execute(`
+      SELECT COUNT(*) as active_schedules
+      FROM vehicle_schedules
+      WHERE data_scadenza >= CURDATE() AND status = 'pending'
+    `) as [any[], any];
+
+    // Conta preventivi aperti
+    const [preventiviRows] = await poolViaggi.execute(`
+      SELECT COUNT(*) as open_quotes
+      FROM maintenance_quotes
+      WHERE status = 'pending'
+    `) as [any[], any];
+
+    return {
+      total: veicoliRows[0]?.total || 0,
+      activeSchedules: scadenzeRows[0]?.active_schedules || 0,
+      openQuotes: preventiviRows[0]?.open_quotes || 0
+    };
+  } catch (error) {
+    console.error('Errore nel recuperare statistiche veicoli:', error);
+    return { total: 0, activeSchedules: 0, openQuotes: 0 };
   }
 }

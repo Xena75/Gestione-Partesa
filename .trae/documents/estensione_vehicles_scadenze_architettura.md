@@ -6,7 +6,7 @@
 graph TD
     A[User Browser] --> B[Next.js Frontend Application]
     B --> C[API Routes Layer]
-    C --> D[MySQL Database VIAGGI_DB]
+    C --> D[MySQL Database viaggi_db]
     C --> E[Notification Service]
     C --> F[Scheduler Service]
     
@@ -26,7 +26,7 @@ graph TD
     
     subgraph "Data Layer"
         D
-        M[Vehicles Table]
+        M[Vehicles Table - Estesa]
         N[Vehicle_Schedules Table]
         O[Notifications Table]
     end
@@ -37,11 +37,32 @@ graph TD
     end
 ```
 
-## 2. Descrizione Tecnologie
+## 2. Implementazioni Recenti Completate
+
+### 2.1 Estensione Tabella Vehicles
+- **Nuovi campi aggiunti**:
+  - `km_ultimo_tagliando` (INT) - Chilometraggio ultimo tagliando
+  - `data_ultimo_tagliando` (DATE) - Data ultimo tagliando effettuato
+  - `data_ultima_revisione` (DATE) - Data ultima revisione effettuata
+  - `attivo` (BOOLEAN DEFAULT 1) - Flag per disattivazione logica
+
+### 2.2 API Vehicles Aggiornate
+- **GET /api/vehicles**: Restituisce nuovi campi con formattazione date italiana
+- **Filtri intelligenti**: Endpoint per valori unici di marca, modello, proprietà, tipo_patente
+- **Soft delete**: Gestione veicoli attivi/disattivati tramite campo `attivo`
+- **Export CSV**: Include tutti i nuovi campi con gestione valori null
+
+### 2.3 Frontend Enhancements
+- **Filtri dropdown**: Sostituzione input text con select popolati dinamicamente
+- **Gestione stato**: Toggle per visualizzazione veicoli attivi/disattivati
+- **Interfaccia TypeScript**: Aggiornata con nuovi campi Vehicle
+- **Esportazione avanzata**: CSV con tutti i campi e formattazione italiana
+
+## 3. Descrizione Tecnologie
 
 - **Frontend**: React@18 + Next.js@15.5.3 + Bootstrap@5.3.2 + TypeScript@5
 - **Backend**: Next.js API Routes + Node.js@24.4.1
-- **Database**: MySQL@8.0+ (via XAMPP) - estensione database VIAGGI_DB esistente
+- **Database**: MySQL@8.0+ (via XAMPP) - estensione database viaggi_db esistente
 - **File Upload**: Multer per gestione upload preventivi (PDF, immagini)
 - **File Storage**: Sistema locale con organizzazione per veicolo/preventivo
 - **Scheduling**: node-cron per controlli automatici scadenze e scadenza preventivi
@@ -50,11 +71,11 @@ graph TD
 - **Charts**: Chart.js per analytics e reports
 - **PDF Viewer**: React-PDF per anteprima preventivi caricati
 
-## 3. Definizioni delle Route
+## 4. Definizioni delle Route
 
 | Route | Scopo |
 |-------|-------|
-| /vehicles | Gestione veicoli con vista scadenze integrate |
+| /vehicles/list | **IMPLEMENTATA** - Lista veicoli con nuovi campi manutenzione, filtri dropdown, disattivazione logica, export CSV |
 | /vehicles/[id] | Dettaglio veicolo con tutte le scadenze |
 | /vehicles/schedules | Calendario scadenze generale |
 | /vehicles/quotes | Gestione preventivi manutenzione |
@@ -63,9 +84,24 @@ graph TD
 | /vehicles/notifications | Configurazione notifiche e alert |
 | /vehicles/reports | Reports e analytics scadenze |
 
-## 4. Definizioni API
+## 5. Definizioni API
 
-### 4.1 API Principali
+### 5.1 API Implementate
+
+**Gestione Veicoli (IMPLEMENTATA)**
+
+```
+GET /api/vehicles
+```
+
+Response:
+| Nome Parametro | Tipo Parametro | Descrizione |
+|----------------|----------------|-------------|
+| vehicles | array | Lista veicoli con nuovi campi: km_ultimo_tagliando, data_ultimo_tagliando, data_ultima_revisione |
+| total | number | Totale veicoli nel database |
+| active | number | Veicoli attivi (attivo = 1) |
+
+### 5.2 API Pianificate
 
 **Gestione Scadenze Veicoli**
 
@@ -198,7 +234,7 @@ Esempio Response:
 }
 ```
 
-## 5. Architettura Server
+## 6. Architettura Server
 
 ```mermaid
 graph TD
@@ -231,9 +267,19 @@ graph TD
     end
 ```
 
-## 6. Modello Dati
+## 7. Modello Dati
 
-### 6.1 Definizione Modello Dati
+### 7.1 Implementazioni Database Completate
+
+**Tabella Vehicles - Campi Aggiunti**
+```sql
+ALTER TABLE vehicles ADD COLUMN km_ultimo_tagliando INT NULL;
+ALTER TABLE vehicles ADD COLUMN data_ultimo_tagliando DATE NULL;
+ALTER TABLE vehicles ADD COLUMN data_ultima_revisione DATE NULL;
+ALTER TABLE vehicles ADD COLUMN attivo BOOLEAN DEFAULT 1;
+```
+
+### 7.2 Definizione Modello Dati
 
 ```mermaid
 erDiagram
@@ -346,7 +392,7 @@ erDiagram
     }
 ```
 
-### 6.2 Data Definition Language
+### 7.3 Data Definition Language
 
 **Estensione Tabella Vehicle_Schedules**
 

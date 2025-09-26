@@ -90,6 +90,7 @@ export default function Navbar() {
                 >
                   📊 Analytics
                 </Link>
+
               </div>
               
               {/* Sezione utente e logout */}

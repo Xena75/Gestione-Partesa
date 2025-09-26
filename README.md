@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.20.1
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.21.0
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -26,14 +26,46 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Responsive design**: Ottimizzato per tutti i dispositivi
 - **Performance ottimizzate**: Caricamento veloce e operazioni fluide
 
+### 🚗 **Gestione Veicoli e Manutenzioni**
+- **Tracciamento completo**: Gestione anagrafica veicoli con dati manutenzione
+- **Scadenze manutenzioni**: Monitoraggio km e date tagliandi/revisioni
+- **Filtri intelligenti**: Ricerca rapida per marca, modello, proprietà, tipo patente
+- **Gestione stato**: Sistema soft-delete per preservare storico veicoli
+- **Export avanzato**: Esportazione CSV completa per analisi offline
+- **Interfaccia ottimizzata**: Visualizzazione responsive con formattazione italiana
+
 ### 🛡️ **Sicurezza e Amministrazione**
 - **Sistema log avanzato**: Registrazione completa di tutte le operazioni
 - **Gestione utenti**: Funzionalità admin per gestione utenti sistema
 - **Configurazioni centralizzate**: Gestione configurazioni sistema
 - **Autenticazione sicura**: Sistema di login con JWT e controllo sessioni
 - **Backup e recovery**: Sistema completo di backup e ripristino dati
+- **Connessione database sicura**: Migrazione da bore.pub a ngrok per stabilità e sicurezza
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
+
+### 🔧 **Risoluzione Errori 500 Backup Dashboard - v2.20.2** ⭐ **CORREZIONE CRITICA**
+
+#### 🎯 **Migrazione Database da Bore a Ngrok**
+- **Problema risolto**: Errori 500 su tutti gli endpoint API del backup dashboard
+- **Causa identificata**: Configurazione database backup ancora su `bore.pub:54000` (non più funzionante)
+- **Soluzione implementata**: Aggiornamento `.env.production` con configurazione ngrok
+- **Migrazione completata**: Da `bore.pub:54000` a `10.tcp.eu.ngrok.io:24345`
+- **Sistema operativo**: Backup dashboard completamente funzionante in produzione
+
+#### 🛠️ **Dettagli Tecnici Correzione**
+- **File modificato**: `.env.production` - Sezione BACKUP MANAGEMENT
+- **MYSQL_HOST**: Aggiornato da `bore.pub` a `10.tcp.eu.ngrok.io`
+- **MYSQL_PORT**: Modificato da `54000` a `24345`
+- **Allineamento configurazione**: Database backup ora allineato con VIAGGI e GESTIONE
+- **Documentazione**: Migrazione documentata in `migrazione_bore_to_ngrok.md`
+
+#### ✅ **Risultati Ottenuti**
+- **API funzionanti**: Tutti gli endpoint `/api/backup/*` ora restituiscono 200 OK
+- **Dashboard operativa**: Backup dashboard completamente accessibile e funzionale
+- **Stabilità migliorata**: Connessione database stabile tramite ngrok
+- **Sicurezza**: Connessione TCP sicura con autenticazione
+- **Monitoraggio**: Sistema di backup completamente operativo
 
 ### 📊 **Sistema Analytics Avanzato - v2.20.0** ⭐ **NUOVO**
 
@@ -165,6 +197,29 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Design coerente**: Integrazione perfetta con il design esistente del sistema
 - **Feedback immediato**: Indicazioni chiare sullo stato di caricamento
 
+### 🚗 **Sistema Gestione Veicoli Avanzato - v2.21.0** ⭐ **NUOVO**
+
+#### 🎯 **Gestione Veicoli Completa**
+- **Nuovi campi manutenzione**: Tracciamento `km_ultimo_tagliando`, `data_ultimo_tagliando`, `data_ultima_revisione`
+- **Filtri dropdown intelligenti**: Selezione rapida per marca, modello, proprietà e tipo patente
+- **Disattivazione logica**: Sistema soft-delete per preservare storico veicoli
+- **Export CSV avanzato**: Esportazione completa con tutti i campi inclusi i nuovi
+- **Interfaccia ottimizzata**: Visualizzazione date in formato italiano e gestione valori null
+
+#### 🔧 **Funzionalità Implementate**
+- **Database esteso**: Nuove colonne per tracciamento manutenzioni e stato attivo
+- **Filtri dinamici**: Popolamento automatico dropdown da valori unici database
+- **Gestione stato**: Toggle per visualizzare veicoli attivi/disattivati/tutti
+- **Formattazione avanzata**: Date in formato gg/mm/aaaa e indicatori visivi per valori mancanti
+- **API ottimizzate**: Endpoint `/api/vehicles` aggiornato con nuovi campi e filtri
+
+#### ✅ **Benefici Operativi**
+- **Tracciamento manutenzioni**: Visibilità immediata su scadenze tagliandi e revisioni
+- **Ricerca efficiente**: Filtri dropdown per selezione rapida e precisa
+- **Storico preservato**: Veicoli dismessi mantenuti per analisi storiche
+- **Export completo**: Analisi offline con tutti i dati disponibili
+- **Interfaccia intuitiva**: UX migliorata con controlli user-friendly
+
 ### 🔄 **Ottimizzazione Sincronizzazione Tab Viaggi - v2.19.1** ⭐ **NUOVO**
 
 #### 🎯 **Sincronizzazione Selettiva Migliorata**
@@ -198,6 +253,22 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Monitoraggio 24h**: Tracking backup nelle ultime 24 ore con alert
 - **Interfaccia moderna**: Design responsive e user-friendly per gestione backup
 - **Performance ottimizzate**: Caricamento veloce e aggiornamenti in tempo reale
+
+## 🔧 **CONFIGURAZIONE DATABASE E TROUBLESHOOTING**
+
+### 🌐 **Configurazione Database Produzione**
+- **VIAGGI Database**: `10.tcp.eu.ngrok.io:24345` via ngrok
+- **GESTIONE Database**: `10.tcp.eu.ngrok.io:24345` via ngrok  
+- **BACKUP Database**: `10.tcp.eu.ngrok.io:24345` via ngrok
+- **Migrazione**: Completata transizione da `bore.pub` a `ngrok` per stabilità
+- **Documentazione**: `migrazione_bore_to_ngrok.md` e `configurazione_ngrok_mysql.md`
+
+### 🛠️ **Troubleshooting Comune**
+- **Errori 500 API**: Verificare configurazione database in `.env.production`
+- **Connessione database**: Controllare che ngrok sia attivo e raggiungibile
+- **Backup dashboard**: Assicurarsi che `MYSQL_HOST` e `MYSQL_PORT` siano corretti
+- **Performance**: Monitorare connessioni TCP e latenza ngrok
+- **Logs**: Controllare logs Next.js per errori specifici di connessione
 
 ### 🔧 **Aggiornamento Statistiche Dashboard e Documentazione - v2.18.5**
 
