@@ -242,11 +242,6 @@ export default function VehicleListPage() {
         <div className="col-12">
           <nav aria-label="breadcrumb">
             <ol className="breadcrumb">
-              <li className="breadcrumb-item">
-                <Link href="/vehicles" className="text-decoration-none">
-                  Dashboard Veicoli
-                </Link>
-              </li>
               <li className="breadcrumb-item active" aria-current="page">
                 Lista Veicoli
               </li>
@@ -264,7 +259,7 @@ export default function VehicleListPage() {
                 Esporta CSV
               </button>
               <Link href="/vehicles" className="btn btn-outline-secondary">
-                Torna alla Dashboard
+                Dashboard Veicoli
               </Link>
             </div>
           </div>

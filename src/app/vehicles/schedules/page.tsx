@@ -141,7 +141,13 @@ function VehicleSchedulesContent() {
     <div className="container-fluid">
       <div className="row">
         <div className="col-12">
-          <h1 className="h3 mb-4">🚗 Dashboard Scadenze Veicoli</h1>
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <h1 className="h3 mb-0">🚗 Dashboard Scadenze Veicoli</h1>
+            <Link href="/vehicles" className="btn btn-outline-primary">
+              <i className="fas fa-arrow-left me-2"></i>
+              Torna ai Veicoli
+            </Link>
+          </div>
 
           {error && (
             <div className="alert alert-danger" role="alert">

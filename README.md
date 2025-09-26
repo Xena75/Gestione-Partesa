@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.21.0
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.21.1
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -198,6 +198,21 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Feedback immediato**: Indicazioni chiare sullo stato di caricamento
 
 ### 🚗 **Sistema Gestione Veicoli Avanzato - v2.21.0** ⭐ **NUOVO**
+
+### 🔧 **Ottimizzazioni Interfaccia Veicoli - v2.21.1**
+
+#### 🎯 **Miglioramenti Navigazione Lista Veicoli**
+- **Riposizionamento link Dashboard**: Spostato il collegamento "Dashboard Veicoli" dopo il pulsante "Esporta CSV" per migliore organizzazione
+- **Breadcrumb semplificato**: Rimosso il collegamento "Dashboard Veicoli" dal breadcrumb per ridurre ridondanza
+- **Interfaccia pulita**: Navigazione più lineare e intuitiva nella sezione veicoli
+- **User experience ottimizzata**: Posizionamento logico dei controlli per workflow più fluido
+- **Design coerente**: Mantenimento dello stile esistente con miglioramenti funzionali
+
+#### ✅ **Risultati Ottenuti**
+- **Navigazione migliorata**: Accesso più diretto e logico alle funzionalità principali
+- **Interfaccia semplificata**: Riduzione elementi ridondanti per maggiore chiarezza
+- **Workflow ottimizzato**: Posizionamento strategico dei controlli per efficienza operativa
+- **Consistenza UI**: Mantenimento design coerente con miglioramenti funzionali
 
 #### 🎯 **Gestione Veicoli Completa**
 - **Nuovi campi manutenzione**: Tracciamento `km_ultimo_tagliando`, `data_ultimo_tagliando`, `data_ultima_revisione`

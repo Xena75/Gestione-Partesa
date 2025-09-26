@@ -204,13 +204,17 @@ function VehicleSchedulesCalendarContent() {
           <div className="d-flex justify-content-between align-items-center mb-4">
             <h1 className="h3 mb-0">📅 Calendario Scadenze Veicoli</h1>
             <div className="btn-group">
+              <Link href="/vehicles/schedules/new" className="btn btn-success">
+                <i className="fas fa-plus me-1"></i>
+                Nuova Scadenza
+              </Link>
               <Link href="/vehicles/schedules" className="btn btn-outline-primary">
                 <i className="fas fa-list me-1"></i>
                 Vista Lista
               </Link>
-              <Link href="/vehicles/schedules/new" className="btn btn-success">
-                <i className="fas fa-plus me-1"></i>
-                Nuova Scadenza
+              <Link href="/vehicles" className="btn btn-outline-primary">
+                <i className="fas fa-arrow-left me-1"></i>
+                Torna ai Veicoli
               </Link>
             </div>
           </div>

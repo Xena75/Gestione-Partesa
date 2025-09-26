@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Car, Calendar, DollarSign, AlertTriangle, CheckCircle, 
-  Clock, TrendingUp, Users, Settings, Plus, Eye 
+  Clock, TrendingUp, Users, Settings, Plus, Eye, List 
 } from 'lucide-react';
 
 interface VehicleStats {
@@ -143,6 +143,8 @@ export default function VehiclesDashboard() {
         </div>
       </div>
 
+
+
       {/* Statistiche Principali */}
       <div className="row mb-4">
         <div className="col-md-6 col-lg-3 mb-3">
@@ -215,6 +217,12 @@ export default function VehiclesDashboard() {
             <div className="card-body">
               <div className="row">
                 <div className="col-md-6 col-lg-3 mb-3">
+                  <Link href="/vehicles/list" className="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
+                    <List size={32} className="mb-2" />
+                    <span>Lista Veicoli</span>
+                  </Link>
+                </div>
+                <div className="col-md-6 col-lg-3 mb-3">
                   <Link href="/vehicles/schedules" className="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
                     <Calendar size={32} className="mb-2" />
                     <span>Gestione Scadenze</span>
@@ -231,13 +239,6 @@ export default function VehiclesDashboard() {
                     <DollarSign size={32} className="mb-2" />
                     <span>Preventivi</span>
                   </Link>
-                </div>
-                <div className="col-md-6 col-lg-3 mb-3">
-                  <button className="btn btn-outline-secondary w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3" disabled>
-                    <TrendingUp size={32} className="mb-2" />
-                    <span>Analytics</span>
-                    <small className="text-muted">(Prossimamente)</small>
-                  </button>
                 </div>
               </div>
             </div>
