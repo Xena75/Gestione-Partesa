@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.21.1
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.22.0
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -196,6 +196,29 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Navigazione intuitiva**: Controlli semplici per scorrere tra le immagini
 - **Design coerente**: Integrazione perfetta con il design esistente del sistema
 - **Feedback immediato**: Indicazioni chiare sullo stato di caricamento
+
+### 🤖 **Sistema Automazione Revisioni Veicoli Ibrido - v2.22.0** ⭐ **NUOVO**
+
+#### 🔄 **Automazione Completa con Backup di Controllo**
+- **Trigger MySQL automatico**: Inserimento automatico della prossima revisione al completamento di una precedente
+- **Calcolo intelligente scadenze**: 2 anni per patente B, 1 anno per patente C e superiori
+- **Cron job settimanale**: Verifica e correzione automatica di eventuali revisioni mancanti
+- **Sistema di backup**: Doppio controllo per massima affidabilità del sistema
+- **Logging completo**: Monitoraggio dettagliato di tutte le operazioni automatiche
+
+#### 🛡️ **Massima Affidabilità e Controllo**
+- **Sistema ibrido**: Combinazione di trigger database e controllo applicativo
+- **Controllo manuale**: API endpoint per verifica e correzione manuale delle revisioni
+- **Monitoraggio continuo**: Sistema di alert per anomalie o revisioni mancanti
+- **Audit trail**: Tracciamento completo di tutte le operazioni automatiche
+- **Failsafe integrato**: Meccanismi di sicurezza per prevenire errori o duplicazioni
+
+#### ⚙️ **Architettura Tecnica Avanzata**
+- **Trigger MySQL**: Esecuzione automatica a livello database per performance ottimali
+- **Node.js Cron Job**: Controllo settimanale per verifica integrità dati
+- **API RESTful**: Endpoint dedicati per gestione manuale e monitoraggio
+- **Sistema di cache**: Ottimizzazione performance per operazioni frequenti
+- **Configurazione flessibile**: Parametri personalizzabili per diversi tipi di veicoli
 
 ### 🚗 **Sistema Gestione Veicoli Avanzato - v2.21.0** ⭐ **NUOVO**
 
