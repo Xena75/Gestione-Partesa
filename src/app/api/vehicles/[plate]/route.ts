@@ -72,7 +72,7 @@ export async function GET(
         created_at as createdAt,
         updated_at as updatedAt
       FROM vehicle_schedules 
-      WHERE vehicle_id = ? AND status = 'active'
+      WHERE vehicle_id = ? AND status = 'pending'
       ORDER BY data_scadenza ASC
     `;
 

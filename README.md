@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.22.0
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.23.0
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -198,6 +198,34 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Feedback immediato**: Indicazioni chiare sullo stato di caricamento
 
 ### 🤖 **Sistema Automazione Revisioni Veicoli Ibrido - v2.22.0** ⭐ **NUOVO**
+
+#### 🔄 **Sistema Ibrido Completo**
+- **Trigger MySQL automatico**: Inserimento automatico della prossima revisione quando una viene completata
+- **Cron job settimanale**: Verifica e correzione automatica di eventuali revisioni mancanti
+- **API controllo manuale**: Endpoint per gestione e monitoraggio manuale del sistema
+- **Logging completo**: Tracciamento dettagliato di tutte le operazioni per monitoraggio
+- **Massima affidabilità**: Combinazione di automazione e backup di controllo
+
+#### ⚙️ **Componenti del Sistema**
+- **Trigger database**: Calcolo automatico date revisioni (2 anni patente B, 1 anno patente C)
+- **Cron job Node.js**: Esecuzione settimanale per controllo integrità dati
+- **API endpoints**: Controllo manuale, verifica singoli veicoli, pulizia log
+- **Sistema di log**: Registrazione operazioni con cleanup automatico
+- **Gestione errori**: Recupero automatico da errori e inconsistenze
+
+#### 🛠️ **Funzionalità API**
+- **GET /api/vehicles/revisions/automation**: Statistiche e stato del sistema
+- **POST /api/vehicles/revisions/automation**: Esecuzione manuale controlli
+- **DELETE /api/vehicles/revisions/automation**: Pulizia log automatica
+- **Parametri flessibili**: Controllo singoli veicoli o esecuzione completa
+- **Risposte dettagliate**: Informazioni complete su operazioni eseguite
+
+#### ✅ **Benefici Implementati**
+- **Automazione completa**: Nessun intervento manuale richiesto per operazioni standard
+- **Backup di sicurezza**: Cron job garantisce integrità anche in caso di problemi
+- **Controllo manuale**: Possibilità di intervento diretto quando necessario
+- **Monitoraggio avanzato**: Log dettagliati per analisi e troubleshooting
+- **Scalabilità**: Sistema progettato per gestire crescita del parco veicoli
 
 #### 🔄 **Automazione Completa con Backup di Controllo**
 - **Trigger MySQL automatico**: Inserimento automatico della prossima revisione al completamento di una precedente

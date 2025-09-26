@@ -40,21 +40,21 @@ export async function GET(request: NextRequest) {
       const [activeSchedulesResult] = await poolViaggi.execute(
         `SELECT COUNT(*) as active_schedules 
          FROM vehicle_schedules 
-         WHERE status = 'active' AND data_scadenza >= CURDATE()`
+         WHERE status = 'pending' AND data_scadenza >= CURDATE()`
       );
       stats.active_schedules = (activeSchedulesResult as any[])[0]?.active_schedules || 0;
 
       const [overdueSchedulesResult] = await poolViaggi.execute(
         `SELECT COUNT(*) as overdue_schedules 
          FROM vehicle_schedules 
-         WHERE status = 'active' AND data_scadenza < CURDATE()`
+         WHERE status = 'pending' AND data_scadenza < CURDATE()`
       );
       stats.overdue_schedules = (overdueSchedulesResult as any[])[0]?.overdue_schedules || 0;
 
       const [openQuotesResult] = await poolViaggi.execute(
         `SELECT COUNT(*) as open_quotes 
          FROM maintenance_quotes 
-         WHERE status IN ('pending', 'in_review')`
+         WHERE status IN ('pending', 'approved')`
       );
       stats.open_quotes = (openQuotesResult as any[])[0]?.open_quotes || 0;
 
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
       const [upcomingDeadlinesResult] = await poolViaggi.execute(
         `SELECT COUNT(*) as upcoming_deadlines 
          FROM vehicle_schedules 
-         WHERE status = 'active' 
+         WHERE status = 'pending' 
          AND data_scadenza BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)`
       );
       stats.upcoming_deadlines = (upcomingDeadlinesResult as any[])[0]?.upcoming_deadlines || 0;
