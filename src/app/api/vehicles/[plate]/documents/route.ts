@@ -44,7 +44,7 @@ export async function GET(
       );
     }
 
-    const vehicleId = (vehicleRows[0] as any).id;
+    const vehicleId = (vehicleRows[0] as any).id; // Questo è già una stringa (targa) // Questo è già una stringa (targa)
 
     // Recupera tutti i documenti del veicolo
     const documentsQuery = `

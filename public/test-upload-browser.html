@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Upload Documento</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #status { margin: 20px 0; padding: 10px; border: 1px solid #ccc; min-height: 100px; }
+        button { padding: 10px 20px; font-size: 16px; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Test Upload Documento</h1>
+    <button onclick="testUpload()">🧪 Testa Upload</button>
+    <button onclick="clearStatus()">🧹 Pulisci</button>
+    <div id="status"></div>
+    
+    <script>
+        function clearStatus() {
+            document.getElementById('status').innerHTML = '';
+        }
+        
+        async function testUpload() {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = '🧪 Inizio test...';
+            
+            try {
+                // 1. Login
+                statusDiv.innerHTML += '<br>📝 Effettuo login...';
+                const loginResponse = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: 'admin',
+                        password: 'admin123'
+                    }),
+                    credentials: 'include' // Importante per i cookie
+                });
+                
+                const loginData = await loginResponse.json();
+                statusDiv.innerHTML += `<br>📊 Login Status: ${loginResponse.status}`;
+                statusDiv.innerHTML += `<br>📄 Login Response: ${JSON.stringify(loginData, null, 2)}`;
+                
+                if (!loginResponse.ok) {
+                    throw new Error(`Login fallito: ${loginResponse.status} - ${loginData.message}`);
+                }
+                
+                statusDiv.innerHTML += '<br><span class="success">✅ Login effettuato con successo</span>';
+                
+                // 2. Verifica autenticazione
+                statusDiv.innerHTML += '<br>🔍 Verifico autenticazione...';
+                const verifyResponse = await fetch('/api/auth/verify', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                const verifyData = await verifyResponse.json();
+                statusDiv.innerHTML += `<br>📊 Verify Status: ${verifyResponse.status}`;
+                statusDiv.innerHTML += `<br>📄 Verify Response: ${JSON.stringify(verifyData, null, 2)}`;
+                
+                // 3. Crea un file di test PDF
+                statusDiv.innerHTML += '<br>📄 Creo file di test...';
+                const fileContent = 'Test PDF content';
+                const file = new File([fileContent], 'test-document.pdf', { type: 'application/pdf' });
+                statusDiv.innerHTML += `<br>📄 File creato: ${file.name} (${file.size} bytes)`;
+                
+                // 4. Crea FormData
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('document_type', 'altro');
+                formData.append('expiry_date', '2025-12-31');
+                formData.append('notes', 'Documento di test dal browser');
+                
+                // 5. Upload
+                statusDiv.innerHTML += '<br>📤 Effettuo upload documento...';
+                const uploadResponse = await fetch('/api/vehicles/EZ184PF/documents', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include' // Importante per i cookie
+                });
+                
+                const uploadResult = await uploadResponse.json();
+                
+                statusDiv.innerHTML += `<br>📊 Upload Status: ${uploadResponse.status}`;
+                statusDiv.innerHTML += `<br>📄 Upload Response: ${JSON.stringify(uploadResult, null, 2)}`;
+                
+                if (uploadResponse.ok) {
+                    statusDiv.innerHTML += '<br><span class="success">✅ Upload completato con successo!</span>';
+                } else {
+                    const errorData = await uploadResponse.json();
+                    statusDiv.innerHTML += '<br><span class="error">❌ Errore durante upload</span>';
+                    statusDiv.innerHTML += `<br>📄 Error Details: ${JSON.stringify(errorData, null, 2)}`;
+                }
+                
+            } catch (error) {
+                statusDiv.innerHTML += `<br><span class="error">❌ Errore: ${error.message}</span>`;
+                console.error('Errore test:', error);
+            }
+        }
+    </script>
+</body>
+</html>
