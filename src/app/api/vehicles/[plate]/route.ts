@@ -3,10 +3,11 @@ import mysql from 'mysql2/promise';
 import { verifyUserAccess } from '@/lib/auth';
 
 const dbConfig = {
-  host: 'localhost',
-  user: 'root',
-  password: '',
-  database: 'viaggi_db',
+  host: process.env.DB_VIAGGI_HOST || 'localhost',
+  port: parseInt(process.env.DB_VIAGGI_PORT || '3306'),
+  user: process.env.DB_VIAGGI_USER || 'root',
+  password: process.env.DB_VIAGGI_PASSWORD || '',
+  database: process.env.DB_VIAGGI_NAME || 'viaggi_db',
   charset: 'utf8mb4'
 };
 
