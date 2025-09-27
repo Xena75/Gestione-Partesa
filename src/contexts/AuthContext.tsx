@@ -14,7 +14,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (username: string, password: string) => Promise<boolean>;
+  login: (_username: string, _password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
 }
@@ -65,14 +65,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  const login = async (username: string, password: string): Promise<boolean> => {
+  const login = async (_username: string, _password: string): Promise<boolean> => {
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username: _username, password: _password }),
         credentials: 'include'
       });
 

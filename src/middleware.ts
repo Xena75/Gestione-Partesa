@@ -63,11 +63,7 @@ const protectedRoutes = [
   '/backup-dashboard'
 ];
 
-// Route pubbliche (accessibili senza autenticazione)
-const publicRoutes = [
-  '/login',
-  '/'
-];
+
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
 interface ViewToggleProps {
   viewType: 'grouped' | 'detailed';
-  setViewType: (type: 'grouped' | 'detailed') => void;
+  setViewType: (_type: 'grouped' | 'detailed') => void;
 }
 
 const ViewToggle: React.FC<ViewToggleProps> = ({ viewType, setViewType }) => {

@@ -24,18 +24,7 @@ const backupDbConfig = {
   charset: 'utf8mb4'
 };
 
-interface DashboardSummary {
-  total_backups: number;
-  successful_backups: number;
-  failed_backups: number;
-  running_backups: number;
-  storage_usage_gb: number;
-  avg_backup_duration: number;
-  last_backup_time: string | null;
-  next_scheduled_backup: string | null;
-  storage_usage_percent: number;
-  database_health_score: number;
-}
+
 
 export async function GET(request: NextRequest) {
   try {
@@ -103,7 +92,6 @@ export async function GET(request: NextRequest) {
       `);
 
       const summary = summaryRows as any[];
-      const alerts = alertRows as any[];
       const schedules = scheduleRows as any[];
       const lastFull = lastFullRows as any[];
       const nextSchedule = nextScheduleRows as any[];

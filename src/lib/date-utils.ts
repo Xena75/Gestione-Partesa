@@ -56,7 +56,7 @@ export const formatDateEuropean = (dateString: string | null | undefined): strin
     const year = date.getFullYear();
     
     return `${day}-${month}-${year}`;
-  } catch (_error) {
+  } catch {
     return '-';
   }
 };
@@ -76,7 +76,7 @@ export const formatDateISO = (dateString: string | null | undefined): string => 
     const day = date.getDate().toString().padStart(2, '0');
     
     return `${year}-${month}-${day}`;
-  } catch (_error) {
+  } catch {
     return '';
   }
 };
@@ -97,7 +97,7 @@ export const formatDateItalian = (dateString: string | null | undefined): string
     const year = date.getFullYear();
     
     return `${day}/${month}/${year}`;
-  } catch (_error) {
+  } catch {
     return '-';
   }
 };
@@ -111,7 +111,7 @@ export const isValidDate = (dateString: string | null | undefined): boolean => {
   try {
     const date = new Date(dateString);
     return !isNaN(date.getTime()) && date.getFullYear() >= 1900 && date.getFullYear() <= 2100;
-  } catch (_error) {
+  } catch {
     return false;
   }
 };
@@ -137,7 +137,7 @@ export const convertItalianToISO = (italianDate: string): string => {
     const isoDay = date.getDate().toString().padStart(2, '0');
     
     return `${isoYear}-${isoMonth}-${isoDay}`;
-  } catch (_error) {
+  } catch {
     return '';
   }
 };
@@ -163,7 +163,7 @@ export const convertISOToItalian = (isoDate: string): string => {
     const italianYear = date.getFullYear();
     
     return `${italianDay}/${italianMonth}/${italianYear}`;
-  } catch (_error) {
+  } catch {
     return '';
   }
 };
@@ -187,7 +187,7 @@ export const isValidItalianDate = (dateString: string): boolean => {
            date.getMonth() === month - 1 && 
            date.getFullYear() === year &&
            year >= 1900 && year <= 2100;
-  } catch (_error) {
+  } catch {
     return false;
   }
 };

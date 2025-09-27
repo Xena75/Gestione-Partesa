@@ -6,11 +6,11 @@ interface SavedDeliveryMappingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   fileId: string;
-  filename: string;
+  _filename: string;
   blobUrl: string;
 }
 
-export default function SavedDeliveryMappingsModal({ isOpen, onClose, fileId, filename, blobUrl }: SavedDeliveryMappingsModalProps) {
+export default function SavedDeliveryMappingsModal({ isOpen, onClose, fileId, _filename, blobUrl }: SavedDeliveryMappingsModalProps) {
   const [mappings, setMappings] = useState<{ id: number; name: string; description: string; mapping_data: string; created_at: Date; updated_at: Date }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 

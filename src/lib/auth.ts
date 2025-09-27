@@ -54,7 +54,7 @@ export function verifyToken(token: string): User | null {
       email: decoded.email,
       role: decoded.role
     };
-  } catch (error) {
+  } catch {
     return null;
   }
 }

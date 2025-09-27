@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyUserAccess, verifyAdminAccess } from '@/lib/auth';
 import mysql from 'mysql2/promise';
-import { v4 as uuidv4 } from 'uuid';
+
 // import * as cronParser from 'cron-parser';
 
 // Configurazione database backup_management
@@ -14,21 +14,7 @@ const backupDbConfig = {
   charset: 'utf8mb4'
 };
 
-interface BackupSchedule {
-  id?: number;
-  schedule_name: string;
-  backup_type: 'full' | 'incremental' | 'differential';
-  cron_expression: string;
-  databases: string[];
-  is_active: boolean;
-  retention_days: number;
-  max_parallel_jobs: number;
-  priority: 'low' | 'normal' | 'high';
-  notification_emails?: string[];
-  created_by: string;
-  last_run?: string;
-  next_run?: string;
-}
+
 
 // GET - Recupera tutti gli schedule di backup
 export async function GET(request: NextRequest) {
@@ -308,7 +294,7 @@ export async function PUT(request: NextRequest) {
         );
       }
 
-      const existingSchedule = (existingRows as any[])[0];
+
       
       // Prepara i campi da aggiornare
       const updateFields = [];
@@ -517,7 +503,7 @@ function isValidCronExpression(cron: string): boolean {
   return cronRegex.test(cron.trim());
 }
 
-function calculateNextRun(cronExpression: string): string {
+function calculateNextRun(_cronExpression: string): string {
   try {
     // Implementazione semplificata per calcolare la prossima esecuzione
     // Per ora usa un fallback di 24 ore, in futuro si può implementare il parsing completo

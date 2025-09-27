@@ -230,7 +230,7 @@ export class BackupDatabase {
   // Test connessione database
   static async testConnection(): Promise<boolean> {
     try {
-      const [rows] = await backupPool.execute('SELECT 1 as test');
+      await backupPool.execute('SELECT 1 as test');
       return true;
     } catch (error) {
       console.error('Errore connessione database backup:', error);

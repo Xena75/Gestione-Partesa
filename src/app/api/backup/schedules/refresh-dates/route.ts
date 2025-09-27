@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { BackupDatabase } from '@/lib/db-backup';
-import type { RowDataPacket, FieldPacket } from 'mysql2/promise';
 
 // POST: Aggiorna le date dei prossimi backup schedulati
 export async function POST(request: NextRequest) {
@@ -16,14 +15,12 @@ export async function POST(request: NextRequest) {
     }
 
     const schedules = await BackupDatabase.getBackupSchedules();
-    let updatedCount = 0;
     
     for (const schedule of schedules) {
       if (schedule.enabled) {
         // Calcola prossima esecuzione basata su cron expression
         const nextRun = new Date();
         nextRun.setDate(nextRun.getDate() + 1); // Semplificato per ora
-        updatedCount++;
       }
     }
 
@@ -57,7 +54,6 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const schedules = await BackupDatabase.getBackupSchedules();
-    const activeSchedules = schedules.filter(s => s.enabled);
 
     return NextResponse.json({
       success: true,

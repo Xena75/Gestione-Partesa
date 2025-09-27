@@ -245,7 +245,7 @@ export async function getViaggiFiltrati(
 }
 
 // --- FUNZIONE PER OTTENERE LE STATISTICHE DEI VIAGGI ---
-export async function getViaggiStats(_currentPage: number = 1, recordsPerPage: number = 20): Promise<Statistiche> {
+export async function getViaggiStats(recordsPerPage: number = 20): Promise<Statistiche> {
   try {
     // Statistiche generali
     const [totalResult] = await pool.query('SELECT COUNT(*) as total FROM tab_viaggi');

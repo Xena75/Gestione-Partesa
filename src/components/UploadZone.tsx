@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback } from 'react';
 
 interface UploadZoneProps {
-  onFileUpload: (file: File) => void;
+  onFileUpload: (_file: File) => void;
   isUploading: boolean;
   uploadedFile: File | null;
 }
