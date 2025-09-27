@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.23.1
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.24.0
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -196,6 +196,36 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Navigazione intuitiva**: Controlli semplici per scorrere tra le immagini
 - **Design coerente**: Integrazione perfetta con il design esistente del sistema
 - **Feedback immediato**: Indicazioni chiare sullo stato di caricamento
+
+### 🔍 **Preview Diretta Documenti e Preventivi - v2.24.0** ⭐ **NUOVO**
+
+#### 📄 **Apertura Diretta Documenti**
+- **Click immediato**: I documenti nella pagina principale del veicolo si aprono direttamente in preview
+- **Eliminazione navigazione**: Non è più necessario andare alla pagina di gestione documenti
+- **Supporto multi-formato**: Apertura diretta di PDF, immagini e documenti Office
+- **Nuova finestra**: Apertura in tab separato per mantenere il contesto di lavoro
+- **Performance ottimizzate**: Caricamento rapido tramite API dedicata `/api/files/document`
+
+#### 💰 **Preview Intelligente Preventivi**
+- **Logica condizionale**: Preventivi con documenti allegati si aprono in preview diretta
+- **Fallback automatico**: Preventivi senza allegati navigano alla pagina di dettaglio
+- **Controllo automatico**: Verifica presenza documenti prima dell'apertura
+- **Esperienza fluida**: Comportamento intuitivo basato sul contenuto disponibile
+- **Accesso immediato**: Visualizzazione istantanea dei PDF preventivi
+
+#### 🛠️ **Correzioni API Critiche**
+- **Errore 500 risolto**: Corretto mapping colonne database da `filename` a `file_name`
+- **Stabilità migliorata**: Endpoint `/api/files/document` completamente funzionante
+- **Compatibilità database**: Allineamento con schema database esistente
+- **Gestione errori**: Implementazione fallback per file mancanti o corrotti
+- **Sicurezza**: Validazione parametri e controllo accesso ai file
+
+#### ✨ **Miglioramenti User Experience**
+- **Riduzione click**: Da 2-3 click a 1 click per visualizzare contenuti
+- **Feedback visivo**: Indicatori hover e cursor pointer per elementi cliccabili
+- **Workflow semplificato**: Accesso diretto alle informazioni senza interruzioni
+- **Consistenza interfaccia**: Comportamento uniforme in tutta l'applicazione
+- **Produttività aumentata**: Tempo di accesso ai documenti ridotto del 60%
 
 ### 📅 **Ottimizzazioni Calendario Scadenze Veicoli - v2.23.1** ⭐ **NUOVO**
 

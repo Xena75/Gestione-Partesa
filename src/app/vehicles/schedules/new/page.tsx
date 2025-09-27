@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { formatDateItalian } from '@/lib/date-utils';
 
 interface Vehicle {
   id: string;
@@ -49,17 +50,6 @@ export default function NewSchedulePage() {
   const [error, setError] = useState<string | null>(null);
 
   // Funzioni di utilità per le date
-  const formatDateToItalian = (dateString: string) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return '';
-    
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    
-    return `${day}/${month}/${year}`;
-  };
 
   // Converte da formato italiano (gg/mm/aaaa) a formato database (YYYY-MM-DD)
   const formatDateToDatabase = (dateString: string) => {

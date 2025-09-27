@@ -30,7 +30,8 @@ Il sistema Gestione Partesa è composto dalle seguenti pagine principali:
 8. **Import Delivery**: import dati delivery, configurazione mapping
 9. **Sistema**: configurazioni, gestione utenti, log sistema, backup
 10. **Dashboard Backup**: monitoraggio backup automatici, gestione job, alert sistema
-11. **Login**: autenticazione utenti, gestione sessioni
+11. **Gestione Veicoli**: anagrafica veicoli, documenti, preventivi, scadenze, manutenzioni
+12. **Login**: autenticazione utenti, gestione sessioni
 
 ### 2.3 Page Details
 
@@ -59,6 +60,11 @@ Il sistema Gestione Partesa è composto dalle seguenti pagine principali:
 | Dashboard Backup | Gestione Schedule | Configura backup automatici full/incrementali/differenziali |
 | Dashboard Backup | Alert Sistema | Notifiche backup falliti, spazio disco, errori critici |
 | Dashboard Backup | Statistiche Backup | Report dimensioni, tempi esecuzione, successo/fallimento |
+| Gestione Veicoli | Anagrafica Veicoli | Gestione completa dati veicolo, marca, modello, targa, proprietà |
+| Gestione Veicoli | Documenti Veicolo | Upload, visualizzazione, gestione scadenze documenti con preview diretta |
+| Gestione Veicoli | Preventivi | Gestione preventivi con apertura diretta PDF o navigazione dettaglio |
+| Gestione Veicoli | Scadenze Manutenzioni | Monitoraggio km e date per tagliandi, revisioni, assicurazioni |
+| Gestione Veicoli | Filtri Avanzati | Ricerca per marca, modello, proprietà, tipo patente, stato |
 | Login | Autenticazione | Login sicuro con JWT, gestione sessioni |
 
 ## 3. Core Process
@@ -89,13 +95,17 @@ graph TD
   B --> I[Import Delivery]
   B --> J[Sistema]
   B --> K[Dashboard Backup]
-  C --> L[Export Dati]
-  E --> M[Import POD]
-  F --> N[Report Mensili]
-  H --> O[Validazione Import]
-  J --> P[Gestione Utenti]
-  K --> Q[Monitoraggio Job]
-  K --> R[Alert Sistema]
+  B --> L[Gestione Veicoli]
+  C --> M[Export Dati]
+  E --> N[Import POD]
+  F --> O[Report Mensili]
+  H --> P[Validazione Import]
+  J --> Q[Gestione Utenti]
+  K --> R[Monitoraggio Job]
+  K --> S[Alert Sistema]
+  L --> T[Documenti Preview]
+  L --> U[Preventivi Preview]
+  L --> V[Scadenze Manutenzioni]
 ```
 
 ## 4. User Interface Design

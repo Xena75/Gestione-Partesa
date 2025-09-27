@@ -69,8 +69,8 @@ export async function GET(request: NextRequest) {
     `;
     
     const [rows] = await connection.execute(statsQuery, queryParams);
-    const stats = Array.isArray(rows) ? rows[0] : rows;
-    
+    const stats = Array.isArray(rows) ? rows[0] as any : rows as any;
+
     return NextResponse.json({
       doc_mat_count: Number(stats.doc_mat_count) || 0,
       qta_uma_sum: Number(stats.qta_uma_sum) || 0,

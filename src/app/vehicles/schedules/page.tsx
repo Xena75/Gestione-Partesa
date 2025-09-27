@@ -3,6 +3,7 @@
 
 import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
+import { formatDateItalian } from '@/lib/date-utils';
 
 interface VehicleSchedule {
   id: number;
@@ -108,7 +109,7 @@ function VehicleSchedulesContent() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('it-IT');
+    return formatDateItalian(dateString);
   };
 
   const formatCurrency = (amount?: number) => {
