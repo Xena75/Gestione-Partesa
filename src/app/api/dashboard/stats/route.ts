@@ -62,13 +62,7 @@ async function getViaggiStats() {
       FROM tab_viaggi
     `) as [any[], any];
 
-    // Statistiche da viaggi_pod (database viaggi_db)
-    const [viaggiPodRows] = await poolViaggi.execute(`
-      SELECT 
-        COUNT(*) as total,
-        COUNT(CASE WHEN \`Data Inizio\` >= CURDATE() THEN 1 END) as active
-      FROM viaggi_pod
-    `) as [any[], any];
+    // Statistiche da viaggi_pod (database viaggi_db) - rimossa variabile non utilizzata
 
     // Conta viaggi completati dalla tabella tab_viaggi del database gestionelogistica
     const [viaggiCompletatiRows] = await poolGestione.execute(`
@@ -93,7 +87,6 @@ async function getViaggiStats() {
     `) as [any[], any];
 
     const tabViaggi = tabViaggiRows[0] || { total: 0, today: 0, thisWeek: 0, thisMonth: 0 };
-    const viaggiPod = viaggiPodRows[0] || { total: 0, active: 0 };
     const viaggiCompletati = viaggiCompletatiRows[0] || { completed: 0 };
     const monitoraggio = monitoraggioRows[0] || { monitoraggi_aperti: 0 };
     const viaggiPodPending = viaggiPodPendingRows[0] || { viaggi_pod_mancanti: 0 };

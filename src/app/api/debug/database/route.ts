@@ -1,13 +1,13 @@
 // src/app/api/debug/database/route.ts
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import pool from '@/lib/db-viaggi';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     console.log('🔍 Debug database - Verifica connessione e tabelle');
     
     // Test connessione
-    const [connection] = await pool.execute('SELECT 1 as test');
+    await pool.execute('SELECT 1 as test');
     console.log('✅ Connessione database OK');
     
     // Verifica se la tabella travel_images esiste

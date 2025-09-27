@@ -52,19 +52,9 @@ export async function GET(request: NextRequest) {
         FROM backup_jobs
       `);
 
-      // Query per alert attivi
-      const [alertRows] = await connection.execute(`
-        SELECT COUNT(*) as active_alerts
-        FROM backup_alerts 
-        WHERE is_resolved = FALSE
-      `);
+      // Query per alert attivi (rimossa variabile non utilizzata)
 
-      // Query per schedule attive
-      const [scheduleRows] = await connection.execute(`
-        SELECT COUNT(*) as active_schedules
-        FROM backup_schedules 
-        WHERE is_active = TRUE
-      `);
+      // Query per schedule attive (rimossa variabile non utilizzata)
 
       // Query per ultimo backup full
       const [lastFullRows] = await connection.execute(`
@@ -92,7 +82,6 @@ export async function GET(request: NextRequest) {
       `);
 
       const summary = summaryRows as any[];
-      const schedules = scheduleRows as any[];
       const lastFull = lastFullRows as any[];
       const nextSchedule = nextScheduleRows as any[];
       const storage = storageRows as any[];

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import poolViaggi from '@/lib/db-viaggi';
-import poolGestione from '@/lib/db-gestione';
 import { verifyUserAccess } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {

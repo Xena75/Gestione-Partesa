@@ -185,7 +185,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Calcola prossima esecuzione
-      const nextRun = calculateNextRun(cron_expression);
+      const nextRun = calculateNextRun();
 
       // Inserisci nuovo schedule
       const [result] = await connection.execute(`
@@ -327,7 +327,7 @@ export async function PUT(request: NextRequest) {
         updateValues.push(updateData.cron_expression);
         
         // Ricalcola prossima esecuzione
-        const nextRun = calculateNextRun(updateData.cron_expression);
+        const nextRun = calculateNextRun();
         updateFields.push('next_run = ?');
         updateValues.push(nextRun);
       }
@@ -503,7 +503,7 @@ function isValidCronExpression(cron: string): boolean {
   return cronRegex.test(cron.trim());
 }
 
-function calculateNextRun(_cronExpression: string): string {
+function calculateNextRun(): string {
   try {
     // Implementazione semplificata per calcolare la prossima esecuzione
     // Per ora usa un fallback di 24 ore, in futuro si può implementare il parsing completo

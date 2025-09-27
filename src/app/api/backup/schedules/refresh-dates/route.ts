@@ -2,18 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { BackupDatabase } from '@/lib/db-backup';
 
 // POST: Aggiorna le date dei prossimi backup schedulati
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
-    const body = await request.json();
-    const { schedule_id, next_run } = body;
-
-    if (!schedule_id || !next_run) {
-      return NextResponse.json(
-        { error: 'Parametri mancanti: schedule_id e next_run sono richiesti' },
-        { status: 400 }
-      );
-    }
-
     const schedules = await BackupDatabase.getBackupSchedules();
     
     for (const schedule of schedules) {
@@ -51,7 +41,7 @@ export async function POST(request: NextRequest) {
 }
 
 // GET: Ottiene le date dei prossimi backup
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const schedules = await BackupDatabase.getBackupSchedules();
 
