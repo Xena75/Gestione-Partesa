@@ -1,14 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mysql from 'mysql2/promise';
+import { writeFile, mkdir } from 'fs/promises';
+import path from 'path';
 
-const dbConfig = {
+// Pool di connessioni per migliori performance
+const pool = mysql.createPool({
   host: process.env.DB_VIAGGI_HOST || 'localhost',
   port: parseInt(process.env.DB_VIAGGI_PORT || '3306'),
   user: process.env.DB_VIAGGI_USER || 'root',
   password: process.env.DB_VIAGGI_PASSWORD || '',
   database: process.env.DB_VIAGGI_NAME || 'viaggi_db',
-  charset: 'utf8mb4'
-};
+  charset: 'utf8mb4',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+  acquireTimeout: 60000,
+  timeout: 60000
+});
 
 // GET - Recupera preventivi
 export async function GET(request: NextRequest) {
@@ -19,7 +27,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const supplierId = searchParams.get('supplierId');
 
-    const connection = await mysql.createConnection(dbConfig);
+    const connection = await pool.getConnection();
 
     let query = `
       SELECT 
@@ -35,7 +43,7 @@ export async function GET(request: NextRequest) {
         s.contact_person as supplier_contact
       FROM maintenance_quotes mq
       JOIN vehicles v ON mq.vehicle_id = v.id
-      JOIN vehicle_schedules vs ON mq.schedule_id = vs.id
+      LEFT JOIN vehicle_schedules vs ON mq.schedule_id = vs.id
       JOIN suppliers s ON mq.supplier_id = s.id
       WHERE 1=1
     `;
@@ -76,7 +84,7 @@ export async function GET(request: NextRequest) {
       })
     );
 
-    await connection.end();
+    connection.release();
 
     return NextResponse.json({ success: true, data: quotesWithDocuments });
   } catch (error) {
@@ -90,9 +98,24 @@ export async function GET(request: NextRequest) {
 
 // POST - Crea un nuovo preventivo
 export async function POST(request: NextRequest) {
+  console.log('=== INIZIO POST /api/vehicles/quotes ===');
+  let connection: any = null;
+  
   try {
-    const body = await request.json();
-    const {
+    console.log('Parsing FormData...');
+    const formData = await request.formData();
+    console.log('FormData ricevuta:', Object.fromEntries(formData.entries()));
+    
+    const schedule_id = formData.get('schedule_id') as string;
+    const vehicle_id = formData.get('vehicle_id') as string;
+    const supplier_id = formData.get('supplier_id') as string;
+    const amount = formData.get('amount') as string;
+    const description = formData.get('description') as string;
+    const valid_until = formData.get('valid_until') as string;
+    const notes = formData.get('notes') as string;
+    const attachment = formData.get('attachment') as File | null;
+
+    console.log('Dati estratti:', {
       schedule_id,
       vehicle_id,
       supplier_id,
@@ -100,74 +123,133 @@ export async function POST(request: NextRequest) {
       description,
       valid_until,
       notes,
-      scheduled_date
-    } = body;
+      attachment: attachment ? { name: attachment.name, size: attachment.size } : null
+    });
 
     // Validazione campi obbligatori
-    if (!schedule_id || !vehicle_id || !supplier_id || !amount || !description || !valid_until) {
+    if (!vehicle_id || !supplier_id || !amount || !description || !valid_until) {
+      console.log('Validazione fallita - campi mancanti');
       return NextResponse.json(
         { success: false, error: 'Campi obbligatori mancanti' },
         { status: 400 }
       );
     }
 
-    const connection = await mysql.createConnection(dbConfig);
+    connection = await pool.getConnection();
 
-    // Verifica che la scadenza e il fornitore esistano
-    const [scheduleCheck] = await connection.execute(
-      'SELECT id FROM vehicle_schedules WHERE id = ?',
-      [schedule_id]
-    );
+    // Verifica che la scadenza esista (solo se fornita) e il fornitore esista
+    if (schedule_id) {
+      const [scheduleCheck] = await connection.execute(
+        'SELECT id FROM vehicle_schedules WHERE id = ?',
+        [parseInt(schedule_id)]
+      );
+      
+      if ((scheduleCheck as any[]).length === 0) {
+        connection.release();
+        return NextResponse.json(
+          { success: false, error: 'Scadenza non trovata' },
+          { status: 404 }
+        );
+      }
+    }
     
     const [supplierCheck] = await connection.execute(
       'SELECT id FROM suppliers WHERE id = ? AND active = TRUE',
-      [supplier_id]
+      [parseInt(supplier_id)]
     );
 
-    if ((scheduleCheck as any[]).length === 0) {
-      await connection.end();
-      return NextResponse.json(
-        { success: false, error: 'Scadenza non trovata' },
-        { status: 404 }
-      );
-    }
-
     if ((supplierCheck as any[]).length === 0) {
-      await connection.end();
+      connection.release();
       return NextResponse.json(
         { success: false, error: 'Fornitore non trovato o non attivo' },
         { status: 404 }
       );
     }
 
+    // Inserisci il preventivo
     const query = `
       INSERT INTO maintenance_quotes (
         schedule_id, vehicle_id, supplier_id, amount, description,
-        valid_until, notes, scheduled_date
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        valid_until, notes
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
 
-    const [result] = await connection.execute(query, [
-      schedule_id,
+    console.log('Eseguendo query INSERT con parametri:', {
+      schedule_id: schedule_id ? parseInt(schedule_id) : null,
       vehicle_id,
-      supplier_id,
-      amount,
+      supplier_id: parseInt(supplier_id),
+      amount: parseFloat(amount),
       description,
       valid_until,
-      notes || null,
-      scheduled_date || null
+      notes: notes || null
+    });
+
+    const [result] = await connection.execute(query, [
+      schedule_id ? parseInt(schedule_id) : null,
+      vehicle_id,
+      parseInt(supplier_id),
+      parseFloat(amount),
+      description,
+      valid_until,
+      notes || null
     ]);
 
-    await connection.end();
+    const quoteId = (result as any).insertId;
+
+    // Gestisci il file allegato se presente
+    if (attachment && attachment.size > 0) {
+      try {
+        // Crea la directory se non esiste
+        const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'quote-documents');
+        await mkdir(uploadDir, { recursive: true });
+
+        // Genera un nome file unico
+        const timestamp = Date.now();
+        const fileExtension = path.extname(attachment.name);
+        const fileName = `quote_${quoteId}_${timestamp}${fileExtension}`;
+        const filePath = path.join(uploadDir, fileName);
+        const relativePath = `/uploads/quote-documents/${fileName}`;
+
+        // Salva il file
+        const bytes = await attachment.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+        await writeFile(filePath, buffer);
+
+        // Salva i metadati del file nel database
+        await connection.execute(
+          `INSERT INTO quote_documents (quote_id, file_name, file_path, file_type, file_size) 
+           VALUES (?, ?, ?, ?, ?)`,
+          [quoteId, attachment.name, relativePath, attachment.type, attachment.size]
+        );
+      } catch (fileError) {
+        console.error('Errore nel salvataggio del file:', fileError);
+        // Non bloccare la creazione del preventivo se il file fallisce
+      }
+    }
+
+    connection.release();
 
     return NextResponse.json({
       success: true,
-      data: { id: (result as any).insertId, ...body }
+      data: { 
+        id: quoteId, 
+        schedule_id: schedule_id ? parseInt(schedule_id) : null,
+        vehicle_id,
+        supplier_id: parseInt(supplier_id),
+        amount: parseFloat(amount),
+        description,
+        valid_until,
+        notes
+      }
     });
   } catch (error) {
     console.error('Errore nella creazione preventivo:', error);
+    console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
+    if (connection) {
+      connection.release();
+    }
     return NextResponse.json(
-      { success: false, error: 'Errore nella creazione del preventivo' },
+      { success: false, error: error instanceof Error ? error.message : 'Errore nella creazione del preventivo' },
       { status: 500 }
     );
   }
@@ -175,6 +257,8 @@ export async function POST(request: NextRequest) {
 
 // PUT - Aggiorna un preventivo (approvazione, rifiuto, etc.)
 export async function PUT(request: NextRequest) {
+  let connection: any = null;
+  
   try {
     const body = await request.json();
     const {
@@ -195,7 +279,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const connection = await mysql.createConnection(dbConfig);
+    connection = await pool.getConnection();
 
     let query = `
       UPDATE maintenance_quotes SET
@@ -261,11 +345,14 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    await connection.end();
+    connection.release();
 
     return NextResponse.json({ success: true, data: body });
   } catch (error) {
     console.error('Errore nell\'aggiornamento preventivo:', error);
+    if (connection) {
+      connection.release();
+    }
     return NextResponse.json(
       { success: false, error: 'Errore nell\'aggiornamento del preventivo' },
       { status: 500 }
@@ -275,6 +362,8 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Elimina un preventivo
 export async function DELETE(request: NextRequest) {
+  let connection: any = null;
+  
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
@@ -286,7 +375,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const connection = await mysql.createConnection(dbConfig);
+    connection = await pool.getConnection();
 
     // Elimina prima i documenti allegati (se esistono)
     await connection.execute('DELETE FROM quote_documents WHERE quote_id = ?', [id]);
@@ -294,11 +383,14 @@ export async function DELETE(request: NextRequest) {
     // Poi elimina il preventivo
     await connection.execute('DELETE FROM maintenance_quotes WHERE id = ?', [id]);
     
-    await connection.end();
+    connection.release();
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Errore nell\'eliminazione preventivo:', error);
+    if (connection) {
+      connection.release();
+    }
     return NextResponse.json(
       { success: false, error: 'Errore nell\'eliminazione del preventivo' },
       { status: 500 }

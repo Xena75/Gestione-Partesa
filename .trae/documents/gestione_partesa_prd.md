@@ -22,15 +22,16 @@ Il sistema Gestione Partesa è composto dalle seguenti pagine principali:
 
 1. **Dashboard**: panoramica generale, statistiche in tempo reale, navigazione rapida
 2. **Gestione Viaggi**: gestione completa viaggi, filtri avanzati, export dati
-3. **Monitoraggio**: tracking viaggi in corso, stato operativo, alert
-4. **Viaggi POD**: gestione Proof of Delivery, import automatico, validazione
-5. **Fatturazione Terzisti**: gestione fatturazione fornitori, export report
-6. **Fatturazione Delivery**: gestione fatturazione delivery, calcoli automatici
-7. **Import Viaggi POD**: caricamento file Excel, mapping colonne, validazione dati
-8. **Import Delivery**: import dati delivery, configurazione mapping
-9. **Sistema**: configurazioni, gestione utenti, log sistema, backup
-10. **Dashboard Backup**: monitoraggio backup automatici, gestione job, alert sistema
-11. **Login**: autenticazione utenti, gestione sessioni
+3. **Gestione Veicoli**: gestione completa parco veicoli, manutenzioni, preventivi
+4. **Monitoraggio**: tracking viaggi in corso, stato operativo, alert
+5. **Viaggi POD**: gestione Proof of Delivery, import automatico, validazione
+6. **Fatturazione Terzisti**: gestione fatturazione fornitori, export report
+7. **Fatturazione Delivery**: gestione fatturazione delivery, calcoli automatici
+8. **Import Viaggi POD**: caricamento file Excel, mapping colonne, validazione dati
+9. **Import Delivery**: import dati delivery, configurazione mapping
+10. **Sistema**: configurazioni, gestione utenti, log sistema, backup
+11. **Dashboard Backup**: monitoraggio backup automatici, gestione job, alert sistema
+12. **Login**: autenticazione utenti, gestione sessioni
 
 ### 2.3 Page Details
 
@@ -42,6 +43,13 @@ Il sistema Gestione Partesa è composto dalle seguenti pagine principali:
 | Gestione Viaggi | Lista Viaggi | Visualizza, filtra, ordina viaggi con paginazione avanzata |
 | Gestione Viaggi | Filtri Avanzati | Filtra per data, stato, cliente, fornitore con reset e applicazione |
 | Gestione Viaggi | Export Dati | Esporta viaggi filtrati in formato Excel/CSV |
+| Gestione Veicoli | Dashboard Veicoli | Panoramica parco veicoli, statistiche manutenzioni, preventivi attivi |
+| Gestione Veicoli | Lista Veicoli | Visualizza tutti i veicoli con filtri per marca, modello, stato |
+| Gestione Veicoli | Dettaglio Veicolo | Informazioni complete veicolo, scadenze, preventivi associati |
+| Gestione Veicoli | Gestione Preventivi | Crea, modifica, approva preventivi manutenzione con allegati |
+| Gestione Veicoli | Lista Preventivi | Visualizza tutti i preventivi con filtri per stato e fornitore |
+| Gestione Veicoli | Scadenze Manutenzione | Gestisce scadenze revisioni, tagliandi, assicurazioni |
+| Gestione Veicoli | Upload Documenti | Caricamento allegati preventivi con drag&drop e validazione |
 | Monitoraggio | Tracking Real-time | Monitora stato viaggi in corso, alert automatici |
 | Monitoraggio | Statistiche Operative | KPI viaggi completati, in corso, ritardi |
 | Viaggi POD | Gestione POD | Visualizza, modifica, valida Proof of Delivery |
@@ -81,21 +89,31 @@ Il sistema Gestione Partesa è composto dalle seguenti pagine principali:
 graph TD
   A[Login] --> B[Dashboard]
   B --> C[Gestione Viaggi]
-  B --> D[Monitoraggio]
-  B --> E[Viaggi POD]
-  B --> F[Fatturazione Terzisti]
-  B --> G[Fatturazione Delivery]
-  B --> H[Import Viaggi POD]
-  B --> I[Import Delivery]
-  B --> J[Sistema]
-  B --> K[Dashboard Backup]
-  C --> L[Export Dati]
-  E --> M[Import POD]
-  F --> N[Report Mensili]
-  H --> O[Validazione Import]
-  J --> P[Gestione Utenti]
-  K --> Q[Monitoraggio Job]
-  K --> R[Alert Sistema]
+  B --> D[Gestione Veicoli]
+  B --> E[Monitoraggio]
+  B --> F[Viaggi POD]
+  B --> G[Fatturazione Terzisti]
+  B --> H[Fatturazione Delivery]
+  B --> I[Import Viaggi POD]
+  B --> J[Import Delivery]
+  B --> K[Sistema]
+  B --> L[Dashboard Backup]
+  C --> M[Export Dati]
+  D --> N[Lista Veicoli]
+  D --> O[Preventivi]
+  D --> P[Scadenze]
+  N --> Q[Dettaglio Veicolo]
+  O --> R[Nuovo Preventivo]
+  O --> S[Lista Preventivi]
+  R --> T[Upload Documenti]
+  S --> U[Dettaglio Preventivo]
+  U --> V[Approvazione]
+  F --> W[Import POD]
+  G --> X[Report Mensili]
+  I --> Y[Validazione Import]
+  K --> Z[Gestione Utenti]
+  L --> AA[Monitoraggio Job]
+  L --> BB[Alert Sistema]
 ```
 
 ## 4. User Interface Design

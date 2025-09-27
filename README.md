@@ -33,6 +33,10 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Gestione stato**: Sistema soft-delete per preservare storico veicoli
 - **Export avanzato**: Esportazione CSV completa per analisi offline
 - **Interfaccia ottimizzata**: Visualizzazione responsive con formattazione italiana
+- **Sistema preventivi**: Gestione completa preventivi con workflow approvazione
+- **Gestione fornitori**: Integrazione fornitori e servizi per preventivi
+- **Upload documenti**: Sistema drag-and-drop per allegati preventivi
+- **Formato date italiano**: Visualizzazione e input date in formato dd/mm/yyyy
 
 ### 🛡️ **Sicurezza e Amministrazione**
 - **Sistema log avanzato**: Registrazione completa di tutte le operazioni
@@ -42,7 +46,68 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Backup e recovery**: Sistema completo di backup e ripristino dati
 - **Connessione database sicura**: Migrazione da bore.pub a ngrok per stabilità e sicurezza
 
+### 💼 **Sistema Preventivi Veicoli** ⭐ **NUOVO**
+- **Workflow completo**: Creazione, modifica, approvazione e gestione preventivi
+- **Stati preventivi**: Sistema a 5 stati (pending, approved, rejected, expired, converted)
+- **Gestione scadenze**: Monitoraggio automatico scadenze preventivi
+- **Integrazione fornitori**: Collegamento con database fornitori e servizi
+- **Upload allegati**: Sistema drag-and-drop per documenti e immagini
+- **Azioni preventivi**: Approvazione, rifiuto, modifica e cancellazione
+- **Formato italiano**: Date in formato dd/mm/yyyy per conformità locale
+- **API complete**: Endpoint RESTful per tutte le operazioni CRUD
+
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
+
+### 💼 **Sistema Preventivi Veicoli Completo - v2.24.0** ⭐ **NUOVO**
+
+#### 🎯 **Gestione Preventivi Avanzata**
+- **Workflow completo**: Sistema completo per creazione, visualizzazione, modifica e gestione preventivi veicoli
+- **Stati preventivi**: Sistema a 5 stati (pending, approved, rejected, expired, converted) con transizioni controllate
+- **Pagine dedicate**: Lista preventivi, dettaglio, creazione e modifica con interfacce ottimizzate
+- **Azioni preventivi**: Approvazione, rifiuto, modifica e cancellazione direttamente dalla pagina veicolo
+- **Integrazione veicoli**: Accesso diretto ai preventivi dalla pagina dettaglio veicolo
+
+#### 📅 **Gestione Date e Scadenze**
+- **Formato italiano**: Tutte le date visualizzate e inserite in formato dd/mm/yyyy
+- **Conversione automatica**: Sistema di conversione tra formato database (yyyy-mm-dd) e formato italiano
+- **Validazione date**: Controllo automatico validità date inserite
+- **Monitoraggio scadenze**: Identificazione automatica preventivi scaduti o in scadenza
+- **Calcolo automatico**: Gestione automatica calcoli temporali e confronti date
+
+#### 📎 **Sistema Allegati Avanzato**
+- **Upload drag-and-drop**: Interfaccia moderna per caricamento documenti e immagini
+- **Gestione completa**: Visualizzazione, download e cancellazione allegati
+- **Tipi file supportati**: PDF, immagini (JPG, PNG, GIF), documenti Office
+- **Validazione file**: Controllo dimensioni e tipi file supportati
+- **Storage sicuro**: Salvataggio file con nomi univoci e percorsi organizzati
+
+#### 🏢 **Integrazione Fornitori e Servizi**
+- **Database fornitori**: Collegamento con sistema fornitori esistente
+- **Selezione servizi**: Dropdown dinamico per selezione servizi disponibili
+- **Filtri attivi**: Visualizzazione solo fornitori e servizi attivi
+- **Validazione dati**: Controllo coerenza dati fornitori e servizi selezionati
+- **API integrate**: Endpoint dedicati per recupero dati fornitori e servizi
+
+#### 🔧 **API RESTful Complete**
+- **CRUD completo**: Endpoint per Create, Read, Update, Delete preventivi
+- **Gestione allegati**: API dedicate per upload, download e cancellazione file
+- **Cambio stato**: Endpoint per approvazione e rifiuto preventivi
+- **Validazione dati**: Controlli server-side per integrità dati
+- **Gestione errori**: Risposte strutturate con codici di errore appropriati
+
+#### 🎨 **Interfaccia Utente Ottimizzata**
+- **Design responsive**: Interfacce ottimizzate per desktop, tablet e mobile
+- **Feedback visivo**: Indicatori di caricamento e messaggi di stato
+- **Navigazione intuitiva**: Breadcrumb e link di navigazione chiari
+- **Azioni contestuali**: Pulsanti azione disponibili in base allo stato preventivo
+- **Conferme sicurezza**: Dialog di conferma per azioni critiche come cancellazione
+
+#### ✅ **Benefici Implementati**
+- **Workflow digitalizzato**: Processo preventivi completamente digitale e tracciabile
+- **Efficienza operativa**: Riduzione tempi gestione preventivi e miglioramento accuratezza
+- **Conformità locale**: Formato date italiano per conformità normativa e usabilità
+- **Gestione documenti**: Sistema centralizzato per tutti i documenti relativi ai preventivi
+- **Integrazione completa**: Perfetta integrazione con sistema veicoli e fornitori esistente
 
 ### 🔧 **Risoluzione Errori 500 Backup Dashboard - v2.20.2** ⭐ **CORREZIONE CRITICA**
 

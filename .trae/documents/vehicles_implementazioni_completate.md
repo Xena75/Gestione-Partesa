@@ -133,14 +133,45 @@ GET /api/vehicles
 - **Scalabilità**: Struttura estendibile
 - **Manutenibilità**: Codice pulito e documentato
 
-## 6. Prossimi Sviluppi
+## 6. Sistema Gestione Preventivi (COMPLETATO)
 
-### 6.1 Funzionalità Pianificate
+### 6.1 Funzionalità Preventivi Implementate
+- **Creazione preventivi**: Form completo con selezione veicolo, fornitore, servizio
+- **Gestione stati**: pending, approved, rejected, expired, converted con workflow
+- **Upload documenti**: Caricamento multiplo allegati PDF/immagini con drag&drop
+- **Approvazione/Rifiuto**: Sistema di approvazione con conferme e note
+- **Lista preventivi**: Visualizzazione completa con filtri avanzati per stato, veicolo, fornitore
+- **Dettaglio preventivo**: Pagina completa con documenti, azioni, cronologia
+- **Modifica preventivi**: Editing completo con gestione allegati
+- **Eliminazione**: Cancellazione preventivi con conferma di sicurezza
+- **Integrazione veicoli**: Preventivi associati nella pagina dettaglio veicolo
+- **Formattazione date**: Formato italiano dd/mm/yyyy in tutti i form
+
+### 6.2 API Preventivi Implementate
+- `GET /api/vehicles/quotes` - Lista tutti i preventivi con filtri
+- `POST /api/vehicles/quotes` - Creazione nuovo preventivo
+- `PUT /api/vehicles/quotes` - Aggiornamento stato preventivo
+- `GET /api/vehicles/quotes/[id]` - Dettagli singolo preventivo
+- `PUT /api/vehicles/quotes/[id]` - Modifica preventivo completo
+- `DELETE /api/vehicles/quotes/[id]` - Eliminazione preventivo
+- `POST /api/vehicles/quotes/[id]/documents` - Upload documenti
+- `GET /api/vehicles/quotes/[id]/documents` - Lista documenti
+- `DELETE /api/vehicles/quotes/[id]/documents` - Eliminazione documento
+
+### 6.3 Database Preventivi
+- **Tabella maintenance_quotes**: Dati principali preventivi
+- **Tabella quote_documents**: Gestione allegati
+- **Relazioni**: JOIN con vehicles, suppliers, vehicle_schedules
+- **Indici**: Ottimizzazione query per performance
+
+## 7. Prossimi Sviluppi
+
+### 7.1 Funzionalità Pianificate
 - Dashboard scadenze con alert automatici
 - Calendario manutenzioni programmate
 - Sistema notifiche email/SMS
-- Gestione preventivi fornitori
 - Analytics e reporting avanzati
+- Export preventivi in PDF
 
 ### 6.2 Miglioramenti Tecnici
 - API caching per performance

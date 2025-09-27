@@ -75,6 +75,14 @@ graph TD
 | /sistema               | System administration and user management           |
 | /backup-dashboard      | Database backup management and monitoring           |
 | /funzionalita          | Features and help documentation                     |
+| /vehicles              | Vehicle management dashboard with statistics        |
+| /vehicles/list         | Complete vehicle list with advanced filtering      |
+| /vehicles/quotes       | All maintenance quotes with filters and actions    |
+| /vehicles/quotes/new   | Create new maintenance quote form                   |
+| /vehicles/quotes/[id]  | Quote detail page with documents and actions       |
+| /vehicles/quotes/[id]/edit | Edit existing quote with document management   |
+| /vehicles/[plate]      | Vehicle detail page with associated quotes         |
+| /vehicles/schedules    | Vehicle maintenance schedules management            |
 
 ## 4. API Definitions
 
@@ -198,7 +206,100 @@ Response:
 | nextScheduled | string | Next scheduled backup time |
 
 **Get Backup Jobs**
+```
+GET /api/backup/jobs
+```
 
+### 4.7 Vehicle Management APIs
+
+**Get All Vehicles**
+```
+GET /api/vehicles
+```
+
+**Get Vehicle Details**
+```
+GET /api/vehicles/[plate]
+```
+
+**Get All Maintenance Quotes**
+```
+GET /api/vehicles/quotes
+```
+
+Query Parameters:
+| Param Name | Param Type | isRequired | Description |
+|------------|------------|------------|-------------|
+| vehicleId | number | false | Filter by vehicle ID |
+| status | string | false | Filter by status (pending/approved/rejected) |
+| supplierId | number | false | Filter by supplier ID |
+
+Response:
+| Param Name | Param Type | Description |
+|------------|------------|-------------|
+| success | boolean | Operation status |
+| quotes | array | List of quotes with vehicle and supplier data |
+| total | number | Total number of quotes |
+
+**Create Maintenance Quote**
+```
+POST /api/vehicles/quotes
+```
+
+Request:
+| Param Name | Param Type | isRequired | Description |
+|------------|------------|------------|-------------|
+| vehicle_id | number | true | Vehicle ID |
+| supplier_id | number | true | Supplier ID |
+| description | string | true | Service description |
+| amount | number | true | Quote amount |
+| valid_until | string | true | Expiry date (YYYY-MM-DD) |
+| schedule_id | number | false | Associated schedule ID |
+| notes | string | false | Additional notes |
+
+**Update Quote Status**
+```
+PUT /api/vehicles/quotes
+```
+
+Request:
+| Param Name | Param Type | isRequired | Description |
+|------------|------------|------------|-------------|
+| id | number | true | Quote ID |
+| status | string | true | New status (approved/rejected) |
+| notes | string | false | Decision notes |
+
+**Get Quote Details**
+```
+GET /api/vehicles/quotes/[id]
+```
+
+**Update Quote**
+```
+PUT /api/vehicles/quotes/[id]
+```
+
+**Delete Quote**
+```
+DELETE /api/vehicles/quotes/[id]
+```
+
+**Upload Quote Documents**
+```
+POST /api/vehicles/quotes/[id]/documents
+```
+
+**Get Quote Documents**
+```
+GET /api/vehicles/quotes/[id]/documents
+```
+
+**Delete Quote Document**
+```
+DELETE /api/vehicles/quotes/[id]/documents?documentId=[docId]
+```
+
+**Get Backup Jobs**
 ```
 GET /api/backup/jobs
 ```

@@ -7,6 +7,7 @@ import Link from 'next/link';
 interface MaintenanceQuote {
   id: number;
   schedule_id: number;
+  vehicle_id: string;
   supplier_id: number;
   quote_number: string;
   description: string;
@@ -16,23 +17,18 @@ interface MaintenanceQuote {
   notes?: string;
   scheduled_date?: string;
   created_at: string;
-  supplier?: {
-    name: string;
-    contact_person?: string;
-    phone?: string;
-    email?: string;
-  };
-  schedule?: {
-    vehicle_id: string;
-    schedule_type: string;
-    description: string;
-    data_scadenza: string;
-    vehicle?: {
-      targa: string;
-      marca: string;
-      modello: string;
-    };
-  };
+  // Campi dal JOIN con vehicles
+  targa: string;
+  marca: string;
+  modello: string;
+  // Campi dal JOIN con vehicle_schedules
+  schedule_type?: string;
+  data_scadenza?: string;
+  // Campi dal JOIN con suppliers
+  supplier_name: string;
+  supplier_email?: string;
+  supplier_phone?: string;
+  supplier_contact?: string;
   documents?: Array<{
     id: number;
     file_name: string;
@@ -80,8 +76,9 @@ function VehicleQuotesContent() {
         throw new Error('Errore nel caricamento dei preventivi');
       }
       const data = await response.json();
-      setQuotes(data.quotes || []);
-      calculateStats(data.quotes || []);
+      console.log('API Response:', data); // Debug log
+      setQuotes(data.data || []);
+      calculateStats(data.data || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Errore sconosciuto');
     } finally {
@@ -243,8 +240,8 @@ function VehicleQuotesContent() {
           bValue = new Date(b.valid_until);
           break;
         case 'supplier':
-          aValue = a.supplier?.name || '';
-          bValue = b.supplier?.name || '';
+          aValue = a.supplier_name || '';
+          bValue = b.supplier_name || '';
           break;
         default:
           aValue = new Date(a.created_at);
@@ -259,9 +256,9 @@ function VehicleQuotesContent() {
     });
 
   const uniqueSuppliers = Array.from(
-    new Set(quotes.map(q => q.supplier?.name).filter(Boolean))
+    new Set(quotes.map(q => q.supplier_name).filter(Boolean))
   ).map(name => {
-    const quote = quotes.find(q => q.supplier?.name === name);
+    const quote = quotes.find(q => q.supplier_name === name);
     return {
       id: quote?.supplier_id,
       name
@@ -464,24 +461,24 @@ function VehicleQuotesContent() {
                             </small>
                           </td>
                           <td>
-                            <strong>{quote.schedule?.vehicle?.targa}</strong><br />
+                            <strong>{quote.targa}</strong><br />
                             <small className="text-muted">
-                              {quote.schedule?.vehicle?.marca} {quote.schedule?.vehicle?.modello}
+                              {quote.marca} {quote.modello}
                             </small>
                           </td>
                           <td>
                             <span className="badge bg-secondary">
-                              {quote.schedule?.schedule_type}
+                              {quote.schedule_type || 'N/A'}
                             </span><br />
                             <small className="text-muted">
                               {quote.description}
                             </small>
                           </td>
                           <td>
-                            <strong>{quote.supplier?.name}</strong><br />
-                            {quote.supplier?.contact_person && (
+                            <strong>{quote.supplier_name}</strong><br />
+                            {quote.supplier_contact && (
                               <small className="text-muted">
-                                {quote.supplier.contact_person}
+                                {quote.supplier_contact}
                               </small>
                             )}
                           </td>

@@ -78,26 +78,41 @@ export async function GET(
 
     const [schedulesRows] = await connection.execute(schedulesQuery, [vehicle.id]);
 
-    // Recupera i preventivi di manutenzione del veicolo
+    // Recupera i preventivi di manutenzione del veicolo con JOIN per ottenere il nome del fornitore
     const quotesQuery = `
       SELECT 
-        id,
-        schedule_id,
-        supplier_id,
-        amount,
-        description,
-        status,
-        valid_until,
-        notes,
-        scheduled_date,
-        created_at as createdAt,
-        updated_at as updatedAt
-      FROM maintenance_quotes 
-      WHERE vehicle_id = ?
-      ORDER BY created_at DESC
+        mq.id,
+        mq.schedule_id,
+        mq.supplier_id,
+        mq.amount as estimated_cost,
+        mq.description,
+        mq.status,
+        mq.valid_until,
+        mq.notes,
+        mq.scheduled_date,
+        mq.created_at as createdAt,
+        mq.updated_at as updatedAt,
+        mq.created_at as quote_date,
+        s.name as supplier,
+        'Manutenzione' as service_type
+      FROM maintenance_quotes mq
+      LEFT JOIN suppliers s ON mq.supplier_id = s.id
+      WHERE mq.vehicle_id = ?
+      ORDER BY mq.created_at DESC
     `;
 
     const [quotesRows] = await connection.execute(quotesQuery, [vehicle.id]);
+
+    // Per ogni preventivo, recupera anche i documenti allegati
+    const quotesWithDocuments = await Promise.all(
+      (quotesRows as any[]).map(async (quote) => {
+        const [docs] = await connection.execute(
+          'SELECT * FROM quote_documents WHERE quote_id = ?',
+          [quote.id]
+        );
+        return { ...quote, documents: docs };
+      })
+    );
 
     await connection.end();
 
@@ -106,7 +121,7 @@ export async function GET(
       vehicle: {
         ...vehicle,
         schedules: schedulesRows,
-        quotes: quotesRows
+        quotes: quotesWithDocuments
       }
     });
   } catch (error) {

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import VehicleDocuments from '@/components/VehicleDocuments';
 
 interface Vehicle {
   id: number;
@@ -33,6 +34,16 @@ interface Schedule {
   updatedAt: string;
 }
 
+interface QuoteDocument {
+  id: number;
+  quote_id: number;
+  file_name: string;
+  file_path: string;
+  file_type: string;
+  file_size: number;
+  uploaded_at: string;
+}
+
 interface Quote {
   id: number;
   vehicle_id: number;
@@ -45,6 +56,7 @@ interface Quote {
   notes: string;
   createdAt: string;
   updatedAt: string;
+  documents?: QuoteDocument[];
 }
 
 interface FormData {
@@ -158,6 +170,7 @@ export default function VehicleDetailPage() {
   };
 
   const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('it-IT');
   };
 
@@ -173,12 +186,111 @@ export default function VehicleDetailPage() {
 
   const getQuoteStatusBadge = (status: string) => {
     const statusMap: { [key: string]: string } = {
-      'pending': 'bg-warning',
+      'pending': 'bg-warning text-dark',
       'approved': 'bg-success',
       'rejected': 'bg-danger',
-      'in_review': 'bg-info'
+      'expired': 'bg-secondary',
+      'converted': 'bg-info'
     };
     return statusMap[status] || 'bg-secondary';
+  };
+
+  const getQuoteStatusText = (status: string) => {
+    const statusTexts: { [key: string]: string } = {
+      'pending': 'In attesa',
+      'approved': 'Approvato',
+      'rejected': 'Rifiutato',
+      'expired': 'Scaduto',
+      'converted': 'Convertito'
+    };
+    return statusTexts[status] || status;
+  };
+
+  const handleQuoteDocumentDownload = (doc: QuoteDocument) => {
+    const downloadUrl = `/api/uploads/${doc.file_path}?download=true`;
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = doc.file_name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleApproveQuote = async (quoteId: number) => {
+    if (!confirm('Sei sicuro di voler approvare questo preventivo?')) return;
+    
+    try {
+      const response = await fetch('/api/vehicles/quotes', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          id: quoteId,
+          status: 'approved'
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Errore nell\'approvazione del preventivo');
+      }
+      
+      // Ricarica i dati del veicolo
+      await fetchVehicleData();
+      setUpdateMessage('Preventivo approvato con successo!');
+    } catch (err) {
+      setUpdateMessage(`Errore nell'approvazione: ${err instanceof Error ? err.message : 'Errore sconosciuto'}`);
+    }
+  };
+
+  const handleRejectQuote = async (quoteId: number) => {
+    if (!confirm('Sei sicuro di voler rifiutare questo preventivo?')) return;
+    
+    try {
+      const response = await fetch('/api/vehicles/quotes', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          id: quoteId,
+          status: 'rejected'
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Errore nel rifiuto del preventivo');
+      }
+      
+      // Ricarica i dati del veicolo
+      await fetchVehicleData();
+      setUpdateMessage('Preventivo rifiutato con successo!');
+    } catch (err) {
+      setUpdateMessage(`Errore nel rifiuto: ${err instanceof Error ? err.message : 'Errore sconosciuto'}`);
+    }
+  };
+
+  const handleDeleteQuote = async (quoteId: number) => {
+    if (!confirm('Sei sicuro di voler eliminare questo preventivo? Questa azione non può essere annullata.')) return;
+    
+    try {
+      const response = await fetch(`/api/vehicles/quotes/${quoteId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Errore nell\'eliminazione del preventivo');
+      }
+      
+      // Ricarica i dati del veicolo
+      await fetchVehicleData();
+      setUpdateMessage('Preventivo eliminato con successo!');
+    } catch (err) {
+      setUpdateMessage(`Errore nell'eliminazione: ${err instanceof Error ? err.message : 'Errore sconosciuto'}`);
+    }
   };
 
   if (loading) {
@@ -514,7 +626,7 @@ export default function VehicleDetailPage() {
       </div>
 
       {/* Preventivi Manutenzione */}
-      <div className="row">
+      <div className="row mb-4">
         <div className="col-12">
           <div className="card">
             <div className="card-header d-flex justify-content-between align-items-center">
@@ -544,6 +656,7 @@ export default function VehicleDetailPage() {
                         <th>Costo Stimato</th>
                         <th>Data</th>
                         <th>Stato</th>
+                        <th>Allegati</th>
                         <th>Azioni</th>
                       </tr>
                     </thead>
@@ -553,20 +666,67 @@ export default function VehicleDetailPage() {
                           <td>{quote.service_type}</td>
                           <td>{quote.description}</td>
                           <td>{quote.supplier}</td>
-                          <td>€ {quote.estimated_cost.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</td>
+                          <td>€ {quote.estimated_cost ? quote.estimated_cost.toLocaleString('it-IT', { minimumFractionDigits: 2 }) : '0,00'}</td>
                           <td>{formatDate(quote.quote_date)}</td>
                           <td>
                             <span className={`badge ${getQuoteStatusBadge(quote.status)}`}>
-                              {quote.status}
+                              {getQuoteStatusText(quote.status)}
                             </span>
                           </td>
                           <td>
-                            <Link 
-                              href={`/vehicles/quotes/${quote.id}`}
-                              className="btn btn-sm btn-outline-primary"
-                            >
-                              <i className="fas fa-eye"></i>
-                            </Link>
+                            {quote.documents && quote.documents.length > 0 ? (
+                              <span className="badge bg-info">
+                                <i className="fas fa-paperclip me-1"></i>
+                                {quote.documents.length}
+                              </span>
+                            ) : (
+                              <span className="text-muted">-</span>
+                            )}
+                          </td>
+                          <td>
+                            <div className="btn-group btn-group-sm">
+                              <Link 
+                                href={`/vehicles/quotes/${quote.id}`}
+                                className="btn btn-outline-primary"
+                                title="Visualizza"
+                              >
+                                <i className="fas fa-eye"></i>
+                              </Link>
+                              {quote.documents && quote.documents.length > 0 && (
+                                <button 
+                                  className="btn btn-outline-success"
+                                  onClick={() => handleQuoteDocumentDownload(quote.documents[0])}
+                                  title="Scarica allegato"
+                                >
+                                  <i className="fas fa-download"></i>
+                                </button>
+                              )}
+                              {quote.status === 'pending' && (
+                                <>
+                                  <button 
+                                    className="btn btn-outline-success"
+                                    onClick={() => handleApproveQuote(quote.id)}
+                                    title="Approva preventivo"
+                                  >
+                                    <i className="fas fa-check"></i>
+                                  </button>
+                                  <button 
+                                    className="btn btn-outline-danger"
+                                    onClick={() => handleRejectQuote(quote.id)}
+                                    title="Rifiuta preventivo"
+                                  >
+                                    <i className="fas fa-times"></i>
+                                  </button>
+                                </>
+                              )}
+                              <button 
+                                className="btn btn-outline-danger"
+                                onClick={() => handleDeleteQuote(quote.id)}
+                                title="Elimina preventivo"
+                              >
+                                <i className="fas fa-trash"></i>
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -576,6 +736,13 @@ export default function VehicleDetailPage() {
               )}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Documenti Veicolo */}
+      <div className="row">
+        <div className="col-12">
+          <VehicleDocuments vehiclePlate={vehicle.targa} />
         </div>
       </div>
     </div>

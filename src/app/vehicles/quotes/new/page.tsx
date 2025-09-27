@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 interface Vehicle {
@@ -20,11 +20,11 @@ interface Supplier {
 
 interface FormData {
   vehicle_id: string;
-  service_type: string;
+  schedule_id: string;
   description: string;
-  estimated_cost: string;
-  supplier: string;
-  quote_date: string;
+  amount: string;
+  supplier_id: string;
+  valid_until: string;
   notes: string;
 }
 
@@ -38,29 +38,71 @@ const serviceTypes = [
   { value: 'altro', label: 'Altro' }
 ];
 
-export default function NewQuotePage() {
+function NewQuotePageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingVehicles, setLoadingVehicles] = useState(true);
   const [loadingSuppliers, setLoadingSuppliers] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   
   const [formData, setFormData] = useState<FormData>({
     vehicle_id: '',
-    service_type: '',
+    schedule_id: '',
     description: '',
-    estimated_cost: '',
-    supplier: '',
-    quote_date: new Date().toISOString().split('T')[0],
+    amount: '',
+    supplier_id: '',
+    valid_until: formatDateToItalian(new Date().toISOString().split('T')[0]),
     notes: ''
   });
+
+  const [schedules, setSchedules] = useState<any[]>([]);
+  const [loadingSchedules, setLoadingSchedules] = useState(true);
+
+  // Funzione per convertire data da ISO (yyyy-mm-dd) a formato italiano (gg/mm/aaaa)
+  function formatDateToItalian(isoDate: string): string {
+    if (!isoDate) return '';
+    const [year, month, day] = isoDate.split('-');
+    return `${day}/${month}/${year}`;
+  }
+
+  // Funzione per convertire data da formato italiano (gg/mm/aaaa) a ISO (yyyy-mm-dd)
+  function formatDateToISO(italianDate: string): string {
+    if (!italianDate) return '';
+    const [day, month, year] = italianDate.split('/');
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+
+  // Funzione per validare il formato data italiana
+  function isValidItalianDate(dateString: string): boolean {
+    const regex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/;
+    if (!regex.test(dateString)) return false;
+    
+    const [day, month, year] = dateString.split('/').map(Number);
+    const date = new Date(year, month - 1, day);
+    
+    return date.getFullYear() === year &&
+           date.getMonth() === month - 1 &&
+           date.getDate() === day;
+  }
 
   useEffect(() => {
     fetchVehicles();
     fetchSuppliers();
-  }, []);
+    fetchSchedules();
+    
+    // Preseleziona il veicolo se passato come parametro URL
+    const vehicleId = searchParams.get('vehicleId');
+    if (vehicleId) {
+      setFormData(prev => ({
+        ...prev,
+        vehicle_id: vehicleId
+      }));
+    }
+  }, [searchParams]);
 
   const fetchVehicles = async () => {
     try {
@@ -94,6 +136,22 @@ export default function NewQuotePage() {
     }
   };
 
+  const fetchSchedules = async () => {
+    try {
+      setLoadingSchedules(true);
+      const response = await fetch('/api/vehicles/schedules');
+      if (!response.ok) {
+        throw new Error('Errore nel caricamento delle scadenze');
+      }
+      const data = await response.json();
+      setSchedules(data.schedules || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Errore nel caricamento delle scadenze');
+    } finally {
+      setLoadingSchedules(false);
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -102,11 +160,41 @@ export default function NewQuotePage() {
     }));
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validazione dimensione file (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        alert('Il file è troppo grande. Dimensione massima: 10MB');
+        e.target.value = '';
+        return;
+      }
+      
+      // Validazione tipo file
+      const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/jpeg', 'image/jpg', 'image/png'];
+      if (!allowedTypes.includes(file.type)) {
+        alert('Tipo di file non supportato. Utilizzare: PDF, DOC, DOCX, JPG, PNG');
+        e.target.value = '';
+        return;
+      }
+      
+      setSelectedFile(file);
+    } else {
+      setSelectedFile(null);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.vehicle_id || !formData.service_type || !formData.description) {
+    if (!formData.vehicle_id || !formData.description || !formData.supplier_id || !formData.amount || !formData.valid_until) {
       setError('Compilare tutti i campi obbligatori');
+      return;
+    }
+
+    // Validazione formato data italiana
+    if (formData.valid_until && !isValidItalianDate(formData.valid_until)) {
+      setError('Formato data non valido. Utilizzare il formato gg/mm/aaaa');
       return;
     }
 
@@ -114,17 +202,26 @@ export default function NewQuotePage() {
       setLoading(true);
       setError(null);
 
-      const submitData = {
-        ...formData,
-        estimated_cost: formData.estimated_cost ? parseFloat(formData.estimated_cost) : null
-      };
+      // Crea FormData per gestire il file upload
+      const submitData = new FormData();
+      submitData.append('vehicle_id', formData.vehicle_id);
+      if (formData.schedule_id) {
+        submitData.append('schedule_id', formData.schedule_id);
+      }
+      submitData.append('supplier_id', formData.supplier_id);
+      submitData.append('amount', formData.amount);
+      submitData.append('description', formData.description);
+      submitData.append('valid_until', formatDateToISO(formData.valid_until));
+      if (formData.notes) {
+        submitData.append('notes', formData.notes);
+      }
+      if (selectedFile) {
+        submitData.append('attachment', selectedFile);
+      }
 
       const response = await fetch('/api/vehicles/quotes', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(submitData),
+        body: submitData, // Non impostare Content-Type, il browser lo farà automaticamente per FormData
       });
 
       if (!response.ok) {
@@ -141,7 +238,7 @@ export default function NewQuotePage() {
     }
   };
 
-  if (loadingVehicles || loadingSuppliers) {
+  if (loadingVehicles || loadingSuppliers || loadingSchedules) {
     return (
       <div className="container-fluid">
         <div className="text-center py-5">
@@ -197,59 +294,70 @@ export default function NewQuotePage() {
                     </select>
                   </div>
 
-                  {/* Tipo Servizio */}
+                  {/* Scadenza */}
                   <div className="col-md-6 mb-3">
-                    <label htmlFor="service_type" className="form-label">
-                      Tipo Servizio <span className="text-danger">*</span>
+                    <label htmlFor="schedule_id" className="form-label">
+                      Scadenza
                     </label>
                     <select
-                      id="service_type"
-                      name="service_type"
+                      id="schedule_id"
+                      name="schedule_id"
                       className="form-select"
-                      value={formData.service_type}
+                      value={formData.schedule_id}
                       onChange={handleInputChange}
-                      required
                     >
-                      <option value="">Seleziona tipo servizio</option>
-                      {serviceTypes.map((type) => (
-                        <option key={type.value} value={type.value}>
-                          {type.label}
+                      <option value="">Seleziona una scadenza</option>
+                      {schedules.map((schedule) => (
+                        <option key={schedule.id} value={schedule.id}>
+                          {schedule.schedule_type} - {schedule.data_scadenza ? new Date(schedule.data_scadenza).toLocaleDateString('it-IT') : 'N/A'}
                         </option>
                       ))}
                     </select>
                   </div>
 
-                  {/* Data Preventivo */}
+                  {/* Data Validità */}
                   <div className="col-md-6 mb-3">
-                    <label htmlFor="quote_date" className="form-label">
-                      Data Preventivo <span className="text-danger">*</span>
+                    <label htmlFor="valid_until" className="form-label">
+                      Valido Fino Al <span className="text-danger">*</span>
                     </label>
                     <input
-                      type="date"
-                      id="quote_date"
-                      name="quote_date"
-                      className="form-control"
-                      value={formData.quote_date}
+                      type="text"
+                      id="valid_until"
+                      name="valid_until"
+                      className={`form-control ${formData.valid_until && !isValidItalianDate(formData.valid_until) ? 'is-invalid' : ''}`}
+                      value={formData.valid_until}
                       onChange={handleInputChange}
+                      placeholder="gg/mm/aaaa"
+                      pattern="(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\d{4}"
+                      title="Inserire la data nel formato gg/mm/aaaa"
                       required
                     />
+                    <div className="form-text">
+                      Formato richiesto: gg/mm/aaaa (es. 15/03/2024)
+                    </div>
+                    {formData.valid_until && !isValidItalianDate(formData.valid_until) && (
+                      <div className="invalid-feedback">
+                        Formato data non valido. Utilizzare gg/mm/aaaa
+                      </div>
+                    )}
                   </div>
 
-                  {/* Costo Stimato */}
+                  {/* Importo */}
                   <div className="col-md-6 mb-3">
-                    <label htmlFor="estimated_cost" className="form-label">
-                      Costo Stimato (€)
+                    <label htmlFor="amount" className="form-label">
+                      Importo (€) <span className="text-danger">*</span>
                     </label>
                     <input
                       type="number"
-                      id="estimated_cost"
-                      name="estimated_cost"
+                      id="amount"
+                      name="amount"
                       className="form-control"
-                      value={formData.estimated_cost}
+                      value={formData.amount}
                       onChange={handleInputChange}
                       placeholder="0.00"
                       step="0.01"
                       min="0"
+                      required
                     />
                   </div>
 
@@ -271,18 +379,19 @@ export default function NewQuotePage() {
                   </div>
 
                   {/* Fornitore */}
-                  <div className="col-12 mb-3">
-                    <label htmlFor="supplier" className="form-label">
-                      Fornitore/Officina
+                  <div className="col-md-6 mb-3">
+                    <label htmlFor="supplier_id" className="form-label">
+                      Fornitore <span className="text-danger">*</span>
                     </label>
                     <select
-                      id="supplier"
-                      name="supplier"
+                      id="supplier_id"
+                      name="supplier_id"
                       className="form-select"
-                      value={formData.supplier}
+                      value={formData.supplier_id}
                       onChange={handleInputChange}
+                      required
                     >
-                      <option value="">Seleziona un fornitore</option>
+                      <option value="">Seleziona fornitore</option>
                       {suppliers.map((supplier) => (
                         <option key={supplier.id} value={supplier.id}>
                           {supplier.name}{supplier.specialization ? ` - ${supplier.specialization}` : ''}
@@ -300,11 +409,36 @@ export default function NewQuotePage() {
                       id="notes"
                       name="notes"
                       className="form-control"
-                      rows={3}
                       value={formData.notes}
                       onChange={handleInputChange}
+                      rows={3}
                       placeholder="Note aggiuntive..."
-                    ></textarea>
+                    />
+                  </div>
+
+                  {/* Allegato */}
+                  <div className="col-12 mb-3">
+                    <label htmlFor="attachment" className="form-label">
+                      Allegato
+                    </label>
+                    <input
+                      type="file"
+                      id="attachment"
+                      name="attachment"
+                      className="form-control"
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                      onChange={handleFileChange}
+                    />
+                    <div className="form-text">
+                      Formati supportati: PDF, DOC, DOCX, JPG, PNG. Dimensione massima: 10MB
+                    </div>
+                    {selectedFile && (
+                      <div className="mt-2">
+                        <small className="text-muted">
+                          File selezionato: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                        </small>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -337,5 +471,13 @@ export default function NewQuotePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function NewQuotePage() {
+  return (
+    <Suspense fallback={<div>Caricamento...</div>}>
+      <NewQuotePageContent />
+    </Suspense>
   );
 }

@@ -3,18 +3,24 @@ import { readFile, stat } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
 
-// Tipi di file immagine consentiti
-const ALLOWED_IMAGE_TYPES = [
+// Tipi di file consentiti (immagini e documenti)
+const ALLOWED_FILE_TYPES = [
+  // Immagini
   'image/jpeg',
   'image/jpg', 
   'image/png',
   'image/gif',
   'image/webp',
-  'image/svg+xml'
+  'image/svg+xml',
+  // Documenti
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'text/plain'
 ];
 
 // Estensioni di file consentite
-const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
+const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.pdf', '.doc', '.docx', '.txt'];
 
 function getMimeType(filename: string): string {
   const ext = filename.toLowerCase().split('.').pop();
@@ -30,12 +36,20 @@ function getMimeType(filename: string): string {
       return 'image/webp';
     case 'svg':
       return 'image/svg+xml';
+    case 'pdf':
+      return 'application/pdf';
+    case 'doc':
+      return 'application/msword';
+    case 'docx':
+      return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    case 'txt':
+      return 'text/plain';
     default:
       return 'application/octet-stream';
   }
 }
 
-function isAllowedImageFile(filename: string): boolean {
+function isAllowedFile(filename: string): boolean {
   const ext = '.' + filename.toLowerCase().split('.').pop();
   return ALLOWED_EXTENSIONS.includes(ext);
 }
@@ -46,6 +60,8 @@ export async function GET(
 ) {
   try {
     const { path } = await params;
+    const { searchParams } = new URL(request.url);
+    const download = searchParams.get('download') === 'true';
     
     if (!path || path.length === 0) {
       return NextResponse.json(
@@ -65,8 +81,8 @@ export async function GET(
       );
     }
 
-    // Verifica che sia un file immagine consentito
-    if (!isAllowedImageFile(filename)) {
+    // Verifica che sia un file consentito
+    if (!isAllowedFile(filename)) {
       return NextResponse.json(
         { error: 'Tipo di file non consentito' },
         { status: 403 }
@@ -101,15 +117,26 @@ export async function GET(
     // Determina il tipo MIME
     const mimeType = getMimeType(filename);
     
+    // Prepara gli headers
+    const headers: Record<string, string> = {
+      'Content-Type': mimeType,
+      'Content-Length': stats.size.toString(),
+      'Last-Modified': stats.mtime.toUTCString(),
+    };
+
+    // Se è richiesto il download, aggiungi Content-Disposition
+    if (download) {
+      const originalFilename = path[path.length - 1]; // Ultimo elemento del path
+      headers['Content-Disposition'] = `attachment; filename="${originalFilename}"`;
+      headers['Cache-Control'] = 'no-cache';
+    } else {
+      headers['Cache-Control'] = 'public, max-age=31536000, immutable'; // Cache per 1 anno
+    }
+    
     // Restituisce il file con gli header appropriati
     return new NextResponse(new Uint8Array(fileBuffer), {
       status: 200,
-      headers: {
-        'Content-Type': mimeType,
-        'Content-Length': stats.size.toString(),
-        'Cache-Control': 'public, max-age=31536000, immutable', // Cache per 1 anno
-        'Last-Modified': stats.mtime.toUTCString(),
-      },
+      headers,
     });
     
   } catch (error) {
