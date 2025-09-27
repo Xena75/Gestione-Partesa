@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { formatDateItalian } from '@/lib/date-utils';
 
 interface VehicleSchedule {
   id: number;
@@ -224,10 +225,6 @@ export default function ScheduleDetailPage({ params }: ScheduleDetailPageProps) 
     };
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('it-IT');
-  };
-
   // Converte da formato database (YYYY-MM-DD) a formato italiano (gg/mm/aaaa)
   const formatDateToItalian = (dateString: string) => {
     if (!dateString) return '';
@@ -420,9 +417,9 @@ export default function ScheduleDetailPage({ params }: ScheduleDetailPageProps) 
                       <div className="col-md-6">
                         <p><strong>Tipo Scadenza:</strong> {getScheduleTypeLabel(schedule.schedule_type)}</p>
                         <p><strong>Descrizione:</strong> {schedule.description || '-'}</p>
-                        <p><strong>Data Scadenza:</strong> {formatDate(schedule.data_scadenza)}</p>
+                        <p><strong>Data Scadenza:</strong> {formatDateItalian(schedule.data_scadenza)}</p>
                         {schedule.completed_date && (
-                          <p><strong>Data Completamento:</strong> {formatDate(schedule.completed_date)}</p>
+                          <p><strong>Data Completamento:</strong> {formatDateItalian(schedule.completed_date)}</p>
                         )}
                       </div>
                       <div className="col-md-6">
@@ -602,10 +599,10 @@ export default function ScheduleDetailPage({ params }: ScheduleDetailPageProps) 
                     <>
                       <p><strong>Giorni Promemoria:</strong> {schedule.reminder_days || '-'}</p>
                       {schedule.created_at && (
-                        <p><strong>Creata il:</strong> {formatDate(schedule.created_at)}</p>
+                        <p><strong>Creata il:</strong> {formatDateItalian(schedule.created_at)}</p>
                       )}
                       {schedule.updated_at && (
-                        <p><strong>Aggiornata il:</strong> {formatDate(schedule.updated_at)}</p>
+                        <p><strong>Aggiornata il:</strong> {formatDateItalian(schedule.updated_at)}</p>
                       )}
                     </>
                   ) : (

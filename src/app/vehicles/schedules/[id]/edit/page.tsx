@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import { formatDateItalian } from '@/lib/date-utils';
 
 interface VehicleSchedule {
   id: number;
@@ -35,17 +36,6 @@ interface Supplier {
 }
 
 // Funzioni di utilità per le date
-function formatDateToItalian(dateString: string): string {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return '';
-  
-  const day = date.getDate().toString().padStart(2, '0');
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const year = date.getFullYear();
-  
-  return `${day}/${month}/${year}`;
-}
 
 function formatDateToDatabase(italianDate: string): string {
   if (!italianDate) return '';
@@ -205,9 +195,9 @@ export default function EditSchedulePage() {
         const newEditForm = {
           schedule_type: schedule.schedule_type || '',
           description: schedule.description || '',
-          data_scadenza: formatDateToItalian(schedule.data_scadenza) || '',
-          completed_date: schedule.completed_date ? formatDateToItalian(schedule.completed_date) : '',
-          booking_date: schedule.booking_date ? formatDateToItalian(schedule.booking_date) : '',
+          data_scadenza: formatDateItalian(schedule.data_scadenza) || '',
+          completed_date: schedule.completed_date ? formatDateItalian(schedule.completed_date) : '',
+          booking_date: schedule.booking_date ? formatDateItalian(schedule.booking_date) : '',
           status: schedule.status || 'pending',
           notes: schedule.notes || '',
           cost: schedule.cost !== null && schedule.cost !== undefined ? schedule.cost.toString() : '',

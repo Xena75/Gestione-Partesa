@@ -22,7 +22,7 @@ Il sistema Gestione Partesa è composto dalle seguenti pagine principali:
 
 1. **Dashboard**: panoramica generale, statistiche in tempo reale, navigazione rapida
 2. **Gestione Viaggi**: gestione completa viaggi, filtri avanzati, export dati
-3. **Gestione Veicoli**: gestione completa parco veicoli, manutenzioni, preventivi
+3. **Gestione Veicoli**: gestione completa parco veicoli, manutenzioni, preventivi, anagrafica veicoli, documenti, scadenze
 4. **Monitoraggio**: tracking viaggi in corso, stato operativo, alert
 5. **Viaggi POD**: gestione Proof of Delivery, import automatico, validazione
 6. **Fatturazione Terzisti**: gestione fatturazione fornitori, export report
@@ -67,6 +67,11 @@ Il sistema Gestione Partesa è composto dalle seguenti pagine principali:
 | Dashboard Backup | Gestione Schedule | Configura backup automatici full/incrementali/differenziali |
 | Dashboard Backup | Alert Sistema | Notifiche backup falliti, spazio disco, errori critici |
 | Dashboard Backup | Statistiche Backup | Report dimensioni, tempi esecuzione, successo/fallimento |
+| Gestione Veicoli | Anagrafica Veicoli | Gestione completa dati veicolo, marca, modello, targa, proprietà |
+| Gestione Veicoli | Documenti Veicolo | Upload, visualizzazione, gestione scadenze documenti con preview diretta |
+| Gestione Veicoli | Preventivi | Gestione preventivi con apertura diretta PDF o navigazione dettaglio |
+| Gestione Veicoli | Scadenze Manutenzioni | Monitoraggio km e date per tagliandi, revisioni, assicurazioni |
+| Gestione Veicoli | Filtri Avanzati | Ricerca per marca, modello, proprietà, tipo patente, stato |
 | Login | Autenticazione | Login sicuro con JWT, gestione sessioni |
 
 ## 3. Core Process
@@ -102,18 +107,21 @@ graph TD
   D --> N[Lista Veicoli]
   D --> O[Preventivi]
   D --> P[Scadenze]
+  D --> T[Documenti Preview]
+  D --> U[Preventivi Preview]
+  D --> V[Scadenze Manutenzioni]
   N --> Q[Dettaglio Veicolo]
   O --> R[Nuovo Preventivo]
   O --> S[Lista Preventivi]
-  R --> T[Upload Documenti]
-  S --> U[Dettaglio Preventivo]
-  U --> V[Approvazione]
-  F --> W[Import POD]
-  G --> X[Report Mensili]
-  I --> Y[Validazione Import]
-  K --> Z[Gestione Utenti]
-  L --> AA[Monitoraggio Job]
-  L --> BB[Alert Sistema]
+  R --> W[Upload Documenti]
+  S --> X[Dettaglio Preventivo]
+  X --> Y[Approvazione]
+  F --> Z[Import POD]
+  G --> AA[Report Mensili]
+  I --> BB[Validazione Import]
+  K --> CC[Gestione Utenti]
+  L --> DD[Monitoraggio Job]
+  L --> EE[Alert Sistema]
 ```
 
 ## 4. User Interface Design

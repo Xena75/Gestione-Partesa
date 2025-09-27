@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
       `;
     
     const [countRows] = await connection.execute(countQuery, queryParams);
-    const total = Array.isArray(countRows) ? countRows[0].total : countRows.total;
+    const total = Array.isArray(countRows) ? (countRows[0] as any).total : (countRows as any).total;
     
     // Query per i dati con paginazione e ordinamento, in base al tipo di vista
     const dataQuery = viewType === 'grouped'

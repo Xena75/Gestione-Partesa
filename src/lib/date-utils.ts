@@ -82,6 +82,27 @@ export const formatDateISO = (dateString: string | null | undefined): string => 
 };
 
 /**
+ * Funzione per formattare le date in formato italiano gg/mm/aaaa
+ * Specificamente per le date di scadenza documenti
+ */
+export const formatDateItalian = (dateString: string | null | undefined): string => {
+  if (!dateString || dateString.trim() === '') return '-';
+  
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '-';
+    
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    
+    return `${day}/${month}/${year}`;
+  } catch (_error) {
+    return '-';
+  }
+};
+
+/**
  * Funzione per validare se una stringa è una data valida
  */
 export const isValidDate = (dateString: string | null | undefined): boolean => {
@@ -90,6 +111,82 @@ export const isValidDate = (dateString: string | null | undefined): boolean => {
   try {
     const date = new Date(dateString);
     return !isNaN(date.getTime()) && date.getFullYear() >= 1900 && date.getFullYear() <= 2100;
+  } catch (_error) {
+    return false;
+  }
+};
+
+/**
+ * Converte una data dal formato italiano (dd/mm/yyyy) al formato ISO (yyyy-mm-dd)
+ */
+export const convertItalianToISO = (italianDate: string): string => {
+  if (!italianDate || italianDate.trim() === '') return '';
+  
+  // Verifica che il formato sia dd/mm/yyyy
+  const dateRegex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/;
+  if (!dateRegex.test(italianDate)) return '';
+  
+  try {
+    const [day, month, year] = italianDate.split('/').map(Number);
+    const date = new Date(year, month - 1, day);
+    
+    if (isNaN(date.getTime())) return '';
+    
+    const isoYear = date.getFullYear();
+    const isoMonth = (date.getMonth() + 1).toString().padStart(2, '0');
+    const isoDay = date.getDate().toString().padStart(2, '0');
+    
+    return `${isoYear}-${isoMonth}-${isoDay}`;
+  } catch (_error) {
+    return '';
+  }
+};
+
+/**
+ * Converte una data dal formato ISO (yyyy-mm-dd) al formato italiano (dd/mm/yyyy)
+ */
+export const convertISOToItalian = (isoDate: string): string => {
+  if (!isoDate || isoDate.trim() === '') return '';
+  
+  // Verifica che il formato sia yyyy-mm-dd
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!dateRegex.test(isoDate)) return '';
+  
+  try {
+    const [year, month, day] = isoDate.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    
+    if (isNaN(date.getTime())) return '';
+    
+    const italianDay = date.getDate().toString().padStart(2, '0');
+    const italianMonth = (date.getMonth() + 1).toString().padStart(2, '0');
+    const italianYear = date.getFullYear();
+    
+    return `${italianDay}/${italianMonth}/${italianYear}`;
+  } catch (_error) {
+    return '';
+  }
+};
+
+/**
+ * Valida se una stringa è nel formato italiano dd/mm/yyyy
+ */
+export const isValidItalianDate = (dateString: string): boolean => {
+  if (!dateString || dateString.trim() === '') return false;
+  
+  const dateRegex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/;
+  if (!dateRegex.test(dateString)) return false;
+  
+  try {
+    const [day, month, year] = dateString.split('/').map(Number);
+    const date = new Date(year, month - 1, day);
+    
+    // Verifica che la data sia valida e corrisponda ai valori inseriti
+    return !isNaN(date.getTime()) && 
+           date.getDate() === day && 
+           date.getMonth() === month - 1 && 
+           date.getFullYear() === year &&
+           year >= 1900 && year <= 2100;
   } catch (_error) {
     return false;
   }

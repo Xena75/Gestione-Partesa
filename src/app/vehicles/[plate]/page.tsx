@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import VehicleDocuments from '@/components/VehicleDocuments';
+import { formatDateItalian } from '@/lib/date-utils';
 
 interface Vehicle {
   id: number;
@@ -59,6 +60,19 @@ interface Quote {
   documents?: QuoteDocument[];
 }
 
+interface Document {
+  id: number;
+  vehicle_id: number;
+  document_type: string;
+  filename: string;
+  original_filename: string;
+  file_path: string;
+  expiry_date: string | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface FormData {
   marca: string;
   modello: string;
@@ -75,6 +89,7 @@ export default function VehicleDetailPage() {
   const plate = params.plate as string;
   
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
+  const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isEditing, setIsEditing] = useState(false);
@@ -92,6 +107,7 @@ export default function VehicleDetailPage() {
 
   useEffect(() => {
     fetchVehicle();
+    fetchDocuments();
   }, [plate]);
 
   const fetchVehicle = async () => {
@@ -119,6 +135,21 @@ export default function VehicleDetailPage() {
       setError('Errore di connessione');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchDocuments = async () => {
+    try {
+      const response = await fetch(`/api/vehicles/${encodeURIComponent(plate)}/documents`);
+      const data = await response.json();
+
+      if (data.success) {
+        setDocuments(data.documents || []);
+      } else {
+        console.error('Errore nel caricamento documenti:', data.error);
+      }
+    } catch (err) {
+      console.error('Errore nel caricamento documenti:', err);
     }
   };
 
@@ -170,8 +201,7 @@ export default function VehicleDetailPage() {
   };
 
   const formatDate = (dateString: string) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('it-IT');
+    return formatDateItalian(dateString);
   };
 
   const getScheduleStatusBadge = (status: string) => {
@@ -236,7 +266,7 @@ export default function VehicleDetailPage() {
       }
       
       // Ricarica i dati del veicolo
-      await fetchVehicleData();
+      await fetchVehicle();
       setUpdateMessage('Preventivo approvato con successo!');
     } catch (err) {
       setUpdateMessage(`Errore nell'approvazione: ${err instanceof Error ? err.message : 'Errore sconosciuto'}`);
@@ -263,7 +293,7 @@ export default function VehicleDetailPage() {
       }
       
       // Ricarica i dati del veicolo
-      await fetchVehicleData();
+      await fetchVehicle();
       setUpdateMessage('Preventivo rifiutato con successo!');
     } catch (err) {
       setUpdateMessage(`Errore nel rifiuto: ${err instanceof Error ? err.message : 'Errore sconosciuto'}`);
@@ -286,10 +316,27 @@ export default function VehicleDetailPage() {
       }
       
       // Ricarica i dati del veicolo
-      await fetchVehicleData();
+      await fetchVehicle();
       setUpdateMessage('Preventivo eliminato con successo!');
     } catch (err) {
       setUpdateMessage(`Errore nell'eliminazione: ${err instanceof Error ? err.message : 'Errore sconosciuto'}`);
+    }
+  };
+
+  const getDocumentExpiryStatus = (expiryDate: string | null) => {
+    if (!expiryDate) return { status: 'no-expiry', badge: 'bg-secondary', text: 'Nessuna scadenza' };
+    
+    const today = new Date();
+    const expiry = new Date(expiryDate);
+    const diffTime = expiry.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) {
+      return { status: 'expired', badge: 'bg-danger', text: 'Scaduto' };
+    } else if (diffDays <= 30) {
+      return { status: 'expiring', badge: 'bg-warning', text: 'In scadenza' };
+    } else {
+      return { status: 'valid', badge: 'bg-success', text: 'Valido' };
     }
   };
 
@@ -344,7 +391,23 @@ export default function VehicleDetailPage() {
   }
 
   return (
-    <div className="container-fluid py-4">
+    <>
+      <style jsx>{`
+        .cursor-pointer {
+          cursor: pointer;
+        }
+        .hover-bg-light:hover {
+          background-color: #f8f9fa !important;
+          transition: background-color 0.2s ease;
+        }
+        .list-group-item.hover-bg-light:hover {
+          background-color: #f8f9fa !important;
+        }
+        tr.hover-bg-light:hover {
+          background-color: #f8f9fa !important;
+        }
+      `}</style>
+      <div className="container-fluid py-4">
       {/* Header */}
       <div className="row mb-4">
         <div className="col-12">
@@ -593,20 +656,22 @@ export default function VehicleDetailPage() {
               ) : (
                 <div className="list-group list-group-flush">
                   {vehicle.schedules.slice(0, 5).map((schedule) => (
-                    <div key={schedule.id} className="list-group-item px-0">
-                      <div className="d-flex justify-content-between align-items-start">
-                        <div className="flex-grow-1">
-                          <h6 className="mb-1">{schedule.type}</h6>
-                          <p className="mb-1 small">{schedule.description}</p>
-                          <small className="text-muted">
-                            Scadenza: {formatDate(schedule.data_scadenza)}
-                          </small>
+                    <Link key={schedule.id} href={`/vehicles/schedules/${schedule.id}`} className="text-decoration-none" style={{ cursor: 'pointer' }}>
+                      <div className="list-group-item px-0 cursor-pointer hover-bg-light">
+                        <div className="d-flex justify-content-between align-items-start">
+                          <div className="flex-grow-1">
+                            <h6 className="mb-1 text-dark">{schedule.type}</h6>
+                            <p className="mb-1 small text-muted">{schedule.description}</p>
+                            <small className="text-muted">
+                              Scadenza: {formatDate(schedule.data_scadenza)}
+                            </small>
+                          </div>
+                          <span className={`badge ${getScheduleStatusBadge(schedule.status)}`}>
+                            {schedule.status}
+                          </span>
                         </div>
-                        <span className={`badge ${getScheduleStatusBadge(schedule.status)}`}>
-                          {schedule.status}
-                        </span>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                   {vehicle.schedules.length > 5 && (
                     <div className="text-center mt-2">
@@ -618,6 +683,87 @@ export default function VehicleDetailPage() {
                       </Link>
                     </div>
                   )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Documenti */}
+        <div className="col-lg-6 mb-4">
+          <div className="card h-100">
+            <div className="card-header d-flex justify-content-between align-items-center">
+              <h5 className="card-title mb-0">
+                <i className="fas fa-file-alt me-2"></i>
+                Documenti ({documents.length})
+              </h5>
+              <Link 
+                href={`/vehicles/${vehicle.targa}/documents`}
+                className="btn btn-sm btn-outline-primary"
+              >
+                <i className="fas fa-folder-open me-1"></i>
+                Gestisci
+              </Link>
+            </div>
+            <div className="card-body">
+              {documents.length === 0 ? (
+                <div className="text-center py-3">
+                  <p className="text-muted mb-2">Nessun documento caricato</p>
+                  <Link 
+                    href={`/vehicles/${vehicle.targa}/documents`}
+                    className="btn btn-sm btn-primary"
+                  >
+                    <i className="fas fa-upload me-1"></i>
+                    Carica Primo Documento
+                  </Link>
+                </div>
+              ) : (
+                <div className="list-group list-group-flush">
+                  {documents.slice(0, 5).map((document) => {
+                    const expiryStatus = getDocumentExpiryStatus(document.expiry_date);
+                    return (
+                      <a key={document.id} href={`/api/files/document?type=document&id=${document.id}`} target="_blank" rel="noopener noreferrer" className="text-decoration-none">
+                        <div className="list-group-item px-0 cursor-pointer hover-bg-light">
+                          <div className="d-flex justify-content-between align-items-start">
+                            <div className="flex-grow-1">
+                              <h6 className="mb-1 text-dark">{document.document_type}</h6>
+                              <p className="mb-1 small text-truncate text-muted" style={{maxWidth: '200px'}}>
+                                {document.original_filename}
+                              </p>
+                              {document.expiry_date && (
+                                <small className="text-muted">
+                                  Scadenza: {formatDate(document.expiry_date)}
+                                </small>
+                              )}
+                            </div>
+                            <span className={`badge ${expiryStatus.badge}`}>
+                              {expiryStatus.text}
+                            </span>
+                          </div>
+                        </div>
+                      </a>
+                    );
+                  })}
+                  {documents.length > 5 && (
+                    <div className="text-center mt-2">
+                      <Link 
+                        href={`/vehicles/${vehicle.targa}/documents`}
+                        className="btn btn-sm btn-outline-secondary"
+                        style={{ cursor: 'pointer' }}
+                      >
+                        Vedi tutti ({documents.length})
+                      </Link>
+                    </div>
+                  )}
+                  <div className="text-center mt-2">
+                    <Link 
+                      href={`/vehicles/${vehicle.targa}/documents`}
+                      className="btn btn-sm btn-primary"
+                    >
+                      <i className="fas fa-upload me-1"></i>
+                      Carica Documento
+                    </Link>
+                  </div>
                 </div>
               )}
             </div>
@@ -662,7 +808,7 @@ export default function VehicleDetailPage() {
                     </thead>
                     <tbody>
                       {vehicle.quotes.map((quote) => (
-                        <tr key={quote.id}>
+                        <tr key={quote.id} className="cursor-pointer hover-bg-light">
                           <td>{quote.service_type}</td>
                           <td>{quote.description}</td>
                           <td>{quote.supplier}</td>
@@ -746,5 +892,6 @@ export default function VehicleDetailPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

@@ -77,7 +77,11 @@ export async function GET(
   }
 }
 
+<<<<<<< HEAD
 // POST - Upload di un nuovo documento
+=======
+// POST - Upload nuovo documento per un veicolo
+>>>>>>> b6920fc4ed8ea752194e659144024a4924f3709b
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ plate: string }> }
@@ -91,6 +95,7 @@ export async function POST(
 
     const { plate } = await params;
     const formData = await request.formData();
+<<<<<<< HEAD
     
     const file = formData.get('file') as File;
     const documentType = formData.get('document_type') as string;
@@ -99,13 +104,54 @@ export async function POST(
     if (!file) {
       return NextResponse.json(
         { success: false, error: 'Nessun file fornito' },
+=======
+    const file = formData.get('file') as File;
+    const documentType = formData.get('document_type') as string;
+    const expiryDate = formData.get('expiry_date') as string;
+    const notes = formData.get('notes') as string;
+
+    if (!file) {
+      return NextResponse.json(
+        { success: false, error: 'File non fornito' },
+>>>>>>> b6920fc4ed8ea752194e659144024a4924f3709b
         { status: 400 }
       );
     }
 
+<<<<<<< HEAD
     if (!documentType || !['libretto', 'assicurazione', 'bollo', 'revisione', 'altro'].includes(documentType)) {
       return NextResponse.json(
         { success: false, error: 'Tipo documento non valido' },
+=======
+    if (!documentType) {
+      return NextResponse.json(
+        { success: false, error: 'Tipo documento non specificato' },
+        { status: 400 }
+      );
+    }
+
+    // Validazione tipi file supportati
+    const allowedTypes = [
+      'application/pdf',
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/webp'
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      return NextResponse.json(
+        { success: false, error: 'Tipo file non supportato. Sono supportati: PDF, JPEG, PNG, WebP' },
+        { status: 400 }
+      );
+    }
+
+    // Limite dimensione file (10MB)
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      return NextResponse.json(
+        { success: false, error: 'File troppo grande. Dimensione massima: 10MB' },
+>>>>>>> b6920fc4ed8ea752194e659144024a4924f3709b
         { status: 400 }
       );
     }
@@ -126,6 +172,7 @@ export async function POST(
       );
     }
 
+<<<<<<< HEAD
     const vehicleId = (vehicleRows[0] as any).id;
 
     // Verifica dimensione file (max 10MB)
@@ -199,6 +246,30 @@ export async function POST(
       file.size,
       expiryDate || null
     ]);
+=======
+    const vehicle = (vehicleRows[0] as any);
+
+    // Upload file su Vercel Blob
+    const fileName = `${plate}_${documentType}_${Date.now()}_${file.name}`;
+    const blob = await put(fileName, file, {
+      access: 'public',
+    });
+
+    // Salva nel database
+    const [result] = await connection.execute(
+      `INSERT INTO vehicle_documents 
+        (vehicle_id, document_type, file_name, file_size, file_path, expiry_date) 
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        vehicle.id,
+        documentType,
+        file.name,
+        file.size,
+        blob.url,
+        expiryDate || null
+      ]
+    );
+>>>>>>> b6920fc4ed8ea752194e659144024a4924f3709b
 
     await connection.end();
 
@@ -207,6 +278,7 @@ export async function POST(
       message: 'Documento caricato con successo',
       document: {
         id: (result as any).insertId,
+<<<<<<< HEAD
         vehicle_id: vehicleId,
         document_type: documentType,
         file_name: file.name,
@@ -297,6 +369,21 @@ export async function DELETE(
     console.error('Errore eliminazione documento:', error);
     return NextResponse.json(
       { success: false, error: 'Errore durante eliminazione documento' },
+=======
+        vehicle_id: vehicle.id,
+        document_type: documentType,
+        file_name: file.name,
+        file_path: blob.url,
+        file_size: file.size,
+        expiry_date: expiryDate || null,
+        notes: notes || null
+      }
+    });
+  } catch (error) {
+    console.error('Errore nell\'upload del documento:', error);
+    return NextResponse.json(
+      { success: false, error: 'Errore nell\'upload del documento' },
+>>>>>>> b6920fc4ed8ea752194e659144024a4924f3709b
       { status: 500 }
     );
   }

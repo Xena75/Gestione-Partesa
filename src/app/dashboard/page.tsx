@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import PendingViaggiModal from '@/components/PendingViaggiModal';
 import PodMancantiModal from '@/components/PodMancantiModal';
+import DocumentExpiryAlert from '@/components/DocumentExpiryAlert';
 
 // Interfaccia per le statistiche
 interface DashboardStats {
@@ -358,6 +359,9 @@ const SectionSkeleton = () => (
           </div>
         </div>
       )}
+
+      {/* Alert documenti in scadenza */}
+      <DocumentExpiryAlert className="mb-6" />
 
       {/* Sezioni Principali */}
       <div className="section-grid">
