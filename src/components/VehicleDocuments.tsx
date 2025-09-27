@@ -37,7 +37,7 @@ export default function VehicleDocuments({ vehiclePlate }: VehicleDocumentsProps
 
   useEffect(() => {
     fetchDocuments();
-  }, [vehiclePlate, fetchDocuments]);
+  }, [vehiclePlate]);
 
   const fetchDocuments = useCallback(async () => {
     try {
