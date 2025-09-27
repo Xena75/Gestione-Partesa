@@ -1,4 +1,57 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.22.0
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.23.1
+
+## 🚀 **VERSIONE 2.23.1** - Ottimizzazioni Calendario Scadenze Veicoli ⭐ **NUOVO**
+
+### 📅 **OTTIMIZZAZIONI LAYOUT E UTILIZZO SPAZIO**
+- **Legenda colori flexbox**: Implementato layout flexbox per distribuzione uniforme di tutti i 7 elementi della legenda
+- **Utilizzo spazio orizzontale**: Sfruttamento completo della larghezza disponibile per migliore visibilità
+- **Ordine prioritario ottimizzato**: Riorganizzazione logica - Scadute, Alta Priorità, Entro 7 giorni, Entro 30 giorni, Completate, Annullate, Standard
+- **Calendario dinamico**: Altezza adattiva con `calc(100vh - 280px)` per utilizzo massimo spazio verticale
+- **Responsività completa**: Layout adattivo per desktop (riga singola), tablet (colonna), mobile (griglia 2x4)
+
+### 🎨 **MIGLIORAMENTI USER EXPERIENCE**
+- **Badge ingranditi**: Dimensioni ottimizzate per migliore leggibilità e accessibilità
+- **Testo più grande**: Font size aumentato per identificazione rapida delle categorie
+- **Altezza minima garantita**: 500px minimi per usabilità su schermi piccoli
+- **Adattamento viewport**: Calendario che si ridimensiona automaticamente alle dimensioni schermo
+- **Performance ottimizzate**: Rendering migliorato per diverse risoluzioni
+
+### 🗓️ **LOGICA EVENTI MIGLIORATA**
+- **Supporto booking_date**: Eventi visualizzati secondo data prenotazione se disponibile
+- **Fallback intelligente**: Utilizzo `data_scadenza` quando `booking_date` non è specificata
+- **Priorità date**: Sistema che privilegia `booking_date` per pianificazione operativa
+- **Coerenza business logic**: Allineamento tra visualizzazione calendario e logica aziendale
+- **Flessibilità gestionale**: Supporto eventi programmati e a scadenza fissa
+
+### 🛠️ **DETTAGLI TECNICI IMPLEMENTAZIONE**
+- **CSS Flexbox**: Layout `display: flex` con `justify-content: space-between` per distribuzione uniforme
+- **Media queries**: Breakpoint responsive per tablet (768px) e mobile (576px)
+- **CSS calc()**: Altezza dinamica `calc(100vh - 280px)` con fallback `min-height: 500px`
+- **React state**: Gestione stato eventi con logica condizionale per date
+- **TypeScript**: Tipizzazione corretta per campi `booking_date` e `data_scadenza`
+
+### ✅ **BENEFICI OPERATIVI OTTENUTI**
+- **Visibilità migliorata**: Legenda più chiara e accessibile per identificazione rapida eventi
+- **Spazio ottimizzato**: Utilizzo massimo dello schermo per visualizzazione calendario
+- **Esperienza uniforme**: Funzionamento ottimale su tutti i dispositivi
+- **Efficienza operativa**: Accesso rapido alle informazioni critiche delle scadenze
+- **Usabilità aumentata**: Interfaccia più intuitiva e professionale
+
+### 🛠️ **FILE MODIFICATI**
+- `src/app/vehicles/schedules/calendar/page.tsx` - Ottimizzazioni layout legenda e calendario
+- CSS inline - Implementazione flexbox e media queries responsive
+- Logica eventi - Aggiunta supporto `booking_date` con fallback `data_scadenza`
+
+### 📋 **FUNZIONALITÀ TESTATE**
+- ✅ **Layout flexbox**: Distribuzione uniforme elementi legenda verificata
+- ✅ **Responsività**: Adattamento corretto su desktop, tablet, mobile
+- ✅ **Altezza dinamica**: Calendario che utilizza tutto lo spazio verticale
+- ✅ **Booking date**: Eventi visualizzati correttamente secondo data prenotazione
+- ✅ **Fallback logic**: Utilizzo `data_scadenza` quando `booking_date` mancante
+- ✅ **Performance**: Rendering ottimizzato senza impatti negativi
+- ✅ **Cross-browser**: Compatibilità verificata su Chrome, Firefox, Safari, Edge
+
+---
 
 ## 🚀 **VERSIONE 2.22.0** - Sistema Automazione Revisioni Veicoli Ibrido ⭐ **NUOVO**
 

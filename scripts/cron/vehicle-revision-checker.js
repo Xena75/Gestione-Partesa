@@ -86,10 +86,14 @@ async function logToDatabase(connection, operationType, vehicleId, scheduleType,
 }
 
 /**
- * Calcola la prossima data di revisione
+ * Calcola la prossima data di revisione basandosi su data_ultima_revisione
  */
-function calculateNextRevisionDate(licenseType, lastRevisionDate = null) {
-  const baseDate = lastRevisionDate ? new Date(lastRevisionDate) : new Date();
+function calculateNextRevisionDate(licenseType, dataUltimaRevisione) {
+  if (!dataUltimaRevisione) {
+    throw new Error('data_ultima_revisione è obbligatoria per il calcolo della prossima revisione');
+  }
+  
+  const baseDate = new Date(dataUltimaRevisione);
   const yearsToAdd = licenseType === 'B' ? 2 : 1;
   
   const nextDate = new Date(baseDate);
@@ -105,7 +109,7 @@ function calculateNextRevisionDate(licenseType, lastRevisionDate = null) {
  * Verifica e corregge revisioni mancanti per un singolo veicolo
  */
 async function checkAndFixVehicleRevisions(connection, vehicle) {
-  const { id: vehicleId, tipo_patente: licenseType, targa } = vehicle;
+  const { id: vehicleId, tipo_patente: licenseType, targa, data_ultima_revisione } = vehicle;
   
   try {
     // Verifica se esiste già una revisione futura
@@ -121,22 +125,8 @@ async function checkAndFixVehicleRevisions(connection, vehicle) {
       return { status: 'already_exists', vehicleId, targa };
     }
     
-    // Trova l'ultima revisione completata
-    const [lastRevisions] = await connection.execute(
-      `SELECT completed_date, data_scadenza FROM vehicle_schedules 
-       WHERE vehicle_id = ? AND schedule_type = 'revisione' 
-       AND status = 'completed' 
-       ORDER BY completed_date DESC, data_scadenza DESC 
-       LIMIT 1`,
-      [vehicleId]
-    );
-    
-    // Calcola la prossima data di revisione
-    const lastRevisionDate = lastRevisions.length > 0 
-      ? (lastRevisions[0].completed_date || lastRevisions[0].data_scadenza)
-      : null;
-    
-    const nextRevision = calculateNextRevisionDate(licenseType, lastRevisionDate);
+    // Usa data_ultima_revisione dalla tabella vehicles come base di calcolo
+    const nextRevision = calculateNextRevisionDate(licenseType, data_ultima_revisione);
     
     // Inserisce la nuova revisione
     const [result] = await connection.execute(
@@ -196,14 +186,27 @@ async function runRevisionChecker() {
     connection = await mysql.createConnection(dbConfig);
     await log('Connessione database stabilita');
     
-    // Recupera tutti i veicoli attivi
+    // Recupera tutti i veicoli attivi con data_ultima_revisione NOT NULL
     const [vehicles] = await connection.execute(
-      `SELECT id, targa, tipo_patente FROM vehicles 
-       WHERE active = 1 
+      `SELECT id, targa, tipo_patente, data_ultima_revisione FROM vehicles 
+       WHERE active = 1 AND data_ultima_revisione IS NOT NULL
        ORDER BY targa`
     );
     
-    await log(`Trovati ${vehicles.length} veicoli da verificare`);
+    // Conta i veicoli esclusi (con data_ultima_revisione NULL)
+    const [excludedVehicles] = await connection.execute(
+      `SELECT COUNT(*) as count FROM vehicles 
+       WHERE active = 1 AND data_ultima_revisione IS NULL`
+    );
+    
+    await log(`Trovati ${vehicles.length} veicoli da verificare (con data_ultima_revisione valida)`);
+    if (excludedVehicles[0].count > 0) {
+      await log(`Esclusi ${excludedVehicles[0].count} veicoli con data_ultima_revisione NULL`);
+      
+      // Log nel database per veicoli esclusi
+      await logToDatabase(connection, 'cron_excluded', 'SYSTEM', 'revisione', 
+        `${excludedVehicles[0].count} veicoli esclusi dal controllo automatico (data_ultima_revisione NULL)`);
+    }
     
     if (vehicles.length === 0) {
       await log('Nessun veicolo trovato per la verifica', 'WARN');

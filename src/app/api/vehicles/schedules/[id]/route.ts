@@ -213,15 +213,16 @@ export async function PUT(
     // Converti le date dal formato italiano al formato database
     const convertedDueDate = body.data_scadenza ? convertItalianDateToDatabase(body.data_scadenza) : null;
     const convertedCompletedDate = body.completed_date ? convertItalianDateToDatabase(body.completed_date) : null;
+    const convertedBookingDate = body.booking_date ? convertItalianDateToDatabase(body.booking_date) : null;
 
     const connection = await mysql.createConnection(dbConfig);
 
     const [result] = await connection.execute(
       `UPDATE vehicle_schedules 
-       SET schedule_type = ?, data_scadenza = ?, completed_date = ?, description = ?, 
+       SET schedule_type = ?, data_scadenza = ?, completed_date = ?, booking_date = ?, description = ?, 
            cost = ?, provider = ?, status = ?, reminder_days = ?, notes = ?, updated_at = NOW()
        WHERE id = ?`,
-      [body.schedule_type || null, convertedDueDate, convertedCompletedDate, 
+      [body.schedule_type || null, convertedDueDate, convertedCompletedDate, convertedBookingDate,
        body.description || null, body.cost || null, body.provider || null, body.status || null, 
        body.reminder_days || null, body.notes || null, id]
     );

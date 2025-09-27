@@ -27,6 +27,8 @@ Il Sistema di Automazione Revisioni Veicoli è un sistema ibrido che combina aut
 
 ### Trigger MySQL
 
+**Versione 2.0** - Include calcolo automatico della priorità
+
 ```sql
 DELIMITER //
 CREATE TRIGGER after_vehicle_schedule_update
@@ -35,6 +37,8 @@ FOR EACH ROW
 BEGIN
     DECLARE next_revision_date DATE;
     DECLARE vehicle_license_type VARCHAR(10);
+    DECLARE calculated_priority VARCHAR(10);
+    DECLARE days_until_due INT;
     
     IF NEW.completato = 1 AND OLD.completato = 0 AND NEW.tipo_servizio = 'revisione' THEN
         SELECT tipo_patente INTO vehicle_license_type 
@@ -47,16 +51,34 @@ BEGIN
             SET next_revision_date = DATE_ADD(NEW.data_scadenza, INTERVAL 2 YEAR);
         END IF;
         
-        INSERT INTO vehicle_schedules (vehicle_id, tipo_servizio, data_scadenza, completato, created_at)
-        VALUES (NEW.vehicle_id, 'revisione', next_revision_date, 0, NOW());
+        -- Calcola la priorità basata sui giorni rimanenti
+        SET days_until_due = DATEDIFF(next_revision_date, CURDATE());
+        
+        IF days_until_due <= 30 THEN
+            SET calculated_priority = 'high';
+        ELSEIF days_until_due <= 90 THEN
+            SET calculated_priority = 'medium';
+        ELSE
+            SET calculated_priority = 'low';
+        END IF;
+        
+        INSERT INTO vehicle_schedules (vehicle_id, tipo_servizio, data_scadenza, priority, completato, created_at)
+        VALUES (NEW.vehicle_id, 'revisione', next_revision_date, calculated_priority, 0, NOW());
         
         INSERT INTO automation_logs (operation_type, vehicle_id, details, created_at)
         VALUES ('trigger_revision_created', NEW.vehicle_id, 
-                CONCAT('Nuova revisione creata automaticamente per ', next_revision_date), NOW());
+                CONCAT('Nuova revisione creata automaticamente per ', next_revision_date, 
+                       ' con priorità: ', calculated_priority, ' (', days_until_due, ' giorni)'), NOW());
     END IF;
 END//
 DELIMITER ;
 ```
+
+#### Logica di Calcolo Priorità
+
+- **HIGH**: Scadenza entro 30 giorni (≤ 30 giorni)
+- **MEDIUM**: Scadenza tra 31 e 90 giorni (31-90 giorni)
+- **LOW**: Scadenza oltre 90 giorni (> 90 giorni)
 
 ### Cron Job
 
@@ -195,6 +217,43 @@ CREATE TABLE automation_logs (
 4. **Trasparenza**: Logging completo di tutte le operazioni
 5. **Flessibilità**: Controllo manuale quando necessario
 6. **Manutenzione Minima**: Sistema auto-gestito
+
+## 📁 File di Implementazione
+
+### File del Trigger Aggiornato
+
+**Percorso**: `database/triggers/after_vehicle_schedule_update_v2.sql`
+
+Contiene il trigger MySQL aggiornato con il calcolo automatico della priorità. Per applicare l'aggiornamento:
+
+```bash
+# Connessione al database MySQL
+mysql -u username -p database_name
+
+# Applicazione del nuovo trigger
+SOURCE database/triggers/after_vehicle_schedule_update_v2.sql;
+```
+
+### File di Test
+
+**Percorso**: `database/triggers/test_trigger_priority.sql`
+
+Contiene query di test per verificare il corretto funzionamento del calcolo automatico della priorità:
+
+- **Test Priorità HIGH**: Revisioni con scadenza ≤ 30 giorni
+- **Test Priorità MEDIUM**: Revisioni con scadenza 31-90 giorni  
+- **Test Priorità LOW**: Revisioni con scadenza > 90 giorni
+- **Verifica Log**: Controllo registrazione operazioni
+- **Query di Pulizia**: Rimozione dati di test
+- **Verifica Coerenza**: Controllo priorità vs giorni rimanenti
+
+### Procedura di Aggiornamento
+
+1. **Backup Database**: Eseguire backup prima dell'aggiornamento
+2. **Applicare Trigger**: Eseguire `after_vehicle_schedule_update_v2.sql`
+3. **Test Funzionalità**: Eseguire test da `test_trigger_priority.sql`
+4. **Verifica Risultati**: Controllare priorità calcolate correttamente
+5. **Pulizia Test**: Rimuovere dati di test
 
 ## 🔧 Configurazione e Manutenzione
 

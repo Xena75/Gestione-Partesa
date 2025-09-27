@@ -8,6 +8,150 @@ import 'moment/locale/it';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import Link from 'next/link';
 
+// CSS globale per forzare tutti i colori degli eventi in modalità dark
+const forceEventColorsCSS = `
+  /* 🔴 ROSSO: Eventi scaduti */
+  .rbc-event.force-red-event,
+  .rbc-event.force-red-event .rbc-event-content,
+  .rbc-event.force-red-event:hover,
+  .rbc-event.force-red-event:focus {
+    background-color: #ff0000 !important;
+    border-color: #ff0000 !important;
+    color: white !important;
+    border: 2px solid #ff0000 !important;
+    outline: 2px solid #ff0000 !important;
+  }
+  
+  /* 🟢 VERDE: Eventi completati */
+  .rbc-event.force-green-event,
+  .rbc-event.force-green-event .rbc-event-content,
+  .rbc-event.force-green-event:hover,
+  .rbc-event.force-green-event:focus {
+    background-color: #28a745 !important;
+    border-color: #28a745 !important;
+    color: white !important;
+    border: 2px solid #28a745 !important;
+  }
+  
+  /* ⚫ GRIGIO: Eventi cancellati */
+  .rbc-event.force-grey-event,
+  .rbc-event.force-grey-event .rbc-event-content,
+  .rbc-event.force-grey-event:hover,
+  .rbc-event.force-grey-event:focus {
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
+    color: white !important;
+    border: 2px solid #6c757d !important;
+  }
+  
+  /* 🟠 ARANCIONE: Eventi priorità alta */
+  .rbc-event.force-orange-event,
+  .rbc-event.force-orange-event .rbc-event-content,
+  .rbc-event.force-orange-event:hover,
+  .rbc-event.force-orange-event:focus {
+    background-color: #fd7e14 !important;
+    border-color: #fd7e14 !important;
+    color: white !important;
+    border: 2px solid #fd7e14 !important;
+  }
+  
+  /* 🟡 GIALLO: Eventi entro 7 giorni */
+  .rbc-event.force-yellow-event,
+  .rbc-event.force-yellow-event .rbc-event-content,
+  .rbc-event.force-yellow-event:hover,
+  .rbc-event.force-yellow-event:focus {
+    background-color: #ffc107 !important;
+    border-color: #ffc107 !important;
+    color: black !important;
+    border: 2px solid #ffc107 !important;
+  }
+  
+  /* 🟣 VIOLA: Eventi entro 30 giorni */
+  .rbc-event.force-purple-event,
+  .rbc-event.force-purple-event .rbc-event-content,
+  .rbc-event.force-purple-event:hover,
+  .rbc-event.force-purple-event:focus {
+    background-color: #6f42c1 !important;
+    border-color: #6f42c1 !important;
+    color: white !important;
+    border: 2px solid #6f42c1 !important;
+  }
+  
+  /* 🔵 BLU: Eventi standard */
+  .rbc-event.force-blue-event,
+  .rbc-event.force-blue-event .rbc-event-content,
+  .rbc-event.force-blue-event:hover,
+  .rbc-event.force-blue-event:focus {
+    background-color: #3174ad !important;
+    border-color: #3174ad !important;
+    color: white !important;
+    border: 2px solid #3174ad !important;
+  }
+  
+  /* Forza i colori anche in modalità scura */
+  .dark .rbc-event.force-red-event,
+  .dark .rbc-event.force-red-event .rbc-event-content {
+    background-color: #ff0000 !important;
+    border-color: #ff0000 !important;
+    color: white !important;
+  }
+  
+  .dark .rbc-event.force-green-event,
+  .dark .rbc-event.force-green-event .rbc-event-content {
+    background-color: #28a745 !important;
+    border-color: #28a745 !important;
+    color: white !important;
+  }
+  
+  .dark .rbc-event.force-grey-event,
+  .dark .rbc-event.force-grey-event .rbc-event-content {
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
+    color: white !important;
+  }
+  
+  .dark .rbc-event.force-orange-event,
+  .dark .rbc-event.force-orange-event .rbc-event-content {
+    background-color: #fd7e14 !important;
+    border-color: #fd7e14 !important;
+    color: white !important;
+  }
+  
+  .dark .rbc-event.force-yellow-event,
+  .dark .rbc-event.force-yellow-event .rbc-event-content {
+    background-color: #ffc107 !important;
+    border-color: #ffc107 !important;
+    color: black !important;
+  }
+  
+  .dark .rbc-event.force-purple-event,
+  .dark .rbc-event.force-purple-event .rbc-event-content {
+    background-color: #6f42c1 !important;
+    border-color: #6f42c1 !important;
+    color: white !important;
+  }
+  
+  .dark .rbc-event.force-blue-event,
+  .dark .rbc-event.force-blue-event .rbc-event-content {
+    background-color: #3174ad !important;
+    border-color: #3174ad !important;
+    color: white !important;
+  }
+  
+  /* Override generale per tutti gli eventi */
+  .rbc-event {
+    border-radius: 4px !important;
+    font-weight: 500 !important;
+  }
+`;
+
+// Inietta il CSS nella pagina
+if (typeof document !== 'undefined') {
+  const style = document.createElement('style');
+  style.textContent = forceEventColorsCSS;
+  document.head.appendChild(style);
+}
+
 // Configura moment in italiano
 moment.locale('it');
 const localizer = momentLocalizer(moment);
@@ -73,32 +217,28 @@ function VehicleSchedulesCalendarContent() {
   };
 
   const convertToCalendarEvents = (schedules: VehicleSchedule[]) => {
+    console.log('Tutti i veicoli nel calendario:', schedules.map(s => ({ targa: s.vehicle?.targa, id: s.id, data_scadenza: s.data_scadenza, booking_date: s.booking_date })));
     const calendarEvents: CalendarEvent[] = schedules.map(schedule => {
-      const dueDate = new Date(schedule.data_scadenza);
-      const now = new Date();
-      const isOverdue = dueDate < now;
+      // Usa booking_date se presente e non vuota, altrimenti data_scadenza
+      const eventDate = schedule.booking_date && schedule.booking_date.trim() !== '' 
+        ? new Date(schedule.booking_date) 
+        : new Date(schedule.data_scadenza);
       
-      // Se l'evento è scaduto ma ha una data di prenotazione, usa quella
-      let displayDate = dueDate;
       let titleSuffix = '';
       
-      if (isOverdue && schedule.booking_date) {
-        displayDate = new Date(schedule.booking_date);
+      if (schedule.booking_date && schedule.booking_date.trim() !== '') {
         titleSuffix = ' (Prenotato)';
       }
       
       return {
         id: schedule.id,
         title: `${schedule.vehicle?.targa || 'N/A'} - ${schedule.schedule_type}${titleSuffix}`,
-        start: displayDate,
-        end: displayDate,
+        start: eventDate,
+        end: eventDate,
         resource: {
           ...schedule,
-          vehicle: {
-            targa: schedule.targa,
-            marca: schedule.marca,
-            modello: schedule.modello
-          }
+          // Mantieni la struttura originale del veicolo dall'API
+          vehicle: schedule.vehicle
         }
       };
     });
@@ -116,45 +256,100 @@ function VehicleSchedulesCalendarContent() {
     window.location.href = `/vehicles/schedules/new?date=${dateParam}`;
   }, []);
 
-  const eventStyleGetter = (event: CalendarEvent) => {
+  const eventStyleGetter = (event: any) => {
     const schedule = event.resource;
-    const now = new Date();
-    const dueDate = new Date(schedule.data_scadenza);
-    const isOverdue = dueDate < now;
-    const isBooked = isOverdue && schedule.booking_date;
-    
-    let backgroundColor = '#3174ad';
-    let borderColor = '#3174ad';
-    
-    if (schedule.status === 'completed') {
-      backgroundColor = '#28a745';
-      borderColor = '#28a745';
-    } else if (schedule.status === 'cancelled') {
-      backgroundColor = '#6c757d';
-      borderColor = '#6c757d';
-    } else if (isBooked) {
-      // Eventi scaduti ma prenotati - colore viola
-      backgroundColor = '#6f42c1';
-      borderColor = '#6f42c1';
-    } else if (dueDate < now) {
-      backgroundColor = '#dc3545';
-      borderColor = '#dc3545';
-    } else if (dueDate <= new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)) {
-      backgroundColor = '#ffc107';
-      borderColor = '#ffc107';
-    } else if (schedule.priority === 'high') {
-      backgroundColor = '#fd7e14';
-      borderColor = '#fd7e14';
+    const today = new Date();
+    const eventDate = new Date(schedule.data_scadenza);
+    const daysDiff = Math.ceil((eventDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+    // 🔴 ROSSO: Eventi scaduti (priorità massima)
+    if (daysDiff < 0) {
+      return {
+        style: {
+          backgroundColor: '#ff0000 !important',
+          borderColor: '#ff0000 !important',
+          color: 'white !important',
+          border: '2px solid #ff0000 !important',
+          outline: '2px solid #ff0000 !important'
+        },
+        className: 'force-red-event'
+      };
     }
-    
+
+    // 🟢 VERDE: Eventi completati
+    if (schedule.status === 'completed') {
+      return {
+        style: {
+          backgroundColor: '#28a745 !important',
+          borderColor: '#28a745 !important',
+          color: 'white !important',
+          border: '2px solid #28a745 !important'
+        },
+        className: 'force-green-event'
+      };
+    }
+
+    // ⚫ GRIGIO: Eventi cancellati
+    if (schedule.status === 'cancelled') {
+      return {
+        style: {
+          backgroundColor: '#6c757d !important',
+          borderColor: '#6c757d !important',
+          color: 'white !important',
+          border: '2px solid #6c757d !important'
+        },
+        className: 'force-grey-event'
+      };
+    }
+
+    // 🟠 ARANCIONE: Eventi con priorità alta
+    if (schedule.priority === 'high') {
+      return {
+        style: {
+          backgroundColor: '#fd7e14 !important',
+          borderColor: '#fd7e14 !important',
+          color: 'white !important',
+          border: '2px solid #fd7e14 !important'
+        },
+        className: 'force-orange-event'
+      };
+    }
+
+    // 🟡 GIALLO: Eventi in scadenza entro 7 giorni
+    if (daysDiff <= 7 && daysDiff >= 0) {
+      return {
+        style: {
+          backgroundColor: '#ffc107 !important',
+          borderColor: '#ffc107 !important',
+          color: 'black !important',
+          border: '2px solid #ffc107 !important'
+        },
+        className: 'force-yellow-event'
+      };
+    }
+
+    // 🟣 VIOLA: Eventi prossimi entro 30 giorni
+    if (daysDiff <= 30 && daysDiff >= 0) {
+      return {
+        style: {
+          backgroundColor: '#6f42c1 !important',
+          borderColor: '#6f42c1 !important',
+          color: 'white !important',
+          border: '2px solid #6f42c1 !important'
+        },
+        className: 'force-purple-event'
+      };
+    }
+
+    // 🔵 BLU: Tutti gli altri eventi (default)
     return {
       style: {
-        backgroundColor,
-        borderColor,
-        color: 'white',
-        border: 'none',
-        borderRadius: '4px'
-      }
+        backgroundColor: '#3174ad !important',
+        borderColor: '#3174ad !important',
+        color: 'white !important',
+        border: '2px solid #3174ad !important'
+      },
+      className: 'force-blue-event'
     };
   };
 
@@ -228,39 +423,64 @@ function VehicleSchedulesCalendarContent() {
           {/* Legenda */}
           <div className="card mb-4">
             <div className="card-body">
-              <h6 className="card-title">Legenda Colori</h6>
-              <div className="row">
-                <div className="col-md-2">
-                  <span className="badge bg-danger me-2">■</span>
-                  <small>Scadute</small>
+              <h6 className="card-title mb-3">Legenda Colori</h6>
+              <div className="d-flex flex-wrap justify-content-between align-items-center gap-2" style={{minHeight: '60px'}}>
+                <div className="d-flex align-items-center flex-grow-1 justify-content-center px-2 py-1">
+                  <span className="badge bg-danger me-2 fs-6" style={{fontSize: '1.1rem !important'}}>🔴</span>
+                  <span className="fw-medium">Scadute</span>
                 </div>
-                <div className="col-md-2">
-                  <span className="badge me-2" style={{backgroundColor: '#6f42c1'}}>■</span>
-                  <small>Prenotate</small>
+                <div className="d-flex align-items-center flex-grow-1 justify-content-center px-2 py-1">
+                  <span className="badge me-2 fs-6" style={{backgroundColor: '#fd7e14', color: 'white', fontSize: '1.1rem !important'}}>🟠</span>
+                  <span className="fw-medium">Priorità alta</span>
                 </div>
-                <div className="col-md-2">
-                  <span className="badge bg-warning me-2">■</span>
-                  <small>In scadenza (7 giorni)</small>
+                <div className="d-flex align-items-center flex-grow-1 justify-content-center px-2 py-1">
+                  <span className="badge bg-warning me-2 fs-6" style={{fontSize: '1.1rem !important'}}>🟡</span>
+                  <span className="fw-medium">In scadenza (7 giorni)</span>
                 </div>
-                <div className="col-md-2">
-                  <span className="badge bg-success me-2">■</span>
-                  <small>Completate</small>
+                <div className="d-flex align-items-center flex-grow-1 justify-content-center px-2 py-1">
+                  <span className="badge me-2 fs-6" style={{backgroundColor: '#6f42c1', color: 'white', fontSize: '1.1rem !important'}}>🟣</span>
+                  <span className="fw-medium">Prossime (30 giorni)</span>
                 </div>
-                <div className="col-md-2">
-                  <span className="badge bg-secondary me-2">■</span>
-                  <small>Annullate</small>
+                <div className="d-flex align-items-center flex-grow-1 justify-content-center px-2 py-1">
+                  <span className="badge bg-success me-2 fs-6" style={{fontSize: '1.1rem !important'}}>🟢</span>
+                  <span className="fw-medium">Completate</span>
                 </div>
-                <div className="col-md-2">
-                  <span className="badge" style={{backgroundColor: '#fd7e14', color: 'white'}} className="me-2">■</span>
-                  <small>Priorità alta</small>
+                <div className="d-flex align-items-center flex-grow-1 justify-content-center px-2 py-1">
+                  <span className="badge bg-secondary me-2 fs-6" style={{fontSize: '1.1rem !important'}}>⚫</span>
+                  <span className="fw-medium">Annullate</span>
+                </div>
+                <div className="d-flex align-items-center flex-grow-1 justify-content-center px-2 py-1">
+                  <span className="badge me-2 fs-6" style={{backgroundColor: '#3174ad', color: 'white', fontSize: '1.1rem !important'}}>🔵</span>
+                  <span className="fw-medium">Eventi standard</span>
                 </div>
               </div>
+              
+              {/* Layout responsivo per dispositivi mobili */}
+              <style jsx>{`
+                @media (max-width: 768px) {
+                  .d-flex.flex-wrap {
+                    flex-direction: column;
+                    gap: 0.5rem;
+                  }
+                  .d-flex.align-items-center.flex-grow-1 {
+                    justify-content: flex-start !important;
+                    min-height: 40px;
+                  }
+                }
+                @media (max-width: 576px) {
+                  .d-flex.flex-wrap {
+                    display: grid !important;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 0.75rem;
+                  }
+                }
+              `}</style>
             </div>
           </div>
 
           {/* Calendario */}
-          <div className="card">
-            <div className="card-body" style={{ height: '600px' }}>
+          <div className="card" style={{ height: 'calc(100vh - 280px)', minHeight: '500px' }}>
+            <div className="card-body" style={{ height: '100%', padding: '1rem' }}>
               <Calendar
                 localizer={localizer}
                 events={events}

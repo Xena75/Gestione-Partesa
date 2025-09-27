@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.23.0
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.23.1
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -196,6 +196,41 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Navigazione intuitiva**: Controlli semplici per scorrere tra le immagini
 - **Design coerente**: Integrazione perfetta con il design esistente del sistema
 - **Feedback immediato**: Indicazioni chiare sullo stato di caricamento
+
+### 📅 **Ottimizzazioni Calendario Scadenze Veicoli - v2.23.1** ⭐ **NUOVO**
+
+#### 🎨 **Legenda Colori Ottimizzata**
+- **Layout flexbox**: Distribuzione uniforme di tutti i 7 elementi della legenda su tutta la larghezza disponibile
+- **Ordine prioritario**: Riorganizzazione logica - Scadute (rosso), Alta Priorità (arancione), Entro 7 giorni (giallo), Entro 30 giorni (viola), Completate (verde), Annullate (grigio), Standard (blu)
+- **Responsività completa**: Layout adattivo - desktop (riga singola), tablet (colonna singola), mobile (griglia 2x4)
+- **Dimensioni ottimizzate**: Badge e testo ingranditi per migliore leggibilità
+- **Utilizzo spazio massimo**: Sfruttamento completo dello spazio orizzontale disponibile
+
+#### 📏 **Calendario Dinamico e Responsivo**
+- **Altezza dinamica**: Sostituzione altezza fissa 600px con `calc(100vh - 280px)` per utilizzo completo spazio verticale
+- **Altezza minima**: Garantiti 500px minimi per usabilità su schermi piccoli
+- **Adattamento viewport**: Calendario che si adatta automaticamente alle dimensioni dello schermo
+- **Spazio ottimizzato**: Massimizzazione area visibile per eventi e navigazione
+- **Performance migliorate**: Rendering ottimizzato per diverse risoluzioni
+
+#### 🗓️ **Logica Eventi Migliorata**
+- **Supporto booking_date**: Eventi visualizzati secondo data prenotazione se disponibile, altrimenti data scadenza
+- **Priorità date intelligente**: Sistema che privilegia `booking_date` per pianificazione operativa
+- **Fallback automatico**: Utilizzo `data_scadenza` quando `booking_date` non è specificata
+- **Coerenza dati**: Allineamento tra visualizzazione calendario e logica di business
+- **Flessibilità operativa**: Gestione eventi sia programmati che a scadenza fissa
+
+#### ✅ **Benefici User Experience**
+- **Navigazione migliorata**: Legenda più chiara e accessibile per identificazione rapida eventi
+- **Spazio ottimizzato**: Utilizzo massimo dello schermo per visualizzazione calendario
+- **Responsività completa**: Esperienza ottimale su desktop, tablet e mobile
+- **Leggibilità aumentata**: Elementi più grandi e spaziatura migliorata
+- **Efficienza operativa**: Accesso rapido alle informazioni critiche delle scadenze
+
+#### 📚 **Documentazione Tecnica**
+- **Guida completa**: `docs/calendario-scadenze-ottimizzazioni.md` - Dettagli implementazione CSS flexbox, media queries, logica booking_date
+- **Riferimento database**: `docs/database-reference.md` - Struttura database e query per sviluppo
+- **Testing e compatibilità**: Browser testati (Chrome, Firefox, Safari, Edge) e dispositivi supportati
 
 ### 🤖 **Sistema Automazione Revisioni Veicoli Ibrido - v2.22.0** ⭐ **NUOVO**
 

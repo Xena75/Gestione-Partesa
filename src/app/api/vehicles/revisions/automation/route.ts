@@ -103,13 +103,14 @@ export async function GET(request: NextRequest) {
         });
         
       case 'vehicles-status':
-        // Stato revisioni per tutti i veicoli
+        // Stato revisioni per tutti i veicoli (solo quelli con data_scadenza_revisione valida)
         const [vehiclesResult] = await connection.execute(`
           SELECT 
             v.id,
             v.targa,
             v.tipo_patente,
             v.active,
+            v.data_ultima_revisione,
             (
               SELECT COUNT(*) 
               FROM vehicle_schedules vs 
@@ -134,7 +135,7 @@ export async function GET(request: NextRequest) {
                 AND vs.status = 'completed'
             ) as last_completed_revision
           FROM vehicles v
-          WHERE v.active = 1
+          WHERE v.active = 1 AND v.data_ultima_revisione IS NOT NULL
           ORDER BY v.targa
         `);
         
@@ -211,16 +212,16 @@ export async function POST(request: NextRequest) {
         try {
           connection = await mysql.createConnection(dbConfig);
           
-          // Recupera informazioni del veicolo
+          // Recupera informazioni del veicolo (solo se ha data_ultima_revisione valida)
           const [vehicleResult] = await connection.execute(
-            'SELECT id, targa, tipo_patente FROM vehicles WHERE id = ?',
+            'SELECT id, targa, tipo_patente, data_ultima_revisione FROM vehicles WHERE id = ? AND data_ultima_revisione IS NOT NULL',
             [vehicleId]
           );
           
           if (!vehicleResult || vehicleResult.length === 0) {
             return NextResponse.json({
               success: false,
-              error: 'Veicolo non trovato'
+              error: 'Veicolo non trovato o non ha una data ultima revisione valida (escluso dal sistema di automazione)'
             }, { status: 404 });
           }
           
