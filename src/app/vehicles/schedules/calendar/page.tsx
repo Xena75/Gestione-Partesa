@@ -1,12 +1,30 @@
 // src/app/vehicles/schedules/calendar/page.tsx
 'use client';
 
-import { Suspense, useState, useEffect, useCallback } from 'react';
-import { Calendar, momentLocalizer, View, Views } from 'react-big-calendar';
+import React, { Suspense, useState, useEffect, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import moment from 'moment';
 import 'moment/locale/it';
-import 'react-big-calendar/lib/css/react-big-calendar.css';
 import Link from 'next/link';
+
+// Import dinamico per prevenire errori di inizializzazione
+const Calendar = dynamic(
+  () => import('react-big-calendar').then((mod) => mod.Calendar),
+  { ssr: false }
+);
+const momentLocalizer = dynamic(
+  () => import('react-big-calendar').then((mod) => mod.momentLocalizer),
+  { ssr: false }
+);
+const Views = dynamic(
+  () => import('react-big-calendar').then((mod) => mod.Views),
+  { ssr: false }
+);
+
+// Import CSS in modo sicuro
+if (typeof window !== 'undefined') {
+  import('react-big-calendar/lib/css/react-big-calendar.css');
+}
 
 // CSS globale per forzare tutti i colori degli eventi in modalità dark
 const forceEventColorsCSS = `
@@ -152,9 +170,8 @@ if (typeof document !== 'undefined') {
   document.head.appendChild(style);
 }
 
-// Configura moment in italiano
+// Configura moment per la localizzazione italiana
 moment.locale('it');
-const localizer = momentLocalizer(moment);
 
 interface VehicleSchedule {
   id: number;
@@ -190,10 +207,23 @@ function VehicleSchedulesCalendarContent() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<View>(Views.MONTH);
+  const [view, setView] = useState<any>('month');
   const [date, setDate] = useState(new Date());
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [calendarReady, setCalendarReady] = useState(false);
+  const [currentLocalizer, setCurrentLocalizer] = useState<any>(null);
+
+  // Inizializzazione del calendario
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      import('react-big-calendar').then((mod) => {
+        const localizer = mod.momentLocalizer(moment);
+        setCurrentLocalizer(localizer);
+        setCalendarReady(true);
+      });
+    }
+  }, []);
 
   useEffect(() => {
     fetchSchedules();
@@ -380,7 +410,7 @@ function VehicleSchedulesCalendarContent() {
     return priorityClasses[priority as keyof typeof priorityClasses] || 'bg-secondary';
   };
 
-  if (loading) {
+  if (loading || !calendarReady || !currentLocalizer) {
     return (
       <div className="container-fluid">
         <div className="text-center py-5">
@@ -481,45 +511,56 @@ function VehicleSchedulesCalendarContent() {
           {/* Calendario */}
           <div className="card" style={{ height: 'calc(100vh - 280px)', minHeight: '500px' }}>
             <div className="card-body" style={{ height: '100%', padding: '1rem' }}>
-              <Calendar
-                localizer={localizer}
-                events={events}
-                startAccessor="start"
-                endAccessor="end"
-                style={{ height: '100%' }}
-                view={view}
-                onView={setView}
-                date={date}
-                onNavigate={setDate}
-                onSelectEvent={handleSelectEvent}
-                onSelectSlot={handleSelectSlot}
-                selectable
-                eventPropGetter={eventStyleGetter}
-                messages={{
-                  next: 'Successivo',
-                  previous: 'Precedente',
-                  today: 'Oggi',
-                  month: 'Mese',
-                  week: 'Settimana',
-                  day: 'Giorno',
-                  agenda: 'Agenda',
-                  date: 'Data',
-                  time: 'Ora',
-                  event: 'Evento',
-                  noEventsInRange: 'Nessun evento in questo periodo',
-                  showMore: (total) => `+ Altri ${total}`
-                }}
-                formats={{
-                  monthHeaderFormat: 'MMMM YYYY',
-                  dayHeaderFormat: 'dddd DD/MM',
-                  dayRangeHeaderFormat: ({ start, end }) => 
-                    `${moment(start).format('DD/MM')} - ${moment(end).format('DD/MM/YYYY')}`,
-                  agendaDateFormat: 'DD/MM/YYYY',
-                  agendaTimeFormat: 'HH:mm',
-                  agendaTimeRangeFormat: ({ start, end }) => 
-                    `${moment(start).format('HH:mm')} - ${moment(end).format('HH:mm')}`
-                }}
-              />
+              {calendarReady && currentLocalizer ? (
+                <Calendar
+                  localizer={currentLocalizer}
+                  events={events}
+                  startAccessor="start"
+                  endAccessor="end"
+                  style={{ height: '100%' }}
+                  view={view}
+                  onView={setView}
+                  date={date}
+                  onNavigate={setDate}
+                  onSelectEvent={handleSelectEvent}
+                  onSelectSlot={handleSelectSlot}
+                  selectable
+                  eventPropGetter={eventStyleGetter}
+                  messages={{
+                    next: 'Successivo',
+                    previous: 'Precedente',
+                    today: 'Oggi',
+                    month: 'Mese',
+                    week: 'Settimana',
+                    day: 'Giorno',
+                    agenda: 'Agenda',
+                    date: 'Data',
+                    time: 'Ora',
+                    event: 'Evento',
+                    noEventsInRange: 'Nessun evento in questo periodo',
+                    showMore: (total) => `+ Altri ${total}`
+                  }}
+                  formats={{
+                    monthHeaderFormat: 'MMMM YYYY',
+                    dayHeaderFormat: 'dddd DD/MM',
+                    dayRangeHeaderFormat: ({ start, end }) => 
+                      `${moment(start).format('DD/MM')} - ${moment(end).format('DD/MM/YYYY')}`,
+                    agendaDateFormat: 'DD/MM/YYYY',
+                    agendaTimeFormat: 'HH:mm',
+                    agendaTimeRangeFormat: ({ start, end }) => 
+                      `${moment(start).format('HH:mm')} - ${moment(end).format('HH:mm')}`
+                  }}
+                />
+              ) : (
+                <div className="d-flex justify-content-center align-items-center h-100">
+                  <div className="text-center">
+                    <div className="spinner-border text-primary" role="status">
+                      <span className="visually-hidden">Caricamento calendario...</span>
+                    </div>
+                    <p className="mt-3 text-muted">Inizializzazione calendario...</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
