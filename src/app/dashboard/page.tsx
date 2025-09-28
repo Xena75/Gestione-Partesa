@@ -3,6 +3,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { 
   Users, Truck, Package, DollarSign, Settings, FileText, 
@@ -10,6 +11,7 @@ import {
 } from 'lucide-react';
 import PendingViaggiModal from '@/components/PendingViaggiModal';
 import PodMancantiModal from '@/components/PodMancantiModal';
+import TravelsNotInTabModal from '@/components/TravelsNotInTabModal';
 import DocumentExpiryAlert from '@/components/DocumentExpiryAlert';
 
 // Interfaccia per le statistiche
@@ -53,6 +55,7 @@ interface DashboardStats {
 
 export default function DashboardPage() {
   const { user, isLoading, isAuthenticated } = useAuth();
+  const router = useRouter();
 
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -61,6 +64,7 @@ export default function DashboardPage() {
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
   const [isPendingModalOpen, setIsPendingModalOpen] = useState(false);
   const [isPodMancantiModalOpen, setIsPodMancantiModalOpen] = useState(false);
+  const [isTravelsNotInTabModalOpen, setIsTravelsNotInTabModalOpen] = useState(false);
 
 
 
@@ -458,7 +462,7 @@ const SectionSkeleton = () => (
                             }}
                             onClick={isClickable ? () => {
                               if (key === 'Monitoraggi pending') {
-                                setIsPendingModalOpen(true);
+                                setIsTravelsNotInTabModalOpen(true);
                               } else if (key === 'Viaggi PoD mancanti') {
                                 setIsPodMancantiModalOpen(true);
                               }
@@ -512,6 +516,12 @@ const SectionSkeleton = () => (
       <PodMancantiModal 
         isOpen={isPodMancantiModalOpen}
         onClose={() => setIsPodMancantiModalOpen(false)}
+      />
+
+      {/* Modal per i viaggi non sincronizzati */}
+      <TravelsNotInTabModal 
+        isOpen={isTravelsNotInTabModalOpen}
+        onClose={() => setIsTravelsNotInTabModalOpen(false)}
       />
 
     </div>

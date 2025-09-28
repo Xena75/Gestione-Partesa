@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import gestionePool from '@/lib/db-gestione';
-import { verifyUserAccess } from '@/lib/auth';
 
 interface PendingViaggio {
   'Numero Viaggio': string;
@@ -10,29 +9,29 @@ interface PendingViaggio {
   'Targa': string;
 }
 
-interface PaginationInfo {
-  currentPage: number;
-  totalPages: number;
-  totalItems: number;
-  itemsPerPage: number;
-}
-
-// GET - Recupera anteprima viaggi pending con paginazione
+// GET - Test endpoint per verificare la connessione al database gestionelogistica
 export async function GET(request: NextRequest) {
   try {
-    // Verifica accesso utente
-    const userCheck = await verifyUserAccess(request);
-    if (!userCheck.success) {
-      return NextResponse.json(
-        { error: 'Accesso negato: devi essere autenticato per accedere ai dati' },
-        { status: 401 }
-      );
-    }
-
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
+    const limit = parseInt(searchParams.get('limit') || '5');
     const offset = (page - 1) * limit;
+
+    // Test connessione database
+    const [testConnection] = await gestionePool.execute('SELECT 1 as test');
+    console.log('Connessione database OK:', testConnection);
+
+    // Verifica esistenza tabella viaggi
+    const [tables] = await gestionePool.execute(
+      "SHOW TABLES LIKE 'tab_viaggi'"
+    );
+    console.log('Tabella tab_viaggi trovata:', tables);
+
+    // Verifica struttura tabella viaggi
+    const [columns] = await gestionePool.execute(
+      "DESCRIBE tab_viaggi"
+    );
+    console.log('Struttura tabella viaggi:', columns);
 
     // Query per contare il totale dei viaggi pending
     const [countResult] = await gestionePool.execute(
@@ -41,7 +40,6 @@ export async function GET(request: NextRequest) {
        WHERE stato = 'pending'`
     );
     const totalItems = (countResult as any[])[0]?.total || 0;
-    const totalPages = Math.ceil(totalItems / limit);
 
     // Query per recuperare i viaggi pending con paginazione
     const [viaggiResult] = await gestionePool.execute(
@@ -60,25 +58,25 @@ export async function GET(request: NextRequest) {
 
     const viaggi = viaggiResult as PendingViaggio[];
 
-    const pagination: PaginationInfo = {
-      currentPage: page,
-      totalPages,
-      totalItems,
-      itemsPerPage: limit
-    };
-
     return NextResponse.json({
       success: true,
+      database: 'gestionelogistica',
+      totalPendingViaggi: totalItems,
       viaggi,
-      pagination
+      debug: {
+        connection: 'OK',
+        tableExists: (tables as any[]).length > 0,
+        columns: columns
+      }
     });
 
   } catch (error) {
-    console.error('Errore nel recupero viaggi pending:', error);
+    console.error('Errore nel test pending viaggi:', error);
     return NextResponse.json(
       { 
-        error: 'Errore interno del server nel recupero viaggi pending',
-        details: error instanceof Error ? error.message : 'Errore sconosciuto'
+        error: 'Errore nel test',
+        details: error instanceof Error ? error.message : 'Errore sconosciuto',
+        database: 'gestionelogistica'
       },
       { status: 500 }
     );

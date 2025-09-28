@@ -5,7 +5,7 @@ const pool = mysql.createPool({
   host: process.env.DB_VIAGGI_HOST,
   port: Number(process.env.DB_VIAGGI_PORT), // <-- Aggiunta la porta
   user: process.env.DB_VIAGGI_USER,
-  password: process.env.DB_VIAGGI_PASS,
+  password: process.env.DB_VIAGGI_PASSWORD,
   database: process.env.DB_VIAGGI_NAME,
   dateStrings: true // <-- Forza mysql2 a restituire le date come stringhe
 });

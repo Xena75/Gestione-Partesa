@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.26.0
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.27.0
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -31,7 +31,7 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Scadenze manutenzioni**: Monitoraggio km e date tagliandi/revisioni
 - **Filtri intelligenti**: Ricerca rapida per marca, modello, proprietà, tipo patente
 - **Gestione stato**: Sistema soft-delete per preservare storico veicoli
-- **Export avanzato**: Esportazione CSV completa per analisi offline
+- **Export Excel avanzato**: Esportazione in formato .xlsx nativo per analisi offline ⭐ **AGGIORNATO**
 - **Interfaccia ottimizzata**: Visualizzazione responsive con formattazione italiana
 - **Sistema preventivi**: Gestione completa preventivi con workflow approvazione
 - **Gestione fornitori**: Integrazione fornitori e servizi per preventivi
@@ -58,7 +58,30 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
 
-### 📊 **Sistema Scadenze Veicoli e Dashboard Statistiche - v2.26.0** ⭐ **NUOVO**
+### 📊 **Export Excel e Modal Integrati - v2.27.0** ⭐ **NUOVO**
+
+#### 📈 **Export Excel Nativo per Veicoli**
+- **Migrazione da CSV**: Conversione completa da formato CSV a Excel nativo (.xlsx)
+- **Libreria xlsx**: Implementazione con libreria `xlsx` per supporto completo formato Excel
+- **Compatibilità aziendale**: Integrazione diretta con Microsoft Office, LibreOffice, Google Sheets
+- **Formattazione preservata**: Mantenimento tipi di dati (date, numeri, testo) senza perdita informazioni
+- **User experience migliorata**: Apertura immediata in Excel senza necessità di importazione
+
+#### 🔧 **Modal Travels Not In Tab Integrato**
+- **Conversione in modal**: Trasformazione pagina `/dashboard/travels-not-in-tab` in modal integrato
+- **Correzione errori SQL**: Risoluzione HTTP 500 con correzione nomi tabelle database
+- **Mapping corretto**: Aggiornamento query da `nominativi/veicoli` a `employees/vehicles`
+- **Dati completi**: Visualizzazione corretta di tutti i campi (numero viaggio, nominativo, targa, data)
+- **Workflow ottimizzato**: Accesso rapido dal dashboard senza navigazione tra pagine
+
+#### ✅ **Benefici Implementati**
+- **Formato standard**: Excel come formato universale per analisi dati aziendali
+- **Esperienza uniforme**: Modal integrati per consistenza interfaccia utente
+- **Efficienza operativa**: Riduzione click e tempi di navigazione nel dashboard
+- **Affidabilità sistema**: Correzione errori SQL per stabilità applicazione
+- **Integrazione Office**: Compatibilità nativa con strumenti Microsoft Office
+
+### 📊 **Sistema Scadenze Veicoli e Dashboard Statistiche - v2.26.0** ⭐ **CONSOLIDATO**
 
 #### 🎯 **Gestione Intelligente Scadenze Veicoli**
 - **Logica booking_date/data_scadenza**: Sistema intelligente che prioritizza `booking_date` quando disponibile, altrimenti utilizza `data_scadenza`

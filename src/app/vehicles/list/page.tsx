@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import Papa from 'papaparse';
+import * as XLSX from 'xlsx';
 import { Eye, Calendar, Search, Filter, Download, ArrowUpDown, ChevronLeft, ChevronRight, X, RotateCcw } from 'lucide-react';
 
 interface Vehicle {
@@ -141,8 +141,8 @@ export default function VehicleListPage() {
     });
   };
 
-  const exportToCSV = () => {
-    const csvData = sortedVehicles.map(vehicle => ({
+  const exportToExcel = () => {
+    const excelData = sortedVehicles.map(vehicle => ({
       Targa: vehicle.targa,
       Marca: vehicle.marca,
       Modello: vehicle.modello,
@@ -157,16 +157,10 @@ export default function VehicleListPage() {
       Stato: vehicle.active ? 'Attivo' : 'Inattivo'
     }));
 
-    const csv = Papa.unparse(csvData);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `veicoli_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Veicoli');
+    XLSX.writeFile(workbook, `veicoli_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   const handleDeactivateVehicle = async (plate: string) => {
@@ -281,11 +275,11 @@ export default function VehicleListPage() {
             <div className="d-flex gap-2">
               <button 
                 className="btn btn-outline-success"
-                onClick={exportToCSV}
+                onClick={exportToExcel}
                 disabled={sortedVehicles.length === 0}
               >
                 <Download size={16} className="me-1" />
-                Esporta CSV
+                Esporta Excel
               </button>
               <Link href="/vehicles" className="btn btn-outline-secondary">
                 Dashboard Veicoli

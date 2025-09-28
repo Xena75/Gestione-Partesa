@@ -1,6 +1,51 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.26.0
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.27.0
 
-## 🚀 **VERSIONE 2.26.0** - Sistema Scadenze Veicoli e Dashboard Statistiche ⭐ **NUOVO**
+## 🚀 **VERSIONE 2.27.0** - Export Excel e Modal Integrati ⭐ **NUOVO**
+
+### 📈 **EXPORT EXCEL NATIVO PER VEICOLI**
+- **Migrazione completa da CSV**: Conversione della funzionalità export da formato CSV a Excel nativo (.xlsx)
+- **Libreria xlsx implementata**: Sostituzione di `papaparse` con libreria `xlsx` per supporto completo formato Excel
+- **Funzione rinominata**: `exportToCSV()` aggiornata a `exportToExcel()` con logica Excel nativa
+- **Interfaccia aggiornata**: Pulsante modificato da "Esporta CSV" a "Esporta Excel" per chiarezza utente
+- **Compatibilità universale**: Supporto nativo per Microsoft Excel, LibreOffice Calc, Google Sheets
+- **Formattazione preservata**: Mantenimento automatico tipi di dati (date, numeri, testo) senza perdita informazioni
+
+### 🔧 **MODAL TRAVELS NOT IN TAB INTEGRATO**
+- **Conversione pagina in modal**: Trasformazione `/dashboard/travels-not-in-tab` da pagina standalone a modal integrato
+- **Correzione errori HTTP 500**: Risoluzione completa errori SQL "Table 'viaggi_db.nominativi' doesn't exist"
+- **Mapping tabelle corretto**: Aggiornamento query SQL da `nominativi/veicoli` a `employees/vehicles`
+- **Componente TravelsNotInTabModal**: Nuovo componente basato su pattern `PodMancantiModal` per consistenza UI
+- **Integrazione dashboard**: Modal accessibile direttamente dal dashboard principale senza navigazione
+- **Dati completi visualizzati**: Correzione visualizzazione tutti i campi (numero viaggio, nominativo, targa, data inizio)
+
+### 🛠️ **DETTAGLI TECNICI IMPLEMENTAZIONE**
+- **File modificati**: `src/app/vehicles/list/page.tsx` - Migrazione export Excel
+- **API corretta**: `src/app/api/dashboard/travels-not-in-tab/route.ts` - Fix query SQL
+- **Nuovo componente**: `src/components/TravelsNotInTabModal.tsx` - Modal integrato
+- **Dashboard aggiornato**: `src/app/dashboard/page.tsx` - Integrazione modal
+- **Query SQL corrette**: `LEFT JOIN employees e ON t.nominativoId = e.id` e `LEFT JOIN vehicles v ON t.targaMezzoId = v.id`
+- **Gestione errori migliorata**: Handling robusto errori SQL e response HTTP
+
+### ✅ **BENEFICI OPERATIVI OTTENUTI**
+- **Formato standard aziendale**: Excel come formato universale per analisi dati e reporting
+- **Workflow dashboard ottimizzato**: Accesso rapido ai dati senza lasciare il dashboard principale
+- **Esperienza utente uniforme**: Pattern modal consistente in tutto il sistema
+- **Affidabilità sistema**: Eliminazione errori SQL per stabilità applicazione
+- **Efficienza operativa**: Riduzione click e tempi di navigazione tra pagine
+- **Integrazione Office**: Compatibilità nativa con strumenti Microsoft Office per produttività
+
+### 📋 **FUNZIONALITÀ TESTATE**
+- ✅ **Export Excel**: Generazione file .xlsx con tutti i dati e formattazione corretta
+- ✅ **Modal integrato**: Apertura e funzionamento corretto dal dashboard
+- ✅ **API riparata**: Endpoint `/api/dashboard/travels-not-in-tab` restituisce 200 OK
+- ✅ **Dati completi**: Visualizzazione corretta di tutti i campi nel modal
+- ✅ **Compatibilità**: Apertura file Excel in Microsoft Office, LibreOffice, Google Sheets
+- ✅ **Responsività**: Modal adattivo per tutti i dispositivi
+- ✅ **Performance**: Caricamento rapido e operazioni fluide
+
+---
+
+## 🚀 **VERSIONE 2.26.0** - Sistema Scadenze Veicoli e Dashboard Statistiche ⭐ **CONSOLIDATO**
 
 ### 🎯 **GESTIONE INTELLIGENTE SCADENZE VEICOLI**
 - **Logica booking_date/data_scadenza**: Sistema intelligente che prioritizza `booking_date` quando disponibile, altrimenti utilizza `data_scadenza`
