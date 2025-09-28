@@ -1,19 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mysql from 'mysql2/promise';
 
-const dbConfig = {
-  host: 'localhost',
-  user: 'root',
-  password: '',
-  database: 'viaggi_db'
-};
+// Pool di connessioni per migliori performance
+const pool = mysql.createPool({
+  host: process.env.DB_VIAGGI_HOST || 'localhost',
+  port: parseInt(process.env.DB_VIAGGI_PORT || '3306'),
+  user: process.env.DB_VIAGGI_USER || 'root',
+  password: process.env.DB_VIAGGI_PASSWORD || '',
+  database: process.env.DB_VIAGGI_NAME || 'viaggi_db',
+  charset: 'utf8mb4',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+  timeout: 60000
+});
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let connection: any = null;
+  
   try {
-    const connection = await mysql.createConnection(dbConfig);
+    connection = await pool.getConnection();
     
     const { id: quoteId } = await params;
     
@@ -41,7 +50,7 @@ export async function GET(
     `;
     
     const [rows] = await connection.execute(query, [quoteId]);
-    await connection.end();
+    connection.release();
     
     const quotes = rows as any[];
     
@@ -61,6 +70,9 @@ export async function GET(
     
   } catch (error) {
     console.error('Errore nel recupero del preventivo:', error);
+    if (connection) {
+      connection.release();
+    }
     return NextResponse.json(
       { success: false, error: 'Errore interno del server' },
       { status: 500 }
@@ -73,8 +85,10 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let connection: any = null;
+  
   try {
-    const connection = await mysql.createConnection(dbConfig);
+    connection = await pool.getConnection();
     const { id: quoteId } = await params;
     const body = await request.json();
     
@@ -95,7 +109,7 @@ export async function PUT(
     );
     
     if ((existingQuote as any[]).length === 0) {
-      await connection.end();
+      connection.release();
       return NextResponse.json(
         { success: false, error: 'Preventivo non trovato' },
         { status: 404 }
@@ -128,7 +142,7 @@ export async function PUT(
       quoteId
     ]);
     
-    await connection.end();
+    connection.release();
     
     return NextResponse.json({
       success: true,
@@ -137,6 +151,9 @@ export async function PUT(
     
   } catch (error) {
     console.error('Errore nell\'aggiornamento del preventivo:', error);
+    if (connection) {
+      connection.release();
+    }
     return NextResponse.json(
       { success: false, error: 'Errore interno del server' },
       { status: 500 }
@@ -149,8 +166,10 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let connection: any = null;
+  
   try {
-    const connection = await mysql.createConnection(dbConfig);
+    connection = await pool.getConnection();
     const { id: quoteId } = await params;
     
     // Verifica che il preventivo esista
@@ -160,7 +179,7 @@ export async function DELETE(
     );
     
     if ((existingQuote as any[]).length === 0) {
-      await connection.end();
+      connection.release();
       return NextResponse.json(
         { success: false, error: 'Preventivo non trovato' },
         { status: 404 }
@@ -173,7 +192,7 @@ export async function DELETE(
       [quoteId]
     );
     
-    await connection.end();
+    connection.release();
     
     return NextResponse.json({
       success: true,
@@ -182,6 +201,9 @@ export async function DELETE(
     
   } catch (error) {
     console.error('Errore nell\'eliminazione del preventivo:', error);
+    if (connection) {
+      connection.release();
+    }
     return NextResponse.json(
       { success: false, error: 'Errore interno del server' },
       { status: 500 }
