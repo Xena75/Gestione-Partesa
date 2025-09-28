@@ -3,6 +3,18 @@ import { authenticateUser } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Credentials': 'true',
+    },
+  });
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { username, password } = await request.json();
@@ -40,6 +52,12 @@ export async function POST(request: NextRequest) {
       maxAge: 24 * 60 * 60, // 24 ore
       path: '/'
     });
+
+    // Aggiungi header CORS
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
 
     return response;
   } catch (error) {
