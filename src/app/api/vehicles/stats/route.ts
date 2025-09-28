@@ -40,14 +40,26 @@ export async function GET(request: NextRequest) {
       const [activeSchedulesResult] = await poolViaggi.execute(
         `SELECT COUNT(*) as active_schedules 
          FROM vehicle_schedules 
-         WHERE status = 'pending' AND data_scadenza >= CURDATE()`
+         WHERE status = 'pending' 
+         AND (
+           CASE 
+             WHEN booking_date IS NOT NULL THEN booking_date >= CURDATE()
+             ELSE data_scadenza >= CURDATE()
+           END
+         )`
       );
       stats.active_schedules = (activeSchedulesResult as any[])[0]?.active_schedules || 0;
 
       const [overdueSchedulesResult] = await poolViaggi.execute(
         `SELECT COUNT(*) as overdue_schedules 
          FROM vehicle_schedules 
-         WHERE status = 'pending' AND data_scadenza < CURDATE()`
+         WHERE status = 'pending' 
+         AND (
+           CASE 
+             WHEN booking_date IS NOT NULL THEN booking_date < CURDATE()
+             ELSE data_scadenza < CURDATE()
+           END
+         )`
       );
       stats.overdue_schedules = (overdueSchedulesResult as any[])[0]?.overdue_schedules || 0;
 
@@ -58,15 +70,25 @@ export async function GET(request: NextRequest) {
       );
       stats.open_quotes = (openQuotesResult as any[])[0]?.open_quotes || 0;
 
-      // Query per costo mensile manutenzione - temporaneamente disabilitata
-      // fino a quando non si verifica la struttura corretta della tabella
-      stats.monthly_maintenance_cost = 0;
+      // Query per costo mensile manutenzione
+      const [monthlyMaintenanceCostResult] = await poolViaggi.execute(
+        `SELECT COALESCE(SUM(amount), 0) as monthly_cost 
+         FROM maintenance_quotes 
+         WHERE status = 'approved' 
+         AND approved_at >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)`
+      );
+      stats.monthly_maintenance_cost = (monthlyMaintenanceCostResult as any[])[0]?.monthly_cost || 0;
 
       const [upcomingDeadlinesResult] = await poolViaggi.execute(
         `SELECT COUNT(*) as upcoming_deadlines 
          FROM vehicle_schedules 
          WHERE status = 'pending' 
-         AND data_scadenza BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)`
+         AND (
+           CASE 
+             WHEN booking_date IS NOT NULL THEN booking_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+             ELSE data_scadenza BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+           END
+         )`
       );
       stats.upcoming_deadlines = (upcomingDeadlinesResult as any[])[0]?.upcoming_deadlines || 0;
     } catch (error) {

@@ -29,6 +29,7 @@ interface MaintenanceQuote {
   supplier_email?: string;
   supplier_phone?: string;
   supplier_contact?: string;
+  quote_date?: string;
   documents?: Array<{
     id: number;
     file_name: string;
@@ -61,6 +62,7 @@ function VehicleQuotesContent() {
   const [error, setError] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterSupplier, setFilterSupplier] = useState<string>('all');
+  const [searchTarga, setSearchTarga] = useState<string>('');
   const [sortBy, setSortBy] = useState<string>('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
@@ -227,6 +229,12 @@ function VehicleQuotesContent() {
       }
       return true;
     })
+    .filter(quote => {
+      if (searchTarga.trim() !== '') {
+        return quote.targa.toLowerCase().includes(searchTarga.toLowerCase());
+      }
+      return true;
+    })
     .sort((a, b) => {
       let aValue: any, bValue: any;
       
@@ -281,7 +289,7 @@ function VehicleQuotesContent() {
     <div className="container-fluid">
       <div className="row">
         <div className="col-12">
-          <h1 className="h3 mb-4">💰 Gestione Preventivi Manutenzione</h1>
+          <h1 className="h3 mb-4 text-white">💰 Gestione Preventivi Manutenzione</h1>
 
           {error && (
             <div className="alert alert-danger" role="alert">
@@ -345,7 +353,7 @@ function VehicleQuotesContent() {
           <div className="card mb-4">
             <div className="card-body">
               <div className="d-flex justify-content-between align-items-center">
-                <h5 className="card-title mb-0">🛠️ Azioni</h5>
+                <h5 className="card-title mb-0 text-white">🛠️ Azioni</h5>
                 <div className="btn-group">
                   <Link href="/vehicles/schedules" className="btn btn-outline-primary">
                     <i className="fas fa-calendar me-1"></i>
@@ -368,8 +376,18 @@ function VehicleQuotesContent() {
           <div className="card mb-4">
             <div className="card-body">
               <div className="row">
-                <div className="col-md-3">
-                  <label className="form-label">Stato</label>
+                <div className="col-lg-2 col-md-3 col-sm-6 mb-3">
+                  <label className="form-label text-white">Cerca per Targa</label>
+                  <input 
+                    type="text"
+                    className="form-control"
+                    placeholder="Inserisci targa..."
+                    value={searchTarga}
+                    onChange={(e) => setSearchTarga(e.target.value)}
+                  />
+                </div>
+                <div className="col-lg-2 col-md-3 col-sm-6 mb-3">
+                  <label className="form-label text-white">Stato</label>
                   <select 
                     className="form-select"
                     value={filterStatus}
@@ -382,8 +400,8 @@ function VehicleQuotesContent() {
                     <option value="expired">Scaduti</option>
                   </select>
                 </div>
-                <div className="col-md-3">
-                  <label className="form-label">Fornitore</label>
+                <div className="col-lg-3 col-md-4 col-sm-6 mb-3">
+                  <label className="form-label text-white">Fornitore</label>
                   <select 
                     className="form-select"
                     value={filterSupplier}
@@ -397,8 +415,8 @@ function VehicleQuotesContent() {
                     ))}
                   </select>
                 </div>
-                <div className="col-md-3">
-                  <label className="form-label">Ordina per</label>
+                <div className="col-lg-3 col-md-4 col-sm-6 mb-3">
+                  <label className="form-label text-white">Ordina per</label>
                   <select 
                     className="form-select"
                     value={sortBy}
@@ -410,8 +428,8 @@ function VehicleQuotesContent() {
                     <option value="supplier">Fornitore</option>
                   </select>
                 </div>
-                <div className="col-md-3">
-                  <label className="form-label">Ordine</label>
+                <div className="col-lg-2 col-md-4 col-sm-6 mb-3">
+                  <label className="form-label text-white">Ordine</label>
                   <select 
                     className="form-select"
                     value={sortOrder}
@@ -428,62 +446,71 @@ function VehicleQuotesContent() {
           {/* Quotes Table */}
           <div className="card">
             <div className="card-header">
-              <h5 className="mb-0">📋 Elenco Preventivi ({filteredAndSortedQuotes.length})</h5>
+              <h5 className="mb-0 text-white">📋 Elenco Preventivi ({filteredAndSortedQuotes.length})</h5>
             </div>
             <div className="card-body">
               {filteredAndSortedQuotes.length === 0 ? (
                 <div className="text-center py-4">
-                  <p className="text-muted">Nessun preventivo trovato con i filtri selezionati.</p>
+                  <p className="text-white">Nessun preventivo trovato con i filtri selezionati.</p>
                 </div>
               ) : (
                 <div className="table-responsive">
                   <table className="table table-hover">
                     <thead>
-                      <tr>
-                        <th>N. Preventivo</th>
-                        <th>Veicolo</th>
-                        <th>Tipo Intervento</th>
-                        <th>Fornitore</th>
-                        <th>Importo</th>
-                        <th>Valido fino</th>
-                        <th>Stato</th>
-                        <th>Documenti</th>
-                        <th>Azioni</th>
-                      </tr>
-                    </thead>
+                        <tr>
+                          <th className="text-white">N. Offerta</th>
+                          <th className="text-white">Data Offerta</th>
+                          <th className="text-white">Veicolo</th>
+                          <th className="text-white">Tipo Intervento</th>
+                          <th className="text-white">Fornitore</th>
+                          <th className="text-white">Importo</th>
+                          <th className="text-white">Valido fino</th>
+                          <th className="text-white">Stato</th>
+                          <th className="text-white">Documenti</th>
+                          <th className="text-white">Azioni</th>
+                        </tr>
+                      </thead>
                     <tbody>
                       {filteredAndSortedQuotes.map((quote) => (
                         <tr key={quote.id}>
                           <td>
-                            <strong>{quote.quote_number}</strong><br />
-                            <small className="text-muted">
-                              {formatDate(quote.created_at)}
-                            </small>
+                            {quote.quote_number ? (
+                              <span className="fw-bold text-white">{quote.quote_number}</span>
+                            ) : (
+                              <span className="text-white">-</span>
+                            )}
                           </td>
                           <td>
-                            <strong>{quote.targa}</strong><br />
-                            <small className="text-muted">
+                            {quote.quote_date ? (
+                              <span className="text-white">{formatDate(quote.quote_date)}</span>
+                            ) : (
+                              <span className="text-white">-</span>
+                            )}
+                          </td>
+                          <td>
+                            <strong className="text-white">{quote.targa}</strong><br />
+                            <small className="text-white">
                               {quote.marca} {quote.modello}
                             </small>
                           </td>
                           <td>
-                            <span className="badge bg-secondary">
+                            <span className="badge bg-secondary text-white">
                               {quote.schedule_type || 'N/A'}
                             </span><br />
-                            <small className="text-muted">
+                            <small className="text-white">
                               {quote.description}
                             </small>
                           </td>
                           <td>
-                            <strong>{quote.supplier_name}</strong><br />
+                            <strong className="text-white">{quote.supplier_name}</strong><br />
                             {quote.supplier_contact && (
-                              <small className="text-muted">
+                              <small className="text-white">
                                 {quote.supplier_contact}
                               </small>
                             )}
                           </td>
                           <td>
-                            <strong className="text-primary">
+                            <strong className="text-white">
                               {formatCurrency(quote.amount)}
                             </strong>
                           </td>
@@ -493,7 +520,7 @@ function VehicleQuotesContent() {
                                 ? 'text-danger'
                                 : new Date(quote.valid_until) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
                                 ? 'text-warning'
-                                : 'text-dark'
+                                : 'text-white'
                             }`}>
                               {formatDate(quote.valid_until)}
                             </span>
@@ -505,11 +532,11 @@ function VehicleQuotesContent() {
                           </td>
                           <td>
                             {quote.documents && quote.documents.length > 0 ? (
-                              <span className="badge bg-info">
+                              <span className="badge bg-info text-white">
                                 {quote.documents.length} file
                               </span>
                             ) : (
-                              <span className="text-muted">-</span>
+                              <span className="text-white">-</span>
                             )}
                           </td>
                           <td>

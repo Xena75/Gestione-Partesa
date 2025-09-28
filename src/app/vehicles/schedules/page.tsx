@@ -17,6 +17,8 @@ interface VehicleSchedule {
   priority: string;
   cost_estimate?: number;
   notes?: string;
+  quote_number?: string;
+  quote_date?: string;
   vehicle?: {
     targa: string;
     marca: string;
@@ -31,6 +33,21 @@ interface AlertStats {
   total: number;
 }
 
+interface RevisionStats {
+  totalVehicles: number;
+  vehiclesWithRevisions: number;
+  vehiclesWithoutRevisions: number;
+  nextRevisionsDue: number;
+}
+
+interface RevisionCheckResult {
+  success: boolean;
+  message: string;
+  stats?: RevisionStats;
+  processed?: number;
+  errors?: string[];
+}
+
 function VehicleSchedulesContent() {
   const [schedules, setSchedules] = useState<VehicleSchedule[]>([]);
   const [alertStats, setAlertStats] = useState<AlertStats>({
@@ -43,6 +60,12 @@ function VehicleSchedulesContent() {
   const [error, setError] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterPriority, setFilterPriority] = useState<string>('all');
+  const [filterPlate, setFilterPlate] = useState<string>('');
+  const [showRevisionModal, setShowRevisionModal] = useState(false);
+  const [revisionStats, setRevisionStats] = useState<RevisionStats | null>(null);
+  const [revisionLoading, setRevisionLoading] = useState(false);
+  const [revisionError, setRevisionError] = useState<string | null>(null);
+  const [lastCheckResult, setLastCheckResult] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSchedules();
@@ -67,26 +90,130 @@ function VehicleSchedulesContent() {
 
   const calculateAlertStats = (schedules: VehicleSchedule[]) => {
     const now = new Date();
-    const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-    const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    now.setHours(0, 0, 0, 0);
+    
+    const thirtyDaysFromNow = new Date(now);
+    thirtyDaysFromNow.setDate(now.getDate() + 30);
+    
+    const sevenDaysFromNow = new Date(now);
+    sevenDaysFromNow.setDate(now.getDate() + 7);
 
-    const stats = schedules.reduce(
-      (acc, schedule) => {
-        const dueDate = new Date(schedule.data_scadenza);
-        if (dueDate < now && schedule.status === 'pending') {
+    const stats = schedules
+      .filter(schedule => schedule.status === 'pending')
+      .reduce((acc, schedule) => {
+        // Usa booking_date se disponibile, altrimenti data_scadenza
+        const relevantDate = schedule.booking_date 
+          ? new Date(schedule.booking_date) 
+          : new Date(schedule.data_scadenza);
+        
+        relevantDate.setHours(0, 0, 0, 0);
+
+        if (relevantDate < now) {
           acc.overdue++;
-        } else if (dueDate <= sevenDaysFromNow && schedule.status === 'pending') {
+        } else if (relevantDate <= sevenDaysFromNow) {
           acc.dueSoon++;
-        } else if (dueDate <= thirtyDaysFromNow && schedule.status === 'pending') {
+        } else if (relevantDate <= thirtyDaysFromNow) {
           acc.upcoming++;
         }
+        
         acc.total++;
         return acc;
-      },
-      { overdue: 0, dueSoon: 0, upcoming: 0, total: 0 }
-    );
+      }, { overdue: 0, dueSoon: 0, upcoming: 0, total: 0 });
 
     setAlertStats(stats);
+  };
+
+  const handleRevisionCheck = async () => {
+    try {
+      setRevisionLoading(true);
+      setRevisionError(null);
+      
+      const response = await fetch('/api/vehicles/revisions/automation?action=vehicles-status');
+      if (!response.ok) {
+        throw new Error('Errore nel controllo delle revisioni');
+      }
+      
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Errore nel controllo delle revisioni');
+      }
+      
+      // Calcola le statistiche dai dati ricevuti
+      const vehicles = result.data;
+      const totalVehicles = vehicles.length;
+      const vehiclesWithRevisions = vehicles.filter((v: any) => v.future_revisions_count > 0).length;
+      const vehiclesWithoutRevisions = totalVehicles - vehiclesWithRevisions;
+      
+      // Conta le revisioni in scadenza nei prossimi 30 giorni
+      const thirtyDaysFromNow = new Date();
+      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+      
+      const nextRevisionsDue = vehicles.filter((v: any) => {
+        if (!v.next_revision_date) return false;
+        const revisionDate = new Date(v.next_revision_date);
+        return revisionDate <= thirtyDaysFromNow;
+      }).length;
+      
+      const stats: RevisionStats = {
+        totalVehicles,
+        vehiclesWithRevisions,
+        vehiclesWithoutRevisions,
+        nextRevisionsDue
+      };
+      
+      setRevisionStats(stats);
+      setShowRevisionModal(true);
+    } catch (err) {
+      setRevisionError(err instanceof Error ? err.message : 'Errore sconosciuto');
+      setShowRevisionModal(true); // Mostra il modal anche in caso di errore
+    } finally {
+      setRevisionLoading(false);
+    }
+  };
+
+  const handleFullRevisionCheck = async () => {
+    try {
+      setRevisionLoading(true);
+      setRevisionError(null);
+      
+      const response = await fetch('/api/vehicles/revisions/automation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'run-check' })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Errore nel controllo completo delle revisioni');
+      }
+      
+      const result: RevisionCheckResult = await response.json();
+      
+      if (result.success) {
+        setLastCheckResult(`Controllo completato con successo. ${result.processed || 0} veicoli processati.`);
+        // Aggiorna le statistiche
+        if (result.stats) {
+          setRevisionStats(result.stats);
+        }
+        // Ricarica la pagina dopo un breve delay
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      } else {
+        setRevisionError(result.message || 'Errore durante il controllo');
+      }
+    } catch (err) {
+      setRevisionError(err instanceof Error ? err.message : 'Errore sconosciuto');
+    } finally {
+      setRevisionLoading(false);
+    }
+  };
+
+  const closeRevisionModal = () => {
+    setShowRevisionModal(false);
+    setRevisionError(null);
+    setLastCheckResult(null);
   };
 
   const getStatusBadge = (status: string) => {
@@ -123,6 +250,7 @@ function VehicleSchedulesContent() {
   const filteredSchedules = schedules.filter(schedule => {
     if (filterStatus !== 'all' && schedule.status !== filterStatus) return false;
     if (filterPriority !== 'all' && schedule.priority !== filterPriority) return false;
+    if (filterPlate && !schedule.vehicle?.targa.toLowerCase().includes(filterPlate.toLowerCase())) return false;
     return true;
   });
 
@@ -144,10 +272,20 @@ function VehicleSchedulesContent() {
         <div className="col-12">
           <div className="d-flex justify-content-between align-items-center mb-4">
             <h1 className="h3 mb-0">🚗 Dashboard Scadenze Veicoli</h1>
-            <Link href="/vehicles" className="btn btn-outline-primary">
-              <i className="fas fa-arrow-left me-2"></i>
-              Torna ai Veicoli
-            </Link>
+            <div className="d-flex gap-2">
+              <Link href="/vehicles/schedules/calendar" className="btn btn-primary">
+                <i className="fas fa-calendar me-1"></i>
+                Calendario
+              </Link>
+              <Link href="/vehicles/quotes" className="btn btn-danger">
+                <i className="fas fa-file-invoice me-1"></i>
+                Preventivi
+              </Link>
+              <Link href="/vehicles" className="btn btn-outline-primary">
+                <i className="fas fa-arrow-left me-2"></i>
+                Torna ai Veicoli
+              </Link>
+            </div>
           </div>
 
           {error && (
@@ -202,18 +340,18 @@ function VehicleSchedulesContent() {
               <div className="d-flex justify-content-between align-items-center">
                 <h5 className="card-title mb-0 text-light">🛠️ Azioni Rapide</h5>
                 <div className="btn-group">
-                  <Link href="/vehicles/schedules/calendar" className="btn btn-primary">
-                    <i className="fas fa-calendar me-1"></i>
-                    Calendario
-                  </Link>
                   <Link href="/vehicles/schedules/new" className="btn btn-success">
                     <i className="fas fa-plus me-1"></i>
                     Nuova Scadenza
                   </Link>
-                  <Link href="/vehicles/quotes" className="btn btn-info">
-                    <i className="fas fa-file-invoice me-1"></i>
-                    Preventivi
-                  </Link>
+                  <button 
+                    onClick={handleRevisionCheck}
+                    className="btn btn-warning"
+                    disabled={revisionLoading}
+                  >
+                    <i className="fas fa-cogs me-1"></i>
+                    {revisionLoading ? 'Controllo...' : 'Controllo Revisioni'}
+                  </button>
                 </div>
               </div>
             </div>
@@ -223,7 +361,7 @@ function VehicleSchedulesContent() {
           <div className="card bg-dark text-light border-secondary mb-4">
             <div className="card-body">
               <div className="row">
-                <div className="col-md-6">
+                <div className="col-md-4">
                   <label className="form-label text-light">Stato</label>
                   <select 
                     className="form-select bg-dark text-light border-secondary"
@@ -237,7 +375,7 @@ function VehicleSchedulesContent() {
                     <option value="cancelled">Annullate</option>
                   </select>
                 </div>
-                <div className="col-md-6">
+                <div className="col-md-4">
                   <label className="form-label text-light">Priorità</label>
                   <select 
                     className="form-select bg-dark text-light border-secondary"
@@ -249,6 +387,16 @@ function VehicleSchedulesContent() {
                     <option value="medium">Media</option>
                     <option value="low">Bassa</option>
                   </select>
+                </div>
+                <div className="col-md-4">
+                  <label className="form-label text-light">Cerca per Targa</label>
+                  <input 
+                    type="text"
+                    className="form-control bg-dark text-light border-secondary"
+                    placeholder="Cerca per targa..."
+                    value={filterPlate}
+                    onChange={(e) => setFilterPlate(e.target.value)}
+                  />
                 </div>
               </div>
             </div>
@@ -279,6 +427,8 @@ function VehicleSchedulesContent() {
                         <th>Costo Stimato</th>
                         <th>Fornitore</th>
                         <th>Data Prenotazione</th>
+                        <th>N. Preventivo</th>
+                        <th>Data Preventivo</th>
                         <th>Note</th>
                         <th>Azioni</th>
                       </tr>
@@ -336,6 +486,16 @@ function VehicleSchedulesContent() {
                             {schedule.booking_date ? formatDate(schedule.booking_date) : '-'}
                           </td>
                           <td>
+                            {schedule.quote_number ? (
+                              <span className="badge bg-info text-dark">
+                                {schedule.quote_number}
+                              </span>
+                            ) : '-'}
+                          </td>
+                          <td>
+                            {schedule.quote_date ? formatDate(schedule.quote_date) : '-'}
+                          </td>
+                          <td>
                             {schedule.notes ? 
                               (schedule.notes.length > 50 ? 
                                 schedule.notes.substring(0, 50) + '...' : 
@@ -367,6 +527,119 @@ function VehicleSchedulesContent() {
               )}
             </div>
           </div>
+
+          {/* Modal Controllo Revisioni */}
+          {showRevisionModal && (
+            <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+              <div className="modal-dialog modal-lg">
+                <div className="modal-content bg-dark text-light">
+                  <div className="modal-header border-secondary">
+                    <h5 className="modal-title">
+                      <i className="fas fa-cogs me-2"></i>
+                      Controllo Revisioni Automatiche
+                    </h5>
+                    <button 
+                      type="button" 
+                      className="btn-close btn-close-white" 
+                      onClick={closeRevisionModal}
+                    ></button>
+                  </div>
+                  <div className="modal-body">
+                    {revisionError && (
+                      <div className="alert alert-danger">
+                        <i className="fas fa-exclamation-triangle me-2"></i>
+                        {revisionError}
+                      </div>
+                    )}
+                    
+                    {lastCheckResult && (
+                      <div className="alert alert-success">
+                        <i className="fas fa-check-circle me-2"></i>
+                        {lastCheckResult}
+                      </div>
+                    )}
+                    
+                    {revisionStats && (
+                      <div className="row">
+                        <div className="col-md-6">
+                          <div className="card bg-secondary text-light mb-3">
+                            <div className="card-body text-center">
+                              <h5 className="card-title text-primary">
+                                <i className="fas fa-car me-2"></i>
+                                Veicoli Totali
+                              </h5>
+                              <h2 className="text-primary">{revisionStats.totalVehicles}</h2>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="col-md-6">
+                          <div className="card bg-secondary text-light mb-3">
+                            <div className="card-body text-center">
+                              <h5 className="card-title text-success">
+                                <i className="fas fa-check-circle me-2"></i>
+                                Con Revisioni
+                              </h5>
+                              <h2 className="text-success">{revisionStats.vehiclesWithRevisions}</h2>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="col-md-6">
+                          <div className="card bg-secondary text-light mb-3">
+                            <div className="card-body text-center">
+                              <h5 className="card-title text-danger">
+                                <i className="fas fa-exclamation-triangle me-2"></i>
+                                Senza Revisioni
+                              </h5>
+                              <h2 className="text-danger">{revisionStats.vehiclesWithoutRevisions}</h2>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="col-md-6">
+                          <div className="card bg-secondary text-light mb-3">
+                            <div className="card-body text-center">
+                              <h5 className="card-title text-warning">
+                                <i className="fas fa-clock me-2"></i>
+                                Prossime Scadenze
+                              </h5>
+                              <h2 className="text-warning">{revisionStats.nextRevisionsDue}</h2>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {revisionLoading && (
+                      <div className="text-center py-3">
+                        <div className="spinner-border text-primary" role="status">
+                          <span className="visually-hidden">Caricamento...</span>
+                        </div>
+                        <p className="mt-2 text-light-emphasis">Controllo in corso...</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="modal-footer border-secondary">
+                    <button 
+                      type="button" 
+                      className="btn btn-secondary" 
+                      onClick={closeRevisionModal}
+                    >
+                      Chiudi
+                    </button>
+                    <button 
+                      type="button" 
+                      className="btn btn-primary" 
+                      onClick={handleFullRevisionCheck}
+                      disabled={revisionLoading}
+                    >
+                      <i className="fas fa-sync-alt me-1"></i>
+                      {revisionLoading ? 'Controllo...' : 'Controllo Completo'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
 

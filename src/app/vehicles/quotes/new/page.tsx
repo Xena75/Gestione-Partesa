@@ -56,7 +56,9 @@ function NewQuotePageContent() {
     amount: '',
     supplier_id: '',
     valid_until: formatDateToItalian(new Date().toISOString().split('T')[0]),
-    notes: ''
+    notes: '',
+    quote_number: '',
+    quote_date: ''
   });
 
   const [schedules, setSchedules] = useState<any[]>([]);
@@ -398,6 +400,37 @@ function NewQuotePageContent() {
                         </option>
                       ))}
                     </select>
+                  </div>
+
+                  {/* Numero Offerta */}
+                  <div className="col-md-6 mb-3">
+                    <label htmlFor="quote_number" className="form-label">
+                      Numero Offerta
+                    </label>
+                    <input
+                      type="text"
+                      id="quote_number"
+                      name="quote_number"
+                      className="form-control"
+                      value={formData.quote_number}
+                      onChange={handleInputChange}
+                      placeholder="Es. OFF-2024-001"
+                    />
+                  </div>
+
+                  {/* Data Offerta */}
+                  <div className="col-md-6 mb-3">
+                    <label htmlFor="quote_date" className="form-label">
+                      Data Offerta
+                    </label>
+                    <input
+                      type="date"
+                      id="quote_date"
+                      name="quote_date"
+                      className="form-control"
+                      value={formData.quote_date}
+                      onChange={handleInputChange}
+                    />
                   </div>
 
                   {/* Note */}

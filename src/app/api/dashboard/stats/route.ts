@@ -293,11 +293,24 @@ async function getVeicoliStats() {
       FROM vehicles
     `) as [any[], any];
 
-    // Conta scadenze attive
+    // Conta scadenze attive - usa booking_date se disponibile, altrimenti data_scadenza
     const [scadenzeRows] = await poolViaggi.execute(`
       SELECT COUNT(*) as active_schedules
       FROM vehicle_schedules
-      WHERE data_scadenza >= CURDATE() AND status = 'pending'
+      WHERE (
+        (booking_date IS NOT NULL AND booking_date >= CURDATE()) OR 
+        (booking_date IS NULL AND data_scadenza >= CURDATE())
+      ) AND status = 'pending'
+    `) as [any[], any];
+
+    // Conta scadenze scadute - usa booking_date se disponibile, altrimenti data_scadenza
+    const [overdueRows] = await poolViaggi.execute(`
+      SELECT COUNT(*) as overdue_schedules
+      FROM vehicle_schedules
+      WHERE (
+        (booking_date IS NOT NULL AND booking_date < CURDATE()) OR 
+        (booking_date IS NULL AND data_scadenza < CURDATE())
+      ) AND status = 'pending'
     `) as [any[], any];
 
     // Conta preventivi aperti
@@ -310,6 +323,7 @@ async function getVeicoliStats() {
     return {
       total: veicoliRows[0]?.total || 0,
       activeSchedules: scadenzeRows[0]?.active_schedules || 0,
+      overdueSchedules: overdueRows[0]?.overdue_schedules || 0,
       openQuotes: preventiviRows[0]?.open_quotes || 0
     };
   } catch (error) {

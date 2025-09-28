@@ -3,14 +3,17 @@ import mysql from 'mysql2/promise';
 import path from 'path';
 import fs from 'fs';
 
-// Configurazione database
-const dbConfig = {
+// Pool di connessioni per migliori performance
+const pool = mysql.createPool({
   host: process.env.DB_VIAGGI_HOST || 'localhost',
   user: process.env.DB_VIAGGI_USER || 'root',
   password: process.env.DB_VIAGGI_PASS || '',
   database: process.env.DB_VIAGGI_NAME || 'viaggi_db',
-  port: parseInt(process.env.DB_VIAGGI_PORT || '3306')
-};
+  port: parseInt(process.env.DB_VIAGGI_PORT || '3306'),
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+});
 
 // GET - Recupera tutti i documenti di un preventivo
 export async function GET(
@@ -21,19 +24,19 @@ export async function GET(
   
   try {
     const { id } = await params;
-    connection = await mysql.createConnection(dbConfig);
+    connection = await pool.getConnection();
     
     const [rows] = await connection.execute(
       'SELECT * FROM quote_documents WHERE quote_id = ? ORDER BY uploaded_at DESC',
       [id]
     );
     
-    connection.end();
+    connection.release();
     
     return NextResponse.json({ success: true, documents: rows });
   } catch (error) {
     console.error('Errore nel recupero documenti:', error);
-    if (connection) connection.end();
+    if (connection) connection.release();
     return NextResponse.json(
       { success: false, error: 'Errore nel recupero documenti' },
       { status: 500 }
@@ -95,7 +98,7 @@ export async function POST(
     fs.writeFileSync(filePath, buffer);
     
     // Salva nel database
-    connection = await mysql.createConnection(dbConfig);
+    connection = await pool.getConnection();
     
     const [result] = await connection.execute(
       `INSERT INTO quote_documents (quote_id, file_name, file_path, file_type, file_size)
@@ -103,7 +106,7 @@ export async function POST(
       [id, file.name, relativePath, file.type, file.size]
     );
     
-    connection.end();
+    connection.release();
     
     return NextResponse.json({
       success: true,
@@ -119,7 +122,7 @@ export async function POST(
     
   } catch (error) {
     console.error('Errore nel caricamento file:', error);
-    if (connection) connection.end();
+    if (connection) connection.release();
     return NextResponse.json(
       { success: false, error: 'Errore nel caricamento file' },
       { status: 500 }
@@ -146,7 +149,7 @@ export async function DELETE(
       );
     }
     
-    connection = await mysql.createConnection(dbConfig);
+    connection = await pool.getConnection();
     
     // Recupera info del file prima di eliminarlo
     const [rows] = await connection.execute(
@@ -155,7 +158,7 @@ export async function DELETE(
     );
     
     if ((rows as any[]).length === 0) {
-      connection.end();
+      connection.release();
       return NextResponse.json(
         { success: false, error: 'Documento non trovato' },
         { status: 404 }
@@ -170,7 +173,7 @@ export async function DELETE(
       [documentId, id]
     );
     
-    connection.end();
+    connection.release();
     
     // Elimina file fisico
     try {

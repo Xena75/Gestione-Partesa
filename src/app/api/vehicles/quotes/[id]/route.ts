@@ -39,6 +39,8 @@ export async function GET(
         mq.valid_until,
         mq.notes,
         mq.scheduled_date,
+        mq.quote_number,
+        mq.quote_date,
         mq.created_at,
         mq.updated_at,
         s.name as supplier_name,
@@ -99,7 +101,9 @@ export async function PUT(
       status,
       valid_until,
       notes,
-      scheduled_date
+      scheduled_date,
+      quote_number,
+      quote_date
     } = body;
     
     // Verifica che il preventivo esista
@@ -127,6 +131,8 @@ export async function PUT(
         valid_until = ?,
         notes = ?,
         scheduled_date = ?,
+        quote_number = ?,
+        quote_date = ?,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `;
@@ -139,6 +145,8 @@ export async function PUT(
       valid_until,
       notes,
       scheduled_date,
+      quote_number,
+      quote_date,
       quoteId
     ]);
     

@@ -112,6 +112,8 @@ export async function POST(request: NextRequest) {
     const description = formData.get('description') as string;
     const valid_until = formData.get('valid_until') as string;
     const notes = formData.get('notes') as string;
+    const quote_number = formData.get('quote_number') as string;
+    const quote_date = formData.get('quote_date') as string;
     const attachment = formData.get('attachment') as File | null;
 
     console.log('Dati estratti:', {
@@ -169,8 +171,8 @@ export async function POST(request: NextRequest) {
     const query = `
       INSERT INTO maintenance_quotes (
         schedule_id, vehicle_id, supplier_id, amount, description,
-        valid_until, notes
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        valid_until, notes, quote_number, quote_date
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     console.log('Eseguendo query INSERT con parametri:', {
@@ -190,7 +192,9 @@ export async function POST(request: NextRequest) {
       parseFloat(amount),
       description,
       valid_until,
-      notes || null
+      notes || null,
+      quote_number || null,
+      quote_date || null
     ]);
 
     const quoteId = (result as any).insertId;

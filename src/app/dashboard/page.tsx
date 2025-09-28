@@ -46,6 +46,7 @@ interface DashboardStats {
   veicoli: {
     total: number;
     activeSchedules: number;
+    overdueSchedules: number;
     openQuotes: number;
   };
 }
@@ -108,7 +109,7 @@ export default function DashboardPage() {
         fatturazione: { monthly: '€0k', pending: '€0', completed: 0 },
         import: { files: 0, pending: 0, errors: 0 },
         sistema: { configs: 0, logs: '0', users: 0 },
-        veicoli: { total: 0, activeSchedules: 0, openQuotes: 0 }
+        veicoli: { total: 0, activeSchedules: 0, overdueSchedules: 0, openQuotes: 0 }
       });
     } finally {
       setStatsLoading(false);
@@ -287,6 +288,7 @@ const SectionSkeleton = () => (
         { name: 'Dashboard Veicoli', href: '/vehicles', icon: Car }
       ],
       stats: { 
+        'Scadute': stats?.veicoli?.overdueSchedules || 0,
         'Scadenze attive': stats?.veicoli?.activeSchedules || 0, 
         'Preventivi aperti': stats?.veicoli?.openQuotes || 0, 
         'Veicoli totali': stats?.veicoli?.total || 0 

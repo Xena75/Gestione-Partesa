@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.25.0
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.26.0
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -58,7 +58,37 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
 
-### 🔗 **Integrazione Automatica Preventivi-Calendario - v2.25.0** ⭐ **NUOVO**
+### 📊 **Sistema Scadenze Veicoli e Dashboard Statistiche - v2.26.0** ⭐ **NUOVO**
+
+#### 🎯 **Gestione Intelligente Scadenze Veicoli**
+- **Logica booking_date/data_scadenza**: Sistema intelligente che prioritizza `booking_date` quando disponibile, altrimenti utilizza `data_scadenza`
+- **Calcolo accurato scadenze**: Distinzione precisa tra scadenze attive, scadute e future
+- **Consistenza cross-dashboard**: Logica unificata tra dashboard principale e pagina veicoli/scadenze
+- **Monitoraggio real-time**: Aggiornamento automatico contatori scadenze in tempo reale
+- **Filtri intelligenti**: Sistema di filtri per visualizzazione scadenze per stato e tipologia
+
+#### 📈 **Dashboard Statistiche Aggiornate**
+- **Sezione Veicoli completa**: Aggiunta statistica "Scadute" nel dashboard principale
+- **API statistiche ottimizzate**: Endpoint `/api/dashboard/stats` con calcolo accurato scadenze
+- **Interfaccia TypeScript**: Aggiornamento interfacce `DashboardStats` con `overdueSchedules`
+- **Visualizzazione coerente**: Allineamento perfetto tra frontend e backend per conteggi
+- **Performance migliorate**: Query SQL ottimizzate per calcolo rapido statistiche
+
+#### 🔧 **Correzioni Tecniche Implementate**
+- **Bug conteggio scadute risolto**: Eliminata discrepanza tra dashboard principale e pagina scadenze
+- **Query SQL unificate**: Stessa logica di calcolo in tutti i punti dell'applicazione
+- **Gestione stati pending**: Corretta gestione scadenze con stato "pending" e date passate
+- **Fallback data_scadenza**: Sistema di fallback robusto quando booking_date non è disponibile
+- **Debug logging rimosso**: Pulizia codice da logging temporaneo di debug
+
+#### ✅ **Benefici Implementati**
+- **Accuratezza dati**: Conteggi precisi e affidabili per tutte le tipologie di scadenze
+- **Esperienza utente migliorata**: Informazioni coerenti e aggiornate in tempo reale
+- **Manutenzione semplificata**: Logica centralizzata e riutilizzabile per calcoli scadenze
+- **Monitoraggio efficace**: Visibilità immediata su scadenze critiche e pianificazione interventi
+- **Integrazione completa**: Sistema unificato tra gestione veicoli e dashboard operativo
+
+### 🔗 **Integrazione Automatica Preventivi-Calendario - v2.25.0** ⭐ **CONSOLIDATO**
 
 #### 📅 **Automazione Completa Workflow Preventivi**
 - **Creazione automatica eventi**: Quando un preventivo viene approvato con data programmata, viene automaticamente creato un evento nel calendario

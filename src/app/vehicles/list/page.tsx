@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Papa from 'papaparse';
-import { Eye, Calendar, Search, Filter, Download, ArrowUpDown, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Eye, Calendar, Search, Filter, Download, ArrowUpDown, ChevronLeft, ChevronRight, X, RotateCcw } from 'lucide-react';
 
 interface Vehicle {
   id: number;
@@ -194,6 +194,35 @@ export default function VehicleListPage() {
     } catch (error) {
       console.error('Errore nella disattivazione:', error);
       alert('Errore nella disattivazione del veicolo');
+    }
+  };
+
+  const handleReactivateVehicle = async (plate: string) => {
+    if (!confirm(`Sei sicuro di voler riattivare il veicolo ${plate}?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/vehicles/${plate}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ active: true }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Ricarica i dati
+        fetchVehicles();
+        alert('Veicolo riattivato con successo!');
+      } else {
+        alert(data.error || 'Errore nella riattivazione del veicolo');
+      }
+    } catch (error) {
+      console.error('Errore nella riattivazione:', error);
+      alert('Errore nella riattivazione del veicolo');
     }
   };
 
@@ -551,6 +580,15 @@ export default function VehicleListPage() {
                               onClick={() => handleDeactivateVehicle(vehicle.targa)}
                             >
                               <X size={14} />
+                            </button>
+                          )}
+                          {!vehicle.active && (
+                            <button
+                              className="btn btn-outline-success btn-sm"
+                              title="Riattiva veicolo"
+                              onClick={() => handleReactivateVehicle(vehicle.targa)}
+                            >
+                              <RotateCcw size={14} />
                             </button>
                           )}
                         </div>

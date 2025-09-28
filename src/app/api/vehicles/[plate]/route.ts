@@ -173,13 +173,6 @@ export async function PUT(
     }
 
     const vehicle = existingVehicle[0] as any;
-    if (vehicle.active === 0) {
-      await connection.end();
-      return NextResponse.json(
-        { success: false, error: 'Veicolo non attivo' },
-        { status: 403 }
-      );
-    }
 
     // Costruisci la query di aggiornamento dinamicamente
     const updateFields = [];
@@ -245,7 +238,7 @@ export async function PUT(
     const updateQuery = `
       UPDATE vehicles 
       SET ${updateFields.join(', ')}
-      WHERE targa = ? AND active = 1
+      WHERE targa = ?
     `;
 
     await connection.execute(updateQuery, updateValues);

@@ -73,6 +73,8 @@ export async function GET(request: NextRequest) {
       cost_estimate: row.cost,
       provider: row.provider,
       notes: row.notes,
+      quote_number: row.quote_number,
+      quote_date: row.quote_date,
       vehicle: {
         targa: row.targa,
         marca: row.marca,
@@ -104,7 +106,9 @@ export async function POST(request: NextRequest) {
       reminder_days,
       notes,
       priority,
-      booking_date
+      booking_date,
+      quote_number,
+      quote_date
     } = body;
 
     // Validazione campi obbligatori
@@ -136,8 +140,9 @@ export async function POST(request: NextRequest) {
     const query = `
       INSERT INTO vehicle_schedules (
         vehicle_id, schedule_type, data_scadenza, description, 
-        cost, provider, reminder_days, notes, priority, booking_date
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        cost, provider, reminder_days, notes, priority, booking_date,
+        quote_number, quote_date
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const [result] = await connection.execute(query, [
@@ -150,7 +155,9 @@ export async function POST(request: NextRequest) {
       reminder_days || 30,
       notes || null,
       calculatedPriority,
-      booking_date || null
+      booking_date || null,
+      quote_number || null,
+      quote_date || null
     ]);
 
     await connection.end();
@@ -184,7 +191,9 @@ export async function PUT(request: NextRequest) {
       reminder_days,
       notes,
       priority,
-      booking_date
+      booking_date,
+      quote_number,
+      quote_date
     } = body;
 
     if (!id) {
@@ -225,6 +234,8 @@ export async function PUT(request: NextRequest) {
         notes = ?,
         priority = ?,
         booking_date = ?,
+        quote_number = ?,
+        quote_date = ?,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `;
@@ -241,6 +252,8 @@ export async function PUT(request: NextRequest) {
       notes || null,
       calculatedPriority || 'medium',
       booking_date || null,
+      quote_number || null,
+      quote_date || null,
       id
     ]);
 

@@ -1,6 +1,54 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.23.1
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.26.0
 
-## 🚀 **VERSIONE 2.23.1** - Ottimizzazioni Calendario Scadenze Veicoli ⭐ **NUOVO**
+## 🚀 **VERSIONE 2.26.0** - Sistema Scadenze Veicoli e Dashboard Statistiche ⭐ **NUOVO**
+
+### 🎯 **GESTIONE INTELLIGENTE SCADENZE VEICOLI**
+- **Logica booking_date/data_scadenza**: Sistema intelligente che prioritizza `booking_date` quando disponibile, altrimenti utilizza `data_scadenza`
+- **Calcolo accurato scadenze**: Distinzione precisa tra scadenze attive, scadute e future con logica unificata
+- **Consistenza cross-dashboard**: Allineamento perfetto tra dashboard principale e pagina veicoli/scadenze
+- **Monitoraggio real-time**: Aggiornamento automatico contatori scadenze in tempo reale
+- **Query SQL ottimizzate**: Performance migliorate per calcolo rapido statistiche veicoli
+
+### 📈 **DASHBOARD STATISTICHE AGGIORNATE**
+- **Sezione Veicoli completa**: Aggiunta statistica "Scadute" nel dashboard principale con conteggio accurato
+- **API statistiche ottimizzate**: Endpoint `/api/dashboard/stats` con funzione `getVeicoliStats()` estesa
+- **Interfaccia TypeScript**: Aggiornamento interfacce `DashboardStats` con campo `overdueSchedules`
+- **Visualizzazione coerente**: Allineamento perfetto tra frontend e backend per tutti i conteggi
+- **Fallback robusto**: Sistema di fallback intelligente per gestione date mancanti
+
+### 🔧 **CORREZIONI TECNICHE IMPLEMENTATE**
+- **Bug conteggio scadute risolto**: Eliminata discrepanza tra dashboard principale (mostrava 1) e pagina scadenze (mostrava 0)
+- **Query SQL unificate**: Implementata stessa logica di calcolo in tutti i punti dell'applicazione
+- **Gestione stati pending**: Corretta gestione scadenze con stato "pending" e date nel passato
+- **Debug logging rimosso**: Pulizia completa del codice da logging temporaneo di debug
+- **Consistenza API**: Allineamento logica tra `/api/dashboard/stats` e `/vehicles/schedules`
+
+### 🛠️ **DETTAGLI TECNICI IMPLEMENTAZIONE**
+- **File modificati**: `src/app/api/dashboard/stats/route.ts` - Funzione `getVeicoliStats()` estesa
+- **Dashboard aggiornato**: `src/app/dashboard/page.tsx` - Aggiunta sezione "Scadute" e interfaccia TypeScript
+- **Logica SQL**: Query con `COALESCE(booking_date, data_scadenza)` per prioritizzazione intelligente date
+- **Calcolo overdue**: `WHERE status = 'pending' AND COALESCE(booking_date, data_scadenza) < CURDATE()`
+- **Calcolo active**: `WHERE status = 'pending' AND COALESCE(booking_date, data_scadenza) >= CURDATE()`
+
+### ✅ **BENEFICI OPERATIVI OTTENUTI**
+- **Accuratezza dati**: Conteggi precisi e affidabili per tutte le tipologie di scadenze veicoli
+- **Esperienza utente migliorata**: Informazioni coerenti e aggiornate in tempo reale su tutti i dashboard
+- **Manutenzione semplificata**: Logica centralizzata e riutilizzabile per tutti i calcoli scadenze
+- **Monitoraggio efficace**: Visibilità immediata su scadenze critiche per pianificazione interventi
+- **Integrazione completa**: Sistema unificato tra gestione veicoli e dashboard operativo principale
+
+### 📋 **FUNZIONALITÀ TESTATE**
+- ✅ **Conteggio scadute**: Dashboard principale e pagina scadenze mostrano stesso valore (0)
+- ✅ **Logica booking_date**: Prioritizzazione corretta di `booking_date` quando disponibile
+- ✅ **Fallback data_scadenza**: Utilizzo corretto di `data_scadenza` quando `booking_date` è null
+- ✅ **Stati pending**: Gestione corretta scadenze con stato "pending" e date passate
+- ✅ **API consistency**: Endpoint `/api/dashboard/stats` allineato con logica frontend
+- ✅ **TypeScript**: Interfacce aggiornate senza errori di compilazione
+- ✅ **Performance**: Query SQL ottimizzate per calcolo rapido su grandi dataset
+
+---
+
+## 🚀 **VERSIONE 2.23.1** - Ottimizzazioni Calendario Scadenze Veicoli ⭐ **CONSOLIDATO**
 
 ### 📅 **OTTIMIZZAZIONI LAYOUT E UTILIZZO SPAZIO**
 - **Legenda colori flexbox**: Implementato layout flexbox per distribuzione uniforme di tutti i 7 elementi della legenda

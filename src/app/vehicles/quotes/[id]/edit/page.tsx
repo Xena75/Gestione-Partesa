@@ -19,6 +19,8 @@ interface Quote {
   supplier_name: string;
   vehicle_targa: string;
   vehicle_id: string;
+  quote_number?: string;
+  quote_date?: string;
 }
 
 interface Supplier {
@@ -55,7 +57,9 @@ export default function EditQuotePage() {
     status: '',
     valid_until: '',
     notes: '',
-    scheduled_date: ''
+    scheduled_date: '',
+    quote_number: '',
+    quote_date: ''
   });
 
   useEffect(() => {
@@ -97,7 +101,9 @@ export default function EditQuotePage() {
           status: quoteData.status || '',
           valid_until: quoteData.valid_until ? formatDateToItalian(quoteData.valid_until) : '',
           notes: quoteData.notes || '',
-          scheduled_date: quoteData.scheduled_date ? formatDateToItalian(quoteData.scheduled_date) : ''
+          scheduled_date: quoteData.scheduled_date ? formatDateToItalian(quoteData.scheduled_date) : '',
+          quote_number: quoteData.quote_number || '',
+          quote_date: quoteData.quote_date ? formatDateToItalian(quoteData.quote_date) : ''
         });
       } else {
         setError(data.error || 'Errore nel caricamento del preventivo');
@@ -228,7 +234,7 @@ export default function EditQuotePage() {
     const { name, value } = e.target;
     
     // Validazione speciale per i campi data
-    if ((name === 'valid_until' || name === 'scheduled_date') && value) {
+    if ((name === 'valid_until' || name === 'scheduled_date' || name === 'quote_date') && value) {
       // Permetti solo numeri e slash
       const cleanValue = value.replace(/[^\d\/]/g, '');
       
@@ -273,6 +279,11 @@ export default function EditQuotePage() {
       return;
     }
 
+    if (formData.quote_date && !isValidItalianDate(formData.quote_date)) {
+      alert('La data offerta deve essere nel formato gg/mm/aaaa e deve essere una data valida');
+      return;
+    }
+
     try {
       setSaving(true);
       const response = await fetch(`/api/vehicles/quotes/${quoteId}`, {
@@ -287,7 +298,9 @@ export default function EditQuotePage() {
           status: formData.status,
           valid_until: formatDateToISO(formData.valid_until),
           notes: formData.notes || null,
-          scheduled_date: formData.scheduled_date ? formatDateToISO(formData.scheduled_date) : null
+          scheduled_date: formData.scheduled_date ? formatDateToISO(formData.scheduled_date) : null,
+          quote_number: formData.quote_number || null,
+          quote_date: formData.quote_date ? formatDateToISO(formData.quote_date) : null
         }),
       });
 
@@ -308,12 +321,14 @@ export default function EditQuotePage() {
                 vehicle_id: quote.vehicle_id,
                 schedule_type: 'manutenzione',
                 data_scadenza: formatDateToISO(formData.scheduled_date),
-                description: `Intervento programmato da preventivo #${quoteId} - ${formData.description}`,
+                description: `Interv. programm. da offerta n°${formData.quote_number || quoteId} - ${formData.description}`,
                 cost: parseFloat(formData.amount),
                 provider: supplierName,
                 notes: formData.notes || `Intervento programmato per ${quote.vehicle_targa}`,
                 priority: 'medium',
-                booking_date: formatDateToISO(formData.scheduled_date)
+                booking_date: formatDateToISO(formData.scheduled_date),
+                quote_number: formData.quote_number || quoteId,
+                quote_date: quote.created_at ? new Date(quote.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
               }),
             });
 
@@ -441,6 +456,39 @@ export default function EditQuotePage() {
             <div className="card-body">
               <form onSubmit={handleSubmit}>
                 <div className="row">
+                  {/* Prima riga: Numero Offerta e Data Offerta */}
+                  <div className="col-md-6 mb-3">
+                    <label htmlFor="quote_number" className="form-label">
+                      Numero Offerta
+                    </label>
+                    <input
+                      type="text"
+                      id="quote_number"
+                      name="quote_number"
+                      className="form-control"
+                      value={formData.quote_number}
+                      onChange={handleInputChange}
+                      placeholder="Es. OFF-2024-001"
+                    />
+                  </div>
+
+                  <div className="col-md-6 mb-3">
+                    <label htmlFor="quote_date" className="form-label">
+                      Data Offerta
+                    </label>
+                    <input
+                      type="text"
+                      id="quote_date"
+                      name="quote_date"
+                      className="form-control"
+                      value={formData.quote_date}
+                      onChange={handleInputChange}
+                      placeholder="gg/mm/aaaa"
+                      pattern="\d{2}/\d{2}/\d{4}"
+                      title="Inserisci la data nel formato gg/mm/aaaa"
+                    />
+                  </div>
+
                   <div className="col-md-6 mb-3">
                     <label htmlFor="supplier_id" className="form-label">
                       Fornitore <span className="text-danger">*</span>
@@ -546,6 +594,8 @@ export default function EditQuotePage() {
                       title="Inserisci la data nel formato gg/mm/aaaa"
                     />
                   </div>
+
+
 
                   <div className="col-12 mb-3">
                     <label htmlFor="notes" className="form-label">

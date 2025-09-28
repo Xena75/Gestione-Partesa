@@ -19,6 +19,8 @@ interface VehicleSchedule {
   provider?: string;
   reminder_days?: number;
   notes?: string;
+  quote_number?: string;
+  quote_date?: string;
   targa?: string;
   marca?: string;
   modello?: string;
@@ -45,7 +47,9 @@ export default function ScheduleDetailPage({ params }: ScheduleDetailPageProps) 
     priority: '',
     cost: '',
     provider: '',
-    notes: ''
+    notes: '',
+    quote_number: '',
+    quote_date: ''
   });
   const router = useRouter();
   const [scheduleId, setScheduleId] = useState<string>('');
@@ -81,7 +85,8 @@ export default function ScheduleDetailPage({ params }: ScheduleDetailPageProps) 
         const editFormData = {
           ...data.data,
           data_scadenza: data.data.data_scadenza ? formatDateToItalian(data.data.data_scadenza) : '',
-          completed_date: data.data.completed_date ? formatDateToItalian(data.data.completed_date) : ''
+          completed_date: data.data.completed_date ? formatDateToItalian(data.data.completed_date) : '',
+          quote_date: data.data.quote_date ? formatDateToItalian(data.data.quote_date) : ''
         };
         setEditForm(editFormData);
       } else {
@@ -104,7 +109,8 @@ export default function ScheduleDetailPage({ params }: ScheduleDetailPageProps) 
     const editFormData = {
       ...schedule,
       data_scadenza: schedule?.data_scadenza ? formatDateToItalian(schedule.data_scadenza) : '',
-      completed_date: schedule?.completed_date ? formatDateToItalian(schedule.completed_date) : ''
+      completed_date: schedule?.completed_date ? formatDateToItalian(schedule.completed_date) : '',
+      quote_date: schedule?.quote_date ? formatDateToItalian(schedule.quote_date) : ''
     };
     setEditForm(editFormData || {});
   };
@@ -171,7 +177,7 @@ export default function ScheduleDetailPage({ params }: ScheduleDetailPageProps) 
     const { name, value } = e.target;
     
     // Per i campi data, mantiene il formato italiano
-    if (name === 'data_scadenza' || name === 'completed_date') {
+    if (name === 'data_scadenza' || name === 'completed_date' || name === 'quote_date') {
       if (value && !validateItalianDate(value)) {
         // Non aggiorna se il formato non è valido
         return;
@@ -421,6 +427,10 @@ export default function ScheduleDetailPage({ params }: ScheduleDetailPageProps) 
                         {schedule.completed_date && (
                           <p><strong>Data Completamento:</strong> {formatDateItalian(schedule.completed_date)}</p>
                         )}
+                        <p><strong>Numero Preventivo:</strong> {schedule.quote_number ? (
+                          <span className="badge bg-info text-dark">{schedule.quote_number}</span>
+                        ) : '-'}</p>
+                        <p><strong>Data Preventivo:</strong> {schedule.quote_date ? formatDateItalian(schedule.quote_date) : '-'}</p>
                       </div>
                       <div className="col-md-6">
                         <p><strong>Stato:</strong> <span className={`badge ${statusBadge.class}`}>{statusBadge.label}</span></p>
@@ -479,6 +489,29 @@ export default function ScheduleDetailPage({ params }: ScheduleDetailPageProps) 
                             onChange={handleInputChange}
                             placeholder="gg/mm/aaaa"
                           />
+                        </div>
+                        <div className="mb-3">
+                          <label className="form-label">Numero Preventivo</label>
+                          <input 
+                            type="text" 
+                            className="form-control" 
+                            name="quote_number"
+                            value={editForm.quote_number || ''}
+                            onChange={handleInputChange}
+                            placeholder="Inserisci numero preventivo"
+                          />
+                        </div>
+                        <div className="mb-3">
+                          <label className="form-label">Data Preventivo</label>
+                          <input 
+                            type="text" 
+                            className="form-control" 
+                            name="quote_date"
+                            value={editForm.quote_date || ''}
+                            onChange={handleInputChange}
+                            placeholder="gg/mm/aaaa"
+                          />
+                          <div className="form-text">Formato: gg/mm/aaaa</div>
                         </div>
                       </div>
                       <div className="col-md-6">

@@ -363,7 +363,7 @@ export default function VehicleDocuments({ vehiclePlate }: VehicleDocumentsProps
                 </tr>
               </thead>
               <tbody>
-                {documents.map((doc) => (
+                {documents.slice(-6).map((doc) => (
                   <tr key={doc.id}>
                     <td>
                       <span className="badge document-type-badge">
@@ -417,6 +417,16 @@ export default function VehicleDocuments({ vehiclePlate }: VehicleDocumentsProps
                 ))}
               </tbody>
             </table>
+            {documents.length > 0 && (
+              <div className="text-center mt-3">
+                <a 
+                  href={`/vehicles/${vehiclePlate}/documents`}
+                  className="btn btn-outline-secondary"
+                >
+                  Visualizza tutti ({documents.length})
+                </a>
+              </div>
+            )}
           </div>
         )}
       </div>

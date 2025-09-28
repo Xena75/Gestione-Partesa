@@ -19,6 +19,8 @@ interface VehicleSchedule {
   cost?: number;
   provider?: string;
   reminder_days?: number;
+  quote_number?: string;
+  quote_date?: string;
   created_at: string;
   updated_at: string;
   // Dati del veicolo (join)
@@ -152,7 +154,9 @@ export default function EditSchedulePage() {
     notes: '',
     cost: '',
     provider: '',
-    reminder_days: '30'
+    reminder_days: '30',
+    quote_number: '',
+    quote_date: ''
   });
 
   useEffect(() => {
@@ -202,7 +206,9 @@ export default function EditSchedulePage() {
           notes: schedule.notes || '',
           cost: schedule.cost !== null && schedule.cost !== undefined ? schedule.cost.toString() : '',
           provider: schedule.provider || '',
-          reminder_days: schedule.reminder_days !== null && schedule.reminder_days !== undefined ? schedule.reminder_days.toString() : '30'
+          reminder_days: schedule.reminder_days !== null && schedule.reminder_days !== undefined ? schedule.reminder_days.toString() : '30',
+          quote_number: schedule.quote_number || '',
+          quote_date: schedule.quote_date ? formatDateItalian(schedule.quote_date) : ''
         };
         
         setEditForm(newEditForm);
@@ -241,6 +247,10 @@ export default function EditSchedulePage() {
       errors.booking_date = 'Formato data non valido (usa gg/mm/aaaa)';
     }
     
+    if (editForm.quote_date && !isValidItalianDate(editForm.quote_date)) {
+      errors.quote_date = 'Formato data non valido (usa gg/mm/aaaa)';
+    }
+    
     if (editForm.cost && isNaN(parseFloat(editForm.cost))) {
       errors.cost = 'Il costo deve essere un numero valido';
     }
@@ -272,7 +282,9 @@ export default function EditSchedulePage() {
         notes: editForm.notes || null,
         cost: editForm.cost ? parseFloat(editForm.cost) : null,
         provider: editForm.provider || null,
-        reminder_days: editForm.reminder_days ? parseInt(editForm.reminder_days) : null
+        reminder_days: editForm.reminder_days ? parseInt(editForm.reminder_days) : null,
+        quote_number: editForm.quote_number || null,
+        quote_date: editForm.quote_date ? formatDateToDatabase(editForm.quote_date) : null
       };
       
       const response = await fetch(`/api/vehicles/schedules/${scheduleId}`, {
@@ -639,6 +651,53 @@ export default function EditSchedulePage() {
                   <div className="form-text">
                     <i className="fas fa-info-circle me-1"></i>
                     Inserire solo se l'appuntamento è già stato prenotato
+                  </div>
+                </div>
+
+                {/* Numero Preventivo */}
+                <div className="col-md-6 mb-3">
+                  <label className="form-label fw-bold">
+                    <i className="fas fa-file-invoice me-2"></i>
+                    Numero Preventivo
+                  </label>
+                  <input
+                    type="text"
+                    name="quote_number"
+                    value={editForm.quote_number}
+                    onChange={handleInputChange}
+                    placeholder="Numero del preventivo (opzionale)"
+                    className="form-control bg-dark bg-opacity-10 border-secondary text-body"
+                    style={{ '--bs-body-color': 'var(--bs-body-color)', '--bs-form-control-color': 'var(--bs-body-color)' } as React.CSSProperties}
+                  />
+                  <div className="form-text">
+                    <i className="fas fa-info-circle me-1"></i>
+                    Numero di riferimento del preventivo associato
+                  </div>
+                </div>
+
+                {/* Data Preventivo */}
+                <div className="col-md-6 mb-3">
+                  <label className="form-label fw-bold">
+                    <i className="fas fa-calendar-alt me-2"></i>
+                    Data Preventivo
+                  </label>
+                  <input
+                    type="text"
+                    name="quote_date"
+                    value={editForm.quote_date}
+                    onChange={handleInputChange}
+                    placeholder="gg/mm/aaaa (opzionale)"
+                    className={`form-control bg-dark bg-opacity-10 border-secondary text-body ${
+                      validationErrors.quote_date ? 'is-invalid' : ''
+                    }`}
+                    style={{ '--bs-body-color': 'var(--bs-body-color)', '--bs-form-control-color': 'var(--bs-body-color)' } as React.CSSProperties}
+                  />
+                  {validationErrors.quote_date && (
+                    <div className="invalid-feedback">{validationErrors.quote_date}</div>
+                  )}
+                  <div className="form-text">
+                    <i className="fas fa-info-circle me-1"></i>
+                    Data di emissione del preventivo
                   </div>
                 </div>
 

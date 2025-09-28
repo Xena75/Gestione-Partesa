@@ -16,6 +16,9 @@ interface Vehicle {
   n_palt: number;
   tipo_patente: string;
   pallet_kg: number;
+  km_ultimo_tagliando: number | null;
+  data_ultimo_tagliando: string | null;
+  data_ultima_revisione: string | null;
   active: number;
   createdAt: string;
   updatedAt: string;
@@ -81,6 +84,9 @@ interface FormData {
   n_palt: string;
   tipo_patente: string;
   pallet_kg: string;
+  km_ultimo_tagliando: string;
+  data_ultimo_tagliando: string;
+  data_ultima_revisione: string;
 }
 
 export default function VehicleDetailPage() {
@@ -100,7 +106,10 @@ export default function VehicleDetailPage() {
     portata: '',
     n_palt: '',
     tipo_patente: '',
-    pallet_kg: ''
+    pallet_kg: '',
+    km_ultimo_tagliando: '',
+    data_ultimo_tagliando: '',
+    data_ultima_revisione: ''
   });
   const [updateLoading, setUpdateLoading] = useState(false);
   const [updateMessage, setUpdateMessage] = useState('');
@@ -125,7 +134,10 @@ export default function VehicleDetailPage() {
           portata: data.vehicle.portata?.toString() || '',
           n_palt: data.vehicle.n_palt?.toString() || '',
           tipo_patente: data.vehicle.tipo_patente || '',
-          pallet_kg: data.vehicle.pallet_kg?.toString() || ''
+          pallet_kg: data.vehicle.pallet_kg?.toString() || '',
+          km_ultimo_tagliando: data.vehicle.km_ultimo_tagliando?.toString() || '',
+          data_ultimo_tagliando: data.vehicle.data_ultimo_tagliando ? formatDate(data.vehicle.data_ultimo_tagliando) : '',
+          data_ultima_revisione: data.vehicle.data_ultima_revisione ? formatDate(data.vehicle.data_ultima_revisione) : ''
         });
       } else {
         // Gestione errori specifici
@@ -195,7 +207,10 @@ export default function VehicleDetailPage() {
           portata: parseFloat(formData.portata) || 0,
           n_palt: parseInt(formData.n_palt) || 0,
           tipo_patente: formData.tipo_patente,
-          pallet_kg: parseFloat(formData.pallet_kg) || 0
+          pallet_kg: parseFloat(formData.pallet_kg) || 0,
+          km_ultimo_tagliando: parseInt(formData.km_ultimo_tagliando) || null,
+          data_ultimo_tagliando: convertItalianDateToDatabase(formData.data_ultimo_tagliando),
+          data_ultima_revisione: convertItalianDateToDatabase(formData.data_ultima_revisione)
         })
       });
 
@@ -217,7 +232,61 @@ export default function VehicleDetailPage() {
   };
 
   const formatDate = (dateString: string) => {
-    return formatDateItalian(dateString);
+    if (!dateString || dateString.trim() === '') return '-';
+    
+    try {
+      // Gestisce le date che arrivano dal database MySQL
+      let date: Date;
+      
+      // Se la data contiene 'T' è in formato ISO completo
+      if (dateString.includes('T')) {
+        date = new Date(dateString);
+      }
+      // Se la data è in formato yyyy-mm-dd
+      else if (/^\d{4}-\d{2}-\d{2}$/.test(dateString.trim())) {
+        const [year, month, day] = dateString.trim().split('-').map(Number);
+        date = new Date(year, month - 1, day);
+      }
+      // Altri formati - prova parsing standard
+      else {
+        date = new Date(dateString);
+      }
+      
+      // Verifica che la data sia valida
+      if (isNaN(date.getTime())) return '-';
+      
+      // Formatta in formato italiano gg/mm/aaaa
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      
+      return `${day}/${month}/${year}`;
+    } catch {
+      return '-';
+    }
+  };
+
+  const convertItalianDateToDatabase = (italianDate: string) => {
+    if (!italianDate || italianDate.trim() === '') return null;
+    
+    try {
+      // Se è già in formato database (yyyy-mm-dd), restituiscilo così com'è
+      if (/^\d{4}-\d{2}-\d{2}$/.test(italianDate.trim())) {
+        return italianDate.trim();
+      }
+      
+      // Se è in formato italiano (gg/mm/aaaa), convertilo
+      if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(italianDate.trim())) {
+        const [day, month, year] = italianDate.trim().split('/').map(Number);
+        const dayStr = day.toString().padStart(2, '0');
+        const monthStr = month.toString().padStart(2, '0');
+        return `${year}-${monthStr}-${dayStr}`;
+      }
+      
+      return null;
+    } catch {
+      return null;
+    }
   };
 
   const getScheduleStatusBadge = (status: string) => {
@@ -568,6 +637,41 @@ export default function VehicleDetailPage() {
                         step="0.01"
                       />
                     </div>
+                    <div className="col-md-6 mb-3">
+                      <label htmlFor="km_ultimo_tagliando" className="form-label">Km Ultimo Tagliando</label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        id="km_ultimo_tagliando"
+                        name="km_ultimo_tagliando"
+                        value={formData.km_ultimo_tagliando}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                    <div className="col-md-6 mb-3">
+                      <label htmlFor="data_ultimo_tagliando" className="form-label">Data Ultimo Tagliando</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        id="data_ultimo_tagliando"
+                        name="data_ultimo_tagliando"
+                        value={formData.data_ultimo_tagliando}
+                        onChange={handleInputChange}
+                        placeholder="gg/mm/aaaa"
+                      />
+                    </div>
+                    <div className="col-md-6 mb-3">
+                      <label htmlFor="data_ultima_revisione" className="form-label">Data Ultima Revisione</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        id="data_ultima_revisione"
+                        name="data_ultima_revisione"
+                        value={formData.data_ultima_revisione}
+                        onChange={handleInputChange}
+                        placeholder="gg/mm/aaaa"
+                      />
+                    </div>
                   </div>
                   <div className="d-flex gap-2">
                     <button 
@@ -601,7 +705,10 @@ export default function VehicleDetailPage() {
                           portata: vehicle.portata?.toString() || '',
                           n_palt: vehicle.n_palt?.toString() || '',
                           tipo_patente: vehicle.tipo_patente || '',
-                          pallet_kg: vehicle.pallet_kg?.toString() || ''
+                          pallet_kg: vehicle.pallet_kg?.toString() || '',
+                          km_ultimo_tagliando: vehicle.km_ultimo_tagliando?.toString() || '',
+                          data_ultimo_tagliando: vehicle.data_ultimo_tagliando || '',
+                          data_ultima_revisione: vehicle.data_ultima_revisione || ''
                         });
                       }}
                     >
@@ -639,6 +746,18 @@ export default function VehicleDetailPage() {
                   <div className="col-md-6 mb-3">
                     <strong>Peso Pallet:</strong>
                     <p className="mb-0">{vehicle.pallet_kg ? `${vehicle.pallet_kg} kg` : 'N/A'}</p>
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <strong>Km Ultimo Tagliando:</strong>
+                    <p className="mb-0">{vehicle.km_ultimo_tagliando || 'N/A'}</p>
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <strong>Data Ultimo Tagliando:</strong>
+                    <p className="mb-0">{vehicle.data_ultimo_tagliando ? formatDate(vehicle.data_ultimo_tagliando) : 'N/A'}</p>
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <strong>Data Ultima Revisione:</strong>
+                    <p className="mb-0">{vehicle.data_ultima_revisione ? formatDate(vehicle.data_ultima_revisione) : 'N/A'}</p>
                   </div>
                   <div className="col-md-6 mb-3">
                     <strong>Creato il:</strong>
@@ -705,90 +824,18 @@ export default function VehicleDetailPage() {
           </div>
         </div>
 
-        {/* Documenti */}
-        <div className="col-lg-6 mb-4">
-          <div className="card h-100">
-            <div className="card-header d-flex justify-content-between align-items-center">
-              <h5 className="card-title mb-0">
-                <i className="fas fa-file-alt me-2"></i>
-                Documenti ({documents.length})
-              </h5>
-              <Link 
-                href={`/vehicles/${vehicle.targa}/documents`}
-                className="btn btn-sm btn-outline-primary"
-              >
-                <i className="fas fa-folder-open me-1"></i>
-                Gestisci
-              </Link>
-            </div>
-            <div className="card-body">
-              {documents.length === 0 ? (
-                <div className="text-center py-3">
-                  <p className="text-muted mb-2">Nessun documento caricato</p>
-                  <Link 
-                    href={`/vehicles/${vehicle.targa}/documents`}
-                    className="btn btn-sm btn-primary"
-                  >
-                    <i className="fas fa-upload me-1"></i>
-                    Carica Primo Documento
-                  </Link>
-                </div>
-              ) : (
-                <div className="list-group list-group-flush">
-                  {documents.slice(0, 5).map((document) => {
-                    const expiryStatus = getDocumentExpiryStatus(document.expiry_date);
-                    return (
-                      <a key={document.id} href={`/api/files/document?type=document&id=${document.id}`} target="_blank" rel="noopener noreferrer" className="text-decoration-none">
-                        <div className="list-group-item px-0 cursor-pointer hover-bg-light">
-                          <div className="d-flex justify-content-between align-items-start">
-                            <div className="flex-grow-1">
-                              <h6 className="mb-1 text-dark">{document.document_type}</h6>
-                              <p className="mb-1 small text-truncate text-muted" style={{maxWidth: '200px'}}>
-                                {document.original_filename}
-                              </p>
-                              {document.expiry_date && (
-                                <small className="text-muted">
-                                  Scadenza: {formatDate(document.expiry_date)}
-                                </small>
-                              )}
-                            </div>
-                            <span className={`badge ${expiryStatus.badge}`}>
-                              {expiryStatus.text}
-                            </span>
-                          </div>
-                        </div>
-                      </a>
-                    );
-                  })}
-                  {documents.length > 5 && (
-                    <div className="text-center mt-2">
-                      <Link 
-                        href={`/vehicles/${vehicle.targa}/documents`}
-                        className="btn btn-sm btn-outline-secondary"
-                        style={{ cursor: 'pointer' }}
-                      >
-                        Vedi tutti ({documents.length})
-                      </Link>
-                    </div>
-                  )}
-                  <div className="text-center mt-2">
-                    <Link 
-                      href={`/vehicles/${vehicle.targa}/documents`}
-                      className="btn btn-sm btn-primary"
-                    >
-                      <i className="fas fa-upload me-1"></i>
-                      Carica Documento
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+
+      </div>
+
+      {/* Documenti Veicolo */}
+      <div className="row mb-4">
+        <div className="col-12">
+          <VehicleDocuments vehiclePlate={vehicle.targa} />
         </div>
       </div>
 
       {/* Preventivi Manutenzione */}
-      <div className="row mb-4">
+      <div className="row">
         <div className="col-12">
           <div className="card">
             <div className="card-header d-flex justify-content-between align-items-center">
@@ -823,7 +870,7 @@ export default function VehicleDetailPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {vehicle.quotes.map((quote) => (
+                      {vehicle.quotes.slice(-6).map((quote) => (
                         <tr key={quote.id} className="cursor-pointer hover-bg-light">
                           <td>{quote.service_type}</td>
                           <td>{quote.description}</td>
@@ -896,15 +943,18 @@ export default function VehicleDetailPage() {
                   </table>
                 </div>
               )}
+              {vehicle.quotes.length > 0 && (
+                <div className="text-center mt-3">
+                  <Link 
+                    href={`/vehicles/quotes?vehicleId=${vehicle.id}`}
+                    className="btn btn-outline-secondary"
+                  >
+                    Visualizza tutti ({vehicle.quotes.length})
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Documenti Veicolo */}
-      <div className="row">
-        <div className="col-12">
-          <VehicleDocuments vehiclePlate={vehicle.targa} />
         </div>
       </div>
     </div>

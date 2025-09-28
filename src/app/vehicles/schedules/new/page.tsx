@@ -29,6 +29,8 @@ interface FormData {
   provider: string;
   reminder_days: string;
   notes: string;
+  quote_number: string;
+  quote_date: string;
 }
 
 const scheduleTypes = [
@@ -91,7 +93,9 @@ export default function NewSchedulePage() {
     cost: '',
     provider: '',
     reminder_days: '30',
-    notes: ''
+    notes: '',
+    quote_number: '',
+    quote_date: ''
   });
 
   useEffect(() => {
@@ -160,6 +164,11 @@ export default function NewSchedulePage() {
       setError('Formato data prenotazione non valido. Utilizzare il formato gg/mm/aaaa');
       return;
     }
+    
+    if (formData.quote_date && !validateItalianDate(formData.quote_date)) {
+      setError('Formato data preventivo non valido. Utilizzare il formato gg/mm/aaaa');
+      return;
+    }
 
     try {
       setLoading(true);
@@ -171,7 +180,8 @@ export default function NewSchedulePage() {
         cost: formData.cost ? parseFloat(formData.cost) : null,
         reminder_days: parseInt(formData.reminder_days) || 30,
         data_scadenza: formData.data_scadenza ? formatDateToDatabase(formData.data_scadenza) : '',
-        booking_date: formData.booking_date ? formatDateToDatabase(formData.booking_date) : null
+        booking_date: formData.booking_date ? formatDateToDatabase(formData.booking_date) : null,
+        quote_date: formData.quote_date ? formatDateToDatabase(formData.quote_date) : null
       };
       
       console.log('Dati da inviare al server:', submitData);
@@ -386,6 +396,44 @@ export default function NewSchedulePage() {
                       ))}
                       <option value="altro">Altro (specificare nelle note)</option>
                     </select>
+                  </div>
+
+                  {/* Numero Preventivo */}
+                  <div className="col-md-6 mb-3">
+                    <label htmlFor="quote_number" className="form-label">
+                      Numero Preventivo
+                    </label>
+                    <input
+                      type="text"
+                      id="quote_number"
+                      name="quote_number"
+                      className="form-control"
+                      value={formData.quote_number}
+                      onChange={handleInputChange}
+                      placeholder="Es: PREV-2024-001"
+                    />
+                    <div className="form-text">
+                      Numero del preventivo associato (opzionale)
+                    </div>
+                  </div>
+
+                  {/* Data Preventivo */}
+                  <div className="col-md-6 mb-3">
+                    <label htmlFor="quote_date" className="form-label">
+                      Data Preventivo
+                    </label>
+                    <input
+                      type="text"
+                      id="quote_date"
+                      name="quote_date"
+                      className="form-control"
+                      value={formData.quote_date}
+                      onChange={handleInputChange}
+                      placeholder="gg/mm/aaaa (opzionale)"
+                    />
+                    <div className="form-text">
+                      Data di emissione del preventivo
+                    </div>
                   </div>
 
                   {/* Note */}

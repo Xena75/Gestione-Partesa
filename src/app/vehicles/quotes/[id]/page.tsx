@@ -18,6 +18,8 @@ interface Quote {
   updated_at: string;
   supplier_name: string;
   vehicle_targa: string;
+  quote_number?: string;
+  quote_date?: string;
 }
 
 export default function QuoteDetailPage() {
@@ -63,7 +65,8 @@ export default function QuoteDetailPage() {
       'pending': 'bg-warning',
       'approved': 'bg-success',
       'rejected': 'bg-danger',
-      'in_review': 'bg-info'
+      'expired': 'bg-secondary',
+      'converted': 'bg-info'
     };
     return statusMap[status] || 'bg-secondary';
   };
@@ -73,7 +76,8 @@ export default function QuoteDetailPage() {
       'pending': 'In Attesa',
       'approved': 'Approvato',
       'rejected': 'Rifiutato',
-      'in_review': 'In Revisione'
+      'expired': 'Scaduto',
+      'converted': 'Convertito'
     };
     return statusMap[status] || status;
   };
@@ -233,6 +237,14 @@ export default function QuoteDetailPage() {
             </div>
             <div className="card-body">
               <div className="row">
+                <div className="col-md-6 mb-3">
+                  <strong>Numero Offerta:</strong>
+                  <p className="mb-0">{quote.quote_number || 'N/A'}</p>
+                </div>
+                <div className="col-md-6 mb-3">
+                  <strong>Data Offerta:</strong>
+                  <p className="mb-0">{quote.quote_date ? new Date(quote.quote_date).toLocaleDateString('it-IT') : 'N/A'}</p>
+                </div>
                 <div className="col-md-6 mb-3">
                   <strong>Descrizione:</strong>
                   <p className="mb-0">{quote.description || 'N/A'}</p>
