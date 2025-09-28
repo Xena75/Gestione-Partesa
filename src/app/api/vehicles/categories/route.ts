@@ -1,21 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
-
-const dbConfig = {
-  host: 'localhost',
-  user: 'root',
-  password: '',
-  database: 'viaggi_db'
-};
+import pool from '@/lib/db-viaggi';
 
 // GET - Recupera tutte le categorie
 export async function GET() {
-  let connection;
-  
   try {
-    connection = await mysql.createConnection(dbConfig);
-    
-    const [rows] = await connection.execute(
+    const [rows] = await pool.execute(
       'SELECT id, name, active, created_at FROM categories ORDER BY name'
     );
     
@@ -26,17 +15,11 @@ export async function GET() {
       { error: 'Errore nel recupero delle categorie' },
       { status: 500 }
     );
-  } finally {
-    if (connection) {
-      await connection.end();
-    }
   }
 }
 
 // POST - Crea una nuova categoria
 export async function POST(request: NextRequest) {
-  let connection;
-  
   try {
     const { name } = await request.json();
     
@@ -47,9 +30,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    connection = await mysql.createConnection(dbConfig);
-    
-    const [result] = await connection.execute(
+    const [result] = await pool.execute(
       'INSERT INTO categories (name, active) VALUES (?, TRUE)',
       [name.trim()]
     );
@@ -72,17 +53,11 @@ export async function POST(request: NextRequest) {
       { error: 'Errore nell\'aggiunta della categoria' },
       { status: 500 }
     );
-  } finally {
-    if (connection) {
-      await connection.end();
-    }
   }
 }
 
 // PUT - Aggiorna una categoria esistente
 export async function PUT(request: NextRequest) {
-  let connection;
-  
   try {
     const { id, name, active } = await request.json();
     
@@ -92,8 +67,6 @@ export async function PUT(request: NextRequest) {
         { status: 400 }
       );
     }
-    
-    connection = await mysql.createConnection(dbConfig);
     
     let query = 'UPDATE categories SET ';
     const params = [];
@@ -112,7 +85,7 @@ export async function PUT(request: NextRequest) {
     query += updates.join(', ') + ' WHERE id = ?';
     params.push(id);
     
-    const [result] = await connection.execute(query, params);
+    const [result] = await pool.execute(query, params);
     
     if ((result as any).affectedRows === 0) {
       return NextResponse.json(
@@ -138,17 +111,11 @@ export async function PUT(request: NextRequest) {
       { error: 'Errore nell\'aggiornamento della categoria' },
       { status: 500 }
     );
-  } finally {
-    if (connection) {
-      await connection.end();
-    }
   }
 }
 
 // DELETE - Elimina una categoria
 export async function DELETE(request: NextRequest) {
-  let connection;
-  
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
@@ -160,10 +127,8 @@ export async function DELETE(request: NextRequest) {
       );
     }
     
-    connection = await mysql.createConnection(dbConfig);
-    
     // Verifica se la categoria è utilizzata da qualche fornitore
-    const [suppliers] = await connection.execute(
+    const [suppliers] = await pool.execute(
       'SELECT COUNT(*) as count FROM suppliers WHERE category COLLATE utf8mb4_unicode_ci = (SELECT name FROM categories WHERE id = ?) COLLATE utf8mb4_unicode_ci',
       [id]
     );
@@ -177,7 +142,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
     
-    const [result] = await connection.execute(
+    const [result] = await pool.execute(
       'DELETE FROM categories WHERE id = ?',
       [id]
     );
@@ -198,9 +163,5 @@ export async function DELETE(request: NextRequest) {
       { error: 'Errore nell\'eliminazione della categoria' },
       { status: 500 }
     );
-  } finally {
-    if (connection) {
-      await connection.end();
-    }
   }
 }
