@@ -32,7 +32,7 @@ export async function GET(
 
     // Recupera l'ID del veicolo dalla targa
     const [vehicleRows] = await connection.execute(
-      'SELECT id FROM vehicles WHERE targa = ? AND active = 1',
+      'SELECT id, active FROM vehicles WHERE targa = ?',
       [plate]
     );
 
@@ -41,6 +41,15 @@ export async function GET(
       return NextResponse.json(
         { success: false, error: 'Veicolo non trovato' },
         { status: 404 }
+      );
+    }
+
+    const vehicle = vehicleRows[0] as any;
+    if (vehicle.active === 0) {
+      await connection.end();
+      return NextResponse.json(
+        { success: false, error: 'Veicolo non attivo' },
+        { status: 403 }
       );
     }
 
@@ -141,7 +150,7 @@ export async function POST(
 
     // Recupera l'ID del veicolo dalla targa
     const [vehicleRows] = await connection.execute(
-      'SELECT id FROM vehicles WHERE targa = ? AND active = 1',
+      'SELECT id, active FROM vehicles WHERE targa = ?',
       [plate]
     );
 
@@ -153,7 +162,16 @@ export async function POST(
       );
     }
 
-    const vehicleId = (vehicleRows[0] as any).id;
+    const vehicle = vehicleRows[0] as any;
+    if (vehicle.active === 0) {
+      await connection.end();
+      return NextResponse.json(
+        { success: false, error: 'Veicolo non attivo' },
+        { status: 403 }
+      );
+    }
+
+    const vehicleId = vehicle.id;
 
     // Upload su Vercel Blob Storage
     const isProduction = process.env.NODE_ENV === 'production';

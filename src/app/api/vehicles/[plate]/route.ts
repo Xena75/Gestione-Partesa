@@ -45,7 +45,7 @@ export async function GET(
         createdAt,
         updatedAt
       FROM vehicles 
-      WHERE targa = ? AND active = 1
+      WHERE targa = ?
     `;
 
     const [vehicleRows] = await connection.execute(vehicleQuery, [plate]);
@@ -59,6 +59,14 @@ export async function GET(
     }
 
     const vehicle = vehicleRows[0] as any;
+    
+    if (vehicle.active === 0) {
+      await connection.end();
+      return NextResponse.json(
+        { success: false, error: 'Veicolo non attivo' },
+        { status: 403 }
+      );
+    }
 
     // Recupera le scadenze del veicolo
     const schedulesQuery = `
@@ -152,7 +160,7 @@ export async function PUT(
 
     // Verifica che il veicolo esista
     const [existingVehicle] = await connection.execute(
-      'SELECT id FROM vehicles WHERE targa = ? AND active = 1',
+      'SELECT id, active FROM vehicles WHERE targa = ?',
       [plate]
     );
 
@@ -161,6 +169,15 @@ export async function PUT(
       return NextResponse.json(
         { success: false, error: 'Veicolo non trovato' },
         { status: 404 }
+      );
+    }
+
+    const vehicle = existingVehicle[0] as any;
+    if (vehicle.active === 0) {
+      await connection.end();
+      return NextResponse.json(
+        { success: false, error: 'Veicolo non attivo' },
+        { status: 403 }
       );
     }
 

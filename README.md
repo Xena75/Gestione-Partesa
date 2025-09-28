@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.24.0
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.25.0
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -58,7 +58,37 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
 
-### 💼 **Sistema Preventivi Veicoli Completo - v2.24.0** ⭐ **NUOVO**
+### 🔗 **Integrazione Automatica Preventivi-Calendario - v2.25.0** ⭐ **NUOVO**
+
+#### 📅 **Automazione Completa Workflow Preventivi**
+- **Creazione automatica eventi**: Quando un preventivo viene approvato con data programmata, viene automaticamente creato un evento nel calendario
+- **Integrazione seamless**: Collegamento diretto tra sistema preventivi e calendario scadenze veicoli
+- **Tipo evento "manutenzione"**: Eventi creati con categoria specifica per identificazione immediata
+- **Dettagli completi**: Trasferimento automatico di descrizione, costo, fornitore, note e priorità
+- **Conferma utente**: Messaggio di conferma con possibilità di visualizzare immediatamente l'evento creato
+
+#### 🎯 **Workflow Operativo Ottimizzato**
+- **Approvazione preventivo**: Salvataggio automatico del preventivo approvato
+- **Creazione evento calendario**: Chiamata automatica API `/api/vehicles/schedules` con dati preventivo
+- **Redirect automatico**: Apertura automatica del calendario per verifica immediata dell'evento
+- **Gestione errori**: Feedback chiaro in caso di problemi nella creazione dell'evento
+- **Tracciabilità completa**: Collegamento bidirezionale tra preventivo e evento calendario
+
+#### 🛠️ **Correzioni API Critiche**
+- **Errore 500 risolto**: Corretto conflitto ENUM `schedule_type` in tabella `vehicle_schedules`
+- **Nuovo valore ENUM**: Aggiunto "manutenzione" come tipo valido per eventi calendario
+- **Stabilità API**: Endpoint `/api/vehicles/schedules` completamente funzionante
+- **Gestione errori migliorata**: Differenziazione tra errori di validazione e errori di sistema
+- **Compatibilità database**: Allineamento perfetto con schema database esistente
+
+#### ✅ **Benefici Implementati**
+- **Automazione 100%**: Eliminazione passaggi manuali nella pianificazione manutenzioni
+- **Riduzione errori**: Trasferimento automatico dati senza possibilità di errori di trascrizione
+- **Efficienza operativa**: Workflow semplificato da approvazione preventivo a pianificazione
+- **Visibilità immediata**: Controllo istantaneo degli eventi programmati nel calendario
+- **Integrazione completa**: Sistema unificato per gestione preventivi e pianificazione interventi
+
+### 💼 **Sistema Preventivi Veicoli Completo - v2.24.0** ⭐ **CONSOLIDATO**
 
 #### 🎯 **Gestione Preventivi Avanzata**
 - **Workflow completo**: Sistema completo per creazione, visualizzazione, modifica e gestione preventivi veicoli

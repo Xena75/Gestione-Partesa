@@ -299,7 +299,7 @@ export default function CategoriesPage() {
                                  autoFocus
                                />
                              ) : (
-                               <span className={`fw-medium ${category.active ? 'text-dark' : 'text-muted'}`}>
+                               <span className={`fw-medium ${category.active ? '' : 'text-muted'}`}>
                                  {category.name}
                                </span>
                              )}

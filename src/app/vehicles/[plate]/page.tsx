@@ -128,7 +128,14 @@ export default function VehicleDetailPage() {
           pallet_kg: data.vehicle.pallet_kg?.toString() || ''
         });
       } else {
-        setError(data.error || 'Errore nel caricamento del veicolo');
+        // Gestione errori specifici
+        if (response.status === 403) {
+          setError('Questo veicolo non è attivo e non può essere visualizzato.');
+        } else if (response.status === 404) {
+          setError('Veicolo non trovato nel sistema.');
+        } else {
+          setError(data.error || 'Errore nel caricamento del veicolo');
+        }
       }
     } catch (err) {
       console.error('Errore:', err);
@@ -146,7 +153,16 @@ export default function VehicleDetailPage() {
       if (data.success) {
         setDocuments(data.documents || []);
       } else {
-        console.error('Errore nel caricamento documenti:', data.error);
+        // Gestione errori specifici
+        if (response.status === 403) {
+          console.error('Errore nel caricamento documenti: Veicolo non attivo');
+          setError('Questo veicolo non è attivo e non è possibile visualizzare i documenti.');
+        } else if (response.status === 404) {
+          console.error('Errore nel caricamento documenti: Veicolo non trovato');
+          setError('Veicolo non trovato nel sistema.');
+        } else {
+          console.error('Errore nel caricamento documenti:', data.error);
+        }
       }
     } catch (err) {
       console.error('Errore nel caricamento documenti:', err);

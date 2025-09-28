@@ -146,54 +146,81 @@ GET /api/vehicles
 - **Eliminazione**: Cancellazione preventivi con conferma di sicurezza
 - **Integrazione veicoli**: Preventivi associati nella pagina dettaglio veicolo
 - **Formattazione date**: Formato italiano dd/mm/yyyy in tutti i form
+- **🆕 Integrazione calendario**: Auto-creazione eventi calendario per preventivi approvati
+- **🆕 Navigazione automatica**: Redirect automatico al calendario dopo creazione evento
 
 ### 6.2 API Preventivi Implementate
 - `GET /api/vehicles/quotes` - Lista tutti i preventivi con filtri
 - `POST /api/vehicles/quotes` - Creazione nuovo preventivo
 - `PUT /api/vehicles/quotes` - Aggiornamento stato preventivo
 - `GET /api/vehicles/quotes/[id]` - Dettagli singolo preventivo
-- `PUT /api/vehicles/quotes/[id]` - Modifica preventivo completo
+- `PUT /api/vehicles/quotes/[id]` - Modifica preventivo completo con integrazione calendario
 - `DELETE /api/vehicles/quotes/[id]` - Eliminazione preventivo
 - `POST /api/vehicles/quotes/[id]/documents` - Upload documenti
 - `GET /api/vehicles/quotes/[id]/documents` - Lista documenti
 - `DELETE /api/vehicles/quotes/[id]/documents` - Eliminazione documento
+- `🆕 POST /api/vehicles/schedules` - Creazione eventi calendario da preventivi
 
 ### 6.3 Database Preventivi
 - **Tabella maintenance_quotes**: Dati principali preventivi
 - **Tabella quote_documents**: Gestione allegati
+- **Tabella vehicle_schedules**: Eventi calendario con ENUM aggiornato
+- **🆕 ENUM schedule_type**: Aggiunto valore "manutenzione" per eventi da preventivi
 - **Relazioni**: JOIN con vehicles, suppliers, vehicle_schedules
 - **Indici**: Ottimizzazione query per performance
 
-## 7. Prossimi Sviluppi
+## 7. Correzioni Critiche Implementate (DICEMBRE 2024)
 
-### 7.1 Funzionalità Pianificate
+### 7.1 Risoluzione Errori API
+- **🔧 Errore 500 API Schedules**: Risolto conflitto ENUM schedule_type
+- **🔧 Errore "Veicolo non trovato"**: Migliorata gestione errori fetchDocuments
+- **🔧 Errore 500 API Documenti**: Corretto mapping colonne database
+- **🔧 Preview documenti**: Eliminati errori apertura file
+
+### 7.2 Miglioramenti UX/UI
+- **✨ Click diretti**: Documenti e preventivi apribili direttamente dalla pagina veicolo
+- **✨ Indicatori stato**: Colori per documenti scaduti/in scadenza/validi
+- **✨ Navigazione intuitiva**: Eliminati passaggi intermedi
+- **✨ Feedback visivo**: Hover effects per elementi clickable
+
+## 8. Prossimi Sviluppi
+
+### 8.1 Funzionalità Pianificate
 - Dashboard scadenze con alert automatici
-- Calendario manutenzioni programmate
-- Sistema notifiche email/SMS
+- Sistema notifiche email/SMS per eventi calendario
 - Analytics e reporting avanzati
 - Export preventivi in PDF
+- Template personalizzabili per eventi calendario
 
-### 6.2 Miglioramenti Tecnici
+### 8.2 Miglioramenti Tecnici
 - API caching per performance
 - Validazione dati lato client
 - Audit log modifiche
 - Backup automatico dati critici
+- Ricorrenze eventi calendario
 
-## 7. Documentazione Tecnica
+## 9. Documentazione Tecnica
 
-### 7.1 File Modificati
+### 9.1 File Modificati (Dicembre 2024)
 - `src/app/vehicles/list/page.tsx` - Interfaccia principale
-- `src/app/api/vehicles/route.ts` - API endpoint
-- Database `viaggi_db` - Tabella vehicles estesa
+- `src/app/vehicles/[plate]/page.tsx` - Preview diretta documenti e preventivi
+- `src/app/vehicles/quotes/[id]/edit/page.tsx` - Integrazione calendario automatica
+- `src/app/api/vehicles/route.ts` - API endpoint veicoli
+- `src/app/api/vehicles/schedules/route.ts` - API calendario con ENUM aggiornato
+- `src/app/api/files/document/route.ts` - API preview documenti corretta
+- Database `viaggi_db` - Tabelle vehicles, vehicle_schedules, maintenance_quotes
 
-### 7.2 Dipendenze
+### 9.2 Dipendenze
 - React 18+ per componenti
 - TypeScript per type safety
 - MySQL per persistenza dati
 - Next.js per API routes
+- React Router per navigazione automatica
+- React Big Calendar per visualizzazione eventi
 
 ---
 
-**Documento aggiornato**: Gennaio 2025  
-**Versione**: 1.0  
-**Stato**: Implementazioni completate e testate
+**Documento aggiornato**: Dicembre 2024  
+**Versione**: 2.0  
+**Stato**: Implementazioni completate, testate e corrette  
+**Ultime aggiunte**: Integrazione preventivi-calendario, correzioni errori API, preview diretta documenti

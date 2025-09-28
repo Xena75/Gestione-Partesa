@@ -294,7 +294,47 @@ export default function EditQuotePage() {
       const data = await response.json();
 
       if (data.success) {
-        alert('Preventivo aggiornato con successo!');
+        // Se il preventivo è approvato e ha una data programmata, crea automaticamente un evento nel calendario
+        if (formData.status === 'approved' && formData.scheduled_date && quote) {
+          try {
+            const supplierName = suppliers.find(s => s.id === parseInt(formData.supplier_id))?.name || 'Fornitore sconosciuto';
+            
+            const scheduleResponse = await fetch('/api/vehicles/schedules', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                vehicle_id: quote.vehicle_id,
+                schedule_type: 'manutenzione',
+                data_scadenza: formatDateToISO(formData.scheduled_date),
+                description: `Intervento programmato da preventivo #${quoteId} - ${formData.description}`,
+                cost: parseFloat(formData.amount),
+                provider: supplierName,
+                notes: formData.notes || `Intervento programmato per ${quote.vehicle_targa}`,
+                priority: 'medium',
+                booking_date: formatDateToISO(formData.scheduled_date)
+              }),
+            });
+
+            const scheduleData = await scheduleResponse.json();
+            
+            if (scheduleData.success) {
+              alert('Preventivo aggiornato con successo!\n\nL\'evento è stato automaticamente aggiunto al calendario.');
+              // Apri il calendario dopo la conferma
+              router.push('/vehicles/schedules/calendar');
+              return; // Esci dalla funzione per evitare la navigazione normale
+            } else {
+              alert('Preventivo aggiornato con successo!\n\nAttenzione: Non è stato possibile aggiungere l\'evento al calendario.');
+            }
+          } catch (scheduleErr) {
+            console.error('Errore nella creazione dell\'evento calendario:', scheduleErr);
+            alert('Preventivo aggiornato con successo!\n\nAttenzione: Non è stato possibile aggiungere l\'evento al calendario.');
+          }
+        } else {
+          alert('Preventivo aggiornato con successo!');
+        }
+        
         router.push(`/vehicles/quotes/${quoteId}`);
       } else {
         alert(data.error || 'Errore nell\'aggiornamento del preventivo');
