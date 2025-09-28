@@ -1,21 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
-
-const dbConfig = {
-  host: 'localhost',
-  user: 'root',
-  password: '',
-  database: 'viaggi_db'
-};
+import pool from '@/lib/db-viaggi';
 
 export async function GET() {
-  let connection;
-  
   try {
-    connection = await mysql.createConnection(dbConfig);
-    
     // Ottieni la definizione ENUM della colonna category dalla tabella suppliers
-    const [rows] = await connection.execute(
+    const [rows] = await pool.execute(
       'SHOW COLUMNS FROM suppliers WHERE Field = "category"'
     );
     
@@ -39,16 +28,10 @@ export async function GET() {
       { error: 'Errore nel recupero delle categorie' },
       { status: 500 }
     );
-  } finally {
-    if (connection) {
-      await connection.end();
-    }
   }
 }
 
 export async function POST(request: NextRequest) {
-  let connection;
-  
   try {
     const { name } = await request.json();
     
@@ -59,9 +42,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    connection = await mysql.createConnection(dbConfig);
-    
-    const [result] = await connection.execute(
+    const [result] = await pool.execute(
       'INSERT INTO categories (name) VALUES (?)',
       [name.trim()]
     );
@@ -84,9 +65,5 @@ export async function POST(request: NextRequest) {
       { error: 'Errore nell\'aggiunta della categoria' },
       { status: 500 }
     );
-  } finally {
-    if (connection) {
-      await connection.end();
-    }
   }
 }

@@ -1,13 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
-
-const dbConfig = {
-  host: 'localhost',
-  user: 'root',
-  password: '',
-  database: 'viaggi_db',
-  charset: 'utf8mb4'
-};
+import pool from '@/lib/db-viaggi';
 
 // Valori enum validi per la categoria
 const VALID_CATEGORIES = [
@@ -36,8 +28,6 @@ export async function GET(request: NextRequest) {
     const active = searchParams.get('active');
     const category = searchParams.get('category');
 
-    const connection = await mysql.createConnection(dbConfig);
-
     let query = 'SELECT * FROM suppliers WHERE 1=1';
     const params: any[] = [];
 
@@ -53,8 +43,7 @@ export async function GET(request: NextRequest) {
 
     query += ' ORDER BY name ASC';
 
-    const [rows] = await connection.execute(query, params);
-    await connection.end();
+    const [rows] = await pool.execute(query, params);
 
     return NextResponse.json({ success: true, data: rows });
   } catch (error) {
@@ -90,15 +79,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const connection = await mysql.createConnection(dbConfig);
-
     const query = `
       INSERT INTO suppliers (
         name, email, phone, address, vat_number, category, rating, contact_person, website, mobile
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
-    const [result] = await connection.execute(query, [
+    const [result] = await pool.execute(query, [
       name,
       email || null,
       phone || null,
@@ -110,8 +97,6 @@ export async function POST(request: NextRequest) {
       website || null,
       mobile || null
     ]);
-
-    await connection.end();
 
     return NextResponse.json({
       success: true,
@@ -152,8 +137,6 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const connection = await mysql.createConnection(dbConfig);
-
     const query = `
       UPDATE suppliers SET
         name = ?,
@@ -171,7 +154,7 @@ export async function PUT(request: NextRequest) {
       WHERE id = ?
     `;
 
-    await connection.execute(query, [
+    await pool.execute(query, [
       name,
       email || null,
       phone || null,
@@ -185,8 +168,6 @@ export async function PUT(request: NextRequest) {
       mobile || null,
       id
     ]);
-
-    await connection.end();
 
     return NextResponse.json({ success: true, data: body });
   } catch (error) {
@@ -212,33 +193,28 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const connection = await mysql.createConnection(dbConfig);
-
     if (force) {
       // Eliminazione definitiva (solo se non ci sono preventivi associati)
-      const [quotesCheck] = await connection.execute(
+      const [quotesCheck] = await pool.execute(
         'SELECT COUNT(*) as count FROM maintenance_quotes WHERE supplier_id = ?',
         [id]
       );
       
       if ((quotesCheck as any[])[0].count > 0) {
-        await connection.end();
         return NextResponse.json(
           { success: false, error: 'Impossibile eliminare: fornitore ha preventivi associati' },
           { status: 400 }
         );
       }
       
-      await connection.execute('DELETE FROM suppliers WHERE id = ?', [id]);
+      await pool.execute('DELETE FROM suppliers WHERE id = ?', [id]);
     } else {
       // Soft delete
-      await connection.execute(
+      await pool.execute(
         'UPDATE suppliers SET active = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
         [id]
       );
     }
-
-    await connection.end();
 
     return NextResponse.json({ success: true });
   } catch (error) {
