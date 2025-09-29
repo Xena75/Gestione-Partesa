@@ -31,48 +31,57 @@ graph TD
 
 ## 2. Technology Description
 
-- **Frontend**: React@18 + Next.js@15 + TypeScript + Bootstrap@5 + TailwindCSS
-- **Backend**: Next.js API Routes + Node.js
-- **Database**: MySQL (3 databases: viaggi_db, gestionelogistica, backup_management)
-- **Export**: xlsx@0.18.5 (Excel native format)
-- **UI Components**: React Modal Pattern + Bootstrap Components
-- **State Management**: React Hooks (useState, useEffect, useCallback)
+* **Frontend**: React\@18 + Next.js\@15 + TypeScript + Bootstrap\@5 + TailwindCSS
+
+* **Backend**: Next.js API Routes + Node.js
+
+* **Database**: MySQL (3 databases: viaggi\_db, gestionelogistica, backup\_management)
+
+* **Export**: xlsx\@0.18.5 (Excel native format)
+
+* **UI Components**: React Modal Pattern + Bootstrap Components
+
+* **State Management**: React Hooks (useState, useEffect, useCallback)
 
 ## 3. Route Definitions
 
-| Route | Purpose |
-|-------|----------|
-| `/dashboard` | Dashboard principale con modal integrati |
-| `/vehicles/list` | Gestione veicoli con export Excel |
-| `/dashboard/travels-not-in-tab` | Pagina completa sincronizzazione viaggi |
-| `/vehicles/schedules` | Calendario scadenze veicoli |
-| `/vehicles/quotes` | Sistema preventivi veicoli |
-| `/analytics` | Dashboard analytics avanzato |
-| `/backup` | Sistema backup e recovery |
+| Route                           | Purpose                                  |
+| ------------------------------- | ---------------------------------------- |
+| `/dashboard`                    | Dashboard principale con modal integrati |
+| `/vehicles/list`                | Gestione veicoli con export Excel        |
+| `/dashboard/travels-not-in-tab` | Pagina completa sincronizzazione viaggi  |
+| `/vehicles/schedules`           | Calendario scadenze veicoli              |
+| `/vehicles/quotes`              | Sistema preventivi veicoli               |
+| `/analytics`                    | Dashboard analytics avanzato             |
+| `/backup`                       | Sistema backup e recovery                |
 
 ## 4. API Definitions
 
 ### 4.1 Core API
 
 **Travels Synchronization API**
+
 ```
 GET /api/dashboard/travels-not-in-tab
 ```
 
 Request Parameters:
-| Param Name | Param Type | isRequired | Description |
-|------------|------------|------------|-------------|
-| page | number | false | Numero pagina per paginazione (default: 1) |
-| limit | number | false | Elementi per pagina (default: 10) |
+
+| Param Name | Param Type | isRequired | Description                                |
+| ---------- | ---------- | ---------- | ------------------------------------------ |
+| page       | number     | false      | Numero pagina per paginazione (default: 1) |
+| limit      | number     | false      | Elementi per pagina (default: 10)          |
 
 Response:
-| Param Name | Param Type | Description |
-|------------|------------|-------------|
-| travels | Travel[] | Array viaggi non sincronizzati |
-| stats | Stats | Statistiche sincronizzazione |
-| pagination | Pagination | Informazioni paginazione |
+
+| Param Name | Param Type | Description                    |
+| ---------- | ---------- | ------------------------------ |
+| travels    | Travel\[]  | Array viaggi non sincronizzati |
+| stats      | Stats      | Statistiche sincronizzazione   |
+| pagination | Pagination | Informazioni paginazione       |
 
 Example Response:
+
 ```json
 {
   "travels": [
@@ -97,39 +106,44 @@ Example Response:
 ```
 
 **Vehicles Management API**
+
 ```
 GET /api/vehicles
 ```
 
 Request Parameters:
-| Param Name | Param Type | isRequired | Description |
-|------------|------------|------------|-------------|
-| search | string | false | Ricerca per targa o modello |
-| marca | string | false | Filtro per marca |
-| attivo | boolean | false | Filtro per stato attivo |
-| page | number | false | Numero pagina |
-| limit | number | false | Elementi per pagina |
+
+| Param Name | Param Type | isRequired | Description                 |
+| ---------- | ---------- | ---------- | --------------------------- |
+| search     | string     | false      | Ricerca per targa o modello |
+| marca      | string     | false      | Filtro per marca            |
+| attivo     | boolean    | false      | Filtro per stato attivo     |
+| page       | number     | false      | Numero pagina               |
+| limit      | number     | false      | Elementi per pagina         |
 
 Response:
-| Param Name | Param Type | Description |
-|------------|------------|-------------|
-| vehicles | Vehicle[] | Array veicoli |
-| stats | VehicleStats | Statistiche veicoli |
-| pagination | Pagination | Informazioni paginazione |
+
+| Param Name | Param Type   | Description              |
+| ---------- | ------------ | ------------------------ |
+| vehicles   | Vehicle\[]   | Array veicoli            |
+| stats      | VehicleStats | Statistiche veicoli      |
+| pagination | Pagination   | Informazioni paginazione |
 
 **Dashboard Statistics API**
+
 ```
 GET /api/dashboard/stats
 ```
 
 Response:
-| Param Name | Param Type | Description |
-|------------|------------|-------------|
-| totalVehicles | number | Totale veicoli attivi |
-| activeSchedules | number | Scadenze attive |
-| overdueSchedules | number | Scadenze scadute |
-| pendingQuotes | number | Preventivi in attesa |
-| recentTravels | number | Viaggi recenti |
+
+| Param Name       | Param Type | Description           |
+| ---------------- | ---------- | --------------------- |
+| totalVehicles    | number     | Totale veicoli attivi |
+| activeSchedules  | number     | Scadenze attive       |
+| overdueSchedules | number     | Scadenze scadute      |
+| pendingQuotes    | number     | Preventivi in attesa  |
+| recentTravels    | number     | Viaggi recenti        |
 
 ## 5. Server Architecture Diagram
 
@@ -266,6 +280,7 @@ erDiagram
 ### 6.2 Data Definition Language
 
 **Travels Table (travels)**
+
 ```sql
 -- Tabella principale viaggi
 CREATE TABLE travels (
@@ -286,6 +301,7 @@ CREATE TABLE travels (
 ```
 
 **Employees Table (employees)**
+
 ```sql
 -- Tabella dipendenti/nominativi
 CREATE TABLE employees (
@@ -302,6 +318,7 @@ CREATE TABLE employees (
 ```
 
 **Vehicles Table (vehicles)**
+
 ```sql
 -- Tabella veicoli estesa
 CREATE TABLE vehicles (
@@ -326,7 +343,8 @@ CREATE TABLE vehicles (
 );
 ```
 
-**Vehicle Schedules Table (vehicle_schedules)**
+**Vehicle Schedules Table (vehicle\_schedules)**
+
 ```sql
 -- Tabella scadenze veicoli
 CREATE TABLE vehicle_schedules (
@@ -349,7 +367,8 @@ CREATE TABLE vehicle_schedules (
 );
 ```
 
-**Tab Viaggi Synchronization (tab_viaggi)**
+**Tab Viaggi Synchronization (tab\_viaggi)**
+
 ```sql
 -- Tabella sincronizzazione viaggi
 CREATE TABLE tab_viaggi (
@@ -364,6 +383,7 @@ CREATE TABLE tab_viaggi (
 ```
 
 **Initial Data**
+
 ```sql
 -- Dati iniziali per testing
 INSERT INTO employees (nome, cognome, email) VALUES
@@ -467,19 +487,27 @@ const handleExport = () => {
 
 ### 8.1 Security Measures
 
-- **SQL Injection Prevention**: Prepared statements e parametrized queries
-- **Authentication**: JWT tokens per sessioni utente
-- **Authorization**: Role-based access control
-- **Input Validation**: Sanitizzazione dati client-side e server-side
-- **CORS Configuration**: Configurazione corretta per API access
+* **SQL Injection Prevention**: Prepared statements e parametrized queries
+
+* **Authentication**: JWT tokens per sessioni utente
+
+* **Authorization**: Role-based access control
+
+* **Input Validation**: Sanitizzazione dati client-side e server-side
+
+* **CORS Configuration**: Configurazione corretta per API access
 
 ### 8.2 Performance Optimizations
 
-- **Database Indexing**: Indici su colonne frequentemente utilizzate
-- **Pagination**: Limitazione risultati per performance
-- **Lazy Loading**: Caricamento componenti on-demand
-- **Caching**: Cache browser per risorse statiche
-- **Query Optimization**: Query SQL ottimizzate per performance
+* **Database Indexing**: Indici su colonne frequentemente utilizzate
+
+* **Pagination**: Limitazione risultati per performance
+
+* **Lazy Loading**: Caricamento componenti on-demand
+
+* **Caching**: Cache browser per risorse statiche
+
+* **Query Optimization**: Query SQL ottimizzate per performance
 
 ### 8.3 Monitoring and Logging
 
@@ -564,16 +592,26 @@ NODE_ENV=production
 ## 10. Future Roadmap
 
 ### 10.1 Short Term (v2.28.0)
-- **Multi-sheet Excel Export**: Export con fogli multipli
-- **Advanced Filters**: Filtri avanzati nei modal
-- **Real-time Updates**: WebSocket per aggiornamenti live
+
+* **Multi-sheet Excel Export**: Export con fogli multipli
+
+* **Advanced Filters**: Filtri avanzati nei modal
+
+* **Real-time Updates**: WebSocket per aggiornamenti live
 
 ### 10.2 Medium Term (v2.30.0)
-- **Mobile App**: Applicazione mobile React Native
-- **API Gateway**: Centralizzazione API con rate limiting
-- **Microservices**: Separazione servizi per scalabilità
+
+* **Mobile App**: Applicazione mobile React Native
+
+* **API Gateway**: Centralizzazione API con rate limiting
+
+* **Microservices**: Separazione servizi per scalabilità
 
 ### 10.3 Long Term (v3.0.0)
-- **Cloud Migration**: Migrazione a cloud provider
-- **AI Integration**: Intelligenza artificiale per predizioni
-- **Advanced Analytics**: Dashboard predittivi e ML
+
+* **Cloud Migration**: Migrazione a cloud provider
+
+* **AI Integration**: Intelligenza artificiale per predizioni
+
+* **Advanced Analytics**: Dashboard predittivi e ML
+

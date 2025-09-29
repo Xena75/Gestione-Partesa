@@ -601,36 +601,28 @@ uploaded_at timestamp    NO        current_timestamp()
 
 #### travels
 ```sql
-Field                Type           Null  Key  Default              Extra
-id                   varchar(191)   NO    PRI  NULL                 
-driver_name          varchar(255)   YES        NULL                 
-driver_surname       varchar(255)   YES        NULL                 
-vehicle_plate        varchar(20)    YES        NULL                 
-start_date           date           YES        NULL                 
-end_date             date           YES        NULL                 
-start_time           time           YES        NULL                 
-end_time             time           YES        NULL                 
-total_hours          decimal(5,2)   YES        NULL                 
-total_km             decimal(8,2)   YES        NULL                 
-fuel_liters          decimal(6,2)   YES        NULL                 
-fuel_cost            decimal(8,2)   YES        NULL                 
-packages_delivered   int(11)        YES        NULL                 
-weight_kg            decimal(8,2)   YES        NULL                 
-route_description    text           YES        NULL                 
-notes                text           YES        NULL                 
-status               enum('planned','in_progress','completed','cancelled') YES planned
-created_at           timestamp      NO        current_timestamp()  
-updated_at           timestamp      NO        current_timestamp()  on update current_timestamp()
-start_km             decimal(8,2)   YES        NULL                 
-end_km               decimal(8,2)   YES        NULL                 
-fuel_price_per_liter decimal(5,3)   YES        NULL                 
-delivery_points      int(11)        YES        NULL                 
-orders_count         int(11)        YES        NULL                 
-has_returns          tinyint(1)     YES        0                    
-month                int(11)        YES        NULL                 
-quarter              int(11)        YES        NULL                 
-week                 int(11)        YES        NULL                 
-day_of_week          varchar(20)    YES        NULL                 
+Field                    Type         Null  Key  Default              Extra
+id                       varchar(191) NO    PRI  NULL                 
+deposito                 varchar(191) NO        NULL                 
+numeroViaggio            varchar(191) NO        NULL                 
+data_viaggio             date         YES       NULL                 STORED GENERATED
+nominativoId             varchar(191) YES   MUL NULL                 
+affiancatoDaId           varchar(191) YES   MUL NULL                 
+totaleColli              int(11)      YES       NULL                 
+dataOraInizioViaggio     datetime     YES       NULL                 
+dataOraFineViaggio       datetime     YES       NULL                 
+targaMezzoId             varchar(191) YES   MUL NULL                 
+kmIniziali               int(11)      YES       NULL                 
+kmFinali                 int(11)      YES       NULL                 
+kmAlRifornimento         int(11)      YES       NULL                 
+litriRiforniti           double       YES       NULL                 
+euroLitro                double       YES       NULL                 
+haiEffettuatoRitiri      tinyint(1)   YES       NULL                 
+updatedAt                datetime(3)  YES       NULL                 
+createdAt                datetime(3)  YES       NULL                 
+kmEffettivi              int(11)      YES       NULL                 STORED GENERATED
+oreEffettive             double       YES       NULL                 STORED GENERATED
+mese                     tinyint(4)   YES       NULL                 STORED GENERATED                 
 ```
 
 #### vehicle_documents
@@ -670,23 +662,22 @@ recurrence_unit    enum('days','weeks','months','years')     YES        NULL
 
 #### vehicles
 ```sql
-Field            Type           Null  Key  Default              Extra
-id               int(11)        NO    PRI  NULL                 auto_increment
-plate            varchar(20)    NO    UNI  NULL                 
-brand            varchar(100)   YES        NULL                 
-model            varchar(100)   YES        NULL                 
-year             int(11)        YES        NULL                 
-fuel_type        enum('gasoline','diesel','electric','hybrid') YES NULL
-engine_capacity  decimal(4,2)   YES        NULL                 
-max_weight       decimal(8,2)   YES        NULL                 
-max_volume       decimal(8,2)   YES        NULL                 
-purchase_date    date           YES        NULL                 
-purchase_price   decimal(10,2)  YES        NULL                 
-current_km       decimal(10,2)  YES        NULL                 
-is_active        tinyint(1)     NO        1                    
-notes            text           YES        NULL                 
-created_at       timestamp      NO        current_timestamp()  
-updated_at       timestamp      NO        current_timestamp()  on update current_timestamp()
+Field                 Type         Null  Key  Default                          Extra
+id                    varchar(191) NO    PRI  NULL                             
+targa                 varchar(191) NO    UNI  NULL                             
+marca                 varchar(191) NO    MUL  NULL                             
+modello               varchar(191) NO        NULL                             
+proprieta             varchar(255) YES       NULL                             
+km_ultimo_tagliando   int(11)      YES       NULL                             
+data_ultimo_tagliando date         YES       NULL                             
+data_ultima_revisione date         YES       NULL                             
+portata               int(11)      YES       NULL                             
+n_palt                int(11)      YES       NULL                             
+tipo_patente          varchar(10)  YES       NULL                             
+pallet_kg             int(11)      YES       NULL                             
+active                tinyint(1)   NO    MUL  1                                
+createdAt             datetime(3)  NO        current_timestamp(3)             
+updatedAt             datetime(3)  NO        current_timestamp(3)             on update current_timestamp(3)
 ```
 
 #### viaggi_pod
