@@ -151,9 +151,9 @@ export default function EditQuotePage() {
     }
 
     // Verifica tipo file
-    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
     if (!allowedTypes.includes(file.type)) {
-      alert('Tipo di file non supportato. Sono ammessi: PDF, JPG, PNG, DOC, DOCX');
+      alert('Tipo di file non supportato. Sono ammessi: PDF, JPG, PNG, DOC, DOCX, TXT');
       return;
     }
 
@@ -654,7 +654,7 @@ export default function EditQuotePage() {
                     id="file-upload"
                     className="form-control"
                     onChange={handleFileUpload}
-                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.txt"
                     disabled={uploading}
                   />
                   <span className="input-group-text">
