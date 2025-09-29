@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mysql from 'mysql2/promise';
-import { writeFile, mkdir } from 'fs/promises';
-import path from 'path';
+import { put } from '@vercel/blob';
 
 // Pool di connessioni per migliori performance
 const pool = mysql.createPool({
@@ -202,30 +201,42 @@ export async function POST(request: NextRequest) {
     // Gestisci il file allegato se presente
     if (attachment && attachment.size > 0) {
       try {
-        // Crea la directory se non esiste
-        const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'quote-documents');
-        await mkdir(uploadDir, { recursive: true });
+        // Verifica dimensione file (max 10MB)
+        if (attachment.size > 10 * 1024 * 1024) {
+          connection.release();
+          return NextResponse.json(
+            { success: false, error: 'File troppo grande (max 10MB)' },
+            { status: 400 }
+          );
+        }
+        
+        // Verifica tipo file
+        const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+        if (!allowedTypes.includes(attachment.type)) {
+          connection.release();
+          return NextResponse.json(
+            { success: false, error: 'Tipo di file non supportato' },
+            { status: 400 }
+          );
+        }
 
-        // Genera un nome file unico
+        // Genera nome file unico per Vercel Blob Storage
         const timestamp = Date.now();
-        const fileExtension = path.extname(attachment.name);
-        const fileName = `quote_${quoteId}_${timestamp}${fileExtension}`;
-        const filePath = path.join(uploadDir, fileName);
-        const relativePath = `/uploads/quote-documents/${fileName}`;
+        const fileName = `quote-documents/${timestamp}-${attachment.name}`;
 
-        // Salva il file
-        const bytes = await attachment.arrayBuffer();
-        const buffer = Buffer.from(bytes);
-        await writeFile(filePath, buffer);
+        // Carica su Vercel Blob Storage
+        const blob = await put(fileName, attachment, {
+          access: 'public',
+        });
 
-        // Salva i metadati del file nel database
+        // Salva i metadati del file nel database con l'URL del blob
         await connection.execute(
           `INSERT INTO quote_documents (quote_id, file_name, file_path, file_type, file_size) 
            VALUES (?, ?, ?, ?, ?)`,
-          [quoteId, attachment.name, relativePath, attachment.type, attachment.size]
+          [quoteId, attachment.name, blob.url, attachment.type, attachment.size]
         );
       } catch (fileError) {
-        console.error('Errore nel salvataggio del file:', fileError);
+        console.error('Errore nel salvataggio del file su Vercel Blob Storage:', fileError);
         // Non bloccare la creazione del preventivo se il file fallisce
       }
     }
