@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mysql from 'mysql2/promise';
-import path from 'path';
-import fs from 'fs';
+import { put, del } from '@vercel/blob';
 
 // Pool di connessioni per migliori performance
 const pool = mysql.createPool({
@@ -80,22 +79,14 @@ export async function POST(
       );
     }
     
-    // Crea directory se non esiste
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'quote-documents');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    
     // Genera nome file unico
     const timestamp = Date.now();
-    const fileName = `${timestamp}-${file.name}`;
-    const filePath = path.join(uploadDir, fileName);
-    const relativePath = `/uploads/quote-documents/${fileName}`;
+    const fileName = `quote-documents/${timestamp}-${file.name}`;
     
-    // Salva file
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    fs.writeFileSync(filePath, buffer);
+    // Carica su Vercel Blob Storage
+    const blob = await put(fileName, file, {
+      access: 'public',
+    });
     
     // Salva nel database
     connection = await pool.getConnection();
@@ -103,7 +94,7 @@ export async function POST(
     const [result] = await connection.execute(
       `INSERT INTO quote_documents (quote_id, file_name, file_path, file_type, file_size)
        VALUES (?, ?, ?, ?, ?)`,
-      [id, file.name, relativePath, file.type, file.size]
+      [id, file.name, blob.url, file.type, file.size]
     );
     
     connection.release();
@@ -114,7 +105,7 @@ export async function POST(
       document: {
         id: (result as any).insertId,
         file_name: file.name,
-        file_path: relativePath,
+        file_path: blob.url,
         file_type: file.type,
         file_size: file.size
       }
@@ -175,14 +166,11 @@ export async function DELETE(
     
     connection.release();
     
-    // Elimina file fisico
+    // Elimina file da Vercel Blob Storage
     try {
-      const fullPath = path.join(process.cwd(), 'public', filePath);
-      if (fs.existsSync(fullPath)) {
-        fs.unlinkSync(fullPath);
-      }
+      await del(filePath);
     } catch (fileError) {
-      console.warn('Errore nell\'eliminazione del file fisico:', fileError);
+      console.warn('Errore nell\'eliminazione del file da Blob Storage:', fileError);
     }
     
     return NextResponse.json({
