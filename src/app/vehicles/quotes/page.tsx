@@ -111,7 +111,8 @@ function VehicleQuotesContent() {
         }
         
         acc.total++;
-        acc.totalValue += quote.amount;
+        const amount = parseFloat(quote.amount) || 0;
+        acc.totalValue += amount;
         return acc;
       },
       { pending: 0, approved: 0, rejected: 0, expired: 0, total: 0, totalValue: 0 }
@@ -354,18 +355,22 @@ function VehicleQuotesContent() {
             <div className="card-body">
               <div className="d-flex justify-content-between align-items-center">
                 <h5 className="card-title mb-0 text-white">🛠️ Azioni</h5>
-                <div className="btn-group">
+                <div className="btn-group" role="group">
                   <Link href="/vehicles/schedules" className="btn btn-outline-primary">
-                    <i className="fas fa-calendar me-1"></i>
+                    <i className="fas fa-clock me-2"></i>
                     Scadenze
                   </Link>
-                  <Link href="/vehicles/quotes/new" className="btn btn-success">
-                    <i className="fas fa-plus me-1"></i>
-                    Nuovo Preventivo
+                  <Link href="/vehicles/schedules/calendar" className="btn btn-outline-primary">
+                    <i className="fas fa-calendar-alt me-2"></i>
+                    Calendario
                   </Link>
-                  <Link href="/vehicles/suppliers" className="btn btn-info">
-                    <i className="fas fa-building me-1"></i>
+                  <Link href="/vehicles/suppliers" className="btn btn-outline-primary">
+                    <i className="fas fa-truck me-2"></i>
                     Fornitori
+                  </Link>
+                  <Link href="/vehicles/quotes/new" className="btn btn-outline-primary">
+                    <i className="fas fa-plus me-2"></i>
+                    Nuovo Preventivo
                   </Link>
                 </div>
               </div>
@@ -494,8 +499,8 @@ function VehicleQuotesContent() {
                             </small>
                           </td>
                           <td>
-                            <span className="badge bg-secondary text-white">
-                              {quote.schedule_type || 'N/A'}
+                            <span className="badge bg-primary text-white">
+                              {quote.intervention_type_name || 'N/A'}
                             </span><br />
                             <small className="text-white">
                               {quote.description}
@@ -532,7 +537,7 @@ function VehicleQuotesContent() {
                           </td>
                           <td>
                             {quote.documents && quote.documents.length > 0 ? (
-                              <span className="badge bg-info text-white">
+                              <span className="badge bg-dark text-white">
                                 {quote.documents.length} file
                               </span>
                             ) : (

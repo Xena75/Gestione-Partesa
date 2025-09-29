@@ -26,6 +26,8 @@ interface FormData {
   supplier_id: string;
   valid_until: string;
   notes: string;
+  quote_number: string;
+  quote_date: string;
 }
 
 const serviceTypes = [
@@ -173,9 +175,9 @@ function NewQuotePageContent() {
       }
       
       // Validazione tipo file
-      const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/jpeg', 'image/jpg', 'image/png'];
+      const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/jpeg', 'image/jpg', 'image/png', 'text/plain'];
       if (!allowedTypes.includes(file.type)) {
-        alert('Tipo di file non supportato. Utilizzare: PDF, DOC, DOCX, JPG, PNG');
+        alert('Tipo di file non supportato. Utilizzare: PDF, DOC, DOCX, JPG, PNG, TXT');
         e.target.value = '';
         return;
       }
@@ -217,10 +219,28 @@ function NewQuotePageContent() {
       if (formData.notes) {
         submitData.append('notes', formData.notes);
       }
+      
+      // DEBUG: Log dei valori prima dell'invio
+      console.log('DEBUG - Valori prima dell\'invio:');
+      console.log('quote_number:', formData.quote_number);
+      console.log('quote_date:', formData.quote_date);
+      
+      if (formData.quote_number) {
+        submitData.append('quote_number', formData.quote_number);
+        console.log('DEBUG - quote_number aggiunto al FormData:', formData.quote_number);
+      } else {
+        console.log('DEBUG - quote_number è vuoto, non aggiunto al FormData');
+      }
+      if (formData.quote_date) {
+        submitData.append('quote_date', formData.quote_date);
+        console.log('DEBUG - quote_date aggiunto al FormData:', formData.quote_date);
+      } else {
+        console.log('DEBUG - quote_date è vuoto, non aggiunto al FormData');
+      }
       if (selectedFile) {
         submitData.append('attachment', selectedFile);
       }
-
+      
       const response = await fetch('/api/vehicles/quotes', {
         method: 'POST',
         body: submitData, // Non impostare Content-Type, il browser lo farà automaticamente per FormData
@@ -459,11 +479,11 @@ function NewQuotePageContent() {
                       id="attachment"
                       name="attachment"
                       className="form-control"
-                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
                       onChange={handleFileChange}
                     />
                     <div className="form-text">
-                      Formati supportati: PDF, DOC, DOCX, JPG, PNG. Dimensione massima: 10MB
+                      Formati supportati: PDF, DOC, DOCX, JPG, PNG, TXT. Dimensione massima: 10MB
                     </div>
                     {selectedFile && (
                       <div className="mt-2">

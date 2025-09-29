@@ -34,13 +34,15 @@ interface FormData {
 }
 
 const scheduleTypes = [
-  { value: 'revisione', label: 'Revisione' },
-  { value: 'tagliando', label: 'Tagliando' },
-  { value: 'assicurazione', label: 'Assicurazione' },
-  { value: 'bollo', label: 'Bollo Auto' },
-  { value: 'patente_conducente', label: 'Patente Conducente' },
-  { value: 'altro', label: 'Altro' }
-];
+    { value: 'assicurazione', label: 'Assicurazione' },
+    { value: 'altro', label: 'Altro' },
+    { value: 'bollo', label: 'Bollo' },
+    { value: 'Manutenzione Ordinaria', label: 'Manutenzione Ordinaria' },
+    { value: 'Manutenzione Straordinaria', label: 'Manutenzione Straordinaria' },
+    { value: 'patente_conducente', label: 'Patente Conducente' },
+    { value: 'revisione', label: 'Revisione' },
+    { value: 'tagliando', label: 'Tagliando' }
+  ];
 
 export default function NewSchedulePage() {
   const router = useRouter();

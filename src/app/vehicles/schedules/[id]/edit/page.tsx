@@ -115,6 +115,10 @@ function getScheduleTypeLabel(type: string): string {
       return 'Bollo Auto';
     case 'patente_conducente':
       return 'Patente Conducente';
+    case 'Manutenzione Ordinaria':
+      return 'Manutenzione Ordinaria';
+    case 'Manutenzione Straordinaria':
+      return 'Manutenzione Straordinaria';
     case 'altro':
       return 'Altro';
     default:
@@ -507,11 +511,14 @@ export default function EditSchedulePage() {
                     style={{ '--bs-form-select-bg-img': 'none' } as React.CSSProperties}
                   >
                     <option value="">Seleziona tipo</option>
-                    <option value="revisione">Revisione</option>
                     <option value="assicurazione">Assicurazione</option>
-                    <option value="bollo">Bollo</option>
-                    <option value="tagliando">Tagliando</option>
                     <option value="altro">Altro</option>
+                    <option value="bollo">Bollo</option>
+                    <option value="Manutenzione Ordinaria">Manutenzione Ordinaria</option>
+                    <option value="Manutenzione Straordinaria">Manutenzione Straordinaria</option>
+                    <option value="patente_conducente">Patente Conducente</option>
+                    <option value="revisione">Revisione</option>
+                    <option value="tagliando">Tagliando</option>
                   </select>
                   {validationErrors.schedule_type && (
                     <div className="invalid-feedback">{validationErrors.schedule_type}</div>

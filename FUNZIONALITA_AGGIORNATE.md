@@ -1,6 +1,65 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.27.0
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.28.0
 
-## 🚀 **VERSIONE 2.27.0** - Export Excel e Modal Integrati ⭐ **NUOVO**
+## 🚀 **VERSIONE 2.28.0** - Sistema Dinamico Tipi Intervento e Ottimizzazioni UI ⭐ **NUOVO**
+
+### 🎯 **SISTEMA DINAMICO TIPI INTERVENTO PER PREVENTIVI**
+- **Nuova tabella intervention_types**: Creazione tabella dedicata per gestione dinamica tipi intervento con campi id, name, description, active, created_at, updated_at
+- **Migrazione da ENUM statico**: Conversione campo `intervention_type` in tabella `maintenance_quotes` da ENUM fisso a INT con foreign key verso `intervention_types.id`
+- **API dedicata**: Implementazione endpoint `/api/vehicles/intervention-types` per recupero tipi intervento attivi con filtro `active = TRUE`
+- **Selezione dinamica**: Dropdown nella pagina modifica preventivi che si aggiorna automaticamente con nuovi tipi intervento senza modifiche codice
+- **Gestione attivazione**: Sistema per attivare/disattivare tipi intervento tramite campo `active` senza impatto su dati storici
+- **Retrocompatibilità**: Migrazione automatica dati esistenti da ENUM a tabella relazionale mantenendo integrità storica
+
+### 🎨 **OTTIMIZZAZIONI UI PAGINA PREVENTIVI**
+- **Riposizionamento strategico**: Campo "Tipo Intervento" spostato dopo "Data Offerta" per ottimizzazione utilizzo spazio orizzontale
+- **Layout responsive ottimizzato**: Mantenimento layout single-row per migliore sfruttamento spazio disponibile su schermi desktop
+- **Miglioramenti colori badge**: Aggiornamento palette colori per migliore leggibilità e contrasto visivo
+- **Badge documenti**: Cambio colore da `bg-info` (azzurro chiaro) a `bg-dark` (scuro) per testo bianco più leggibile
+- **Badge tipo intervento**: Utilizzo `bg-primary` (blu Bootstrap standard) per coerenza visiva con design system
+- **Esperienza utente**: Layout più intuitivo e professionale con migliore gerarchia visiva
+
+### 🔧 **CORREZIONE CRITICA VISUALIZZAZIONE SCADENZE PROGRAMMATE**
+- **Bug API identificato**: Risoluzione mismatch tra struttura risposta API e aspettative componenti frontend
+- **Endpoint schedules corretto**: Modifica risposta API da `{success: true, data: schedulesWithVehicles}` a `{success: true, schedules: schedulesWithVehicles}`
+- **Visualizzazione ripristinata**: Ripristino completo funzionalità visualizzazione scadenze su pagina `/vehicles/schedules`
+- **Consistenza dati**: Allineamento perfetto struttura dati tra API backend e componenti React frontend
+- **Affidabilità sistema**: Eliminazione errore che impediva caricamento dati scadenze programmate
+
+### 🛠️ **DETTAGLI TECNICI IMPLEMENTAZIONE**
+- **Database migration**: Script SQL per creazione tabella `intervention_types` e modifica `maintenance_quotes.intervention_type`
+- **API implementation**: Nuovo endpoint GET `/api/vehicles/intervention-types` con filtro tipi attivi
+- **Frontend updates**: Modifica componente edit preventivi per utilizzo API dinamica invece di valori hardcoded
+- **UI repositioning**: Aggiornamento layout form con riposizionamento campo "Tipo Intervento" dopo "Data Offerta"
+- **Color scheme**: Aggiornamento classi CSS badge da `bg-info` a `bg-dark` e mantenimento `bg-primary` per tipo intervento
+- **API fix**: Correzione response structure in `/api/vehicles/schedules/route.ts` linea 88
+
+### ✅ **BENEFICI OPERATIVI OTTENUTI**
+- **Flessibilità gestionale**: Possibilità di aggiungere nuovi tipi intervento senza modifiche codice o deploy
+- **User experience migliorata**: Layout ottimizzato e colori più leggibili per utilizzo quotidiano
+- **Manutenibilità**: Sistema centralizzato per gestione tipi intervento con controllo attivazione
+- **Affidabilità**: Correzione bug critico per operatività completa sistema scadenze
+- **Scalabilità**: Base solida per future espansioni sistema preventivi e gestione interventi
+- **Consistenza dati**: Allineamento perfetto tra backend e frontend per esperienza utente fluida
+
+### 🛠️ **FILE MODIFICATI**
+- `src/app/api/vehicles/intervention-types/route.ts` - Nuovo endpoint API per tipi intervento
+- `src/app/vehicles/quotes/edit/[id]/page.tsx` - Aggiornamento UI e integrazione API dinamica
+- `src/app/api/vehicles/schedules/route.ts` - Correzione struttura response API
+- `src/app/vehicles/quotes/page.tsx` - Aggiornamento colori badge per migliore leggibilità
+- `database/migrations/` - Script creazione tabella `intervention_types` e modifica `maintenance_quotes`
+
+### 📋 **FUNZIONALITÀ TESTATE**
+- ✅ **API intervention-types**: Endpoint restituisce tipi attivi correttamente
+- ✅ **Dropdown dinamico**: Selezione tipi intervento carica da database
+- ✅ **Migrazione dati**: Conversione ENUM a relazionale senza perdita dati
+- ✅ **Layout ottimizzato**: Riposizionamento campo "Tipo Intervento" funzionale
+- ✅ **Colori badge**: Miglioramento leggibilità con nuova palette colori
+- ✅ **Scadenze programmate**: Visualizzazione corretta su `/vehicles/schedules`
+- ✅ **Retrocompatibilità**: Sistema funziona con dati esistenti e nuovi
+
+---
+
+## 🚀 **VERSIONE 2.27.0** - Export Excel e Modal Integrati ⭐ **CONSOLIDATO**
 
 ### 📈 **EXPORT EXCEL NATIVO PER VEICOLI**
 - **Migrazione completa da CSV**: Conversione della funzionalità export da formato CSV a Excel nativo (.xlsx)

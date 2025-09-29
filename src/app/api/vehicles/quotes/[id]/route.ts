@@ -26,7 +26,7 @@ export async function GET(
     
     const { id: quoteId } = await params;
     
-    // Query per ottenere i dettagli del preventivo con il nome del fornitore e la targa del veicolo
+    // Query per ottenere i dettagli del preventivo con il nome del fornitore, la targa del veicolo e le informazioni degli utenti
     const query = `
       SELECT 
         mq.id,
@@ -41,13 +41,24 @@ export async function GET(
         mq.scheduled_date,
         mq.quote_number,
         mq.quote_date,
+        mq.intervention_type,
         mq.created_at,
         mq.updated_at,
+        mq.created_by,
+        mq.approved_by,
+        mq.approved_at,
         s.name as supplier_name,
-        v.targa as vehicle_targa
+        v.targa as vehicle_targa,
+        it.name as intervention_type_name,
+        it.description as intervention_type_description,
+        u_created.username as created_by_username,
+        u_approved.username as approved_by_username
       FROM maintenance_quotes mq
       LEFT JOIN suppliers s ON mq.supplier_id = s.id
       LEFT JOIN vehicles v ON mq.vehicle_id = v.id
+      LEFT JOIN intervention_types it ON mq.intervention_type = it.id
+      LEFT JOIN gestionelogistica.users u_created ON mq.created_by = u_created.id
+      LEFT JOIN gestionelogistica.users u_approved ON mq.approved_by = u_approved.id
       WHERE mq.id = ?
     `;
     
@@ -103,7 +114,8 @@ export async function PUT(
       notes,
       scheduled_date,
       quote_number,
-      quote_date
+      quote_date,
+      intervention_type
     } = body;
     
     // Verifica che il preventivo esista
@@ -133,6 +145,7 @@ export async function PUT(
         scheduled_date = ?,
         quote_number = ?,
         quote_date = ?,
+        intervention_type = ?,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `;
@@ -147,6 +160,7 @@ export async function PUT(
       scheduled_date,
       quote_number,
       quote_date,
+      intervention_type ? parseInt(intervention_type) : 1,
       quoteId
     ]);
     

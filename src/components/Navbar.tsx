@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LogOut, User, Settings, Sun, Moon } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
+import UserSwitcher from './UserSwitcher';
 
 export default function Navbar() {
   const { user, isAuthenticated, logout, isLoading } = useAuth();
@@ -145,6 +146,13 @@ export default function Navbar() {
                     </ul>
                   )}
                 </div>
+                
+                {/* User Switcher - Solo per admin */}
+                {user?.role === 'admin' && (
+                  <div className="ms-2">
+                    <UserSwitcher />
+                  </div>
+                )}
               </div>
             </div>
           </>

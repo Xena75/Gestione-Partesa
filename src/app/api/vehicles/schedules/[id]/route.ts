@@ -201,7 +201,7 @@ function convertItalianDateToDatabase(dateInput: string): string | null {
   throw new Error(`Formato data non valido: ${dateInput}. Utilizzare gg/mm/aaaa o YYYY-MM-DD`);
 }
 
-// PUT - Aggiorna una scadenza specifica
+// PUT - Aggiorna una scadenza specifica (aggiornamento completo)
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -235,6 +235,129 @@ export async function PUT(
     console.error('Errore nell\'aggiornamento della scadenza:', error);
     return NextResponse.json(
       { success: false, error: 'Errore interno del server' },
+      { status: 500 }
+    );
+  }
+}
+
+// PATCH - Aggiornamento parziale di una scadenza (per drag and drop)
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const body = await request.json();
+    
+    console.log(`[PATCH /api/vehicles/schedules/${id}] Received data:`, body);
+    
+    const connection = await mysql.createConnection(dbConfig);
+    
+    // Costruisci la query dinamicamente basandoti sui campi forniti
+    const updateFields = [];
+    const updateValues = [];
+    
+    if (body.data_scadenza !== undefined) {
+      const convertedDate = body.data_scadenza ? convertItalianDateToDatabase(body.data_scadenza) : null;
+      updateFields.push('data_scadenza = ?');
+      updateValues.push(convertedDate);
+    }
+    
+    if (body.booking_date !== undefined) {
+      const convertedDate = body.booking_date ? convertItalianDateToDatabase(body.booking_date) : null;
+      updateFields.push('booking_date = ?');
+      updateValues.push(convertedDate);
+    }
+    
+    if (body.completed_date !== undefined) {
+      const convertedDate = body.completed_date ? convertItalianDateToDatabase(body.completed_date) : null;
+      updateFields.push('completed_date = ?');
+      updateValues.push(convertedDate);
+    }
+    
+    if (body.status !== undefined) {
+      updateFields.push('status = ?');
+      updateValues.push(body.status);
+    }
+    
+    if (body.schedule_type !== undefined) {
+      updateFields.push('schedule_type = ?');
+      updateValues.push(body.schedule_type);
+    }
+    
+    if (body.description !== undefined) {
+      updateFields.push('description = ?');
+      updateValues.push(body.description);
+    }
+    
+    if (body.cost !== undefined) {
+      updateFields.push('cost = ?');
+      updateValues.push(body.cost);
+    }
+    
+    if (body.provider !== undefined) {
+      updateFields.push('provider = ?');
+      updateValues.push(body.provider);
+    }
+    
+    if (body.priority !== undefined) {
+      updateFields.push('priority = ?');
+      updateValues.push(body.priority);
+    }
+    
+    if (body.reminder_days !== undefined) {
+      updateFields.push('reminder_days = ?');
+      updateValues.push(body.reminder_days);
+    }
+    
+    if (body.notes !== undefined) {
+      updateFields.push('notes = ?');
+      updateValues.push(body.notes);
+    }
+    
+    if (body.quote_number !== undefined) {
+      updateFields.push('quote_number = ?');
+      updateValues.push(body.quote_number);
+    }
+    
+    if (body.quote_date !== undefined) {
+      const convertedDate = body.quote_date ? convertItalianDateToDatabase(body.quote_date) : null;
+      updateFields.push('quote_date = ?');
+      updateValues.push(convertedDate);
+    }
+    
+    if (updateFields.length === 0) {
+      await connection.end();
+      return NextResponse.json(
+        { success: false, error: 'Nessun campo da aggiornare' },
+        { status: 400 }
+      );
+    }
+    
+    // Aggiungi sempre updated_at
+    updateFields.push('updated_at = NOW()');
+    updateValues.push(id); // ID per la WHERE clause
+    
+    const query = `UPDATE vehicle_schedules SET ${updateFields.join(', ')} WHERE id = ?`;
+    
+    console.log(`[PATCH /api/vehicles/schedules/${id}] Executing query:`, query);
+    console.log(`[PATCH /api/vehicles/schedules/${id}] Query parameters:`, updateValues);
+    
+    const [result] = await connection.execute(query, updateValues);
+    
+    await connection.end();
+    
+    console.log(`[PATCH /api/vehicles/schedules/${id}] Update successful`);
+    return NextResponse.json({ success: true });
+
+  } catch (error) {
+    console.error(`[PATCH /api/vehicles/schedules/${id || 'unknown'}] Error:`, error);
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: 'Errore interno del server',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }

@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.27.0
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.28.0
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -58,7 +58,37 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
 
-### 📊 **Export Excel e Modal Integrati - v2.27.0** ⭐ **NUOVO**
+### 🔧 **Sistema Dinamico Tipi Intervento e Ottimizzazioni UI - v2.28.0** ⭐ **NUOVO**
+
+#### 🎯 **Sistema Dinamico Tipi Intervento per Preventivi**
+- **Database intervention_types**: Nuova tabella per gestione dinamica tipi intervento
+- **Migrazione da ENUM**: Conversione campo `intervention_type` da ENUM statico a riferimento dinamico
+- **API dedicata**: Endpoint `/api/vehicles/intervention-types` per recupero tipi attivi
+- **Selezione dinamica**: Dropdown che si aggiorna automaticamente con nuovi tipi intervento
+- **Gestione attivazione**: Sistema per attivare/disattivare tipi intervento senza modifiche codice
+- **Retrocompatibilità**: Migrazione dati esistenti mantenendo integrità storica
+
+#### 🎨 **Ottimizzazioni UI Pagina Preventivi**
+- **Riposizionamento campi**: Campo "Tipo Intervento" spostato dopo "Data Offerta" per ottimizzazione spazio
+- **Layout responsive**: Mantenimento layout single-row per migliore utilizzo spazio orizzontale
+- **Colori badge migliorati**: Aggiornamento colori badge per migliore leggibilità e contrasto
+- **Badge documenti**: Cambio da azzurro chiaro a scuro per testo bianco più leggibile
+- **Badge tipo intervento**: Utilizzo blu Bootstrap standard per coerenza visiva
+
+#### 🔧 **Correzione Visualizzazione Scadenze Programmate**
+- **Bug API risolto**: Correzione mismatch tra struttura risposta API e aspettative frontend
+- **Endpoint schedules**: Modifica risposta da `{success: true, data: [...]}` a `{success: true, schedules: [...]}`
+- **Visualizzazione corretta**: Ripristino completo visualizzazione scadenze su `/vehicles/schedules`
+- **Consistenza dati**: Allineamento struttura dati tra API e componenti frontend
+
+#### ✅ **Benefici Implementati**
+- **Flessibilità gestionale**: Aggiunta nuovi tipi intervento senza modifiche codice
+- **User experience migliorata**: Layout ottimizzato e colori più leggibili
+- **Manutenibilità**: Sistema centralizzato per gestione tipi intervento
+- **Affidabilità**: Correzione bug visualizzazione per operatività completa
+- **Scalabilità**: Base solida per future espansioni sistema preventivi
+
+### 📊 **Export Excel e Modal Integrati - v2.27.0** ⭐ **CONSOLIDATO**
 
 #### 📈 **Export Excel Nativo per Veicoli**
 - **Migrazione da CSV**: Conversione completa da formato CSV a Excel nativo (.xlsx)

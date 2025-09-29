@@ -117,6 +117,20 @@ export default function ScheduleDetailPage({ params }: ScheduleDetailPageProps) 
 
   const handleSave = async () => {
     try {
+      // Valida le date prima del salvataggio
+      if (editForm.data_scadenza && !validateItalianDate(editForm.data_scadenza)) {
+        alert('Formato data scadenza non valido. Utilizzare il formato gg/mm/aaaa');
+        return;
+      }
+      if (editForm.completed_date && !validateItalianDate(editForm.completed_date)) {
+        alert('Formato data completamento non valido. Utilizzare il formato gg/mm/aaaa');
+        return;
+      }
+      if (editForm.quote_date && !validateItalianDate(editForm.quote_date)) {
+        alert('Formato data preventivo non valido. Utilizzare il formato gg/mm/aaaa');
+        return;
+      }
+      
       // Prepara i dati per l'invio, le date sono già in formato italiano in editForm
       const dataToSend = {
         ...editForm
@@ -176,13 +190,10 @@ export default function ScheduleDetailPage({ params }: ScheduleDetailPageProps) 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
-    // Per i campi data, mantiene il formato italiano
+    // Per i campi data, permette la digitazione progressiva
     if (name === 'data_scadenza' || name === 'completed_date' || name === 'quote_date') {
-      if (value && !validateItalianDate(value)) {
-        // Non aggiorna se il formato non è valido
-        return;
-      }
-      // Memorizza nel formato italiano
+      // Permette sempre l'aggiornamento durante la digitazione
+      // La validazione completa avverrà solo al salvataggio
       setEditForm(prev => ({
         ...prev,
         [name]: value
@@ -287,6 +298,8 @@ export default function ScheduleDetailPage({ params }: ScheduleDetailPageProps) 
       'assicurazione': 'Assicurazione',
       'bollo': 'Bollo Auto',
       'patente_conducente': 'Patente Conducente',
+      'Manutenzione Ordinaria': 'Manutenzione Ordinaria',
+      'Manutenzione Straordinaria': 'Manutenzione Straordinaria',
       'altro': 'Altro'
     };
     return types[type] || type;
@@ -450,12 +463,14 @@ export default function ScheduleDetailPage({ params }: ScheduleDetailPageProps) 
                             value={editForm.schedule_type || ''}
                             onChange={handleInputChange}
                           >
+                            <option value="assicurazione">Assicurazione</option>
+                            <option value="altro">Altro</option>
+                            <option value="bollo">Bollo Auto</option>
+                            <option value="Manutenzione Ordinaria">Manutenzione Ordinaria</option>
+                            <option value="Manutenzione Straordinaria">Manutenzione Straordinaria</option>
+                            <option value="patente_conducente">Patente Conducente</option>
                             <option value="revisione">Revisione</option>
                             <option value="tagliando">Tagliando</option>
-                            <option value="assicurazione">Assicurazione</option>
-                            <option value="bollo">Bollo Auto</option>
-                            <option value="patente_conducente">Patente Conducente</option>
-                            <option value="altro">Altro</option>
                           </select>
                         </div>
                         <div className="mb-3">

@@ -17,6 +17,7 @@ interface AuthContextType {
   login: (_username: string, _password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
+  switchUser: (userId: number) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -104,6 +105,31 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  const switchUser = async (userId: number): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/auth/switch-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId }),
+        credentials: 'include'
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.user) {
+        setUser(data.user);
+        return true;
+      } else {
+        return false;
+      }
+    } catch (error) {
+      console.error('Errore switch user:', error);
+      return false;
+    }
+  };
+
   useEffect(() => {
     const handleAuth = async () => {
       await checkAuth();
@@ -132,7 +158,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isAuthenticated,
     login,
     logout,
-    checkAuth
+    checkAuth,
+    switchUser
   };
 
   return (

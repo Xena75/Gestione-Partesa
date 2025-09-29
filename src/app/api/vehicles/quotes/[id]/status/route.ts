@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mysql from 'mysql2/promise';
+import { verifyUserAccess } from '@/lib/auth';
 
 // Pool di connessioni per migliori performance
 const pool = mysql.createPool({
@@ -21,6 +22,15 @@ export async function PUT(
   let connection: any = null;
   
   try {
+    // Verifica autenticazione utente
+    const userCheck = await verifyUserAccess(request);
+    if (!userCheck.success) {
+      return NextResponse.json(
+        { success: false, error: 'Accesso negato: devi essere autenticato' },
+        { status: 401 }
+      );
+    }
+
     connection = await pool.getConnection();
     const { id: quoteId } = await params;
     const body = await request.json();
@@ -49,11 +59,11 @@ export async function PUT(
       );
     }
     
-    // Aggiorna lo status e approved_at se necessario
+    // Aggiorna lo status e approved_at/approved_by se necessario
     if (status === 'approved') {
       await connection.execute(
-        'UPDATE maintenance_quotes SET status = ?, notes = ?, approved_at = NOW(), updated_at = NOW() WHERE id = ?',
-        [status, notes || null, quoteId]
+        'UPDATE maintenance_quotes SET status = ?, notes = ?, approved_by = ?, approved_at = NOW(), updated_at = NOW() WHERE id = ?',
+        [status, notes || null, userCheck.user?.id, quoteId]
       );
     } else {
       await connection.execute(

@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const type = searchParams.get('type');
     const upcoming = searchParams.get('upcoming'); // giorni per scadenze imminenti
+    const quoteNumber = searchParams.get('quote_number'); // filtro per numero offerta
 
     const connection = await mysql.createConnection(dbConfig);
 
@@ -46,6 +47,11 @@ export async function GET(request: NextRequest) {
     if (type) {
       query += ' AND vs.schedule_type = ?';
       params.push(type);
+    }
+
+    if (quoteNumber) {
+      query += ' AND vs.quote_number = ?';
+      params.push(quoteNumber);
     }
 
     if (upcoming) {

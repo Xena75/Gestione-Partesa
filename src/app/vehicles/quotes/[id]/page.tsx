@@ -200,10 +200,10 @@ export default function QuoteDetailPage() {
           <div className="d-flex justify-content-between align-items-center">
             <div>
               <h1 className="h3 mb-0">
-                <i className="fas fa-file-invoice-dollar me-2"></i>
-                Preventivo #{quote.id}
-              </h1>
-              <p className="text-muted mb-0">Veicolo: {quote.vehicle_targa}</p>
+                  <i className="fas fa-file-invoice-dollar me-2"></i>
+                  Preventivo {quote.quote_number || quote.id}
+                </h1>
+                <p className="text-muted mb-0">Veicolo: {quote.vehicle_targa}</p>
             </div>
             <div>
               <Link 
@@ -298,9 +298,25 @@ export default function QuoteDetailPage() {
                 <p className="mb-0">{formatDate(quote.created_at)}</p>
               </div>
               <div className="mb-3">
+                <strong>Creato da:</strong>
+                <p className="mb-0">{quote.created_by_username || 'N/A'}</p>
+              </div>
+              <div className="mb-3">
                 <strong>Ultimo aggiornamento:</strong>
                 <p className="mb-0">{formatDate(quote.updated_at)}</p>
               </div>
+              {quote.approved_by_username && (
+                <div className="mb-3">
+                  <strong>Approvato da:</strong>
+                  <p className="mb-0">{quote.approved_by_username}</p>
+                </div>
+              )}
+              {quote.approved_at && (
+                <div className="mb-3">
+                  <strong>Approvato il:</strong>
+                  <p className="mb-0">{formatDate(quote.approved_at)}</p>
+                </div>
+              )}
             </div>
           </div>
 

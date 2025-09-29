@@ -21,11 +21,23 @@ interface Quote {
   vehicle_id: string;
   quote_number?: string;
   quote_date?: string;
+  created_by?: number;
+  approved_by?: number;
+  created_by_username?: string;
+  approved_by_username?: string;
+  approved_at?: string;
+  intervention_type?: string;
 }
 
 interface Supplier {
   id: number;
   name: string;
+}
+
+interface InterventionType {
+  id: number;
+  name: string;
+  description: string;
 }
 
 interface Document {
@@ -44,6 +56,7 @@ export default function EditQuotePage() {
   
   const [quote, setQuote] = useState<Quote | null>(null);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [interventionTypes, setInterventionTypes] = useState<InterventionType[]>([]);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -59,12 +72,14 @@ export default function EditQuotePage() {
     notes: '',
     scheduled_date: '',
     quote_number: '',
-    quote_date: ''
+    quote_date: '',
+    intervention_type: ''
   });
 
   useEffect(() => {
     fetchQuote();
     fetchSuppliers();
+    fetchInterventionTypes();
     fetchDocuments();
   }, [quoteId]);
 
@@ -103,7 +118,8 @@ export default function EditQuotePage() {
           notes: quoteData.notes || '',
           scheduled_date: quoteData.scheduled_date ? formatDateToItalian(quoteData.scheduled_date) : '',
           quote_number: quoteData.quote_number || '',
-          quote_date: quoteData.quote_date ? formatDateToItalian(quoteData.quote_date) : ''
+          quote_date: quoteData.quote_date ? formatDateToItalian(quoteData.quote_date) : '',
+          intervention_type: quoteData.intervention_type || ''
         });
       } else {
         setError(data.error || 'Errore nel caricamento del preventivo');
@@ -125,6 +141,18 @@ export default function EditQuotePage() {
       console.error('Errore nel caricamento fornitori:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchInterventionTypes = async () => {
+    try {
+      const response = await fetch('/api/intervention-types');
+      const data = await response.json();
+      if (data.success) {
+        setInterventionTypes(data.data);
+      }
+    } catch (err) {
+      console.error('Errore nel caricamento tipi di intervento:', err);
     }
   };
 
@@ -300,57 +328,93 @@ export default function EditQuotePage() {
           notes: formData.notes || null,
           scheduled_date: formData.scheduled_date ? formatDateToISO(formData.scheduled_date) : null,
           quote_number: formData.quote_number || null,
-          quote_date: formData.quote_date ? formatDateToISO(formData.quote_date) : null
+          quote_date: formData.quote_date ? formatDateToISO(formData.quote_date) : null,
+          intervention_type: formData.intervention_type || null
         }),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        // Se il preventivo è approvato e ha una data programmata, crea automaticamente un evento nel calendario
+        // Se il preventivo è approvato e ha una data programmata, verifica se creare un evento nel calendario
         if (formData.status === 'approved' && formData.scheduled_date && quote) {
-          try {
-            const supplierName = suppliers.find(s => s.id === parseInt(formData.supplier_id))?.name || 'Fornitore sconosciuto';
-            
-            const scheduleResponse = await fetch('/api/vehicles/schedules', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                vehicle_id: quote.vehicle_id,
-                schedule_type: 'manutenzione',
-                data_scadenza: formatDateToISO(formData.scheduled_date),
-                description: `Interv. programm. da offerta n°${formData.quote_number || quoteId} - ${formData.description}`,
-                cost: parseFloat(formData.amount),
-                provider: supplierName,
-                notes: formData.notes || `Intervento programmato per ${quote.vehicle_targa}`,
-                priority: 'medium',
-                booking_date: formatDateToISO(formData.scheduled_date),
-                quote_number: formData.quote_number || quoteId,
-                quote_date: quote.created_at ? new Date(quote.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
-              }),
-            });
+          // Controlla se il preventivo era già approvato e aveva già una data programmata
+          const wasAlreadyApproved = quote.status === 'approved';
+          const hadScheduledDate = quote.scheduled_date;
+          
+          // Crea l'evento solo se:
+          // 1. Non era già approvato prima, OPPURE
+          // 2. Non aveva una data programmata prima
+          if (!wasAlreadyApproved || !hadScheduledDate) {
+            try {
+              // Prima controlla se esiste già un evento con questo quote_number
+              const checkResponse = await fetch(`/api/vehicles/schedules?quote_number=${encodeURIComponent(formData.quote_number || quoteId)}`);
+              const existingSchedules = await checkResponse.json();
+              
+              if (existingSchedules.success && existingSchedules.data && existingSchedules.data.length > 0) {
+                // Evento già esistente, non creare duplicato
+                alert('Preventivo aggiornato con successo!\n\nL\'evento è già presente nel calendario.');
+                // Reindirizza alla lista preventivi se l'evento esiste già
+                router.push('/vehicles/quotes');
+                return;
+              } else {
+                // Nessun evento esistente, procedi con la creazione
+                const supplierName = suppliers.find(s => s.id === parseInt(formData.supplier_id))?.name || 'Fornitore sconosciuto';
+                
+                const scheduleResponse = await fetch('/api/vehicles/schedules', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    vehicle_id: quote.vehicle_id,
+                    schedule_type: 'manutenzione',
+                    data_scadenza: formatDateToISO(formData.scheduled_date),
+                    description: `Interv. programm. da offerta n°${formData.quote_number || quoteId} - ${formData.description}`,
+                    cost: parseFloat(formData.amount),
+                    provider: supplierName,
+                    notes: formData.notes || `Intervento programmato per ${quote.vehicle_targa}`,
+                    priority: 'medium',
+                    booking_date: formatDateToISO(formData.scheduled_date),
+                    quote_number: formData.quote_number || quoteId,
+                    quote_date: quote.created_at ? new Date(quote.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+                  }),
+                });
 
-            const scheduleData = await scheduleResponse.json();
-            
-            if (scheduleData.success) {
-              alert('Preventivo aggiornato con successo!\n\nL\'evento è stato automaticamente aggiunto al calendario.');
-              // Apri il calendario dopo la conferma
-              router.push('/vehicles/schedules/calendar');
-              return; // Esci dalla funzione per evitare la navigazione normale
-            } else {
-              alert('Preventivo aggiornato con successo!\n\nAttenzione: Non è stato possibile aggiungere l\'evento al calendario.');
+                const scheduleData = await scheduleResponse.json();
+                
+                if (scheduleData.success) {
+                  alert('Preventivo aggiornato con successo!\n\nL\'evento è stato automaticamente aggiunto al calendario.');
+                  // Reindirizza al calendario dopo aver creato un nuovo evento
+                  router.push('/vehicles/schedules/calendar');
+                  return; // Esci dalla funzione per evitare la navigazione normale
+                } else {
+                  alert('Preventivo aggiornato con successo!\n\nAttenzione: Non è stato possibile aggiungere l\'evento al calendario.');
+                  // Reindirizza alla lista preventivi se la creazione dell'evento fallisce
+                  router.push('/vehicles/quotes');
+                  return;
+                }
+              }
+            } catch (scheduleErr) {
+              console.error('Errore nella gestione dell\'evento calendario:', scheduleErr);
+              alert('Preventivo aggiornato con successo!\n\nAttenzione: Non è stato possibile gestire l\'evento al calendario.');
+              // Reindirizza alla lista preventivi in caso di errore
+              router.push('/vehicles/quotes');
+              return;
             }
-          } catch (scheduleErr) {
-            console.error('Errore nella creazione dell\'evento calendario:', scheduleErr);
-            alert('Preventivo aggiornato con successo!\n\nAttenzione: Non è stato possibile aggiungere l\'evento al calendario.');
+          } else {
+            // Preventivo già approvato con data programmata, non creare evento
+            alert('Preventivo aggiornato con successo!');
+            // Reindirizza alla lista preventivi se non viene creato alcun evento
+            router.push('/vehicles/quotes');
+            return;
           }
         } else {
           alert('Preventivo aggiornato con successo!');
+          // Reindirizza alla lista preventivi se non ci sono condizioni per creare eventi
+          router.push('/vehicles/quotes');
+          return;
         }
-        
-        router.push(`/vehicles/quotes/${quoteId}`);
       } else {
         alert(data.error || 'Errore nell\'aggiornamento del preventivo');
       }
@@ -426,7 +490,7 @@ export default function EditQuotePage() {
             <div>
               <h1 className="h3 mb-0">
                 <i className="fas fa-edit me-2"></i>
-                Modifica Preventivo #{quote.id}
+                Modifica Preventivo {quote.quote_number || quote.id}
               </h1>
               <p className="text-muted mb-0">Veicolo: {quote.vehicle_targa}</p>
             </div>
@@ -456,8 +520,8 @@ export default function EditQuotePage() {
             <div className="card-body">
               <form onSubmit={handleSubmit}>
                 <div className="row">
-                  {/* Prima riga: Numero Offerta e Data Offerta */}
-                  <div className="col-md-6 mb-3">
+                  {/* Prima riga: Numero Offerta, Data Offerta e Tipo Intervento */}
+                  <div className="col-md-4 mb-3">
                     <label htmlFor="quote_number" className="form-label">
                       Numero Offerta
                     </label>
@@ -472,7 +536,7 @@ export default function EditQuotePage() {
                     />
                   </div>
 
-                  <div className="col-md-6 mb-3">
+                  <div className="col-md-4 mb-3">
                     <label htmlFor="quote_date" className="form-label">
                       Data Offerta
                     </label>
@@ -487,6 +551,26 @@ export default function EditQuotePage() {
                       pattern="\d{2}/\d{2}/\d{4}"
                       title="Inserisci la data nel formato gg/mm/aaaa"
                     />
+                  </div>
+
+                  <div className="col-md-4 mb-3">
+                    <label htmlFor="intervention_type" className="form-label">
+                      Tipo Intervento
+                    </label>
+                    <select
+                      id="intervention_type"
+                      name="intervention_type"
+                      className="form-select"
+                      value={formData.intervention_type}
+                      onChange={handleInputChange}
+                    >
+                      <option value="">Seleziona tipo</option>
+                      {interventionTypes.map((type) => (
+                        <option key={type.id} value={type.id}>
+                          {type.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div className="col-md-6 mb-3">
@@ -542,7 +626,9 @@ export default function EditQuotePage() {
                     ></textarea>
                   </div>
 
-                  <div className="col-md-6 mb-3">
+
+
+                  <div className="col-md-4 mb-3">
                     <label htmlFor="status" className="form-label">
                       Stato
                     </label>
@@ -560,7 +646,7 @@ export default function EditQuotePage() {
                     </select>
                   </div>
 
-                  <div className="col-md-6 mb-3">
+                  <div className="col-md-4 mb-3">
                     <label htmlFor="valid_until" className="form-label">
                       Valido fino al <span className="text-danger">*</span>
                     </label>
@@ -578,7 +664,7 @@ export default function EditQuotePage() {
                     />
                   </div>
 
-                  <div className="col-md-6 mb-3">
+                  <div className="col-md-4 mb-3">
                     <label htmlFor="scheduled_date" className="form-label">
                       Data Programmata
                     </label>
@@ -610,6 +696,46 @@ export default function EditQuotePage() {
                       onChange={handleInputChange}
                       placeholder="Note aggiuntive..."
                     ></textarea>
+                  </div>
+
+                  {/* Campi informativi */}
+                  <div className="row mb-3">
+                    <div className="col-md-3">
+                      <label className="form-label">Creato da</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={quote?.created_by_username || ''}
+                        disabled
+                      />
+                    </div>
+                    <div className="col-md-3">
+                      <label className="form-label">Creato il</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={quote?.created_at ? new Date(quote.created_at).toLocaleDateString('it-IT') : ''}
+                        disabled
+                      />
+                    </div>
+                    <div className="col-md-3">
+                      <label className="form-label">Approvato da</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={quote?.approved_by_username || ''}
+                        disabled
+                      />
+                    </div>
+                    <div className="col-md-3">
+                      <label className="form-label">Approvato il</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={quote?.approved_at ? new Date(quote.approved_at).toLocaleDateString('it-IT') : ''}
+                        disabled
+                      />
+                    </div>
                   </div>
                 </div>
 

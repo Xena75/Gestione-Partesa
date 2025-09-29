@@ -14,6 +14,7 @@ import PodMancantiModal from '@/components/PodMancantiModal';
 import TravelsNotInTabModal from '@/components/TravelsNotInTabModal';
 import DocumentExpiryAlert from '@/components/DocumentExpiryAlert';
 
+
 // Interfaccia per le statistiche
 interface DashboardStats {
   viaggi: {

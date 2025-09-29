@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mysql from 'mysql2/promise';
 import { put } from '@vercel/blob';
+import { verifyUserAccess } from '@/lib/auth';
 
 // Pool di connessioni per migliori performance
 const pool = mysql.createPool({
@@ -38,11 +39,14 @@ export async function GET(request: NextRequest) {
         s.name as supplier_name,
         s.email as supplier_email,
         s.phone as supplier_phone,
-        s.contact_person as supplier_contact
+        s.contact_person as supplier_contact,
+        it.name as intervention_type_name,
+        it.description as intervention_type_description
       FROM maintenance_quotes mq
       JOIN vehicles v ON mq.vehicle_id = v.id
       LEFT JOIN vehicle_schedules vs ON mq.schedule_id = vs.id
       JOIN suppliers s ON mq.supplier_id = s.id
+      LEFT JOIN intervention_types it ON mq.intervention_type = it.id
       WHERE 1=1
     `;
     const params: any[] = [];
@@ -100,15 +104,23 @@ export async function POST(request: NextRequest) {
   let connection: any = null;
   
   try {
+    // Verifica autenticazione utente
+    const userCheck = await verifyUserAccess(request);
+    if (!userCheck.success) {
+      return NextResponse.json(
+        { success: false, error: 'Accesso negato: devi essere autenticato' },
+        { status: 401 }
+      );
+    }
+
     console.log('Parsing FormData...');
     const formData = await request.formData();
-    console.log('FormData ricevuta:', Object.fromEntries(formData.entries()));
-    
     const schedule_id = formData.get('schedule_id') as string;
     const vehicle_id = formData.get('vehicle_id') as string;
     const supplier_id = formData.get('supplier_id') as string;
     const amount = formData.get('amount') as string;
     const description = formData.get('description') as string;
+    const intervention_type = formData.get('intervention_type') as string;
     const valid_until = formData.get('valid_until') as string;
     const notes = formData.get('notes') as string;
     const quote_number = formData.get('quote_number') as string;
@@ -169,9 +181,9 @@ export async function POST(request: NextRequest) {
     // Inserisci il preventivo
     const query = `
       INSERT INTO maintenance_quotes (
-        schedule_id, vehicle_id, supplier_id, amount, description,
-        valid_until, notes, quote_number, quote_date
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        schedule_id, vehicle_id, supplier_id, amount, description, intervention_type,
+        valid_until, notes, quote_number, quote_date, created_by
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     console.log('Eseguendo query INSERT con parametri:', {
@@ -190,10 +202,12 @@ export async function POST(request: NextRequest) {
       parseInt(supplier_id),
       parseFloat(amount),
       description,
+      intervention_type ? parseInt(intervention_type) : 1,
       valid_until,
       notes || null,
       quote_number || null,
-      quote_date || null
+      quote_date || null,
+      userCheck.user?.id
     ]);
 
     const quoteId = (result as any).insertId;
@@ -283,6 +297,7 @@ export async function PUT(request: NextRequest) {
       scheduled_date,
       amount,
       description,
+      intervention_type,
       valid_until
     } = body;
 
@@ -329,6 +344,11 @@ export async function PUT(request: NextRequest) {
     if (description !== undefined) {
       query += ', description = ?';
       params.push(description);
+    }
+
+    if (intervention_type !== undefined) {
+      query += ', intervention_type = ?';
+      params.push(intervention_type ? parseInt(intervention_type) : 1);
     }
 
     if (valid_until !== undefined) {

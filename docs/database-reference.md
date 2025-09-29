@@ -643,21 +643,21 @@ updated_at    timestamp                                               NO        
 
 #### vehicle_schedules
 ```sql
-Field              Type                                      Null  Key  Default              Extra
-id                 int(11)                                   NO    PRI  NULL                 auto_increment
-vehicle_id         int(11)                                   NO    MUL  NULL                 
-schedule_type      enum('maintenance','inspection','other') NO        NULL                 
-scheduled_date     date                                      NO        NULL                 
-description        text                                      YES        NULL                 
-is_completed       tinyint(1)                                NO        0                    
-completed_date     date                                      YES        NULL                 
-notes              text                                      YES        NULL                 
-created_at         timestamp                                 NO        current_timestamp()  
-updated_at         timestamp                                 NO        current_timestamp()  on update current_timestamp()
-reminder_days      int(11)                                   YES        7                    
-is_recurring       tinyint(1)                                NO        0                    
-recurrence_interval int(11)                                  YES        NULL                 
-recurrence_unit    enum('days','weeks','months','years')     YES        NULL                 
+Field              Type                                                                                           Null  Key  Default              Extra
+id                 int(11)                                                                                        NO    PRI  NULL                 auto_increment
+vehicle_id         int(11)                                                                                        NO    MUL  NULL                 
+schedule_type      enum('altro','manutenzione','Manutenzione Ordinaria','Manutenzione Straordinaria','revisione') NO        NULL                 
+scheduled_date     date                                                                                           NO        NULL                 
+description        text                                                                                           YES        NULL                 
+is_completed       tinyint(1)                                                                                     NO        0                    
+completed_date     date                                                                                           YES        NULL                 
+notes              text                                                                                           YES        NULL                 
+created_at         timestamp                                                                                      NO        current_timestamp()  
+updated_at         timestamp                                                                                      NO        current_timestamp()  on update current_timestamp()
+reminder_days      int(11)                                                                                        YES        7                    
+is_recurring       tinyint(1)                                                                                     NO        0                    
+recurrence_interval int(11)                                                                                     YES        NULL                 
+recurrence_unit    enum('days','weeks','months','years')                                                          YES        NULL                 
 ```
 
 #### vehicles
@@ -1139,6 +1139,35 @@ VALUES ('nuovo_user', 'hash_password', 'email@example.com', 'user');
 ```
 
 ### Database: viaggi_db
+
+#### Tabella: `intervention_types`
+Gestisce i tipi di intervento disponibili per i preventivi di manutenzione.
+
+**Struttura:**
+```sql
+CREATE TABLE intervention_types (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+```
+
+**Campi:**
+- `id` (INT, PRIMARY KEY, AUTO_INCREMENT): Identificativo univoco
+- `name` (VARCHAR(100)): Nome del tipo di intervento
+- `description` (TEXT): Descrizione dettagliata del tipo di intervento
+- `active` (BOOLEAN): Indica se il tipo di intervento è attivo
+- `created_at` (TIMESTAMP): Data di creazione
+- `updated_at` (TIMESTAMP): Data ultimo aggiornamento
+
+#### Tabella: `maintenance_quotes` (aggiornata)
+**Modifiche recenti:**
+- `intervention_type`: Cambiato da ENUM a INT, ora fa riferimento a `intervention_types.id`
+
+**Query comuni:**
 ```sql
 -- Verificare veicoli attivi
 SELECT * FROM vehicles WHERE stato = 'attivo';
@@ -1158,6 +1187,14 @@ WHERE t.stato = 'in_corso';
 
 -- Fornitori attivi
 SELECT * FROM suppliers WHERE attivo = TRUE;
+
+-- Tipi di intervento attivi
+SELECT * FROM intervention_types WHERE active = TRUE ORDER BY name;
+
+-- Preventivi con tipo intervento
+SELECT mq.*, it.name as intervention_name 
+FROM maintenance_quotes mq 
+JOIN intervention_types it ON mq.intervention_type = it.id;
 ```
 
 ### Database: backup_management
@@ -1239,6 +1276,11 @@ SELECT * FROM backup_schedules WHERE enabled = TRUE;
 
 #### Tabella: `maintenance_quotes`
 - **src/lib/data-viaggi.ts** - Gestione preventivi manutenzione
+- **src/app/api/vehicles/quotes/route.ts** - API gestione preventivi veicoli
+
+#### Tabella: `intervention_types`
+- **src/app/api/vehicles/intervention-types/route.ts** - API gestione tipi intervento
+- **src/app/vehicles/quotes/edit/[id]/page.tsx** - Pagina modifica preventivi con selezione dinamica tipi intervento
 
 #### Tabella: `travel_images`
 - **src/lib/data-viaggi.ts** - Gestione immagini viaggi

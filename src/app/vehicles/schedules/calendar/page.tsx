@@ -24,6 +24,7 @@ const Views = dynamic(
 // Import CSS in modo sicuro
 if (typeof window !== 'undefined') {
   import('react-big-calendar/lib/css/react-big-calendar.css');
+  import('react-big-calendar/lib/addons/dragAndDrop/styles.css');
 }
 
 // CSS globale per forzare tutti i colori degli eventi in modalità dark
@@ -213,13 +214,23 @@ function VehicleSchedulesCalendarContent() {
   const [showModal, setShowModal] = useState(false);
   const [calendarReady, setCalendarReady] = useState(false);
   const [currentLocalizer, setCurrentLocalizer] = useState<any>(null);
+  const [DragAndDropCalendar, setDragAndDropCalendar] = useState<any>(null);
+  const [dragFeedback, setDragFeedback] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStartTime, setDragStartTime] = useState<number | null>(null);
 
   // Inizializzazione del calendario
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      import('react-big-calendar').then((mod) => {
-        const localizer = mod.momentLocalizer(moment);
+      Promise.all([
+        import('react-big-calendar'),
+        import('react-big-calendar/lib/addons/dragAndDrop')
+      ]).then(([calendarMod, dragAndDropMod]) => {
+        const localizer = calendarMod.momentLocalizer(moment);
+        const withDragAndDrop = dragAndDropMod.default;
+        const DragAndDropCalendarComponent = withDragAndDrop(calendarMod.Calendar);
         setCurrentLocalizer(localizer);
+        setDragAndDropCalendar(() => DragAndDropCalendarComponent);
         setCalendarReady(true);
       });
     }
@@ -227,6 +238,13 @@ function VehicleSchedulesCalendarContent() {
 
   useEffect(() => {
     fetchSchedules();
+  }, []);
+
+  // Reset isDragging quando il componente viene smontato
+  useEffect(() => {
+    return () => {
+      setIsDragging(false);
+    };
   }, []);
 
   const fetchSchedules = async () => {
@@ -276,6 +294,7 @@ function VehicleSchedulesCalendarContent() {
   };
 
   const handleSelectEvent = useCallback((event: CalendarEvent) => {
+    // Apri sempre il modal al click, il drag è gestito separatamente
     setSelectedEvent(event);
     setShowModal(true);
   }, []);
@@ -286,13 +305,111 @@ function VehicleSchedulesCalendarContent() {
     window.location.href = `/vehicles/schedules/new?date=${dateParam}`;
   }, []);
 
+  const handleDragStart = useCallback(() => {
+    setIsDragging(true);
+    setDragStartTime(Date.now());
+    setShowModal(false); // Chiudi il modal se aperto
+  }, []);
+
+  // Aggiungi un handler per quando il drag finisce senza drop
+  const handleDragEnd = useCallback(() => {
+    setIsDragging(false);
+    setTimeout(() => {
+      setDragStartTime(null);
+    }, 300);
+  }, []);
+
+  const handleEventDrop = useCallback(async ({ event, start, end }: { event: CalendarEvent, start: Date, end: Date }) => {
+
+    
+    try {
+      setDragFeedback('Aggiornamento in corso...');
+      
+      const scheduleId = event.resource.id;
+      const newDate = start.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+      
+      // Determina quale campo aggiornare basandosi sulla logica esistente
+      const updateData: any = {};
+      
+      // Se l'evento ha booking_date, aggiorna quello, altrimenti data_scadenza
+      if (event.resource.booking_date && event.resource.booking_date.trim() !== '') {
+        updateData.booking_date = newDate;
+      } else {
+        updateData.data_scadenza = newDate;
+      }
+      
+      // Chiamata API per aggiornare la scadenza (usando PATCH per aggiornamento parziale)
+      const response = await fetch(`/api/vehicles/schedules/${scheduleId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Errore nell\'aggiornamento della data');
+      }
+      
+      // Aggiorna lo stato locale degli eventi
+      const updatedSchedules = schedules.map(schedule => {
+        if (schedule.id === scheduleId) {
+          return {
+            ...schedule,
+            ...updateData
+          };
+        }
+        return schedule;
+      });
+      
+      setSchedules(updatedSchedules);
+      convertToCalendarEvents(updatedSchedules);
+      
+      setDragFeedback('✅ Data aggiornata con successo!');
+      setTimeout(() => setDragFeedback(null), 3000);
+      
+      // Reset dello stato di drag immediatamente dopo il successo
+      setIsDragging(false);
+      setTimeout(() => {
+        setDragStartTime(null);
+      }, 300);
+      
+    } catch (error) {
+      console.error('Errore durante l\'aggiornamento:', error);
+      setDragFeedback('❌ Errore nell\'aggiornamento della data');
+      setTimeout(() => setDragFeedback(null), 5000);
+      
+      // Reset dello stato di drag
+      setIsDragging(false);
+      setTimeout(() => {
+        setDragStartTime(null);
+      }, 300);
+      
+      // Ricarica i dati in caso di errore
+      fetchSchedules();
+    }
+  }, [schedules]);
+
   const eventStyleGetter = (event: any) => {
     const schedule = event.resource;
     const today = new Date();
     const eventDate = new Date(schedule.data_scadenza);
     const daysDiff = Math.ceil((eventDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
-    // 🔴 ROSSO: Eventi scaduti (priorità massima)
+    // 🟢 VERDE: Eventi completati (priorità massima)
+    if (schedule.status === 'completed') {
+      return {
+        style: {
+          backgroundColor: '#28a745 !important',
+          borderColor: '#28a745 !important',
+          color: 'white !important',
+          border: '2px solid #28a745 !important'
+        },
+        className: 'force-green-event'
+      };
+    }
+
+    // 🔴 ROSSO: Eventi scaduti
     if (daysDiff < 0) {
       return {
         style: {
@@ -303,19 +420,6 @@ function VehicleSchedulesCalendarContent() {
           outline: '2px solid #ff0000 !important'
         },
         className: 'force-red-event'
-      };
-    }
-
-    // 🟢 VERDE: Eventi completati
-    if (schedule.status === 'completed') {
-      return {
-        style: {
-          backgroundColor: '#28a745 !important',
-          borderColor: '#28a745 !important',
-          color: 'white !important',
-          border: '2px solid #28a745 !important'
-        },
-        className: 'force-green-event'
       };
     }
 
@@ -450,6 +554,13 @@ function VehicleSchedulesCalendarContent() {
             </div>
           )}
 
+          {/* Feedback per drag and drop */}
+          {dragFeedback && (
+            <div className={`alert ${dragFeedback.includes('✅') ? 'alert-success' : dragFeedback.includes('❌') ? 'alert-danger' : 'alert-info'} alert-dismissible`} role="alert">
+              {dragFeedback}
+            </div>
+          )}
+
           {/* Legenda */}
           <div className="card mb-4">
             <div className="card-body">
@@ -511,8 +622,8 @@ function VehicleSchedulesCalendarContent() {
           {/* Calendario */}
           <div className="card" style={{ height: 'calc(100vh - 280px)', minHeight: '500px' }}>
             <div className="card-body" style={{ height: '100%', padding: '1rem' }}>
-              {calendarReady && currentLocalizer ? (
-                <Calendar
+              {calendarReady && currentLocalizer && DragAndDropCalendar ? (
+                  <DragAndDropCalendar
                   localizer={currentLocalizer}
                   events={events}
                   startAccessor="start"
@@ -526,6 +637,11 @@ function VehicleSchedulesCalendarContent() {
                   onSelectSlot={handleSelectSlot}
                   selectable
                   eventPropGetter={eventStyleGetter}
+                  draggableAccessor={() => true}
+                  resizable={false}
+                  onEventDrop={handleEventDrop}
+                  onDragStart={handleDragStart}
+                  onDragEnd={handleDragEnd}
                   messages={{
                     next: 'Successivo',
                     previous: 'Precedente',
@@ -550,7 +666,7 @@ function VehicleSchedulesCalendarContent() {
                     agendaTimeRangeFormat: ({ start, end }) => 
                       `${moment(start).format('HH:mm')} - ${moment(end).format('HH:mm')}`
                   }}
-                />
+                  />
               ) : (
                 <div className="d-flex justify-content-center align-items-center h-100">
                   <div className="text-center">
@@ -640,11 +756,11 @@ function VehicleSchedulesCalendarContent() {
                   Visualizza Dettagli
                 </Link>
                 <Link 
-                  href={`/vehicles/schedules/${selectedEvent.resource.id}/edit`}
-                  className="btn btn-warning"
-                >
-                  Modifica
-                </Link>
+                      href={`/vehicles/schedules/${selectedEvent.resource.id}/edit`}
+                      className="btn btn-danger"
+                    >
+                      Modifica
+                    </Link>
               </div>
             </div>
           </div>
