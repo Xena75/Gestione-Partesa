@@ -24,6 +24,7 @@ interface FormData {
   description: string;
   amount: string;
   supplier_id: string;
+  intervention_type: string;
   valid_until: string;
   notes: string;
   quote_number: string;
@@ -36,6 +37,17 @@ const serviceTypes = [
   { value: 'tagliando', label: 'Tagliando' },
   { value: 'revisione', label: 'Revisione' },
   { value: 'pneumatici', label: 'Pneumatici' },
+  { value: 'carrozzeria', label: 'Carrozzeria' },
+  { value: 'altro', label: 'Altro' }
+];
+
+const interventionTypes = [
+  { value: 'manutenzione_ordinaria', label: 'Manutenzione Ordinaria' },
+  { value: 'manutenzione_straordinaria', label: 'Manutenzione Straordinaria' },
+  { value: 'riparazione', label: 'Riparazione' },
+  { value: 'revisione', label: 'Revisione' },
+  { value: 'tagliando', label: 'Tagliando' },
+  { value: 'sostituzione_pneumatici', label: 'Sostituzione Pneumatici' },
   { value: 'carrozzeria', label: 'Carrozzeria' },
   { value: 'altro', label: 'Altro' }
 ];
@@ -57,6 +69,7 @@ function NewQuotePageContent() {
     description: '',
     amount: '',
     supplier_id: '',
+    intervention_type: '',
     valid_until: formatDateToItalian(new Date().toISOString().split('T')[0]),
     notes: '',
     quote_number: '',
@@ -107,6 +120,16 @@ function NewQuotePageContent() {
       }));
     }
   }, [searchParams]);
+
+  // Resetta la selezione della scadenza quando cambia il veicolo
+  useEffect(() => {
+    if (formData.vehicle_id) {
+      setFormData(prev => ({
+        ...prev,
+        schedule_id: ''
+      }));
+    }
+  }, [formData.vehicle_id]);
 
   const fetchVehicles = async () => {
     try {
@@ -191,7 +214,7 @@ function NewQuotePageContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.vehicle_id || !formData.description || !formData.supplier_id || !formData.amount || !formData.valid_until) {
+    if (!formData.vehicle_id || !formData.description || !formData.supplier_id || !formData.intervention_type || !formData.amount || !formData.valid_until) {
       setError('Compilare tutti i campi obbligatori');
       return;
     }
@@ -213,6 +236,7 @@ function NewQuotePageContent() {
         submitData.append('schedule_id', formData.schedule_id);
       }
       submitData.append('supplier_id', formData.supplier_id);
+      submitData.append('intervention_type', formData.intervention_type);
       submitData.append('amount', formData.amount);
       submitData.append('description', formData.description);
       submitData.append('valid_until', formatDateToISO(formData.valid_until));
@@ -327,14 +351,33 @@ function NewQuotePageContent() {
                       className="form-select"
                       value={formData.schedule_id}
                       onChange={handleInputChange}
+                      disabled={!formData.vehicle_id}
                     >
-                      <option value="">Seleziona una scadenza</option>
-                      {schedules.map((schedule) => (
-                        <option key={schedule.id} value={schedule.id}>
-                          {schedule.schedule_type} - {schedule.data_scadenza ? new Date(schedule.data_scadenza).toLocaleDateString('it-IT') : 'N/A'}
-                        </option>
-                      ))}
+                      <option value="">
+                        {!formData.vehicle_id 
+                          ? 'Prima seleziona un veicolo' 
+                          : 'Seleziona una scadenza'
+                        }
+                      </option>
+                      {formData.vehicle_id && schedules
+                        .filter(schedule => schedule.vehicle_id === formData.vehicle_id)
+                        .map((schedule) => (
+                          <option key={schedule.id} value={schedule.id}>
+                            {schedule.schedule_type} - {schedule.data_scadenza ? new Date(schedule.data_scadenza).toLocaleDateString('it-IT') : 'N/A'}
+                            {schedule.description && ` (${schedule.description})`}
+                          </option>
+                        ))
+                      }
+                      {formData.vehicle_id && schedules.filter(schedule => schedule.vehicle_id === formData.vehicle_id).length === 0 && (
+                        <option value="" disabled>Nessuna scadenza disponibile per questo veicolo</option>
+                      )}
                     </select>
+                    {formData.vehicle_id && schedules.filter(schedule => schedule.vehicle_id === formData.vehicle_id).length === 0 && (
+                      <div className="form-text text-muted">
+                        <i className="fas fa-info-circle me-1"></i>
+                        Non ci sono scadenze programmate per questo veicolo. Puoi comunque creare un preventivo generico.
+                      </div>
+                    )}
                   </div>
 
                   {/* Data Validità */}
@@ -417,6 +460,28 @@ function NewQuotePageContent() {
                       {suppliers.map((supplier) => (
                         <option key={supplier.id} value={supplier.id}>
                           {supplier.name}{supplier.specialization ? ` - ${supplier.specialization}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Tipo Intervento */}
+                  <div className="col-md-6 mb-3">
+                    <label htmlFor="intervention_type" className="form-label">
+                      Tipo Intervento <span className="text-danger">*</span>
+                    </label>
+                    <select
+                      id="intervention_type"
+                      name="intervention_type"
+                      className="form-select"
+                      value={formData.intervention_type}
+                      onChange={handleInputChange}
+                      required
+                    >
+                      <option value="">Seleziona tipo intervento</option>
+                      {interventionTypes.map((type) => (
+                        <option key={type.value} value={type.value}>
+                          {type.label}
                         </option>
                       ))}
                     </select>

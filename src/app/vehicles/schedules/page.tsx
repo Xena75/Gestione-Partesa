@@ -4,6 +4,7 @@
 import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { formatDateItalian } from '@/lib/date-utils';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface VehicleSchedule {
   id: number;
@@ -49,6 +50,18 @@ interface RevisionCheckResult {
 }
 
 function VehicleSchedulesContent() {
+  const { theme } = useTheme();
+  
+  // Classi dinamiche basate sul tema
+  const textClass = theme === 'dark' ? 'text-light' : 'text-dark';
+  const bgClass = theme === 'dark' ? 'bg-dark' : 'bg-light';
+  const cardClass = theme === 'dark' ? 'bg-dark text-light' : 'bg-white text-dark';
+  const borderClass = theme === 'dark' ? 'border-secondary' : 'border-light';
+  const formClass = theme === 'dark' ? 'bg-dark text-light border-secondary' : 'bg-white text-dark border-light';
+  const modalClass = theme === 'dark' ? 'bg-dark text-light' : 'bg-white text-dark';
+  const tableClass = theme === 'dark' ? 'table-dark' : 'table-light';
+  const badgeClass = theme === 'dark' ? 'bg-info text-dark' : 'bg-primary text-white';
+
   const [schedules, setSchedules] = useState<VehicleSchedule[]>([]);
   const [alertStats, setAlertStats] = useState<AlertStats>({
     overdue: 0,
@@ -297,45 +310,45 @@ function VehicleSchedulesContent() {
           {/* Alert Overview */}
           <div className="row mb-4">
             <div className="col-md-3">
-              <div className="card bg-dark text-light border-danger">
+              <div className={`card ${cardClass} border-danger`}>
                 <div className="card-body text-center">
                   <h5 className="card-title text-danger">⚠️ Scadute</h5>
                   <h2 className="text-danger">{alertStats.overdue}</h2>
-                  <small className="text-light-emphasis">Richiedono attenzione immediata</small>
+                  <small className={theme === 'dark' ? 'text-light-emphasis' : 'text-muted'}>Richiedono attenzione immediata</small>
                 </div>
               </div>
             </div>
             <div className="col-md-3">
-              <div className="card bg-dark text-light border-warning">
+              <div className={`card ${cardClass} border-warning`}>
                 <div className="card-body text-center">
                   <h5 className="card-title text-warning">⏰ In Scadenza</h5>
                   <h2 className="text-warning">{alertStats.dueSoon}</h2>
-                  <small className="text-light-emphasis">Prossimi 7 giorni</small>
+                  <small className={theme === 'dark' ? 'text-light-emphasis' : 'text-muted'}>Prossimi 7 giorni</small>
                 </div>
               </div>
             </div>
             <div className="col-md-3">
-              <div className="card bg-dark text-light border-info">
+              <div className={`card ${cardClass} border-info`}>
                 <div className="card-body text-center">
                   <h5 className="card-title text-info">📅 Prossime</h5>
                   <h2 className="text-info">{alertStats.upcoming}</h2>
-                  <small className="text-light-emphasis">Prossimi 30 giorni</small>
+                  <small className={theme === 'dark' ? 'text-light-emphasis' : 'text-muted'}>Prossimi 30 giorni</small>
                 </div>
               </div>
             </div>
             <div className="col-md-3">
-              <div className="card bg-dark text-light border-primary">
+              <div className={`card ${cardClass} border-primary`}>
                 <div className="card-body text-center">
                   <h5 className="card-title text-primary">📊 Totali</h5>
                   <h2 className="text-primary">{alertStats.total}</h2>
-                  <small className="text-light-emphasis">Tutte le scadenze</small>
+                  <small className={theme === 'dark' ? 'text-light-emphasis' : 'text-muted'}>Tutte le scadenze</small>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Actions */}
-          <div className="card bg-dark text-light border-secondary mb-4">
+          <div className={`card ${cardClass} ${borderClass} mb-4`}>
             <div className="card-body">
               <div className="d-flex justify-content-between align-items-center">
                 <h5 className="card-title mb-0 text-light">🛠️ Azioni Rapide</h5>
@@ -358,13 +371,13 @@ function VehicleSchedulesContent() {
           </div>
 
           {/* Filters */}
-          <div className="card bg-dark text-light border-secondary mb-4">
+          <div className={`card ${cardClass} ${borderClass} mb-4`}>
             <div className="card-body">
               <div className="row">
                 <div className="col-md-4">
-                  <label className="form-label text-light">Stato</label>
+                  <label className={`form-label ${textClass}`}>Stato</label>
                   <select 
-                    className="form-select bg-dark text-light border-secondary"
+                    className={`form-select ${formClass}`}
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
                   >
@@ -376,9 +389,9 @@ function VehicleSchedulesContent() {
                   </select>
                 </div>
                 <div className="col-md-4">
-                  <label className="form-label text-light">Priorità</label>
+                  <label className={`form-label ${textClass}`}>Priorità</label>
                   <select 
-                    className="form-select bg-dark text-light border-secondary"
+                    className={`form-select ${formClass}`}
                     value={filterPriority}
                     onChange={(e) => setFilterPriority(e.target.value)}
                   >
@@ -389,10 +402,10 @@ function VehicleSchedulesContent() {
                   </select>
                 </div>
                 <div className="col-md-4">
-                  <label className="form-label text-light">Cerca per Targa</label>
+                  <label className={`form-label ${textClass}`}>Cerca per Targa</label>
                   <input 
                     type="text"
-                    className="form-control bg-dark text-light border-secondary"
+                    className={`form-control ${formClass}`}
                     placeholder="Cerca per targa..."
                     value={filterPlate}
                     onChange={(e) => setFilterPlate(e.target.value)}
@@ -403,18 +416,18 @@ function VehicleSchedulesContent() {
           </div>
 
           {/* Schedules Table */}
-          <div className="card bg-dark text-light border-secondary">
-            <div className="card-header bg-dark border-secondary">
-              <h5 className="mb-0 text-light">📋 Elenco Scadenze ({filteredSchedules.length})</h5>
+          <div className={`card ${cardClass} ${borderClass}`}>
+            <div className={`card-header ${cardClass} ${borderClass}`}>
+              <h5 className={`mb-0 ${textClass}`}>📋 Elenco Scadenze ({filteredSchedules.length})</h5>
             </div>
             <div className="card-body">
               {filteredSchedules.length === 0 ? (
                 <div className="text-center py-4">
-                  <p className="text-light-emphasis">Nessuna scadenza trovata con i filtri selezionati.</p>
+                  <p className={theme === 'dark' ? 'text-light-emphasis' : 'text-muted'}>Nessuna scadenza trovata con i filtri selezionati.</p>
                 </div>
               ) : (
                 <div className="table-responsive">
-                  <table className="table table-dark table-hover">
+                  <table className={`table ${tableClass} table-hover`}>
                     <thead>
                       <tr>
                         <th>Veicolo</th>
@@ -437,35 +450,33 @@ function VehicleSchedulesContent() {
                       {filteredSchedules.map((schedule) => (
                         <tr key={schedule.id}>
                           <td>
-                            <strong>{schedule.vehicle?.targa}</strong><br />
-                            <small className="text-light-emphasis">
+                            <strong className={textClass}>{schedule.vehicle?.targa}</strong><br />
+                            <small className={theme === 'dark' ? 'text-light-emphasis' : 'text-muted'}>
                               {schedule.vehicle?.marca} {schedule.vehicle?.modello}
                             </small>
                           </td>
                           <td>
-                            <span className="badge bg-secondary text-light">
+                            <span className={`badge ${theme === 'dark' ? 'bg-secondary text-light' : 'bg-light text-dark'}`}>
                               {schedule.schedule_type}
                             </span>
                           </td>
-                          <td>{schedule.description}</td>
+                          <td className={textClass}>{schedule.description}</td>
                           <td>
-                            <span className={`fw-bold ${
-                              new Date(schedule.data_scadenza) < new Date() && schedule.status === 'pending'
+                            <span className={
+                              schedule.status === 'completed'
+                                ? textClass
+                                : schedule.status === 'pending' && new Date(schedule.data_scadenza) < new Date()
                                 ? 'text-danger'
-                                : new Date(schedule.data_scadenza) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                                : schedule.status === 'pending' && new Date(schedule.data_scadenza) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
                                 ? 'text-warning'
-                                : new Date(schedule.data_scadenza) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+                                : schedule.status === 'pending' && new Date(schedule.data_scadenza) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
                                 ? 'text-info'
-                                : 'text-white'
-                            }`}
-                            style={!(new Date(schedule.data_scadenza) < new Date() && schedule.status === 'pending') && 
-                                   !(new Date(schedule.data_scadenza) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)) && 
-                                   !(new Date(schedule.data_scadenza) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)) ? 
-                                   {color: '#ffffff'} : {}}>
+                                : textClass
+                            }>
                               {formatDate(schedule.data_scadenza)}
                             </span>
                           </td>
-                          <td>
+                          <td className={textClass}>
                             {schedule.completed_date ? formatDate(schedule.completed_date) : '-'}
                           </td>
                           <td>
@@ -478,24 +489,24 @@ function VehicleSchedulesContent() {
                               {schedule.priority}
                             </span>
                           </td>
-                          <td>{formatCurrency(schedule.cost_estimate)}</td>
-                          <td>
+                          <td className={textClass}>{formatCurrency(schedule.cost_estimate)}</td>
+                          <td className={textClass}>
                             {schedule.provider || '-'}
                           </td>
-                          <td>
+                          <td className={textClass}>
                             {schedule.booking_date ? formatDate(schedule.booking_date) : '-'}
                           </td>
                           <td>
                             {schedule.quote_number ? (
-                              <span className="badge bg-info text-dark">
+                              <span className={`badge ${badgeClass}`}>
                                 {schedule.quote_number}
                               </span>
-                            ) : '-'}
+                            ) : <span className={textClass}>-</span>}
                           </td>
                           <td>
                             {schedule.quote_date ? formatDate(schedule.quote_date) : '-'}
                           </td>
-                          <td>
+                          <td className={textClass}>
                             {schedule.notes ? 
                               (schedule.notes.length > 50 ? 
                                 schedule.notes.substring(0, 50) + '...' : 
@@ -532,15 +543,15 @@ function VehicleSchedulesContent() {
           {showRevisionModal && (
             <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
               <div className="modal-dialog modal-lg">
-                <div className="modal-content bg-dark text-light">
-                  <div className="modal-header border-secondary">
-                    <h5 className="modal-title">
+                <div className={`modal-content ${modalClass}`}>
+                  <div className={`modal-header ${borderClass}`}>
+                    <h5 className={`modal-title ${textClass}`}>
                       <i className="fas fa-cogs me-2"></i>
                       Controllo Revisioni Automatiche
                     </h5>
                     <button 
                       type="button" 
-                      className="btn-close btn-close-white" 
+                      className={theme === 'dark' ? 'btn-close btn-close-white' : 'btn-close'} 
                       onClick={closeRevisionModal}
                     ></button>
                   </div>
@@ -562,7 +573,7 @@ function VehicleSchedulesContent() {
                     {revisionStats && (
                       <div className="row">
                         <div className="col-md-6">
-                          <div className="card bg-secondary text-light mb-3">
+                          <div className={`card ${cardClass} mb-3`}>
                             <div className="card-body text-center">
                               <h5 className="card-title text-primary">
                                 <i className="fas fa-car me-2"></i>
@@ -573,7 +584,7 @@ function VehicleSchedulesContent() {
                           </div>
                         </div>
                         <div className="col-md-6">
-                          <div className="card bg-secondary text-light mb-3">
+                          <div className={`card ${cardClass} mb-3`}>
                             <div className="card-body text-center">
                               <h5 className="card-title text-success">
                                 <i className="fas fa-check-circle me-2"></i>
@@ -584,7 +595,7 @@ function VehicleSchedulesContent() {
                           </div>
                         </div>
                         <div className="col-md-6">
-                          <div className="card bg-secondary text-light mb-3">
+                          <div className={`card ${cardClass} mb-3`}>
                             <div className="card-body text-center">
                               <h5 className="card-title text-danger">
                                 <i className="fas fa-exclamation-triangle me-2"></i>
@@ -595,7 +606,7 @@ function VehicleSchedulesContent() {
                           </div>
                         </div>
                         <div className="col-md-6">
-                          <div className="card bg-secondary text-light mb-3">
+                          <div className={`card ${cardClass} mb-3`}>
                             <div className="card-body text-center">
                               <h5 className="card-title text-warning">
                                 <i className="fas fa-clock me-2"></i>
@@ -613,7 +624,7 @@ function VehicleSchedulesContent() {
                         <div className="spinner-border text-primary" role="status">
                           <span className="visually-hidden">Caricamento...</span>
                         </div>
-                        <p className="mt-2 text-light-emphasis">Controllo in corso...</p>
+                        <p className={`mt-2 ${theme === 'dark' ? 'text-light-emphasis' : 'text-muted'}`}>Controllo in corso...</p>
                       </div>
                     )}
                   </div>

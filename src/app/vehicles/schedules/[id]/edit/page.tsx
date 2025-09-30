@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { formatDateItalian } from '@/lib/date-utils';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface VehicleSchedule {
   id: number;
@@ -138,6 +139,14 @@ export default function EditSchedulePage() {
   const router = useRouter();
   const params = useParams();
   const scheduleId = params.id as string;
+  const { theme } = useTheme();
+  
+  // Classi dinamiche basate sul tema
+  const textClass = theme === 'dark' ? 'text-light' : 'text-dark';
+  const bgClass = theme === 'dark' ? 'bg-dark' : 'bg-light';
+  const cardClass = theme === 'dark' ? 'bg-dark text-light' : 'bg-white text-dark';
+  const borderClass = theme === 'dark' ? 'border-secondary' : 'border-light';
+  const formClass = theme === 'dark' ? 'bg-dark bg-opacity-10 border-secondary text-body' : 'bg-white border-light text-dark';
   
   const [schedule, setSchedule] = useState<VehicleSchedule | null>(null);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -485,11 +494,11 @@ export default function EditSchedulePage() {
                     <i className="fas fa-car me-2"></i>
                     Veicolo
                   </label>
-                  <div className="p-3 bg-dark bg-opacity-25 border rounded">
-                    <div className="fw-bold text-light">
+                  <div className={`p-3 ${cardClass} border rounded`}>
+                    <div className={`fw-bold ${textClass}`}>
                       {schedule?.targa || 'N/A'}
                     </div>
-                    <div className="text-light-emphasis small">
+                    <div className={`${theme === 'dark' ? 'text-light-emphasis' : 'text-muted'} small`}>
                       {schedule?.marca} {schedule?.modello} ({schedule?.anno})
                     </div>
                   </div>
@@ -505,7 +514,7 @@ export default function EditSchedulePage() {
                     name="schedule_type"
                     value={editForm.schedule_type}
                     onChange={handleInputChange}
-                    className={`form-select bg-dark bg-opacity-10 border-secondary text-body ${
+                    className={`form-select ${formClass} ${
                       validationErrors.schedule_type ? 'is-invalid' : ''
                     }`}
                     style={{ '--bs-form-select-bg-img': 'none' } as React.CSSProperties}
@@ -547,14 +556,30 @@ export default function EditSchedulePage() {
                 {/* Stato */}
                 <div className="col-md-6 mb-3">
                   <label className="form-label fw-bold">
-                    <i className="fas fa-info-circle me-2"></i>
-                    Stato *
+                    <i className="fas fa-cog me-2"></i>
+                    Stato
+                  </label>
+                  <div className={`p-3 ${cardClass} border rounded`}>
+                    <span className={`badge ${getStatusBadge(schedule.status).class}`}>
+                      {getStatusBadge(schedule.status).label}
+                    </span>
+                    <small className={`${theme === 'dark' ? 'text-light-emphasis' : 'text-muted'} d-block mt-1`}>
+                      Stato attuale della scadenza
+                    </small>
+                  </div>
+                </div>
+
+                {/* Stato */}
+                <div className="col-md-6 mb-3">
+                  <label className="form-label fw-bold">
+                    <i className="fas fa-cog me-2"></i>
+                    Stato
                   </label>
                   <select
                     name="status"
                     value={editForm.status}
                     onChange={handleInputChange}
-                    className={`form-select bg-dark bg-opacity-10 border-secondary text-body ${
+                    className={`form-select ${formClass} ${
                       validationErrors.status ? 'is-invalid' : ''
                     }`}
                     style={{ '--bs-form-select-bg-img': 'none' } as React.CSSProperties}
@@ -573,18 +598,17 @@ export default function EditSchedulePage() {
                 <div className="col-12 mb-3">
                   <label className="form-label fw-bold">
                     <i className="fas fa-align-left me-2"></i>
-                    Descrizione *
+                    Descrizione
                   </label>
-                  <textarea
+                  <input
+                    type="text"
                     name="description"
                     value={editForm.description}
                     onChange={handleInputChange}
-                    rows={3}
-                    className={`form-control bg-dark bg-opacity-10 border-secondary text-body ${
+                    className={`form-control ${formClass} ${
                       validationErrors.description ? 'is-invalid' : ''
                     }`}
                     placeholder="Descrizione della scadenza..."
-                    style={{ '--bs-body-color': 'var(--bs-body-color)', '--bs-form-control-color': 'var(--bs-body-color)' } as React.CSSProperties}
                   />
                   {validationErrors.description && (
                     <div className="invalid-feedback">{validationErrors.description}</div>
@@ -595,18 +619,16 @@ export default function EditSchedulePage() {
                 <div className="col-md-6 mb-3">
                   <label className="form-label fw-bold">
                     <i className="fas fa-calendar-alt me-2"></i>
-                    Data Scadenza *
+                    Data Scadenza
                   </label>
                   <input
-                    type="text"
+                    type="date"
                     name="data_scadenza"
                     value={editForm.data_scadenza}
                     onChange={handleInputChange}
-                    placeholder="gg/mm/aaaa"
-                    className={`form-control bg-dark bg-opacity-10 border-secondary text-body ${
+                    className={`form-control ${formClass} ${
                       validationErrors.data_scadenza ? 'is-invalid' : ''
                     }`}
-                    style={{ '--bs-body-color': 'var(--bs-body-color)', '--bs-form-control-color': 'var(--bs-body-color)' } as React.CSSProperties}
                   />
                   {validationErrors.data_scadenza && (
                     <div className="invalid-feedback">{validationErrors.data_scadenza}</div>
@@ -616,19 +638,17 @@ export default function EditSchedulePage() {
                 {/* Data Completamento */}
                 <div className="col-md-6 mb-3">
                   <label className="form-label fw-bold">
-                    <i className="fas fa-calendar-check me-2"></i>
+                    <i className="fas fa-check-circle me-2"></i>
                     Data Completamento
                   </label>
                   <input
-                    type="text"
+                    type="date"
                     name="completed_date"
                     value={editForm.completed_date}
                     onChange={handleInputChange}
-                    placeholder="gg/mm/aaaa"
-                    className={`form-control bg-dark bg-opacity-10 border-secondary text-body ${
+                    className={`form-control ${formClass} ${
                       validationErrors.completed_date ? 'is-invalid' : ''
                     }`}
-                    style={{ '--bs-body-color': 'var(--bs-body-color)', '--bs-form-control-color': 'var(--bs-body-color)' } as React.CSSProperties}
                   />
                   {validationErrors.completed_date && (
                     <div className="invalid-feedback">{validationErrors.completed_date}</div>
@@ -638,27 +658,16 @@ export default function EditSchedulePage() {
                 {/* Data Prenotazione */}
                 <div className="col-md-6 mb-3">
                   <label className="form-label fw-bold">
-                    <i className="fas fa-calendar-plus me-2"></i>
+                    <i className="fas fa-calendar-check me-2"></i>
                     Data Prenotazione
                   </label>
                   <input
-                    type="text"
+                    type="date"
                     name="booking_date"
                     value={editForm.booking_date}
                     onChange={handleInputChange}
-                    placeholder="gg/mm/aaaa (opzionale)"
-                    className={`form-control bg-dark bg-opacity-10 border-secondary text-body ${
-                      validationErrors.booking_date ? 'is-invalid' : ''
-                    }`}
-                    style={{ '--bs-body-color': 'var(--bs-body-color)', '--bs-form-control-color': 'var(--bs-body-color)' } as React.CSSProperties}
+                    className="form-control ${formClass}"
                   />
-                  {validationErrors.booking_date && (
-                    <div className="invalid-feedback">{validationErrors.booking_date}</div>
-                  )}
-                  <div className="form-text">
-                    <i className="fas fa-info-circle me-1"></i>
-                    Inserire solo se l'appuntamento è già stato prenotato
-                  </div>
                 </div>
 
                 {/* Numero Preventivo */}
@@ -672,47 +681,21 @@ export default function EditSchedulePage() {
                     name="quote_number"
                     value={editForm.quote_number}
                     onChange={handleInputChange}
-                    placeholder="Numero del preventivo (opzionale)"
-                    className="form-control bg-dark bg-opacity-10 border-secondary text-body"
-                    style={{ '--bs-body-color': 'var(--bs-body-color)', '--bs-form-control-color': 'var(--bs-body-color)' } as React.CSSProperties}
-                  />
-                  <div className="form-text">
-                    <i className="fas fa-info-circle me-1"></i>
-                    Numero di riferimento del preventivo associato
-                  </div>
-                </div>
-
-                {/* Data Preventivo */}
-                <div className="col-md-6 mb-3">
-                  <label className="form-label fw-bold">
-                    <i className="fas fa-calendar-alt me-2"></i>
-                    Data Preventivo
-                  </label>
-                  <input
-                    type="text"
-                    name="quote_date"
-                    value={editForm.quote_date}
-                    onChange={handleInputChange}
-                    placeholder="gg/mm/aaaa (opzionale)"
-                    className={`form-control bg-dark bg-opacity-10 border-secondary text-body ${
-                      validationErrors.quote_date ? 'is-invalid' : ''
+                    className={`form-control ${formClass} ${
+                      validationErrors.quote_number ? 'is-invalid' : ''
                     }`}
-                    style={{ '--bs-body-color': 'var(--bs-body-color)', '--bs-form-control-color': 'var(--bs-body-color)' } as React.CSSProperties}
+                    placeholder="Numero preventivo..."
                   />
-                  {validationErrors.quote_date && (
-                    <div className="invalid-feedback">{validationErrors.quote_date}</div>
+                  {validationErrors.quote_number && (
+                    <div className="invalid-feedback">{validationErrors.quote_number}</div>
                   )}
-                  <div className="form-text">
-                    <i className="fas fa-info-circle me-1"></i>
-                    Data di emissione del preventivo
-                  </div>
                 </div>
 
-                {/* Costo */}
+                {/* Costo Stimato */}
                 <div className="col-md-6 mb-3">
                   <label className="form-label fw-bold">
                     <i className="fas fa-euro-sign me-2"></i>
-                    Costo
+                    Costo Stimato
                   </label>
                   <input
                     type="number"
@@ -720,11 +703,10 @@ export default function EditSchedulePage() {
                     name="cost"
                     value={editForm.cost}
                     onChange={handleInputChange}
-                    className={`form-control bg-dark bg-opacity-10 border-secondary text-body ${
+                    className={`form-control ${formClass} ${
                       validationErrors.cost ? 'is-invalid' : ''
                     }`}
                     placeholder="0.00"
-                    style={{ '--bs-body-color': 'var(--bs-body-color)', '--bs-form-control-color': 'var(--bs-body-color)' } as React.CSSProperties}
                   />
                   {validationErrors.cost && (
                     <div className="invalid-feedback">{validationErrors.cost}</div>
@@ -737,26 +719,18 @@ export default function EditSchedulePage() {
                     <i className="fas fa-building me-2"></i>
                     Fornitore
                   </label>
-                  <select
+                  <input
+                    type="text"
                     name="provider"
                     value={editForm.provider}
                     onChange={handleInputChange}
-                    className="form-select bg-dark bg-opacity-10 border-secondary text-body"
-                    style={{ '--bs-form-select-bg-img': 'none' } as React.CSSProperties}
-                    disabled={loadingSuppliers}
-                  >
-                    <option value="">Seleziona fornitore</option>
-                    {suppliers.map(supplier => (
-                      <option key={supplier.id} value={supplier.name}>
-                        {supplier.name} ({supplier.category})
-                      </option>
-                    ))}
-                  </select>
-                  {loadingSuppliers && (
-                    <div className="form-text">
-                      <i className="fas fa-spinner fa-spin me-1"></i>
-                      Caricamento fornitori...
-                    </div>
+                    className={`form-control ${formClass} ${
+                      validationErrors.provider ? 'is-invalid' : ''
+                    }`}
+                    placeholder="Nome fornitore..."
+                  />
+                  {validationErrors.provider && (
+                    <div className="invalid-feedback">{validationErrors.provider}</div>
                   )}
                 </div>
 
@@ -766,17 +740,20 @@ export default function EditSchedulePage() {
                     <i className="fas fa-bell me-2"></i>
                     Giorni Promemoria
                   </label>
-                  <input
-                    type="number"
+                  <select
                     name="reminder_days"
                     value={editForm.reminder_days}
                     onChange={handleInputChange}
-                    className={`form-control bg-dark bg-opacity-10 border-secondary text-body ${
-                      validationErrors.reminder_days ? 'is-invalid' : ''
-                    }`}
-                    placeholder="Giorni prima della scadenza"
-                    style={{ '--bs-body-color': 'var(--bs-body-color)', '--bs-form-control-color': 'var(--bs-body-color)' } as React.CSSProperties}
-                  />
+                    className={`form-select ${formClass}`}
+                    style={{ '--bs-form-select-bg-img': 'none' } as React.CSSProperties}
+                  >
+                    <option value="0">Nessun promemoria</option>
+                    <option value="1">1 giorno prima</option>
+                    <option value="3">3 giorni prima</option>
+                    <option value="7">7 giorni prima</option>
+                    <option value="15">15 giorni prima</option>
+                    <option value="30">30 giorni prima</option>
+                  </select>
                   {validationErrors.reminder_days && (
                     <div className="invalid-feedback">{validationErrors.reminder_days}</div>
                   )}
@@ -792,11 +769,41 @@ export default function EditSchedulePage() {
                     name="notes"
                     value={editForm.notes}
                     onChange={handleInputChange}
-                    rows={4}
-                    className="form-control bg-dark bg-opacity-10 border-secondary text-body"
+                    className={`form-control ${formClass}`}
+                    rows={3}
                     placeholder="Note aggiuntive..."
-                    style={{ '--bs-body-color': 'var(--bs-body-color)', '--bs-form-control-color': 'var(--bs-body-color)' } as React.CSSProperties}
                   />
+                </div>
+
+                {/* Pulsanti */}
+                <div className="col-12 mt-4">
+                  <div className="d-flex gap-2 justify-content-end">
+                    <Link 
+                      href="/vehicles/schedules" 
+                      className="btn btn-secondary"
+                    >
+                      <i className="fas fa-times me-2"></i>
+                      Annulla
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={handleSave}
+                      disabled={saving}
+                      className="btn btn-primary"
+                    >
+                      {saving ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                          Salvataggio...
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-save me-2"></i>
+                          Salva Modifiche
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
              </div>

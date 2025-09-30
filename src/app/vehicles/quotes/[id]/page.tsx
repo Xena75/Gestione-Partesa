@@ -20,6 +20,9 @@ interface Quote {
   vehicle_targa: string;
   quote_number?: string;
   quote_date?: string;
+  created_by_username?: string;
+  approved_by_username?: string;
+  approved_at?: string;
 }
 
 export default function QuoteDetailPage() {
@@ -98,7 +101,8 @@ export default function QuoteDetailPage() {
       const data = await response.json();
 
       if (data.success) {
-        setQuote({ ...quote, status: newStatus });
+        // Ricarica i dati completi dal database per ottenere i campi di approvazione aggiornati
+        await fetchQuote();
         alert(`Preventivo ${newStatus === 'approved' ? 'approvato' : 'rifiutato'} con successo!`);
       } else {
         alert(data.error || 'Errore nell\'aggiornamento dello stato');

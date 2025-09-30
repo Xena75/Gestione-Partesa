@@ -3,6 +3,7 @@
 
 import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface MaintenanceQuote {
   id: number;
@@ -49,6 +50,14 @@ interface QuoteStats {
 }
 
 function VehicleQuotesContent() {
+  const { theme } = useTheme();
+  
+  // Classi dinamiche basate sul tema
+  const textClass = theme === 'dark' ? 'text-white' : 'text-dark';
+  const bgClass = theme === 'dark' ? 'bg-dark' : 'bg-light';
+  const cardClass = theme === 'dark' ? 'bg-dark border-secondary' : 'bg-white border-light';
+  const mutedTextClass = theme === 'dark' ? 'text-white-50' : 'text-muted';
+  
   const [quotes, setQuotes] = useState<MaintenanceQuote[]>([]);
   const [stats, setStats] = useState<QuoteStats>({
     pending: 0,
@@ -290,7 +299,7 @@ function VehicleQuotesContent() {
     <div className="container-fluid">
       <div className="row">
         <div className="col-12">
-          <h1 className="h3 mb-4 text-white">💰 Gestione Preventivi Manutenzione</h1>
+          <h1 className={`h3 mb-4 ${textClass}`}>💰 Gestione Preventivi Manutenzione</h1>
 
           {error && (
             <div className="alert alert-danger" role="alert">
@@ -351,11 +360,15 @@ function VehicleQuotesContent() {
           </div>
 
           {/* Actions */}
-          <div className="card mb-4">
+          <div className={`card mb-4 ${cardClass}`}>
             <div className="card-body">
               <div className="d-flex justify-content-between align-items-center">
-                <h5 className="card-title mb-0 text-white">🛠️ Azioni</h5>
+                <h5 className={`card-title mb-0 ${textClass}`}>🛠️ Azioni</h5>
                 <div className="btn-group" role="group">
+                  <Link href="/vehicles/quotes/new" className="btn btn-primary">
+                    <i className="fas fa-plus me-2"></i>
+                    Nuovo Preventivo
+                  </Link>
                   <Link href="/vehicles/schedules" className="btn btn-outline-primary">
                     <i className="fas fa-clock me-2"></i>
                     Scadenze
@@ -368,9 +381,9 @@ function VehicleQuotesContent() {
                     <i className="fas fa-truck me-2"></i>
                     Fornitori
                   </Link>
-                  <Link href="/vehicles/quotes/new" className="btn btn-outline-primary">
-                    <i className="fas fa-plus me-2"></i>
-                    Nuovo Preventivo
+                  <Link href="/vehicles" className="btn btn-outline-primary">
+                    <i className="fas fa-tachometer-alt me-2"></i>
+                    Dashboard Veicoli
                   </Link>
                 </div>
               </div>
@@ -378,11 +391,11 @@ function VehicleQuotesContent() {
           </div>
 
           {/* Filters and Sorting */}
-          <div className="card mb-4">
+          <div className={`card mb-4 ${cardClass}`}>
             <div className="card-body">
               <div className="row">
                 <div className="col-lg-2 col-md-3 col-sm-6 mb-3">
-                  <label className="form-label text-white">Cerca per Targa</label>
+                  <label className={`form-label ${textClass}`}>Cerca per Targa</label>
                   <input 
                     type="text"
                     className="form-control"
@@ -392,7 +405,7 @@ function VehicleQuotesContent() {
                   />
                 </div>
                 <div className="col-lg-2 col-md-3 col-sm-6 mb-3">
-                  <label className="form-label text-white">Stato</label>
+                  <label className={`form-label ${textClass}`}>Stato</label>
                   <select 
                     className="form-select"
                     value={filterStatus}
@@ -406,7 +419,7 @@ function VehicleQuotesContent() {
                   </select>
                 </div>
                 <div className="col-lg-3 col-md-4 col-sm-6 mb-3">
-                  <label className="form-label text-white">Fornitore</label>
+                  <label className={`form-label ${textClass}`}>Fornitore</label>
                   <select 
                     className="form-select"
                     value={filterSupplier}
@@ -421,7 +434,7 @@ function VehicleQuotesContent() {
                   </select>
                 </div>
                 <div className="col-lg-3 col-md-4 col-sm-6 mb-3">
-                  <label className="form-label text-white">Ordina per</label>
+                  <label className={`form-label ${textClass}`}>Ordina per</label>
                   <select 
                     className="form-select"
                     value={sortBy}
@@ -434,7 +447,7 @@ function VehicleQuotesContent() {
                   </select>
                 </div>
                 <div className="col-lg-2 col-md-4 col-sm-6 mb-3">
-                  <label className="form-label text-white">Ordine</label>
+                  <label className={`form-label ${textClass}`}>Ordine</label>
                   <select 
                     className="form-select"
                     value={sortOrder}
@@ -449,30 +462,30 @@ function VehicleQuotesContent() {
           </div>
 
           {/* Quotes Table */}
-          <div className="card">
+          <div className={`card ${cardClass}`}>
             <div className="card-header">
-              <h5 className="mb-0 text-white">📋 Elenco Preventivi ({filteredAndSortedQuotes.length})</h5>
+              <h5 className={`mb-0 ${textClass}`}>📋 Elenco Preventivi ({filteredAndSortedQuotes.length})</h5>
             </div>
             <div className="card-body">
               {filteredAndSortedQuotes.length === 0 ? (
                 <div className="text-center py-4">
-                  <p className="text-white">Nessun preventivo trovato con i filtri selezionati.</p>
+                  <p className={textClass}>Nessun preventivo trovato con i filtri selezionati.</p>
                 </div>
               ) : (
                 <div className="table-responsive">
                   <table className="table table-hover">
                     <thead>
                         <tr>
-                          <th className="text-white">N. Offerta</th>
-                          <th className="text-white">Data Offerta</th>
-                          <th className="text-white">Veicolo</th>
-                          <th className="text-white">Tipo Intervento</th>
-                          <th className="text-white">Fornitore</th>
-                          <th className="text-white">Importo</th>
-                          <th className="text-white">Valido fino</th>
-                          <th className="text-white">Stato</th>
-                          <th className="text-white">Documenti</th>
-                          <th className="text-white">Azioni</th>
+                          <th className={textClass}>N. Offerta</th>
+                          <th className={textClass}>Data Offerta</th>
+                          <th className={textClass}>Veicolo</th>
+                          <th className={textClass}>Tipo Intervento</th>
+                          <th className={textClass}>Fornitore</th>
+                          <th className={textClass}>Importo</th>
+                          <th className={textClass}>Valido fino</th>
+                          <th className={textClass}>Stato</th>
+                          <th className={textClass}>Documenti</th>
+                          <th className={textClass}>Azioni</th>
                         </tr>
                       </thead>
                     <tbody>
@@ -480,21 +493,21 @@ function VehicleQuotesContent() {
                         <tr key={quote.id}>
                           <td>
                             {quote.quote_number ? (
-                              <span className="fw-bold text-white">{quote.quote_number}</span>
+                              <span className={`fw-bold ${textClass}`}>{quote.quote_number}</span>
                             ) : (
-                              <span className="text-white">-</span>
+                              <span className={textClass}>-</span>
                             )}
                           </td>
                           <td>
                             {quote.quote_date ? (
-                              <span className="text-white">{formatDate(quote.quote_date)}</span>
+                              <span className={textClass}>{formatDate(quote.quote_date)}</span>
                             ) : (
-                              <span className="text-white">-</span>
+                              <span className={textClass}>-</span>
                             )}
                           </td>
                           <td>
-                            <strong className="text-white">{quote.targa}</strong><br />
-                            <small className="text-white">
+                            <strong className={textClass}>{quote.targa}</strong><br />
+                            <small className={mutedTextClass}>
                               {quote.marca} {quote.modello}
                             </small>
                           </td>
@@ -502,30 +515,34 @@ function VehicleQuotesContent() {
                             <span className="badge bg-primary text-white">
                               {quote.intervention_type_name || 'N/A'}
                             </span><br />
-                            <small className="text-white">
+                            <small className={mutedTextClass}>
                               {quote.description}
                             </small>
                           </td>
                           <td>
-                            <strong className="text-white">{quote.supplier_name}</strong><br />
+                            <strong className={textClass}>{quote.supplier_name}</strong><br />
                             {quote.supplier_contact && (
-                              <small className="text-white">
+                              <small className={mutedTextClass}>
                                 {quote.supplier_contact}
                               </small>
                             )}
                           </td>
                           <td>
-                            <strong className="text-white">
+                            <strong className={textClass}>
                               {formatCurrency(quote.amount)}
                             </strong>
                           </td>
                           <td>
                             <span className={`fw-bold ${
-                              new Date(quote.valid_until) < new Date()
-                                ? 'text-danger'
-                                : new Date(quote.valid_until) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-                                ? 'text-warning'
-                                : 'text-white'
+                              // Se il preventivo è approvato o rifiutato, la scadenza non è più rilevante
+                              quote.status === 'approved' || quote.status === 'rejected'
+                                ? textClass
+                                : // Solo per preventivi in attesa, applica la colorazione basata sulla scadenza
+                                  new Date(quote.valid_until) < new Date()
+                                  ? 'text-danger'
+                                  : new Date(quote.valid_until) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                                  ? 'text-warning'
+                                  : textClass
                             }`}>
                               {formatDate(quote.valid_until)}
                             </span>
@@ -537,11 +554,11 @@ function VehicleQuotesContent() {
                           </td>
                           <td>
                             {quote.documents && quote.documents.length > 0 ? (
-                              <span className="badge bg-dark text-white">
+                              <span className={`badge ${theme === 'dark' ? 'bg-dark text-white' : 'bg-secondary text-white'}`}>
                                 {quote.documents.length} file
                               </span>
                             ) : (
-                              <span className="text-white">-</span>
+                              <span className={textClass}>-</span>
                             )}
                           </td>
                           <td>

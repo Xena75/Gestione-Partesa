@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import * as XLSX from 'xlsx';
-import { Eye, Calendar, Search, Filter, Download, ArrowUpDown, ChevronLeft, ChevronRight, X, RotateCcw } from 'lucide-react';
+import { Eye, Calendar, Search, Filter, Download, ArrowUpDown, ChevronLeft, ChevronRight, X, RotateCcw, Plus } from 'lucide-react';
 
 interface Vehicle {
   id: number;
@@ -273,6 +273,10 @@ export default function VehicleListPage() {
           <div className="d-flex justify-content-between align-items-center">
             <h1 className="h3 mb-0 text-white">Lista Veicoli</h1>
             <div className="d-flex gap-2">
+              <Link href="/vehicles/list/new" className="btn btn-primary">
+                <Plus size={16} className="me-1" />
+                Nuovo Veicolo
+              </Link>
               <button 
                 className="btn btn-outline-success"
                 onClick={exportToExcel}

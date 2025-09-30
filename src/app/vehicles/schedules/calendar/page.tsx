@@ -162,6 +162,7 @@ const forceEventColorsCSS = `
     border-radius: 4px !important;
     font-weight: 500 !important;
   }
+
 `;
 
 // Inietta il CSS nella pagina
@@ -533,7 +534,7 @@ function VehicleSchedulesCalendarContent() {
           <div className="d-flex justify-content-between align-items-center mb-4">
             <h1 className="h3 mb-0">📅 Calendario Scadenze Veicoli</h1>
             <div className="btn-group">
-              <Link href="/vehicles/schedules/new" className="btn btn-success">
+              <Link href="/vehicles/schedules/new" className="btn btn-outline-primary">
                 <i className="fas fa-plus me-1"></i>
                 Nuova Scadenza
               </Link>
@@ -542,8 +543,8 @@ function VehicleSchedulesCalendarContent() {
                 Vista Lista
               </Link>
               <Link href="/vehicles" className="btn btn-outline-primary">
-                <i className="fas fa-arrow-left me-1"></i>
-                Torna ai Veicoli
+                <i className="fas fa-arrow-left me-2"></i>
+                  Dashboard Veicoli
               </Link>
             </div>
           </div>

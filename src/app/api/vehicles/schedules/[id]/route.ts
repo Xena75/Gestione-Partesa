@@ -152,6 +152,28 @@ function convertItalianDateToDatabase(dateInput: string): string | null {
     return null;
   }
   
+  // Verifica se è un formato ISO con timestamp (YYYY-MM-DDTHH:mm:ss.sssZ)
+  const isoTimestampRegex = /^(\d{4})-(\d{1,2})-(\d{1,2})T/;
+  const isoTimestampMatch = dateInput.match(isoTimestampRegex);
+  
+  if (isoTimestampMatch) {
+    // Estrai solo la parte della data
+    const [, year, month, day] = isoTimestampMatch;
+    const dayNum = parseInt(day, 10);
+    const monthNum = parseInt(month, 10);
+    const yearNum = parseInt(year, 10);
+    
+    if (dayNum < 1 || dayNum > 31 || monthNum < 1 || monthNum > 12) {
+      throw new Error(`Data non valida: ${dateInput}`);
+    }
+    
+    // Formatta con zero padding
+    const formattedDay = day.padStart(2, '0');
+    const formattedMonth = month.padStart(2, '0');
+    
+    return `${year}-${formattedMonth}-${formattedDay}`;
+  }
+  
   // Verifica se è già nel formato ISO (YYYY-MM-DD)
   const isoRegex = /^(\d{4})-(\d{1,2})-(\d{1,2})$/;
   const isoMatch = dateInput.match(isoRegex);
@@ -198,7 +220,7 @@ function convertItalianDateToDatabase(dateInput: string): string | null {
   }
   
   // Nessun formato riconosciuto
-  throw new Error(`Formato data non valido: ${dateInput}. Utilizzare gg/mm/aaaa o YYYY-MM-DD`);
+  throw new Error(`Formato data non valido: ${dateInput}. Utilizzare gg/mm/aaaa, YYYY-MM-DD o formato ISO`);
 }
 
 // PUT - Aggiorna una scadenza specifica (aggiornamento completo)

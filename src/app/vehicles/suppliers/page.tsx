@@ -271,13 +271,35 @@ function VehicleSuppliersContent() {
               <h1 className="h3 mb-0">Gestione Fornitori</h1>
               <p className="text-muted mb-0">Gestisci i fornitori e le officine</p>
             </div>
-            <button 
-              className="btn btn-primary"
-              onClick={() => setShowAddForm(true)}
-            >
-              <i className="fas fa-plus me-2"></i>
-              Nuovo Fornitore
-            </button>
+            <div className="d-flex gap-2">
+              <button 
+                className="btn btn-primary"
+                onClick={() => setShowAddForm(true)}
+              >
+                <i className="fas fa-plus me-2"></i>
+                Nuovo Fornitore
+              </button>
+              
+              {/* Pulsanti di navigazione */}
+              <div className="btn-group" role="group">
+                <Link href="/vehicles/calendar" className="btn btn-outline-secondary">
+                  <i className="fas fa-calendar me-1"></i>
+                  Calendario
+                </Link>
+                <Link href="/vehicles/quotes" className="btn btn-outline-secondary">
+                  <i className="fas fa-file-invoice me-1"></i>
+                  Preventivi
+                </Link>
+                <Link href="/vehicles/schedules" className="btn btn-outline-secondary">
+                  <i className="fas fa-clock me-1"></i>
+                  Scadenze
+                </Link>
+                <Link href="/vehicles" className="btn btn-outline-secondary">
+                  <i className="fas fa-tachometer-alt me-1"></i>
+                  Dashboard Veicoli
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </div>

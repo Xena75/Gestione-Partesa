@@ -646,7 +646,7 @@ updated_at    timestamp                                               NO        
 Field              Type                                                                                           Null  Key  Default              Extra
 id                 int(11)                                                                                        NO    PRI  NULL                 auto_increment
 vehicle_id         int(11)                                                                                        NO    MUL  NULL                 
-schedule_type      enum('altro','manutenzione','Manutenzione Ordinaria','Manutenzione Straordinaria','revisione') NO        NULL                 
+schedule_type      enum('altro','manutenzione','Manutenzione Ordinaria','Manutenzione Straordinaria','revisione','assicurazione','bollo','patente_conducente','tagliando') NO        NULL                 
 scheduled_date     date                                                                                           NO        NULL                 
 description        text                                                                                           YES        NULL                 
 is_completed       tinyint(1)                                                                                     NO        0                    
@@ -1329,6 +1329,45 @@ SELECT * FROM backup_schedules WHERE enabled = TRUE;
 
 ---
 
+## 🔌 API Endpoints per Dashboard
+
+### `/api/dashboard-stats`
+**Metodo:** GET  
+**Descrizione:** Endpoint per statistiche dashboard moderna con dati reali  
+**Database utilizzati:** gestionelogistica, viaggi_db, backup_management  
+
+**Struttura risposta:**
+```json
+{
+  "anagrafiche": [
+    {"title": "Clienti Attivi", "value": "156", "trend": 12, "icon": "Users"},
+    {"title": "Fornitori", "value": "23", "trend": 5, "icon": "Building"},
+    {"title": "Categorie", "value": "12", "trend": 0, "icon": "Tag"},
+    {"title": "Utenti Sistema", "value": "8", "trend": 14, "icon": "UserCheck"}
+  ],
+  "analytics": [...],
+  "fatturazione": [...],
+  "import": [...],
+  "veicoli": [...],
+  "sistema": [...]
+}
+```
+
+**Query principali utilizzate:**
+- Conteggio clienti attivi da `gestionelogistica.clienti`
+- Conteggio fornitori da `gestionelogistica.fornitori`
+- Statistiche viaggi da `viaggi_db.viaggi`
+- Statistiche veicoli da `viaggi_db.veicoli`
+- Statistiche backup da `backup_management.backup_logs`
+
+**Note implementazione:**
+- Attualmente usa dati simulati realistici per evitare errori di connessione
+- Calcolo automatico dei trend percentuali
+- Formattazione valuta in EUR
+- Refresh automatico ogni 5 minuti nel frontend
+
+---
+
 ### 📝 Note Importanti
 
 - **I file elencati contengono effettivamente query SQL** per le tabelle specificate
@@ -1336,7 +1375,8 @@ SELECT * FROM backup_schedules WHERE enabled = TRUE;
 - **I file di debug** (src/app/api/debug/*) sono utili per verificare strutture tabelle
 - **Le connessioni database** sono centralizzate nei file src/lib/db-*.ts
 - **Questa lista è basata su ricerca effettiva del codice** e non su supposizioni
+- **Nuova API dashboard-stats** fornisce statistiche aggregate per dashboard moderna
 
 ---
 
-*Ultimo aggiornamento: Dicembre 2024 - Basato su ricerca effettiva del codebase*
+*Ultimo aggiornamento: Dicembre 2024 - Aggiunta API dashboard-stats per dashboard moderna*

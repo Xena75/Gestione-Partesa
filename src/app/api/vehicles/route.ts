@@ -58,3 +58,100 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+// POST - Crea un nuovo veicolo
+export async function POST(request: NextRequest) {
+  try {
+    // Verifica autenticazione
+    const authResult = await verifyUserAccess(request);
+    if (!authResult.success) {
+      return NextResponse.json({ error: authResult.message }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const {
+      targa,
+      marca,
+      modello,
+      proprieta,
+      portata,
+      n_palt,
+      tipo_patente,
+      pallet_kg,
+      km_ultimo_tagliando,
+      data_ultimo_tagliando,
+      data_ultima_revisione
+    } = body;
+
+    // Validazione campi obbligatori
+    if (!targa || !marca || !modello || !proprieta || !portata || !n_palt || !tipo_patente || !pallet_kg) {
+      return NextResponse.json(
+        { success: false, error: 'Tutti i campi obbligatori devono essere compilati' },
+        { status: 400 }
+      );
+    }
+
+    const connection = await mysql.createConnection(dbConfig);
+
+    // Verifica se la targa esiste già
+    const checkQuery = 'SELECT id FROM vehicles WHERE targa = ?';
+    const [existingVehicle] = await connection.execute(checkQuery, [targa]);
+
+    if (Array.isArray(existingVehicle) && existingVehicle.length > 0) {
+      await connection.end();
+      return NextResponse.json(
+        { success: false, error: 'Un veicolo con questa targa esiste già' },
+        { status: 400 }
+      );
+    }
+
+    // Inserimento nuovo veicolo
+    const insertQuery = `
+      INSERT INTO vehicles (
+        targa,
+        marca,
+        modello,
+        proprieta,
+        portata,
+        n_palt,
+        tipo_patente,
+        pallet_kg,
+        km_ultimo_tagliando,
+        data_ultimo_tagliando,
+        data_ultima_revisione,
+        active,
+        createdAt,
+        updatedAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())
+    `;
+
+    const [result] = await connection.execute(insertQuery, [
+      targa.toUpperCase(),
+      marca,
+      modello,
+      proprieta,
+      portata,
+      n_palt,
+      tipo_patente,
+      pallet_kg,
+      km_ultimo_tagliando || null,
+      data_ultimo_tagliando || null,
+      data_ultima_revisione || null
+    ]);
+
+    await connection.end();
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Veicolo creato con successo',
+      vehicleId: (result as any).insertId
+    });
+
+  } catch (error) {
+    console.error('Errore nella creazione del veicolo:', error);
+    return NextResponse.json(
+      { success: false, error: 'Errore nella creazione del veicolo' },
+      { status: 500 }
+    );
+  }
+}
