@@ -4,7 +4,7 @@ import mysql from 'mysql2/promise';
 import fetch from 'node-fetch';
 import * as fs from 'fs/promises';
 
-// Configurazione database
+// Configurazione database viaggi
 const dbConfig = {
   host: process.env.DB_VIAGGI_HOST || 'localhost',
   user: process.env.DB_VIAGGI_USER || 'root',
@@ -13,8 +13,35 @@ const dbConfig = {
   port: parseInt(process.env.DB_VIAGGI_PORT || '3306')
 };
 
+// Configurazione database gestionelogistica (per system_logs)
+const logDbConfig = {
+  host: process.env.MYSQL_HOST || 'localhost',
+  user: process.env.MYSQL_USER || 'root',
+  password: process.env.MYSQL_PASSWORD || '',
+  database: process.env.MYSQL_DATABASE || 'gestionelogistica',
+  port: parseInt(process.env.MYSQL_PORT || '3306')
+};
+
 // Importa il sistema di progress tracking database-backed
 import { updateImportProgress, cleanupImportProgress, getImportProgress } from '@/lib/import-progress-db';
+
+// Funzione per scrivere nei system_logs
+async function writeSystemLog(type: string, user: string, action: string, details: string, status: 'success' | 'error' | 'warning' = 'success') {
+  try {
+    const connection = await mysql.createConnection(logDbConfig);
+    
+    await connection.execute(
+      `INSERT INTO system_logs (type, user, action, details, status, timestamp) 
+       VALUES (?, ?, ?, ?, ?, NOW())`,
+      [type, user, action, details, status]
+    );
+    
+    await connection.end();
+    console.log('✅ Log scritto nei system_logs:', { type, user, action, details, status });
+  } catch (error) {
+    console.error('❌ Errore nella scrittura del log:', error);
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -318,6 +345,22 @@ async function executeImport(fileId: string, mapping: Record<string, string>, bl
       : 'Importazione completata con successo';
     await updateProgress(fileId, 100, finalMessage, true, result);
 
+    // Scrivi log nei system_logs se l'importazione è riuscita
+    if (result.success) {
+      const filename = blobUrl.split('/').pop() || 'file_excel';
+      const logDetails = duplicates.length > 0 
+        ? `File: ${filename} - ${importedRows} righe importate, ${duplicates.length} duplicate saltate`
+        : `File: ${filename} - ${importedRows} righe importate`;
+      
+      await writeSystemLog(
+        'import',
+        'admin', // Puoi modificare questo per ottenere l'utente reale dalla sessione
+        'Import Excel viaggi PoD',
+        logDetails,
+        'success'
+      );
+    }
+
   } catch (error) {
     console.error('❌ Errore durante l\'importazione:', error);
     
@@ -332,6 +375,18 @@ async function executeImport(fileId: string, mapping: Record<string, string>, bl
     
     console.log('❌ Importazione fallita:', result);
     await updateProgress(fileId, 100, 'Errore durante l\'importazione', true, result);
+
+    // Scrivi log di errore nei system_logs
+    const filename = blobUrl.split('/').pop() || 'file_excel';
+    const errorDetails = `File: ${filename} - Errore: ${(error as Error).message}`;
+    
+    await writeSystemLog(
+      'import',
+      'admin',
+      'Import Excel viaggi PoD',
+      errorDetails,
+      'error'
+    );
   }
 }
 

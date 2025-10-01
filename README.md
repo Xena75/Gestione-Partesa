@@ -69,7 +69,54 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
 
-### 📊 **Dashboard Moderna con Statistiche Reali - v2.29.0** ⭐ **NUOVO**
+### 📈 **Trend Settimanali Reali e Ottimizzazioni Dashboard - v2.30.0** ⭐ **NUOVO**
+
+#### 🎯 **Implementazione Trend Settimanali Reali**
+- **Sostituzione dati simulati**: Eliminazione completa trend simulati con calcoli reali da database
+- **Query SQL settimanali**: Implementazione query con `WEEK()` e `YEAR()` per confronti accurati
+- **Funzione calculateTrend()**: Algoritmo centralizzato per calcolo percentuali trend su dati storici
+- **Filtro temporale 14 giorni**: Ottimizzazione performance con query limitate agli ultimi 14 giorni
+- **Trend multi-database**: Calcoli su gestionelogistica, viaggi_db e backup_management
+
+#### 📊 **Trend Implementati per Sezione**
+- **Viaggi**: Confronti settimanali su `tab_viaggi`, `viaggi_pod`, `travels` per trend completamenti
+- **Sistema**: Trend reali su `backup_logs`, `system_logs`, `users` per monitoraggio operativo
+- **Veicoli**: Query settimanali su `vehicles`, `vehicle_schedules`, `maintenance_quotes`
+- **Backup**: Conteggio backup completati con confronto settimana corrente vs precedente
+- **Anagrafiche**: Trend fornitori e categorie basati su dati di creazione/modifica
+
+#### 🔧 **Ottimizzazioni Struttura Dashboard**
+- **Rimozione "Clienti Attivi"**: Eliminata statistica "Clienti Attivi" dalla card "Anagrafiche"
+- **Rimozione link "Clienti e Utenti"**: Eliminati link disabilitati "Clienti (WIP)" e "Utenti (WIP)"
+- **Spostamento "Intervention Types"**: Statistica spostata da "Sistema" a "Veicoli" per coerenza logica
+- **Correzione bug "Utenti Sistema"**: Risolto trend errato +33% con calcolo reale
+- **Aggiornamento array indices**: Correzione indici `anagraficheStats` dopo rimozione elementi
+
+#### 📈 **Esempi Query Settimanali Implementate**
+```sql
+-- Viaggi completati con trend settimanale
+SELECT 
+  COUNT(*) as completed,
+  COUNT(CASE WHEN WEEK(Data) = WEEK(CURDATE()) AND YEAR(Data) = YEAR(CURDATE()) THEN 1 END) as completed_this_week,
+  COUNT(CASE WHEN WEEK(Data) = WEEK(CURDATE()) - 1 AND YEAR(Data) = YEAR(CURDATE()) THEN 1 END) as completed_prev_week
+FROM tab_viaggi
+
+-- Backup con trend settimanale
+SELECT 
+  COUNT(*) as backups_this_week,
+  COUNT(CASE WHEN WEEK(created_at) = WEEK(CURDATE()) - 1 AND YEAR(created_at) = YEAR(CURDATE()) THEN 1 END) as backups_prev_week
+FROM backup_logs 
+WHERE status = 'completed' AND created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)
+```
+
+#### ✅ **Benefici Implementati**
+- **Accuratezza dati**: Trend basati su dati reali invece di simulazioni per decisioni informate
+- **Performance ottimizzate**: Query limitate temporalmente per caricamento rapido
+- **Struttura logica**: Organizzazione coerente statistiche per categoria funzionale
+- **Manutenibilità**: Codice centralizzato per calcoli trend riutilizzabile
+- **Monitoraggio operativo**: Visibilità real-time su performance settimanali sistema
+
+### 📊 **Dashboard Moderna con Statistiche Reali - v2.29.0** ⭐ **CONSOLIDATO**
 
 #### 🎯 **Dashboard Completamente Ridisegnata**
 - **Design moderno**: Interfaccia completamente rinnovata con Bootstrap, gradients e animazioni

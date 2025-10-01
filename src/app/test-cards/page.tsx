@@ -6,37 +6,43 @@ import {
   Users, Package, Truck, Calendar, AlertTriangle, CheckCircle, 
   FileText, Clock, Home, BarChart3, DollarSign, Upload, 
   Settings, Database, Shield, Bell, Search, Plus,
-  TrendingUp, TrendingDown, Activity, Zap, RefreshCw
+  TrendingUp, TrendingDown, Activity, Zap, RefreshCw, Tag, HelpCircle, Car, Eye, Construction
 } from 'lucide-react';
+import PodMancantiModal from '@/components/PodMancantiModal';
+import TravelsNotInTabModal from '@/components/TravelsNotInTabModal';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Interfacce per i dati
 interface Stat {
-  label: string;
+  title: string;
   value: number | string;
-  trend: string;
-  color: string;
-}
-
-interface SectionStats {
-  stats: Stat[];
+  trend: number;
+  icon: string;
 }
 
 interface DashboardData {
-  anagrafiche: SectionStats;
-  analytics: SectionStats;
-  fatturazione: SectionStats;
-  import: SectionStats;
-  veicoli: SectionStats;
-  sistema: SectionStats;
+  anagrafiche: Stat[];
+  analytics: Stat[];
+  fatturazione: Stat[];
+  import: Stat[];
+  veicoli: Stat[];
+  sistema: Stat[];
+  supporto: Stat[];
+  viaggi: Stat[];
 }
 
 export default function ModernDashboard() {
+  const { user } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [notifications, setNotifications] = useState(3);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  // Stati per i modal
+  const [isPodMancantiModalOpen, setIsPodMancantiModalOpen] = useState(false);
+  const [isTravelsNotInTabModalOpen, setIsTravelsNotInTabModalOpen] = useState(false);
 
   // Aggiorna l'orologio ogni secondo
   useEffect(() => {
@@ -90,22 +96,7 @@ export default function ModernDashboard() {
     return () => clearInterval(refreshTimer);
   }, []);
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('it-IT', { 
-      hour: '2-digit', 
-      minute: '2-digit', 
-      second: '2-digit' 
-    });
-  };
 
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('it-IT', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
-  };
 
   const AnimatedCounter = ({ value }: { value: number | string }) => {
     return <span>{value}</span>;
@@ -114,7 +105,7 @@ export default function ModernDashboard() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="container-fluid py-4">
+      <div className="dashboard-container">
         <div className="d-flex justify-content-center align-items-center" style={{ height: '80vh' }}>
           <div className="text-center">
             <div className="spinner-border text-primary mb-3" role="status" style={{ width: '3rem', height: '3rem' }}>
@@ -131,7 +122,7 @@ export default function ModernDashboard() {
   // Error state
   if (error) {
     return (
-      <div className="container-fluid py-4">
+      <div className="dashboard-container">
         <div className="d-flex justify-content-center align-items-center" style={{ height: '80vh' }}>
           <div className="text-center">
             <AlertTriangle className="text-danger mb-3" size={48} />
@@ -152,7 +143,7 @@ export default function ModernDashboard() {
   // No data state
   if (!dashboardData) {
     return (
-      <div className="container-fluid py-4">
+      <div className="dashboard-container">
         <div className="d-flex justify-content-center align-items-center" style={{ height: '80vh' }}>
           <div className="text-center">
             <Database className="text-warning mb-3" size={48} />
@@ -257,12 +248,7 @@ export default function ModernDashboard() {
           box-shadow: 0 6px 20px rgba(13, 110, 253, 0.4);
         }
         
-        .header-card {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          border-radius: 15px;
-          color: white;
-          margin-bottom: 2rem;
-        }
+
         
         .search-box {
           border-radius: 25px;
@@ -295,54 +281,48 @@ export default function ModernDashboard() {
         }
       `}</style>
 
-      <div className="container-fluid py-4">
-        {/* Header Dinamico */}
-        <div className="header-card p-4 mb-4">
-          <div className="row align-items-center">
-            <div className="col-md-6">
-              <h1 className="mb-2">
-                <Activity className="me-3" size={32} />
-                Dashboard Gestione Partesa
-              </h1>
-              <p className="mb-0 opacity-75">
-                Benvenuto! Oggi è {formatDate(currentTime)}
+      <div className="dashboard-container">
+        {/* Header */}
+        <div className="dashboard-header">
+          <div className="header-content d-flex justify-content-between align-items-center">
+            <div className="header-info">
+              <h1 className="dashboard-title">Partesa Hub</h1>
+              <p className="dashboard-subtitle">
+                Benvenuto, <strong>{user?.username || 'Utente'}</strong>! 
+                <span className="user-role">{user?.role || 'Utente'}</span>
               </p>
             </div>
-            <div className="col-md-6 text-md-end">
-              <div className="d-flex align-items-center justify-content-md-end gap-3">
-                <div className="text-center">
-                  <Clock size={24} className="mb-1" />
-                  <div className="h4 mb-0 font-monospace">{formatTime(currentTime)}</div>
-                </div>
-                <div className="position-relative">
-                  <Bell size={24} />
-                  {notifications > 0 && (
-                    <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-badge">
-                      {notifications}
-                    </span>
-                  )}
-                </div>
-                <RefreshCw size={20} className="icon-spin opacity-50" />
+            
+            {/* Barra di Ricerca al Centro */}
+            <div className="header-search w-50 mx-3">
+              <div className="position-relative">
+                <Search className="position-absolute top-50 start-0 translate-middle-y ms-3 text-muted" size={20} />
+                <input
+                  type="text"
+                  className="form-control search-box ps-5 py-2"
+                  placeholder="Cerca funzionalità, reports, veicoli..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+            
+            <div className="header-right">
+              <div className="header-badges-large" style={{justifyContent: 'flex-end'}}>
+                <span className="header-badge-large datetime">
+                  <Calendar size={18} />
+                  <span style={{fontSize: '1.1rem', fontWeight: '600'}}>{currentTime.toLocaleDateString('it-IT')}</span>
+                </span>
+                <span className="header-badge-large datetime">
+                  <Clock size={18} />
+                  <span style={{fontSize: '1.1rem', fontWeight: '600'}}>{currentTime.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</span>
+                </span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Barra di Ricerca */}
-        <div className="row mb-4">
-          <div className="col-md-8 mx-auto">
-            <div className="position-relative">
-              <Search className="position-absolute top-50 start-0 translate-middle-y ms-3 text-muted" size={20} />
-              <input
-                type="text"
-                className="form-control search-box ps-5 py-3"
-                placeholder="Cerca funzionalità, reports, veicoli..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </div>
-        </div>
+
 
         {/* Cards Dashboard */}
         <div className="row g-4">
@@ -361,42 +341,30 @@ export default function ModernDashboard() {
               <div className="card-body">
                 <div className="row g-2 mb-3">
                   <div className="col-6">
-                    <Link href="/clienti" className="btn btn-outline-primary btn-action btn-sm w-100">
+                    <Link href="/vehicles/suppliers" className="btn btn-outline-primary btn-action btn-sm w-100">
                       <Users size={16} className="me-1" />
-                      Clienti
-                    </Link>
-                  </div>
-                  <div className="col-6">
-                    <Link href="/fornitori" className="btn btn-outline-primary btn-action btn-sm w-100">
-                      <Truck size={16} className="me-1" />
                       Fornitori
                     </Link>
                   </div>
                   <div className="col-6">
-                    <Link href="/categorie" className="btn btn-outline-primary btn-action btn-sm w-100">
-                      <Package size={16} className="me-1" />
+                    <Link href="/vehicles/categories" className="btn btn-outline-primary btn-action btn-sm w-100">
+                      <Tag size={16} className="me-1" />
                       Categorie
-                    </Link>
-                  </div>
-                  <div className="col-6">
-                    <Link href="/utenti" className="btn btn-outline-primary btn-action btn-sm w-100">
-                      <Shield size={16} className="me-1" />
-                      Utenti
                     </Link>
                   </div>
                 </div>
                 <hr />
                 <div className="stats-container">
-                  {dashboardData.anagrafiche.map((stat, index) => (
+                  {dashboardData?.anagrafiche?.map((stat, index) => (
                     <div key={index} className="stat-row d-flex justify-content-between align-items-center py-2">
                       <span className="text-muted">{stat.title}:</span>
                       <div className="d-flex align-items-center gap-2">
                         <strong className="h6 mb-0">
                           <AnimatedCounter value={stat.value} />
                         </strong>
-                        <span className={`trend-badge ${stat.trend >= 0 ? 'bg-success' : 'bg-danger'} text-white`}>
-                          {stat.trend >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                          {stat.trend >= 0 ? '+' : ''}{stat.trend}%
+                        <span className={`trend-badge ${stat.trend > 0 ? 'bg-success' : stat.trend < 0 ? 'bg-danger' : 'bg-secondary'} text-white`}>
+                          {stat.trend > 0 ? <TrendingUp size={12} /> : stat.trend < 0 ? <TrendingDown size={12} /> : <Activity size={12} />}
+                          {stat.trend > 0 ? '+' : ''}{stat.trend}
                         </span>
                       </div>
                     </div>
@@ -427,36 +395,48 @@ export default function ModernDashboard() {
                     </Link>
                   </div>
                   <div className="col-6">
-                    <Link href="/viaggi-analytics" className="btn btn-outline-primary btn-action btn-sm w-100">
-                      <Truck size={16} className="me-1" />
-                      Viaggi
-                    </Link>
+                    <button 
+                      className="btn btn-outline-secondary btn-action btn-sm w-100 opacity-50" 
+                      disabled 
+                      title="Funzionalità in sviluppo"
+                    >
+                      <Construction size={16} className="me-1" />
+                      Viaggi Analytics (WIP)
+                    </button>
                   </div>
                   <div className="col-6">
-                    <Link href="/performance" className="btn btn-outline-primary btn-action btn-sm w-100">
-                      <Zap size={16} className="me-1" />
-                      Performance
-                    </Link>
+                    <button 
+                      className="btn btn-outline-secondary btn-action btn-sm w-100 opacity-50" 
+                      disabled 
+                      title="Funzionalità in sviluppo"
+                    >
+                      <Construction size={16} className="me-1" />
+                      Performance Analytics (WIP)
+                    </button>
                   </div>
                   <div className="col-6">
-                    <Link href="/reports" className="btn btn-outline-primary btn-action btn-sm w-100">
-                      <FileText size={16} className="me-1" />
-                      Reports
-                    </Link>
+                    <button 
+                      className="btn btn-outline-secondary btn-action btn-sm w-100 opacity-50" 
+                      disabled 
+                      title="Funzionalità in sviluppo"
+                    >
+                      <Construction size={16} className="me-1" />
+                      Report Avanzati (WIP)
+                    </button>
                   </div>
                 </div>
                 <hr />
                 <div className="stats-container">
-                  {dashboardData.analytics.map((stat, index) => (
+                  {dashboardData?.analytics?.map((stat, index) => (
                     <div key={index} className="stat-row d-flex justify-content-between align-items-center py-2">
                       <span className="text-muted">{stat.title}:</span>
                       <div className="d-flex align-items-center gap-2">
                         <strong className="h6 mb-0">
                           <AnimatedCounter value={stat.value} />
                         </strong>
-                        <span className={`trend-badge ${stat.trend >= 0 ? 'bg-success' : 'bg-danger'} text-white`}>
-                          {stat.trend >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                          {stat.trend >= 0 ? '+' : ''}{stat.trend}%
+                        <span className={`trend-badge ${stat.trend > 0 ? 'bg-success' : stat.trend < 0 ? 'bg-danger' : 'bg-secondary'} text-white`}>
+                          {stat.trend > 0 ? <TrendingUp size={12} /> : stat.trend < 0 ? <TrendingDown size={12} /> : <Activity size={12} />}
+                          {stat.trend > 0 ? '+' : ''}{stat.trend}
                         </span>
                       </div>
                     </div>
@@ -483,34 +463,34 @@ export default function ModernDashboard() {
                   <div className="col-6">
                     <Link href="/fatturazione-terzisti" className="btn btn-outline-primary btn-action btn-sm w-100">
                       <DollarSign size={16} className="me-1" />
-                      Terzisti
+                      Fatturazione Terzisti
                     </Link>
                   </div>
                   <div className="col-6">
-                    <Link href="/fatturazione-delivery" className="btn btn-outline-primary btn-action btn-sm w-100">
+                    <Link href="/gestione" className="btn btn-outline-primary btn-action btn-sm w-100">
                       <Package size={16} className="me-1" />
-                      Delivery
+                      Fatturazione Delivery
                     </Link>
                   </div>
                   <div className="col-12">
                     <Link href="/handling" className="btn btn-outline-primary btn-action btn-sm w-100">
-                      <Truck size={16} className="me-1" />
-                      Handling Operations
+                      <Package size={16} className="me-1" />
+                      Fatturazione Handling
                     </Link>
                   </div>
                 </div>
                 <hr />
                 <div className="stats-container">
-                  {dashboardData.fatturazione.map((stat, index) => (
+                  {dashboardData?.fatturazione?.map((stat, index) => (
                     <div key={index} className="stat-row d-flex justify-content-between align-items-center py-2">
                       <span className="text-muted">{stat.title}:</span>
                       <div className="d-flex align-items-center gap-2">
                         <strong className="h6 mb-0">
                           <AnimatedCounter value={stat.value} />
                         </strong>
-                        <span className={`trend-badge ${stat.trend >= 0 ? 'bg-success' : 'bg-danger'} text-white`}>
-                          {stat.trend >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                          {stat.trend >= 0 ? '+' : ''}{stat.trend}%
+                        <span className={`trend-badge ${stat.trend > 0 ? 'bg-success' : stat.trend < 0 ? 'bg-danger' : 'bg-secondary'} text-white`}>
+                          {stat.trend > 0 ? <TrendingUp size={12} /> : stat.trend < 0 ? <TrendingDown size={12} /> : <Activity size={12} />}
+                          {stat.trend > 0 ? '+' : ''}{stat.trend}
                         </span>
                       </div>
                     </div>
@@ -537,34 +517,29 @@ export default function ModernDashboard() {
                   <div className="col-6">
                     <Link href="/import_viaggi_PoD" className="btn btn-outline-primary btn-action btn-sm w-100">
                       <Upload size={16} className="me-1" />
-                      Viaggi POD
+                      Import Viaggi PoD
                     </Link>
                   </div>
                   <div className="col-6">
                     <Link href="/import-delivery" className="btn btn-outline-primary btn-action btn-sm w-100">
-                      <Package size={16} className="me-1" />
-                      Delivery
+                      <Truck size={16} className="me-1" />
+                      Import Delivery
                     </Link>
                   </div>
-                  <div className="col-12">
-                    <Link href="/import-history" className="btn btn-outline-primary btn-action btn-sm w-100">
-                      <FileText size={16} className="me-1" />
-                      Storico Import
-                    </Link>
-                  </div>
+
                 </div>
                 <hr />
                 <div className="stats-container">
-                  {dashboardData.import.map((stat, index) => (
+                  {dashboardData?.import?.map((stat, index) => (
                     <div key={index} className="stat-row d-flex justify-content-between align-items-center py-2">
                       <span className="text-muted">{stat.title}:</span>
                       <div className="d-flex align-items-center gap-2">
                         <strong className="h6 mb-0">
                           <AnimatedCounter value={stat.value} />
                         </strong>
-                        <span className={`trend-badge ${stat.trend >= 0 ? 'bg-success' : 'bg-danger'} text-white`}>
-                          {stat.trend >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                          {stat.trend >= 0 ? '+' : ''}{stat.trend}%
+                        <span className={`trend-badge ${stat.trend > 0 ? 'bg-success' : stat.trend < 0 ? 'bg-danger' : 'bg-secondary'} text-white`}>
+                          {stat.trend > 0 ? <TrendingUp size={12} /> : stat.trend < 0 ? <TrendingDown size={12} /> : <Activity size={12} />}
+                          {stat.trend > 0 ? '+' : ''}{stat.trend}
                         </span>
                       </div>
                     </div>
@@ -589,40 +564,178 @@ export default function ModernDashboard() {
               <div className="card-body">
                 <div className="row g-2 mb-3">
                   <div className="col-6">
-                    <Link href="/vehicles" className="btn btn-outline-primary btn-action btn-sm w-100">
-                      <Truck size={16} className="me-1" />
-                      Gestione
+                    <Link href="/vehicles/list" className="btn btn-outline-primary btn-action btn-sm w-100">
+                      <Car size={16} className="me-1" />
+                      Lista Veicoli
                     </Link>
                   </div>
                   <div className="col-6">
-                    <Link href="/vehicles/scadenze" className="btn btn-outline-primary btn-action btn-sm w-100">
+                    <Link href="/vehicles/schedules" className="btn btn-outline-primary btn-action btn-sm w-100">
                       <Calendar size={16} className="me-1" />
-                      Scadenze
+                      Gestione Scadenze
+                    </Link>
+                  </div>
+                  <div className="col-6">
+                    <Link href="/vehicles/schedules/calendar" className="btn btn-outline-primary btn-action btn-sm w-100">
+                      <Calendar size={16} className="me-1" />
+                      Calendario Veicoli
+                    </Link>
+                  </div>
+                  <div className="col-6">
+                    <Link href="/vehicles/quotes" className="btn btn-outline-primary btn-action btn-sm w-100">
+                      <DollarSign size={16} className="me-1" />
+                      Preventivi Manutenzione
                     </Link>
                   </div>
                   <div className="col-12">
-                    <Link href="/vehicles/preventivi" className="btn btn-outline-primary btn-action btn-sm w-100">
-                      <FileText size={16} className="me-1" />
-                      Preventivi
+                    <Link href="/vehicles" className="btn btn-outline-primary btn-action btn-sm w-100">
+                      <Car size={16} className="me-1" />
+                      Dashboard Veicoli
                     </Link>
                   </div>
                 </div>
                 <hr />
                 <div className="stats-container">
-                  {dashboardData.veicoli.map((stat, index) => (
+                  {dashboardData?.veicoli?.map((stat, index) => (
                     <div key={index} className="stat-row d-flex justify-content-between align-items-center py-2">
                       <span className="text-muted">{stat.title}:</span>
                       <div className="d-flex align-items-center gap-2">
                         <strong className="h6 mb-0">
                           <AnimatedCounter value={stat.value} />
                         </strong>
-                        <span className={`trend-badge ${stat.trend >= 0 ? 'bg-success' : 'bg-danger'} text-white`}>
-                          {stat.trend >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                          {stat.trend >= 0 ? '+' : ''}{stat.trend}%
+                        <span className={`trend-badge ${stat.trend > 0 ? 'bg-success' : stat.trend < 0 ? 'bg-danger' : 'bg-secondary'} text-white`}>
+                          {stat.trend > 0 ? <TrendingUp size={12} /> : stat.trend < 0 ? <TrendingDown size={12} /> : <Activity size={12} />}
+                          {stat.trend > 0 ? '+' : ''}{stat.trend}
                         </span>
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Supporto */}
+          <div className="col-lg-4 col-md-6">
+            <div className="card dashboard-card h-100">
+              <div className="card-header card-header-purple text-white">
+                <div className="d-flex align-items-center">
+                  <HelpCircle className="me-3" size={24} />
+                  <div>
+                    <h5 className="mb-0">📚 Supporto</h5>
+                    <small className="opacity-75">Guide e documentazione</small>
+                  </div>
+                </div>
+              </div>
+              <div className="card-body">
+                <div className="row g-2 mb-3">
+                  <div className="col-6">
+                    <Link href="/funzionalita" className="btn btn-outline-primary btn-action btn-sm w-100">
+                      <HelpCircle size={16} className="me-1" />
+                      Funzionalità
+                    </Link>
+                  </div>
+                  <div className="col-6">
+                    <Link href="/documents/prd" className="btn btn-outline-primary btn-action btn-sm w-100">
+                      <FileText size={16} className="me-1" />
+                      Guide PRD
+                    </Link>
+                  </div>
+                  <div className="col-12">
+                    <Link href="/documents/architettura" className="btn btn-outline-primary btn-action btn-sm w-100">
+                      <Settings size={16} className="me-1" />
+                      Architettura Tecnica
+                    </Link>
+                  </div>
+                </div>
+                <hr />
+                <div className="stats-container">
+                  {dashboardData?.supporto?.map((stat, index) => (
+                    <div key={index} className="stat-row d-flex justify-content-between align-items-center py-2">
+                      <span className="text-muted">{stat.title}:</span>
+                      <div className="d-flex align-items-center gap-2">
+                        <strong className="h6 mb-0">
+                          <AnimatedCounter value={stat.value} />
+                        </strong>
+                        <span className={`trend-badge ${stat.trend > 0 ? 'bg-success' : stat.trend < 0 ? 'bg-danger' : 'bg-secondary'} text-white`}>
+                          {stat.trend > 0 ? <TrendingUp size={12} /> : stat.trend < 0 ? <TrendingDown size={12} /> : <Activity size={12} />}
+                          {stat.trend > 0 ? '+' : ''}{stat.trend}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Viaggi */}
+          <div className="col-lg-4 col-md-6">
+            <div className="card dashboard-card h-100">
+              <div className="card-header card-header-blue text-white">
+                <div className="d-flex align-items-center">
+                  <Truck className="me-3" size={24} />
+                  <div>
+                    <h5 className="mb-0">🚛 Viaggi</h5>
+                    <small className="opacity-75">Gestione e monitoraggio viaggi</small>
+                  </div>
+                </div>
+              </div>
+              <div className="card-body">
+                <div className="row g-2 mb-3">
+                  <div className="col-6">
+                    <Link href="/viaggi" className="btn btn-outline-primary btn-action btn-sm w-100">
+                      <Truck size={16} className="me-1" />
+                      Gestione Viaggi
+                    </Link>
+                  </div>
+                  <div className="col-6">
+                    <Link href="/monitoraggio" className="btn btn-outline-primary btn-action btn-sm w-100">
+                      <BarChart3 size={16} className="me-1" />
+                      Monitoraggio
+                    </Link>
+                  </div>
+                  <div className="col-12">
+                    <Link href="/viaggi-pod" className="btn btn-outline-primary btn-action btn-sm w-100">
+                      <Package size={16} className="me-1" />
+                      Viaggi POD
+                    </Link>
+                  </div>
+                </div>
+                <hr />
+                <div className="stats-container">
+                  {dashboardData?.viaggi?.map((stat, index) => {
+                    // Rendi cliccabili 'Monitoraggi Pending' e 'Viaggi Pod Pending'
+                    const isClickable = stat.title === 'Monitoraggi Pending' || stat.title === 'Viaggi Pod Pending';
+                    
+                    return (
+                      <div key={index} className="stat-row d-flex justify-content-between align-items-center py-2">
+                        <span className="text-muted">{stat.title}:</span>
+                        <div className="d-flex align-items-center gap-2">
+                          <strong 
+                            className={`h6 mb-0 ${isClickable ? 'clickable-stat' : ''}`}
+                            onClick={isClickable ? () => {
+                              if (stat.title === 'Monitoraggi Pending') {
+                                setIsTravelsNotInTabModalOpen(true);
+                              } else if (stat.title === 'Viaggi Pod Pending') {
+                                setIsPodMancantiModalOpen(true);
+                              }
+                            } : undefined}
+                            style={{ cursor: isClickable ? 'pointer' : 'default' }}
+                          >
+                            <AnimatedCounter value={stat.value} />
+                            {isClickable && (
+                              <Eye size={14} className="ms-1" style={{ verticalAlign: 'middle' }} />
+                            )}
+                          </strong>
+                          <span className={`trend-badge ${stat.trend > 0 ? 'bg-success' : stat.trend < 0 ? 'bg-danger' : 'bg-secondary'} text-white`}>
+                            {stat.trend > 0 ? <TrendingUp size={12} /> : stat.trend < 0 ? <TrendingDown size={12} /> : <Activity size={12} />}
+                            {stat.trend > 0 ? '+' : ''}{stat.trend}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -643,36 +756,42 @@ export default function ModernDashboard() {
               <div className="card-body">
                 <div className="row g-2 mb-3">
                   <div className="col-6">
-                    <Link href="/backup-dashboard" className="btn btn-outline-primary btn-action btn-sm w-100">
-                      <Database size={16} className="me-1" />
-                      Backup
-                    </Link>
-                  </div>
-                  <div className="col-6">
-                    <Link href="/sistema/logs" className="btn btn-outline-primary btn-action btn-sm w-100">
-                      <FileText size={16} className="me-1" />
-                      Logs
-                    </Link>
-                  </div>
-                  <div className="col-12">
                     <Link href="/sistema/configurazioni" className="btn btn-outline-primary btn-action btn-sm w-100">
                       <Settings size={16} className="me-1" />
                       Configurazioni
                     </Link>
                   </div>
+                  <div className="col-6">
+                    <Link href="/sistema/logs" className="btn btn-outline-primary btn-action btn-sm w-100">
+                      <FileText size={16} className="me-1" />
+                      Log Sistema
+                    </Link>
+                  </div>
+                  <div className="col-6">
+                    <Link href="/sistema" className="btn btn-outline-primary btn-action btn-sm w-100">
+                      <Users size={16} className="me-1" />
+                      Gestione Utenti
+                    </Link>
+                  </div>
+                  <div className="col-6">
+                    <Link href="/backup-dashboard" className="btn btn-outline-primary btn-action btn-sm w-100">
+                      <Shield size={16} className="me-1" />
+                      Backup Dashboard
+                    </Link>
+                  </div>
                 </div>
                 <hr />
                 <div className="stats-container">
-                  {dashboardData.sistema.map((stat, index) => (
+                  {dashboardData?.sistema?.map((stat, index) => (
                     <div key={index} className="stat-row d-flex justify-content-between align-items-center py-2">
                       <span className="text-muted">{stat.title}:</span>
                       <div className="d-flex align-items-center gap-2">
                         <strong className="h6 mb-0">
                           <AnimatedCounter value={stat.value} />
                         </strong>
-                        <span className={`trend-badge ${stat.trend >= 0 ? 'bg-success' : 'bg-danger'} text-white`}>
-                          {stat.trend >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                          {stat.trend >= 0 ? '+' : ''}{stat.trend}%
+                        <span className={`trend-badge ${stat.trend > 0 ? 'bg-success' : stat.trend < 0 ? 'bg-danger' : 'bg-secondary'} text-white`}>
+                          {stat.trend > 0 ? <TrendingUp size={12} /> : stat.trend < 0 ? <TrendingDown size={12} /> : <Activity size={12} />}
+                          {stat.trend > 0 ? '+' : ''}{stat.trend}
                         </span>
                       </div>
                     </div>
@@ -694,7 +813,7 @@ export default function ModernDashboard() {
             <div className="col-md-6 text-md-start">
               <p className="text-muted mb-0">
                 <CheckCircle size={16} className="me-2 text-success" />
-                Sistema operativo - Ultimo aggiornamento: {formatTime(currentTime)}
+                Sistema operativo - Ultimo aggiornamento: {currentTime.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
               </p>
             </div>
             <div className="col-md-6 text-md-end">
@@ -710,6 +829,18 @@ export default function ModernDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Modal per i viaggi POD mancanti */}
+      <PodMancantiModal 
+        isOpen={isPodMancantiModalOpen}
+        onClose={() => setIsPodMancantiModalOpen(false)}
+      />
+
+      {/* Modal per i viaggi non sincronizzati */}
+      <TravelsNotInTabModal 
+        isOpen={isTravelsNotInTabModalOpen}
+        onClose={() => setIsTravelsNotInTabModalOpen(false)}
+      />
     </>
   );
 }

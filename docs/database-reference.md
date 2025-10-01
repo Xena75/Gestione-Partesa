@@ -75,6 +75,12 @@ UM1                      varchar(10)    YES        NULL
 ID_Consegna              varchar(100)   YES   UNI  NULL     STORED GENERATED
 ```
 
+**Utilizzo nel progetto:**
+- **Pagine**: Dashboard principale, gestione consegne
+- **API**: `/api/dashboard-stats` per statistiche consegne
+- **Componenti**: Sistema di tracciamento consegne
+- **Funzionalità**: Tracciamento consegne, reportistica, analisi performance
+
 #### delivery_mappings
 ```sql
 Field         Type        Null  Key  Default              Extra
@@ -85,6 +91,12 @@ mapping_data  longtext    NO        NULL
 created_at    timestamp   NO        current_timestamp()  
 updated_at    timestamp   NO        current_timestamp()  on update current_timestamp()
 ```
+
+**Utilizzo nel progetto:**
+- **Pagine**: `/import_delivery` - Import dati delivery
+- **API**: `/api/import-delivery/delivery-mappings` per gestione mapping
+- **Componenti**: `DeliveryMappingInterface.tsx` per configurazione mapping
+- **Funzionalità**: Mapping colonne CSV per import dati delivery
 
 #### fatt_delivery
 ```sql
@@ -126,6 +138,13 @@ settimana          tinyint(4)     YES        NULL                 STORED GENERAT
 ID_fatt            varchar(255)   YES        NULL                 STORED GENERATED
 anno               smallint(6)    YES        NULL                 STORED GENERATED
 ```
+
+**Utilizzo nel progetto:**
+- **Pagine**: `/delivery` - Visualizzazione e gestione delivery
+- **API**: `/api/delivery/data` per recupero dati delivery
+- **Componenti**: `DeliveryTable.tsx` per visualizzazione tabellare
+- **Funzionalità**: Gestione fatturazione delivery, analisi performance, reportistica
+- **Analytics**: `DeliveryCharts.tsx` per grafici e statistiche
 
 #### fatt_extra_navette
 ```sql
@@ -223,6 +242,13 @@ updated_by  varchar(100)                                      YES        NULL
 updated_at  datetime                                          NO        current_timestamp()  on update current_timestamp()
 ```
 
+**Utilizzo nel progetto:**
+- **Pagine**: Sistema configurazione generale
+- **API**: API di configurazione sistema
+- **Componenti**: Gestione configurazioni
+- **Funzionalità**: Configurazione parametri sistema
+- **Dashboard**: Controllo configurazioni attive
+
 #### system_logs
 ```sql
 Field      Type                                           Null  Key  Default              Extra
@@ -235,6 +261,13 @@ details    text                                           YES        NULL
 ip_address varchar(45)                                    YES        NULL                 
 status     enum('success','error','warning')              NO    MUL  success              
 ```
+
+**Utilizzo nel progetto:**
+- **Pagine**: Sistema logging e audit
+- **API**: API di logging sistema
+- **Componenti**: Gestione log sistema
+- **Funzionalità**: Tracciamento attività, audit trail
+- **Dashboard**: Monitoraggio log, controllo errori
 
 #### tab_bu
 ```sql
@@ -345,6 +378,13 @@ UM              varchar(10)  YES        NULL
 Classe_Prod     varchar(50)  YES   MUL  NULL     
 ```
 
+**Utilizzo nel progetto:**
+- **Pagine**: Sistema gestione prodotti
+- **API**: Query per classificazione prodotti
+- **Componenti**: Gestione catalogo prodotti
+- **Funzionalità**: Classificazione prodotti, gestione articoli
+- **Dashboard**: Statistiche prodotti per classe
+
 #### tab_tariffe
 ```sql
 Field                 Type           Null  Key  Default  Extra
@@ -369,11 +409,20 @@ Azienda_Vettore   varchar(200) YES        NULL
 Nome_Vettore      varchar(255) YES        NULL     
 Cognome_Vettore   varchar(100) YES        NULL     
 Cellulare_Vettore varchar(20)  YES        NULL     
+```
+
 Email_Vettore     varchar(100) YES        NULL     
 Data_Modifica     datetime     YES        NULL     
 Targa_Mezzo       varchar(191) YES        NULL     
 Id_Tariffa        varchar(10)  YES        2        
 ```
+
+**Utilizzo nel progetto:**
+- **Pagine**: Sistema gestione vettori/trasportatori
+- **API**: `/api/terzisti/import` per gestione fatturazione terzisti
+- **Componenti**: Gestione anagrafica vettori
+- **Funzionalità**: Gestione trasportatori, fatturazione terzisti
+- **Dashboard**: Statistiche per vettore, performance trasportatori
 
 #### tab_viaggi
 ```sql
@@ -415,6 +464,14 @@ Sett                     double       YES        NULL
 Giorno                   varchar(255) YES        NULL     
 ```
 
+**Utilizzo nel progetto:**
+- **Pagine**: `/viaggi` - Gestione e visualizzazione viaggi
+- **API**: `/api/viaggi/data`, `/api/viaggi/sync-tab-viaggi` per sincronizzazione
+- **Componenti**: `ViaggioTab` interface, pagine di modifica viaggi
+- **Funzionalità**: Gestione viaggi, sincronizzazione con travels e viaggi_pod
+- **Dashboard**: Statistiche viaggi, monitoraggio performance
+- **Sync**: Sincronizzazione automatica da database viaggi_db
+
 #### user_sessions
 ```sql
 Field      Type        Null  Key  Default              Extra
@@ -437,6 +494,28 @@ role          enum('admin','user')    YES        user
 created_at    timestamp               NO        current_timestamp()  
 updated_at    timestamp               NO        current_timestamp()  on update current_timestamp()
 ```
+
+**Utilizzo nel progetto:**
+- **Autenticazione**: Sistema di login e gestione utenti
+- **API**: `/api/auth/login`, `/api/auth/register`
+- **Componenti**: Sistema di autenticazione globale
+- **Middleware**: Controllo accessi e autorizzazioni
+
+#### user_sessions
+```sql
+Field      Type        Null  Key  Default              Extra
+id         varchar(36) NO    PRI  uuid()               
+user_id    varchar(36) NO    MUL  NULL                 
+token      text        NO        NULL                 
+expires_at timestamp   NO    MUL  current_timestamp()  on update current_timestamp()
+created_at timestamp   NO        current_timestamp()  
+updated_at timestamp   NO        current_timestamp()  on update current_timestamp()
+```
+
+**Utilizzo nel progetto:**
+- **Sessioni**: Gestione token di sessione utente
+- **API**: Sistema di autenticazione con token
+- **Sicurezza**: Controllo scadenza sessioni
 
 ## Database: viaggi_db
 
@@ -472,6 +551,13 @@ created_at  timestamp    NO        current_timestamp()
 updated_at  timestamp    NO        current_timestamp()  on update current_timestamp()
 ```
 
+**Utilizzo nel progetto:**
+- **Pagine**: Sistema gestione dipendenti
+- **API**: `/api/dashboard-stats` per statistiche dipendenti
+- **Componenti**: Gestione anagrafica dipendenti
+- **Funzionalità**: Gestione personale, assegnazione viaggi
+- **Dashboard**: Statistiche dipendenti attivi
+
 #### employees
 ```sql
 Field       Type         Null  Key  Default              Extra
@@ -498,6 +584,24 @@ mapping_data json         NO        NULL
 created_at   timestamp    NO        current_timestamp()  
 updated_at   timestamp    NO        current_timestamp()  on update current_timestamp()
 ```
+
+#### intervention_types
+```sql
+Field       Type         Null  Key  Default              Extra
+id          int(11)      NO    PRI  NULL                 auto_increment
+name        varchar(100) NO    UNI  NULL                 
+description text         YES        NULL                 
+active      tinyint(1)   YES        1                    
+created_at  timestamp    NO        current_timestamp()  
+updated_at  timestamp    NO        current_timestamp()  on update current_timestamp()
+```
+
+**Utilizzo nel progetto:**
+- **Pagine**: Sistema gestione tipi intervento
+- **API**: API per gestione categorie interventi
+- **Componenti**: Gestione tipologie manutenzione
+- **Funzionalità**: Classificazione interventi, gestione categorie
+- **Dashboard**: Controllo tipi intervento disponibili
 
 #### maintenance_quotes
 ```sql
@@ -588,6 +692,13 @@ created_at  timestamp    NO        current_timestamp()
 updated_at  timestamp    NO        current_timestamp()  on update current_timestamp()
 ```
 
+**Utilizzo nel progetto:**
+- **Pagine**: Sistema gestione fornitori
+- **API**: `/api/dashboard-stats` per statistiche fornitori
+- **Componenti**: Gestione anagrafica fornitori
+- **Funzionalità**: Gestione fornitori, preventivi manutenzione
+- **Dashboard**: Statistiche fornitori attivi
+
 #### travel_images
 ```sql
 Field       Type         Null  Key  Default              Extra
@@ -624,6 +735,13 @@ kmEffettivi              int(11)      YES       NULL                 STORED GENE
 oreEffettive             double       YES       NULL                 STORED GENERATED
 mese                     tinyint(4)   YES       NULL                 STORED GENERATED                 
 ```
+
+**Utilizzo nel progetto:**
+- **Pagine**: Sistema di monitoraggio viaggi
+- **API**: `/api/viaggi/sync-tab-viaggi` per sincronizzazione con tab_viaggi
+- **Componenti**: `data-viaggi.ts` per gestione dati
+- **Funzionalità**: Monitoraggio viaggi in tempo reale, sincronizzazione dati
+- **Dashboard**: Statistiche viaggi, calcolo KPI performance
 
 #### vehicle_documents
 ```sql
@@ -680,6 +798,13 @@ createdAt             datetime(3)  NO        current_timestamp(3)
 updatedAt             datetime(3)  NO        current_timestamp(3)             on update current_timestamp(3)
 ```
 
+**Utilizzo nel progetto:**
+- **Pagine**: Sistema gestione veicoli
+- **API**: `/api/dashboard-stats` per statistiche veicoli
+- **Componenti**: Gestione flotta veicoli
+- **Funzionalità**: Monitoraggio veicoli, manutenzione, documenti
+- **Dashboard**: Statistiche flotta, controllo scadenze
+
 #### viaggi_pod
 ```sql
 Field       Type         Null  Key  Default              Extra
@@ -706,119 +831,195 @@ updated_at  timestamp    NO        current_timestamp()  on update current_timest
 
 #### backup_activity_log
 ```sql
-Field       Type         Null  Key  Default              Extra
-id          int(11)      NO    PRI  NULL                 auto_increment
-activity    varchar(255) NO        NULL                 
-details     text         YES        NULL                 
-timestamp   timestamp    NO        current_timestamp()  
-user_id     varchar(50)  YES        NULL                 
-status      enum('success','error','warning') NO success
+Field         Type                                                                                                                                                                     Null  Key  Default              Extra
+id            int(11)                                                                                                                                                                  NO    PRI  NULL                 auto_increment
+job_id        int(11)                                                                                                                                                                  YES   MUL  NULL                 
+activity_type enum('job_started','job_completed','job_failed','job_cancelled','job_deleted','schedule_created','schedule_updated','schedule_deleted','alert_created','alert_resolved') NO    MUL  NULL                 
+user_id       varchar(100)                                                                                                                                                             NO    MUL  NULL                 
+details       text                                                                                                                                                                     YES        NULL                 
+created_at    timestamp                                                                                                                                                                NO    MUL  current_timestamp()  
 ```
 
 #### backup_alerts
 ```sql
-Field       Type                              Null  Key  Default              Extra
-id          int(11)                           NO    PRI  NULL                 auto_increment
-alert_type  enum('error','warning','info')   NO        NULL                 
-message     text                              NO        NULL                 
-created_at  timestamp                         NO        current_timestamp()  
-is_read     tinyint(1)                        NO        0                    
-severity    enum('low','medium','high')       NO        medium               
+Field            Type                                                         Null  Key  Default              Extra
+id               int(11)                                                      NO    PRI  NULL                 auto_increment
+alert_type       enum('error','warning','info','success')                     NO    MUL  NULL                 
+title            varchar(200)                                                 NO        NULL                 
+message          text                                                         NO        NULL                 
+source           enum('backup_job','schedule','system','storage','database') NO    MUL  NULL                 
+source_id        int(11)                                                      YES        NULL                 
+is_read          tinyint(1)                                                   YES   MUL  0                    
+is_resolved      tinyint(1)                                                   YES   MUL  0                    
+resolved_by      varchar(100)                                                 YES        NULL                 
+resolved_at      datetime                                                     YES        NULL                 
+resolution_notes text                                                         YES        NULL                 
+metadata         text                                                         YES        NULL                 
+created_at       timestamp                                                    NO    MUL  current_timestamp()  
+updated_at       timestamp                                                    NO        current_timestamp()  on update current_timestamp()
 ```
 
 #### backup_configs
 ```sql
-Field         Type         Null  Key  Default              Extra
-id            int(11)      NO    PRI  NULL                 auto_increment
-config_name   varchar(100) NO    UNI  NULL                 
-config_value  text         YES        NULL                 
-description   text         YES        NULL                 
-created_at    timestamp    NO        current_timestamp()  
-updated_at    timestamp    NO        current_timestamp()  on update current_timestamp()
+Field        Type                                      Null  Key  Default              Extra
+id           int(11)                                   NO    PRI  NULL                 auto_increment
+config_key   varchar(100)                              NO    UNI  NULL                 
+config_value text                                      NO        NULL                 
+description  text                                      YES        NULL                 
+config_type  enum('string','integer','boolean','json') YES        string               
+is_system    tinyint(1)                                YES   MUL  0                    
+created_at   timestamp                                 NO        current_timestamp()  
+updated_at   timestamp                                 NO        current_timestamp()  on update current_timestamp()
 ```
+
+**Utilizzo nel progetto:**
+- **Pagine**: `/backup-dashboard` - Gestione configurazioni backup
+- **API**: `/api/backup/config` per gestione configurazioni
+- **Componenti**: `BackupConfigManager.tsx`
+- **Funzionalità**: Configurazione parametri backup, impostazioni sistema
+- **Dashboard**: Controllo configurazioni backup
 
 #### backup_files
 ```sql
-Field       Type           Null  Key  Default              Extra
-id          int(11)        NO    PRI  NULL                 auto_increment
-file_name   varchar(255)   NO        NULL                 
-file_path   varchar(500)   NO        NULL                 
-file_size   bigint(20)     YES        NULL                 
-backup_date timestamp      NO        current_timestamp()  
-file_type   varchar(50)    YES        NULL                 
-checksum    varchar(64)    YES        NULL                 
-status      enum('active','archived','deleted') NO active
+Field                  Type                                                    Null  Key  Default              Extra
+id                     int(11)                                                 NO    PRI  NULL                 auto_increment
+job_id                 int(11)                                                 NO    MUL  NULL                 
+file_path              varchar(500)                                            NO        NULL                 
+file_name              varchar(255)                                            NO    MUL  NULL                 
+file_size_bytes        bigint(20)                                              NO        NULL                 
+checksum               varchar(64)                                             YES        NULL                 
+compression_type       enum('none','gzip','bzip2','xz')                        YES        gzip                 
+backup_type            enum('full','incremental','differential','manual')      YES        manual               
+created_at             timestamp                                               NO    MUL  current_timestamp()  
+execution_time_seconds int(11)                                                 YES        NULL                 
+compressed_size        bigint(20)                                              YES        NULL                 
+compression_ratio      decimal(5,2)                                            YES        NULL                 
+file_hash              varchar(64)                                             YES        NULL                 
+verification_status    enum('pending','verified','failed','skipped')           YES        pending              
+last_verified_at       timestamp                                               YES        NULL                 
 ```
+
+**Utilizzo nel progetto:**
+- **Pagine**: `/backup-dashboard` - Gestione file backup
+- **API**: `/api/backup/files` per gestione file
+- **Componenti**: Gestione archivio backup
+- **Funzionalità**: Archiviazione file backup, verifica integrità
+- **Dashboard**: Statistiche file backup, controllo spazio
 
 #### backup_jobs
 ```sql
-Field         Type                                    Null  Key  Default              Extra
-id            int(11)                                 NO    PRI  NULL                 auto_increment
-job_name      varchar(100)                            NO    UNI  NULL                 
-job_type      enum('full','incremental','differential') NO      NULL                 
-schedule_time time                                    YES        NULL                 
-frequency     enum('daily','weekly','monthly')        NO        daily                
-is_active     tinyint(1)                              NO        1                    
-last_run      timestamp                               YES        NULL                 
-next_run      timestamp                               YES        NULL                 
-created_at    timestamp                               NO        current_timestamp()  
-updated_at    timestamp                               NO        current_timestamp()  on update current_timestamp()
+Field                  Type                                     Null  Key  Default              Extra
+id                     int(11)                                  NO    PRI  NULL                 auto_increment
+name                   varchar(100)                             NO    UNI  NULL                 
+description            text                                     YES        NULL                 
+backup_type            enum('full','incremental','differential') NO        full                 
+status                 enum('pending','running','completed','failed','cancelled') NO MUL NULL
+start_time             datetime                                 YES        NULL                 
+end_time               datetime                                 YES        NULL                 
+duration_seconds       int(11)                                  YES        NULL                 
+database_list          text                                     NO        NULL                 
+backup_path            varchar(500)                             NO        NULL                 
+file_size_bytes        bigint(20)                               YES        NULL                 
+triggered_by           enum('manual','schedule','api')          YES   MUL  manual               
+triggered_by_user      varchar(100)                             NO        NULL                 
+retention_until        date                                     NO    MUL  NULL                 
+error_message          text                                     YES        NULL                 
+progress_percentage    tinyint(4)                               YES        0                    
+created_at             timestamp                                NO        current_timestamp()  
+updated_at             timestamp                                NO        current_timestamp()  on update current_timestamp()
 ```
+
+**Utilizzo nel progetto:**
+- **Pagine**: `/backup-dashboard` - Dashboard gestione backup
+- **API**: `/api/backup/summary` per statistiche backup
+- **Componenti**: `BackupMonitor.tsx`, `BackupProgress.tsx`
+- **Funzionalità**: Gestione job backup, monitoraggio progresso
+- **Dashboard**: Statistiche backup, controllo stato job
 
 #### backup_logs
 ```sql
-Field       Type                              Null  Key  Default              Extra
-id          int(11)                           NO    PRI  NULL                 auto_increment
-job_id      int(11)                           YES   MUL  NULL                 
-start_time  timestamp                         NO        current_timestamp()  
-end_time    timestamp                         YES        NULL                 
-status      enum('running','completed','failed') NO     NULL                 
-log_message text                              YES        NULL                 
-file_count  int(11)                           YES        NULL                 
-total_size  bigint(20)                        YES        NULL                 
+Field          Type                                              Null  Key  Default              Extra
+id             int(11)                                           NO    PRI  NULL                 auto_increment
+backup_file_id int(11)                                           YES   MUL  NULL                 
+schedule_id    int(11)                                           YES   MUL  NULL                 
+log_level      enum('debug','info','warning','error','critical') NO    MUL  NULL                 
+message        text                                              NO        NULL                 
+details        longtext                                          YES        NULL                 
+created_at     timestamp                                         NO    MUL  current_timestamp()  
 ```
 
 #### backup_schedules
 ```sql
-Field         Type                             Null  Key  Default              Extra
-id            int(11)                          NO    PRI  NULL                 auto_increment
-schedule_name varchar(100)                     NO    UNI  NULL                 
-cron_expression varchar(100)                  NO        NULL                 
-is_enabled    tinyint(1)                       NO        1                    
-last_execution timestamp                       YES        NULL                 
-next_execution timestamp                       YES        NULL                 
-backup_type   enum('full','incremental')       NO        full                 
-retention_days int(11)                         NO        30                   
-created_at    timestamp                        NO        current_timestamp()  
-updated_at    timestamp                        NO        current_timestamp()  on update current_timestamp()
+Field                  Type                         Null  Key  Default              Extra
+id                     int(11)                      NO    PRI  NULL                 auto_increment
+name                   varchar(100)                 NO    UNI  NULL                 
+description            text                         YES        NULL                 
+cron_expression        varchar(100)                 NO        NULL                 
+backup_type            enum('full','incremental')   NO        full                 
+database_list          text                         NO        NULL                 
+backup_path            varchar(500)                 NO        NULL                 
+is_active              tinyint(1)                   YES   MUL  1                    
+retention_days         int(11)                      YES        30                   
+max_parallel_jobs      int(11)                      YES        1                    
+priority               enum('low','normal','high')  YES        normal               
+notification_emails    text                         YES        NULL                 
+created_by             varchar(100)                 NO        NULL                 
+last_run               datetime                     YES        NULL                 
+next_run               datetime                     YES   MUL  NULL                 
+created_at             timestamp                    NO        current_timestamp()  
+updated_at             timestamp                    NO        current_timestamp()  on update current_timestamp()
+max_retries            int(11)                      YES        3                    
+retry_interval_minutes int(11)                      YES        30                   
+email_notifications    tinyint(1)                   YES        0                    
 ```
+
+**Utilizzo nel progetto:**
+- **Pagine**: `/backup-dashboard` - Gestione schedule backup
+- **API**: `/api/backup/schedules` per gestione programmazioni
+- **Componenti**: `BackupScheduleManager.tsx`
+- **Funzionalità**: Programmazione backup automatici, gestione cron
+- **Dashboard**: Controllo schedule attive, prossime esecuzioni
 
 #### system_config
 ```sql
-Field       Type         Null  Key  Default              Extra
-id          int(11)      NO    PRI  NULL                 auto_increment
-config_key  varchar(100) NO    UNI  NULL                 
-config_value text        YES        NULL                 
-description text         YES        NULL                 
-created_at  timestamp    NO        current_timestamp()  
-updated_at  timestamp    NO        current_timestamp()  on update current_timestamp()
+Field       Type                                                 Null  Key  Default              Extra
+id          int(11)                                              NO    PRI  NULL                 auto_increment
+category    enum('general','backup','notifications','security')  NO    MUL  NULL                 
+key         varchar(100)                                         NO        NULL                 
+value       text                                                 NO        NULL                 
+description text                                                 YES        NULL                 
+updated_by  varchar(100)                                         YES        NULL                 
+updated_at  datetime                                             NO        current_timestamp()  on update current_timestamp()
 ```
 
 #### system_logs
 ```sql
-Field      Type                              Null  Key  Default              Extra
-id         int(11)                           NO    PRI  NULL                 auto_increment
-log_level  enum('info','warning','error')    NO        info                 
-message    text                              NO        NULL                 
-timestamp  timestamp                         NO        current_timestamp()  
-module     varchar(100)                      YES        NULL                 
-user_id    varchar(50)                       YES        NULL                 
-ip_address varchar(45)                       YES        NULL                 
+Field      Type                                   Null  Key  Default              Extra
+id         int(11)                                NO    PRI  NULL                 auto_increment
+timestamp  datetime                               NO    MUL  current_timestamp()  
+type       enum('access','backup','error','import','system') NO MUL NULL
+user       varchar(100)                           NO    MUL  NULL                 
+action     varchar(255)                           NO        NULL                 
+details    text                                   YES        NULL                 
+ip_address varchar(45)                            YES        NULL                 
+status     enum('success','error','warning')      NO    MUL  success              
 ```
 
 ---
 
 ## Note Aggiuntive
+
+### ⚠️ IMPORTANTE - Aggiornamento Strutture Database
+**Data aggiornamento**: Dicembre 2024
+
+Le strutture delle tabelle del database `backup_management` sono state verificate e aggiornate per riflettere la realtà del database in produzione. Le principali differenze corrette includono:
+
+- **backup_logs**: La tabella reale contiene `log_level`, `message`, `details` invece di `status`, `start_time`, `end_time`
+- **backup_jobs**: Struttura completamente diversa con campi aggiuntivi per gestione avanzata dei backup
+- **backup_files**: Aggiunta di campi per compressione, verifica e metadati avanzati
+- **backup_schedules**: Estesa con configurazioni per retry, notifiche e priorità
+- **backup_alerts**: Struttura più complessa con gestione risoluzione e metadati
+- **system_logs**: Campi `type`, `user`, `action`, `status` invece di `log_level`, `module`, `user_id`
 
 ### Relazioni tra Database
 - Il database `gestionelogistica` contiene i dati principali per la gestione logistica e delle consegne
@@ -1340,16 +1541,22 @@ SELECT * FROM backup_schedules WHERE enabled = TRUE;
 ```json
 {
   "anagrafiche": [
-    {"title": "Clienti Attivi", "value": "156", "trend": 12, "icon": "Users"},
-    {"title": "Fornitori", "value": "23", "trend": 5, "icon": "Building"},
-    {"title": "Categorie", "value": "12", "trend": 0, "icon": "Tag"},
-    {"title": "Utenti Sistema", "value": "8", "trend": 14, "icon": "UserCheck"}
+    {"title": "Fornitori Attivi", "value": "23", "trend": 5, "icon": "Building"},
+    {"title": "Categorie", "value": "12", "trend": 0, "icon": "Tag"}
   ],
   "analytics": [...],
   "fatturazione": [...],
   "import": [...],
-  "veicoli": [...],
-  "sistema": [...]
+  "veicoli": [
+    {"title": "Veicoli Attivi", "value": "15", "trend": 8, "icon": "Truck"},
+    {"title": "Manutenzioni", "value": "42", "trend": -5, "icon": "Wrench"},
+    {"title": "Intervention Types", "value": "8", "trend": 12, "icon": "Settings"}
+  ],
+  "sistema": [
+    {"title": "Backup Completati", "value": "156", "trend": 12, "icon": "Database"},
+    {"title": "Log Sistema", "value": "1,234", "trend": 8, "icon": "FileText"},
+    {"title": "Utenti Sistema", "value": "8", "trend": 14, "icon": "UserCheck"}
+  ]
 }
 ```
 
@@ -1360,11 +1567,35 @@ SELECT * FROM backup_schedules WHERE enabled = TRUE;
 - Statistiche veicoli da `viaggi_db.veicoli`
 - Statistiche backup da `backup_management.backup_logs`
 
+**Trend Settimanali Implementati:**
+- **Viaggi**: Query con `WEEK()` e `YEAR()` per confronti settimanali su `tab_viaggi`, `viaggi_pod`, `travels`
+- **Sistema**: Confronti settimanali su `backup_logs`, `system_logs`, `users` per trend reali
+- **Veicoli**: Query settimanali su `vehicles`, `vehicle_schedules`, `maintenance_quotes`, `intervention_types`
+- **Backup**: Conteggio backup completati con confronto settimana corrente vs precedente
+
+**Esempi Query Settimanali:**
+```sql
+-- Viaggi completati con trend settimanale
+SELECT 
+  COUNT(*) as completed,
+  COUNT(CASE WHEN WEEK(Data) = WEEK(CURDATE()) AND YEAR(Data) = YEAR(CURDATE()) THEN 1 END) as completed_this_week,
+  COUNT(CASE WHEN WEEK(Data) = WEEK(CURDATE()) - 1 AND YEAR(Data) = YEAR(CURDATE()) THEN 1 END) as completed_prev_week
+FROM tab_viaggi
+
+-- Backup con trend settimanale
+SELECT 
+  COUNT(*) as backups_this_week,
+  COUNT(CASE WHEN WEEK(created_at) = WEEK(CURDATE()) - 1 AND YEAR(created_at) = YEAR(CURDATE()) THEN 1 END) as backups_prev_week
+FROM backup_logs 
+WHERE status = 'completed' AND created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)
+```
+
 **Note implementazione:**
-- Attualmente usa dati simulati realistici per evitare errori di connessione
-- Calcolo automatico dei trend percentuali
+- **Trend reali**: Sostituiti dati simulati con query SQL reali per trend accurati
+- Calcolo automatico dei trend percentuali con `calculateTrend()`
 - Formattazione valuta in EUR
 - Refresh automatico ogni 5 minuti nel frontend
+- **Filtro temporale**: Query limitate agli ultimi 14 giorni per performance ottimali
 
 ---
 

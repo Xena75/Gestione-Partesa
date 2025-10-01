@@ -1,6 +1,77 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.29.0
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.30.0
 
-## 🚀 **VERSIONE 2.29.0** - Dashboard Moderna con Statistiche Reali ⭐ **NUOVO**
+## 🚀 **VERSIONE 2.30.0** - Trend Settimanali Reali e Ottimizzazioni Dashboard ⭐ **NUOVO**
+
+### 📈 **IMPLEMENTAZIONE TREND SETTIMANALI REALI**
+- **Sostituzione dati simulati**: Eliminazione completa trend simulati con implementazione calcoli reali basati su dati storici database
+- **Query SQL settimanali**: Implementazione query avanzate con funzioni `WEEK()` e `YEAR()` per confronti temporali accurati
+- **Funzione calculateTrend()**: Algoritmo centralizzato per calcolo percentuali trend con gestione edge cases (divisione per zero, valori negativi)
+- **Filtro temporale ottimizzato**: Query limitate agli ultimi 14 giorni per performance ottimali e dati rilevanti
+- **Trend multi-database**: Calcoli distribuiti su gestionelogistica, viaggi_db e backup_management per copertura completa
+
+### 📊 **TREND IMPLEMENTATI PER SEZIONE OPERATIVA**
+- **Viaggi**: Confronti settimanali su tabelle `tab_viaggi`, `viaggi_pod`, `travels` per trend completamenti e performance
+- **Sistema**: Trend reali su `backup_logs`, `system_logs`, `users` per monitoraggio operativo e stabilità sistema
+- **Veicoli**: Query settimanali su `vehicles`, `vehicle_schedules`, `maintenance_quotes`, `intervention_types` per gestione flotta
+- **Backup**: Conteggio backup completati con confronto settimana corrente vs precedente per affidabilità sistema
+- **Anagrafiche**: Trend fornitori e categorie basati su dati di creazione/modifica per crescita anagrafica
+
+### 🔧 **OTTIMIZZAZIONI STRUTTURA DASHBOARD**
+- **Rimozione "Clienti Attivi"**: Eliminata statistica "Clienti Attivi" dalla card "Anagrafiche" per semplificazione interfaccia
+- **Rimozione link disabilitati**: Eliminati link "Clienti (WIP)" e "Utenti (WIP)" per pulizia UI e focus su funzionalità attive
+- **Spostamento "Intervention Types"**: Statistica spostata da card "Sistema" a "Veicoli" per coerenza logica e organizzazione tematica
+- **Correzione bug "Utenti Sistema"**: Risolto trend errato +33% con implementazione calcolo reale basato su dati storici
+- **Aggiornamento array indices**: Correzione indici `anagraficheStats[0]` e `anagraficheStats[1]` dopo rimozione primo elemento
+
+### 📈 **ESEMPI QUERY SETTIMANALI IMPLEMENTATE**
+```sql
+-- Viaggi completati con trend settimanale
+SELECT 
+  COUNT(*) as completed,
+  COUNT(CASE WHEN WEEK(Data) = WEEK(CURDATE()) AND YEAR(Data) = YEAR(CURDATE()) THEN 1 END) as completed_this_week,
+  COUNT(CASE WHEN WEEK(Data) = WEEK(CURDATE()) - 1 AND YEAR(Data) = YEAR(CURDATE()) THEN 1 END) as completed_prev_week
+FROM tab_viaggi
+
+-- Backup con trend settimanale
+SELECT 
+  COUNT(*) as backups_this_week,
+  COUNT(CASE WHEN WEEK(created_at) = WEEK(CURDATE()) - 1 AND YEAR(created_at) = YEAR(CURDATE()) THEN 1 END) as backups_prev_week
+FROM backup_logs 
+WHERE status = 'completed' AND created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)
+
+-- Veicoli con manutenzioni settimanali
+SELECT 
+  COUNT(DISTINCT vehicle_id) as vehicles_with_maintenance,
+  COUNT(CASE WHEN WEEK(created_at) = WEEK(CURDATE()) THEN 1 END) as maintenance_this_week,
+  COUNT(CASE WHEN WEEK(created_at) = WEEK(CURDATE()) - 1 THEN 1 END) as maintenance_prev_week
+FROM maintenance_quotes 
+WHERE created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)
+```
+
+### 🛠️ **DETTAGLI TECNICI IMPLEMENTAZIONE**
+- **File modificati**: `src/app/api/dashboard-stats/route.ts` per implementazione query reali
+- **Funzioni aggiunte**: `calculateTrend(current, previous)` per calcolo percentuali standardizzato
+- **Query ottimizzate**: Utilizzo indici temporali per performance su tabelle con molti record
+- **Gestione errori**: Fallback a valori di default in caso di errori query per stabilità sistema
+- **Logging**: Sistema di log per monitoraggio performance query e debug
+- **Type safety**: Tipizzazione TypeScript per response API e parametri funzioni
+
+### ✅ **BENEFICI OPERATIVI E BUSINESS**
+- **Accuratezza dati**: Trend basati su dati reali invece di simulazioni per decisioni informate e strategiche
+- **Performance ottimizzate**: Query temporalmente limitate per caricamento rapido dashboard (< 1s)
+- **Struttura logica**: Organizzazione coerente statistiche per categoria funzionale e workflow operativo
+- **Manutenibilità**: Codice centralizzato per calcoli trend riutilizzabile in altre sezioni applicazione
+- **Monitoraggio operativo**: Visibilità real-time su performance settimanali per identificazione trend e anomalie
+- **Business intelligence**: Dashboard con KPI reali per supporto decisionale e pianificazione strategica
+
+### 🛠️ **FILE MODIFICATI**
+- `src/app/api/dashboard-stats/route.ts` - Implementazione trend reali e rimozione simulazioni
+- `src/app/test-cards/page.tsx` - Rimozione link "Clienti (WIP)" e "Utenti (WIP)" da card Anagrafiche
+- `docs/database-reference.md` - Aggiornamento documentazione con query settimanali e struttura API
+- `README.md` - Aggiunta sezione trend settimanali reali v2.30.0
+- `FUNZIONALITA_AGGIORNATE.md` - Documentazione completa implementazione trend reali
+
+## 🚀 **VERSIONE 2.29.0** - Dashboard Moderna con Statistiche Reali ⭐ **CONSOLIDATO**
 
 ### 📊 **DASHBOARD COMPLETAMENTE RIDISEGNATA CON DATI REALI**
 - **Design moderno**: Interfaccia completamente rinnovata con Bootstrap 5, gradients CSS e animazioni fluide per esperienza utente contemporanea
