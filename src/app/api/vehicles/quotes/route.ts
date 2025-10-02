@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import mysql from 'mysql2/promise';
 import { put } from '@vercel/blob';
 import { verifyUserAccess } from '@/lib/auth';
+import { writeFile, mkdir } from 'fs/promises';
+import { join } from 'path';
+import { existsSync } from 'fs';
 
 // Pool di connessioni per migliori performance
 const pool = mysql.createPool({
@@ -287,6 +290,95 @@ export async function POST(request: NextRequest) {
 
     const quoteId = result.insertId;
     console.log('Preventivo creato con successo, ID:', quoteId);
+
+    // Gestione upload file allegato se presente
+    if (attachment && attachment.size > 0) {
+      console.log('Processando allegato:', attachment.name, 'Dimensione:', attachment.size);
+      
+      // Validazione file
+      const allowedTypes = [
+        'application/pdf',
+        'image/jpeg',
+        'image/jpg', 
+        'image/png',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'text/plain'
+      ];
+
+      if (!allowedTypes.includes(attachment.type)) {
+        connection.release();
+        return NextResponse.json(
+          { success: false, error: 'Tipo di file non supportato. Sono supportati: PDF, DOC, DOCX, JPG, PNG, TXT' },
+          { status: 400 }
+        );
+      }
+
+      // Limite dimensione file (10MB)
+      const maxSize = 10 * 1024 * 1024;
+      if (attachment.size > maxSize) {
+        connection.release();
+        return NextResponse.json(
+          { success: false, error: 'File troppo grande. Dimensione massima: 10MB' },
+          { status: 400 }
+        );
+      }
+
+      try {
+        // Determina se siamo in produzione e abbiamo il token Blob
+        const isProduction = process.env.NODE_ENV === 'production';
+        const hasBlobToken = !!process.env.BLOB_READ_WRITE_TOKEN;
+        
+        let filePath: string;
+        
+        if (isProduction && hasBlobToken) {
+          // PRODUZIONE: Usa Vercel Blob Storage
+          const blobName = `quote-documents/${quoteId}_${Date.now()}_${attachment.name}`;
+          
+          const blob = await put(blobName, attachment, {
+            access: 'public',
+            addRandomSuffix: false
+          });
+          filePath = blob.url;
+        } else {
+          // SVILUPPO: Salva localmente
+          const fileName = `${quoteId}_${Date.now()}_${attachment.name}`;
+          const uploadDir = join(process.cwd(), 'uploads', 'quote-documents');
+          const localFilePath = join(uploadDir, fileName);
+          
+          // Crea la cartella se non esiste
+          if (!existsSync(uploadDir)) {
+            await mkdir(uploadDir, { recursive: true });
+          }
+          
+          // Salva il file fisicamente
+          const buffer = Buffer.from(await attachment.arrayBuffer());
+          await writeFile(localFilePath, buffer);
+          
+          filePath = `/uploads/quote-documents/${fileName}`;
+        }
+
+        // Salva informazioni file nel database
+        const insertDocumentQuery = `
+          INSERT INTO quote_documents (quote_id, file_name, file_path, file_size, mime_type)
+          VALUES (?, ?, ?, ?, ?)
+        `;
+
+        await connection.execute(insertDocumentQuery, [
+          quoteId,
+          attachment.name,
+          filePath,
+          attachment.size,
+          attachment.type
+        ]);
+
+        console.log('Allegato salvato con successo:', filePath);
+      } catch (fileError) {
+        console.error('Errore durante il salvataggio del file:', fileError);
+        // Non blocchiamo la creazione del preventivo per errori di upload
+        // Il preventivo è già stato creato con successo
+      }
+    }
 
     connection.release();
 

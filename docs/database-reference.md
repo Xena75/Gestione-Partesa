@@ -650,6 +650,23 @@ notes       text         YES        NULL
 ```
 
 #### quote_documents
+Gestisce gli allegati dei preventivi di manutenzione veicoli.
+
+**Struttura:**
+```sql
+CREATE TABLE quote_documents (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    quote_id INT NOT NULL,
+    file_name VARCHAR(255) NOT NULL,
+    file_path VARCHAR(500) NOT NULL,
+    file_size INT,
+    mime_type VARCHAR(100),
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (quote_id) REFERENCES maintenance_quotes(id) ON DELETE CASCADE
+);
+```
+
+**Campi:**
 ```sql
 Field         Type         Null  Key  Default              Extra
 id            int(11)      NO    PRI  NULL                 auto_increment
@@ -660,6 +677,20 @@ file_size     int(11)      YES        NULL
 mime_type     varchar(100) YES        NULL                 
 uploaded_at   timestamp    NO        current_timestamp()  
 ```
+
+**Utilizzo nel progetto:**
+- **API**: `/api/vehicles/quotes` per upload allegati durante creazione preventivi
+- **API**: `/api/vehicles/quotes/[id]/documents` per gestione documenti preventivi
+- **Funzionalità**: Upload file PDF, DOC, DOCX, JPG, PNG, TXT (max 10MB)
+- **Storage**: Vercel Blob Storage (produzione) / Filesystem locale (sviluppo)
+- **Integrazione**: Collegamento automatico con preventivi tramite `quote_id`
+
+**Tipi file supportati:**
+- `application/pdf` - Documenti PDF
+- `application/msword` - Documenti Word (.doc)
+- `application/vnd.openxmlformats-officedocument.wordprocessingml.document` - Documenti Word (.docx)
+- `image/jpeg`, `image/jpg`, `image/png` - Immagini
+- `text/plain` - File di testo
 
 #### schedule_notifications
 ```sql
@@ -1365,8 +1396,16 @@ CREATE TABLE intervention_types (
 - `updated_at` (TIMESTAMP): Data ultimo aggiornamento
 
 #### Tabella: `maintenance_quotes` (aggiornata)
-**Modifiche recenti:**
+**Modifiche recenti (v2.28.0):**
 - `intervention_type`: Cambiato da ENUM a INT, ora fa riferimento a `intervention_types.id`
+- **Fix critico**: Risolto errore "Incorrect integer value" nell'endpoint `/api/vehicles/quotes`
+- **Validazione dati**: Implementata conversione automatica con `parseInt(intervention_type) || 1`
+- **Valore default**: ID 1 come fallback per tipi intervento non specificati
+
+**Integrazione con allegati:**
+- Collegamento con tabella `quote_documents` per gestione file allegati
+- Upload automatico durante creazione preventivi
+- Supporto dual-storage (Vercel Blob / filesystem locale)
 
 **Query comuni:**
 ```sql

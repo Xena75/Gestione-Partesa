@@ -57,19 +57,47 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Backup e recovery**: Sistema completo di backup e ripristino dati
 - **Connessione database sicura**: Migrazione da bore.pub a ngrok per stabilità e sicurezza
 
-### 💼 **Sistema Preventivi Veicoli** ⭐ **NUOVO**
+### 💼 **Sistema Preventivi Veicoli** ⭐ **AGGIORNATO**
 - **Workflow completo**: Creazione, modifica, approvazione e gestione preventivi
 - **Stati preventivi**: Sistema a 5 stati (pending, approved, rejected, expired, converted)
 - **Gestione scadenze**: Monitoraggio automatico scadenze preventivi
 - **Integrazione fornitori**: Collegamento con database fornitori e servizi
-- **Upload allegati**: Sistema drag-and-drop per documenti e immagini
+- **Upload allegati**: Sistema completo per documenti e immagini con salvataggio automatico ⭐ **RISOLTO**
 - **Azioni preventivi**: Approvazione, rifiuto, modifica e cancellazione
 - **Formato italiano**: Date in formato dd/mm/yyyy per conformità locale
 - **API complete**: Endpoint RESTful per tutte le operazioni CRUD
+- **Fix critici**: Risolti errori 500 su endpoint `/api/vehicles/quotes` ⭐ **NUOVO**
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
 
-### 🔄 **Sistema Toggle Dashboard e Ottimizzazioni UX - v2.30.2** ⭐ **NUOVO**
+### 📎 **Sistema Upload Allegati Preventivi - v2.28.0** ⭐ **NUOVO**
+
+#### 🔧 **Risoluzione Errori Critici API**
+- **Fix endpoint `/api/vehicles/quotes`**: Risolto errore 500 "Incorrect integer value" per campo `intervention_type`
+- **Validazione dati**: Implementata conversione automatica `parseInt(intervention_type) || 1`
+- **Gestione errori**: Sistema robusto di fallback con valore default ID 1
+- **Compatibilità database**: Allineamento con schema `intervention_types.id` (INT)
+
+#### 📁 **Sistema Upload File Completo**
+- **Upload automatico**: Salvataggio allegati durante creazione preventivi
+- **Validazione file**: Controllo tipo e dimensione (max 10MB)
+- **Tipi supportati**: PDF, DOC, DOCX, JPG, PNG, TXT
+- **Storage dual-mode**: Vercel Blob Storage (produzione) / Filesystem locale (sviluppo)
+- **Database integration**: Metadati salvati in tabella `quote_documents`
+
+#### 🛡️ **Sicurezza e Robustezza**
+- **Validazione MIME type**: Controllo rigoroso tipi file accettati
+- **Gestione errori**: Upload non blocca creazione preventivo in caso di errori
+- **Logging dettagliato**: Tracciamento completo operazioni per debugging
+- **Nomenclatura file**: Pattern `{quoteId}_{timestamp}_{filename}` per unicità
+
+#### ✅ **Benefici Implementati**
+- **Funzionalità completa**: Upload allegati ora funzionante al 100%
+- **Stabilità API**: Eliminati errori 500 su endpoint preventivi
+- **Esperienza utente**: Processo fluido di creazione preventivi con allegati
+- **Manutenibilità**: Codice robusto e ben documentato per future estensioni
+
+### 🔄 **Sistema Toggle Dashboard e Ottimizzazioni UX - v2.30.2** ⭐ **CONSOLIDATO**
 
 #### 🎯 **Toggle Dashboard Integrato**
 - **Navigazione fluida**: Sistema di toggle per passaggio rapido tra Dashboard Classica e Dashboard Moderna

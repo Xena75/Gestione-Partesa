@@ -635,20 +635,34 @@ async function getSistemaStats() {
 // Statistiche veicoli - QUERY DAL DATABASE VIAGGI_DB
 async function getVeicoliStats() {
   try {
-    // Conta veicoli totali con confronto settimanale
-    const [veicoliRows] = await poolViaggi.execute(`
-      SELECT 
-        COUNT(*) as total,
-        COUNT(CASE WHEN WEEK(created_at) = WEEK(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE()) THEN 1 END) as vehicles_this_week,
-        COUNT(CASE WHEN WEEK(created_at) = WEEK(CURDATE()) - 1 AND YEAR(created_at) = YEAR(CURDATE()) THEN 1 END) as vehicles_prev_week
+    // Conta veicoli totali (SENZA filtro temporale per il totale)
+    const [veicoliTotalRows] = await poolViaggi.execute(`
+      SELECT COUNT(*) as total
       FROM vehicles
-      WHERE created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)
     `) as [any[], any];
 
-    // Conta scadenze attive con confronto settimanale
-    const [scadenzeRows] = await poolViaggi.execute(`
+    // Conta veicoli per trend settimanali (CON filtro temporale solo per i trend)
+    const [veicoliTrendRows] = await poolViaggi.execute(`
       SELECT 
-        COUNT(*) as active_schedules,
+        COUNT(CASE WHEN WEEK(createdAt) = WEEK(CURDATE()) AND YEAR(createdAt) = YEAR(CURDATE()) THEN 1 END) as vehicles_this_week,
+        COUNT(CASE WHEN WEEK(createdAt) = WEEK(CURDATE()) - 1 AND YEAR(createdAt) = YEAR(CURDATE()) THEN 1 END) as vehicles_prev_week
+      FROM vehicles
+      WHERE createdAt >= DATE_SUB(NOW(), INTERVAL 14 DAY)
+    `) as [any[], any];
+
+    // Conta scadenze attive (SENZA filtro temporale per il totale)
+    const [scadenzeTotalRows] = await poolViaggi.execute(`
+      SELECT COUNT(*) as active_schedules
+      FROM vehicle_schedules
+      WHERE (
+        (booking_date IS NOT NULL AND booking_date >= CURDATE()) OR 
+        (booking_date IS NULL AND data_scadenza >= CURDATE())
+      ) AND status = 'pending'
+    `) as [any[], any];
+
+    // Conta scadenze attive per trend settimanali (CON filtro temporale solo per i trend)
+    const [scadenzeTrendRows] = await poolViaggi.execute(`
+      SELECT 
         COUNT(CASE WHEN WEEK(created_at) = WEEK(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE()) THEN 1 END) as schedules_this_week,
         COUNT(CASE WHEN WEEK(created_at) = WEEK(CURDATE()) - 1 AND YEAR(created_at) = YEAR(CURDATE()) THEN 1 END) as schedules_prev_week
       FROM vehicle_schedules
@@ -659,10 +673,19 @@ async function getVeicoliStats() {
       AND created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)
     `) as [any[], any];
 
-    // Conta scadenze scadute con confronto settimanale
-    const [overdueRows] = await poolViaggi.execute(`
+    // Conta scadenze scadute (SENZA filtro temporale per il totale)
+    const [overdueTotalRows] = await poolViaggi.execute(`
+      SELECT COUNT(*) as overdue_schedules
+      FROM vehicle_schedules
+      WHERE (
+        (booking_date IS NOT NULL AND booking_date < CURDATE()) OR 
+        (booking_date IS NULL AND data_scadenza < CURDATE())
+      ) AND status = 'pending'
+    `) as [any[], any];
+
+    // Conta scadenze scadute per trend settimanali (CON filtro temporale solo per i trend)
+    const [overdueTrendRows] = await poolViaggi.execute(`
       SELECT 
-        COUNT(*) as overdue_schedules,
         COUNT(CASE WHEN WEEK(created_at) = WEEK(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE()) THEN 1 END) as overdue_this_week,
         COUNT(CASE WHEN WEEK(created_at) = WEEK(CURDATE()) - 1 AND YEAR(created_at) = YEAR(CURDATE()) THEN 1 END) as overdue_prev_week
       FROM vehicle_schedules
@@ -673,10 +696,16 @@ async function getVeicoliStats() {
       AND created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)
     `) as [any[], any];
 
-    // Conta preventivi aperti con confronto settimanale
-    const [preventiviRows] = await poolViaggi.execute(`
+    // Conta preventivi aperti (SENZA filtro temporale per il totale)
+    const [preventiviTotalRows] = await poolViaggi.execute(`
+      SELECT COUNT(*) as open_quotes
+      FROM maintenance_quotes
+      WHERE status = 'pending'
+    `) as [any[], any];
+
+    // Conta preventivi aperti per trend settimanali (CON filtro temporale solo per i trend)
+    const [preventiviTrendRows] = await poolViaggi.execute(`
       SELECT 
-        COUNT(*) as open_quotes,
         COUNT(CASE WHEN WEEK(created_at) = WEEK(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE()) THEN 1 END) as quotes_this_week,
         COUNT(CASE WHEN WEEK(created_at) = WEEK(CURDATE()) - 1 AND YEAR(created_at) = YEAR(CURDATE()) THEN 1 END) as quotes_prev_week
       FROM maintenance_quotes
@@ -684,8 +713,15 @@ async function getVeicoliStats() {
       AND created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)
     `) as [any[], any];
 
-    // Conta intervention types con confronto settimanale
-    const [interventionRows] = await poolViaggi.execute(`
+    // Conta intervention types attivi (SENZA filtro temporale per il totale)
+    const [interventionTotalRows] = await poolViaggi.execute(`
+      SELECT COUNT(*) as intervention_types
+      FROM intervention_types 
+      WHERE active = TRUE
+    `) as [any[], any];
+
+    // Conta intervention types per trend settimanali (CON filtro temporale solo per i trend)
+    const [interventionTrendRows] = await poolViaggi.execute(`
       SELECT 
         COUNT(CASE WHEN WEEK(created_at) = WEEK(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE()) THEN 1 END) as interventions_this_week,
         COUNT(CASE WHEN WEEK(created_at) = WEEK(CURDATE()) - 1 AND YEAR(created_at) = YEAR(CURDATE()) THEN 1 END) as interventions_prev_week
@@ -694,18 +730,19 @@ async function getVeicoliStats() {
       AND created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)
     `) as [any[], any];
 
-    const interventions = interventionRows[0]?.interventions_this_week || 0;
-    const interventionsPrevWeek = interventionRows[0]?.interventions_prev_week || 0;
+    const interventions = interventionTotalRows[0]?.intervention_types || 0;
+    const interventionsThisWeek = interventionTrendRows[0]?.interventions_this_week || 0;
+    const interventionsPrevWeek = interventionTrendRows[0]?.interventions_prev_week || 0;
 
     return {
-      total: veicoliRows[0]?.total || 0,
-      totalPrevWeek: veicoliRows[0]?.vehicles_prev_week || 0,
-      activeSchedules: scadenzeRows[0]?.active_schedules || 0,
-      activeSchedulesPrevWeek: scadenzeRows[0]?.schedules_prev_week || 0,
-      overdueSchedules: overdueRows[0]?.overdue_schedules || 0,
-      overdueSchedulesPrevWeek: overdueRows[0]?.overdue_prev_week || 0,
-      openQuotes: preventiviRows[0]?.open_quotes || 0,
-      openQuotesPrevWeek: preventiviRows[0]?.quotes_prev_week || 0,
+      total: veicoliTotalRows[0]?.total || 0,
+      totalPrevWeek: veicoliTrendRows[0]?.vehicles_prev_week || 0,
+      activeSchedules: scadenzeTotalRows[0]?.active_schedules || 0,
+      activeSchedulesPrevWeek: scadenzeTrendRows[0]?.schedules_prev_week || 0,
+      overdueSchedules: overdueTotalRows[0]?.overdue_schedules || 0,
+      overdueSchedulesPrevWeek: overdueTrendRows[0]?.overdue_prev_week || 0,
+      openQuotes: preventiviTotalRows[0]?.open_quotes || 0,
+      openQuotesPrevWeek: preventiviTrendRows[0]?.quotes_prev_week || 0,
       interventions,
       interventionsPrevWeek
     };

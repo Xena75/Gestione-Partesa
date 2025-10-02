@@ -1,0 +1,4 @@
+Questo è un file di test per verificare l'upload degli allegati nei preventivi.
+Data: 2024-01-20
+Funzionalità: Upload allegati preventivi
+Status: Test in corso

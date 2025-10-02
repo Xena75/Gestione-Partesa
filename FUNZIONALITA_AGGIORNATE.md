@@ -1,6 +1,49 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.30.2
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.28.0
 
-## 🚀 **VERSIONE 2.30.2** - Sistema Toggle Dashboard e Ottimizzazioni UX ⭐ **NUOVO**
+## 🚀 **VERSIONE 2.28.0** - Sistema Upload Allegati Preventivi e Fix Critici API ⭐ **NUOVO**
+
+### 🔧 **RISOLUZIONE ERRORI CRITICI API PREVENTIVI**
+- **Fix endpoint `/api/vehicles/quotes`**: Risolto completamente errore 500 "Incorrect integer value" per campo `intervention_type`
+- **Conversione automatica dati**: Implementata validazione robusta con `parseInt(intervention_type) || 1` per gestione input non validi
+- **Fallback intelligente**: Sistema di fallback automatico a ID 1 (intervention_type default) in caso di valori non convertibili
+- **Compatibilità schema database**: Allineamento perfetto con nuovo schema `intervention_types.id` (INT) vs precedente ENUM
+- **Gestione errori avanzata**: Logging dettagliato e gestione graceful degli errori per debugging e monitoraggio
+
+### 📁 **SISTEMA UPLOAD ALLEGATI COMPLETO**
+- **Upload automatico durante creazione**: Salvataggio allegati integrato nel processo di creazione preventivi senza interruzioni
+- **Validazione file rigorosa**: Controllo tipo MIME e dimensione file (limite 10MB) per sicurezza e performance
+- **Tipi file supportati**: PDF, DOC, DOCX, JPG, PNG, TXT per copertura completa esigenze documentali
+- **Storage dual-mode intelligente**: Vercel Blob Storage (produzione) / Filesystem locale `/uploads/quote-documents/` (sviluppo)
+- **Integrazione database**: Metadati file salvati automaticamente in tabella `quote_documents` con relazione `quote_id`
+
+### 🛡️ **SICUREZZA E ROBUSTEZZA IMPLEMENTATE**
+- **Validazione MIME type**: Controllo rigoroso tipi file accettati per prevenire upload file dannosi
+- **Gestione errori non bloccante**: Upload fallito non impedisce creazione preventivo, garantendo continuità operativa
+- **Logging operazioni**: Tracciamento completo upload, errori e operazioni database per audit e debugging
+- **Nomenclatura file sicura**: Pattern `{quoteId}_{timestamp}_{filename}` per unicità e organizzazione
+- **Controllo dimensioni**: Limite 10MB per bilanciare usabilità e performance sistema
+
+### 🗄️ **AGGIORNAMENTI SCHEMA DATABASE**
+- **Tabella `quote_documents`**: Struttura completa per gestione metadati allegati (id, quote_id, file_name, file_path, file_size, mime_type, uploaded_at)
+- **Campo `intervention_type`**: Migrazione da ENUM a INT con riferimento a `intervention_types.id` per flessibilità
+- **Relazioni database**: Integrità referenziale tra `maintenance_quotes`, `quote_documents` e `intervention_types`
+- **Indici ottimizzati**: Performance query migliorate per ricerca allegati per preventivo
+
+### ✅ **BENEFICI OPERATIVI IMPLEMENTATI**
+- **Funzionalità upload 100% operativa**: Sistema allegati completamente funzionante e testato
+- **Stabilità API garantita**: Eliminazione completa errori 500 su endpoint preventivi
+- **Esperienza utente fluida**: Processo creazione preventivi con allegati senza interruzioni
+- **Manutenibilità codice**: Architettura robusta e documentata per future estensioni
+- **Scalabilità storage**: Sistema pronto per crescita volume allegati con storage cloud
+
+### 🔄 **PROCESSO IMPLEMENTAZIONE E TESTING**
+- **Testing completo**: Verifiche funzionali su creazione preventivi, upload allegati, gestione errori
+- **Validazione cross-browser**: Compatibilità garantita su tutti i browser moderni
+- **Performance testing**: Ottimizzazione tempi upload e response API
+- **Error handling**: Gestione completa scenari edge case e recovery automatico
+- **Documentation update**: Aggiornamento completo documentazione tecnica e database reference
+
+## 🚀 **VERSIONE 2.30.2** - Sistema Toggle Dashboard e Ottimizzazioni UX ⭐ **CONSOLIDATO**
 
 ### 🔄 **IMPLEMENTAZIONE TOGGLE DASHBOARD INTEGRATO**
 - **Navigazione fluida tra dashboard**: Sistema di toggle per passaggio rapido tra Dashboard Classica (`/dashboard`) e Dashboard Moderna (`/test-cards`)
