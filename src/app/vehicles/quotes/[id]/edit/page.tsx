@@ -146,7 +146,7 @@ export default function EditQuotePage() {
 
   const fetchInterventionTypes = async () => {
     try {
-      const response = await fetch('/api/intervention-types');
+      const response = await fetch('/api/vehicles/intervention-types');
       const data = await response.json();
       if (data.success) {
         setInterventionTypes(data.data);

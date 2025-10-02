@@ -360,7 +360,7 @@ export async function POST(request: NextRequest) {
 
         // Salva informazioni file nel database
         const insertDocumentQuery = `
-          INSERT INTO quote_documents (quote_id, file_name, file_path, file_size, mime_type)
+          INSERT INTO quote_documents (quote_id, file_name, file_path, file_size, file_type)
           VALUES (?, ?, ?, ?, ?)
         `;
 

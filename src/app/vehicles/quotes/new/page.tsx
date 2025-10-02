@@ -41,25 +41,23 @@ const serviceTypes = [
   { value: 'altro', label: 'Altro' }
 ];
 
-const interventionTypes = [
-  { value: 'manutenzione_ordinaria', label: 'Manutenzione Ordinaria' },
-  { value: 'manutenzione_straordinaria', label: 'Manutenzione Straordinaria' },
-  { value: 'riparazione', label: 'Riparazione' },
-  { value: 'revisione', label: 'Revisione' },
-  { value: 'tagliando', label: 'Tagliando' },
-  { value: 'sostituzione_pneumatici', label: 'Sostituzione Pneumatici' },
-  { value: 'carrozzeria', label: 'Carrozzeria' },
-  { value: 'altro', label: 'Altro' }
-];
+interface InterventionType {
+  id: number;
+  name: string;
+  description?: string;
+  active: boolean;
+}
 
 function NewQuotePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [interventionTypes, setInterventionTypes] = useState<InterventionType[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingVehicles, setLoadingVehicles] = useState(true);
   const [loadingSuppliers, setLoadingSuppliers] = useState(true);
+  const [loadingInterventionTypes, setLoadingInterventionTypes] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   
@@ -110,6 +108,7 @@ function NewQuotePageContent() {
     fetchVehicles();
     fetchSuppliers();
     fetchSchedules();
+    fetchInterventionTypes();
     
     // Preseleziona il veicolo se passato come parametro URL
     const vehicleId = searchParams.get('vehicleId');
@@ -176,6 +175,22 @@ function NewQuotePageContent() {
       setError(err instanceof Error ? err.message : 'Errore nel caricamento delle scadenze');
     } finally {
       setLoadingSchedules(false);
+    }
+  };
+
+  const fetchInterventionTypes = async () => {
+    try {
+      setLoadingInterventionTypes(true);
+      const response = await fetch('/api/vehicles/intervention-types');
+      if (!response.ok) {
+        throw new Error('Errore nel caricamento dei tipi di intervento');
+      }
+      const data = await response.json();
+      setInterventionTypes(data.data || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Errore nel caricamento dei tipi di intervento');
+    } finally {
+      setLoadingInterventionTypes(false);
     }
   };
 
@@ -479,11 +494,15 @@ function NewQuotePageContent() {
                       required
                     >
                       <option value="">Seleziona tipo intervento</option>
-                      {interventionTypes.map((type) => (
-                        <option key={type.value} value={type.value}>
-                          {type.label}
-                        </option>
-                      ))}
+                      {loadingInterventionTypes ? (
+                        <option disabled>Caricamento...</option>
+                      ) : (
+                        interventionTypes.map((type) => (
+                          <option key={type.id} value={type.id}>
+                            {type.name}
+                          </option>
+                        ))
+                      )}
                     </select>
                   </div>
 

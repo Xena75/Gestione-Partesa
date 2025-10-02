@@ -660,7 +660,7 @@ CREATE TABLE quote_documents (
     file_name VARCHAR(255) NOT NULL,
     file_path VARCHAR(500) NOT NULL,
     file_size INT,
-    mime_type VARCHAR(100),
+    file_type VARCHAR(50),
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (quote_id) REFERENCES maintenance_quotes(id) ON DELETE CASCADE
 );
@@ -673,8 +673,8 @@ id            int(11)      NO    PRI  NULL                 auto_increment
 quote_id      int(11)      NO    MUL  NULL                 
 file_name     varchar(255) NO        NULL                 
 file_path     varchar(500) NO        NULL                 
-file_size     int(11)      YES        NULL                 
-mime_type     varchar(100) YES        NULL                 
+file_size     int(11)      NO        NULL                 
+file_type     varchar(50)  NO        NULL                 
 uploaded_at   timestamp    NO        current_timestamp()  
 ```
 
@@ -1498,6 +1498,7 @@ SELECT * FROM backup_schedules WHERE enabled = TRUE;
 
 #### Tabella: `categories`
 - **src/lib/data-viaggi.ts** - Gestione categorie
+- **src/app/api/vehicles/suppliers/categories/route.ts** - API gestione categorie fornitori (aggiornata per leggere dalla tabella separata)
 
 #### Tabella: `travels`
 - **src/lib/data-viaggi.ts** - Gestione viaggi

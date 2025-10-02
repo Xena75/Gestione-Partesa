@@ -1,6 +1,50 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.28.0
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.30.3
 
-## 🚀 **VERSIONE 2.28.0** - Sistema Upload Allegati Preventivi e Fix Critici API ⭐ **NUOVO**
+## 🚀 **VERSIONE 2.30.3** - Miglioramenti UX Preventivi e Fix Critici Sistema ⭐ **NUOVO**
+
+### 🔧 **PULSANTE MODIFICA PREVENTIVI IMPLEMENTATO**
+- **Accesso diretto editing**: Aggiunto pulsante "Modifica" nella pagina `/vehicles/quotes` per apertura diretta pagina edit
+- **Posizionamento strategico**: Pulsante posizionato tra "Visualizza" e "Approva/Rifiuta" per workflow logico
+- **Styling coerente**: Design `btn-outline-warning` con icona `fas fa-edit` per riconoscibilità immediata
+- **Navigazione ottimizzata**: Link diretto a `/vehicles/quotes/{id}/edit` senza passaggi intermedi
+- **Visibilità universale**: Pulsante disponibile per tutti i preventivi indipendentemente dallo stato
+
+### 🏷️ **RISOLUZIONE PROBLEMA CATEGORIE FORNITORI**
+- **Fix API categorie**: Aggiornamento `/api/vehicles/suppliers/categories` per lettura dalla tabella `categories` separata
+- **Migrazione da ENUM**: Transizione completa da colonna ENUM `category` a tabella dedicata `categories`
+- **Visualizzazione corretta**: Risolto problema mancata visualizzazione nuove categorie (es. "Cristalli")
+- **Struttura database ottimizzata**: Tabella `categories` con campi `id`, `name`, `active`, `created_at`, `updated_at`
+- **API coerente**: Metodo GET legge da tabella, metodo POST inserisce in tabella per consistenza
+
+### 📁 **CORREZIONE SISTEMA UPLOAD PDF CRITICA**
+- **Fix campo database**: Risolto errore "Unknown column 'mime_type'" aggiornando query da `mime_type` a `file_type`
+- **Allineamento schema**: Sincronizzazione perfetta tra API e struttura tabella `quote_documents`
+- **Upload funzionante**: Sistema upload PDF completamente operativo nella pagina `/vehicles/quotes/new`
+- **Gestione errori**: Eliminazione errori SQL durante salvataggio metadati allegati
+- **Compatibilità storage**: Funzionamento garantito sia con Vercel Blob che filesystem locale
+
+### 🛡️ **OTTIMIZZAZIONI CONFIGURAZIONE PRODUZIONE**
+- **Vercel Blob Storage**: Configurazione ottimizzata per storage file in ambiente produzione
+- **Performance migliorate**: Gestione efficiente upload e download allegati
+- **Scalabilità garantita**: Sistema pronto per crescita volume allegati
+- **Sicurezza avanzata**: Controlli rigorosi su tipi file e dimensioni
+- **Monitoring integrato**: Logging completo operazioni storage per debugging
+
+### 📚 **AGGIORNAMENTO DOCUMENTAZIONE COMPLETO**
+- **Database reference**: Aggiornamento `docs/database-reference.md` con correzioni schema tabelle
+- **README aggiornato**: Nuova versione v2.30.3 con changelog dettagliato implementazioni
+- **Documentazione tecnica**: Aggiornamento riferimenti API e strutture database
+- **Guide operative**: Documentazione processi aggiornati per team sviluppo
+- **Architettura sistema**: Diagrammi e specifiche tecniche allineate alle modifiche
+
+### ✅ **BENEFICI OPERATIVI RAGGIUNTI**
+- **UX migliorata**: Accesso più rapido e intuitivo alle funzioni di modifica preventivi
+- **Stabilità sistema**: Eliminazione errori critici upload e gestione categorie
+- **Produttività aumentata**: Workflow più fluidi per gestione preventivi e fornitori
+- **Manutenibilità**: Codice più pulito e documentazione aggiornata
+- **Affidabilità**: Sistema più robusto con gestione errori migliorata
+
+## 🚀 **VERSIONE 2.28.0** - Sistema Upload Allegati Preventivi e Fix Critici API ⭐ **CONSOLIDATO**
 
 ### 🔧 **RISOLUZIONE ERRORI CRITICI API PREVENTIVI**
 - **Fix endpoint `/api/vehicles/quotes`**: Risolto completamente errore 500 "Incorrect integer value" per campo `intervention_type`

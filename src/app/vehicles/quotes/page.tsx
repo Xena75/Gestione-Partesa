@@ -569,6 +569,13 @@ function VehicleQuotesContent() {
                               >
                                 <i className="fas fa-eye"></i>
                               </Link>
+                              <Link 
+                                href={`/vehicles/quotes/${quote.id}/edit`}
+                                className="btn btn-outline-warning"
+                                title="Modifica"
+                              >
+                                <i className="fas fa-edit"></i>
+                              </Link>
                               {quote.status === 'pending' && new Date(quote.valid_until) >= new Date() && (
                                 <>
                                   <button 

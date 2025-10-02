@@ -3,23 +3,12 @@ import pool from '@/lib/db-viaggi';
 
 export async function GET() {
   try {
-    // Ottieni la definizione ENUM della colonna category dalla tabella suppliers
+    // Ottieni le categorie dalla tabella categories
     const [rows] = await pool.execute(
-      'SHOW COLUMNS FROM suppliers WHERE Field = "category"'
+      'SELECT name FROM categories WHERE active = 1 ORDER BY name'
     );
     
-    let categories: string[] = [];
-    
-    if (rows.length > 0) {
-      const typeDefinition = (rows as any[])[0].Type;
-      // Estrai i valori ENUM dalla definizione
-      const enumMatch = typeDefinition.match(/enum\((.+)\)/i);
-      if (enumMatch) {
-        categories = enumMatch[1]
-          .split(',')
-          .map((val: string) => val.trim().replace(/'/g, ''));
-      }
-    }
+    const categories = (rows as any[]).map(row => row.name);
     
     return NextResponse.json({ categories });
   } catch (error) {
