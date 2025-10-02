@@ -260,7 +260,7 @@ export async function POST(request: NextRequest) {
       parseInt(supplier_id),
       parseFloat(amount),
       description,
-      intervention_type || 'Manutenzione generale', // Valore di default se non specificato
+      parseInt(intervention_type) || 1, // Valore di default ID 1 se non specificato
       valid_until,
       notes || null,
       quote_number || null,
