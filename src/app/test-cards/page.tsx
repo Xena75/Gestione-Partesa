@@ -6,7 +6,8 @@ import {
   Users, Package, Truck, Calendar, AlertTriangle, CheckCircle, 
   FileText, Clock, Home, BarChart3, DollarSign, Upload, 
   Settings, Database, Shield, Bell, Search, Plus,
-  TrendingUp, TrendingDown, Activity, Zap, RefreshCw, Tag, HelpCircle, Car, Eye, Construction
+  TrendingUp, TrendingDown, Activity, Zap, RefreshCw, Tag, HelpCircle, Car, Eye, Construction,
+  ChevronDown, ChevronUp
 } from 'lucide-react';
 import PodMancantiModal from '@/components/PodMancantiModal';
 import TravelsNotInTabModal from '@/components/TravelsNotInTabModal';
@@ -39,6 +40,46 @@ export default function ModernDashboard() {
   const [notifications, setNotifications] = useState(3);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  // Stati toggle per ogni card
+  const [toggleStates, setToggleStates] = useState({
+    anagrafiche: false,
+    analytics: false,
+    fatturazione: false,
+    import: false,
+    veicoli: false,
+    supporto: false,
+    viaggi: false,
+    sistema: false
+  });
+
+  // Funzione per toggle delle statistiche
+  const toggleStats = (cardName: keyof typeof toggleStates) => {
+    setToggleStates(prev => ({
+      ...prev,
+      [cardName]: !prev[cardName]
+    }));
+  };
+
+  // Funzione per toggle globale di tutte le statistiche
+  const toggleAllStats = () => {
+    const allExpanded = Object.values(toggleStates).every(state => state);
+    const newState = !allExpanded; // Se tutte espanse, collassa; altrimenti espandi
+    
+    setToggleStates({
+      anagrafiche: newState,
+      analytics: newState,
+      fatturazione: newState,
+      import: newState,
+      veicoli: newState,
+      supporto: newState,
+      viaggi: newState,
+      sistema: newState
+    });
+  };
+
+  // Determina se tutte le card sono espanse
+  const allExpanded = Object.values(toggleStates).every(state => state);
   
   // Stati per i modal
   const [isPodMancantiModalOpen, setIsPodMancantiModalOpen] = useState(false);
@@ -164,7 +205,7 @@ export default function ModernDashboard() {
           border-radius: 15px;
           box-shadow: 0 4px 15px rgba(0,0,0,0.1);
           overflow: hidden;
-          height: 100%;
+          min-height: 200px;
         }
         
         .dashboard-card:hover {
@@ -276,9 +317,54 @@ export default function ModernDashboard() {
         }
         
         @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
+           from { transform: rotate(0deg); }
+           to { transform: rotate(360deg); }
+         }
+         
+         .toggle-btn {
+           background: none;
+           border: none;
+           color: white;
+           cursor: pointer;
+           padding: 0.25rem;
+           border-radius: 4px;
+           transition: all 0.2s ease;
+         }
+         
+         .toggle-btn:hover {
+           background-color: rgba(255, 255, 255, 0.1);
+         }
+         
+         .stats-container {
+           transition: all 0.4s ease;
+           overflow: hidden;
+         }
+         
+         .stats-collapsed {
+           max-height: 0 !important;
+           opacity: 0;
+           margin: 0 !important;
+           padding: 0 !important;
+           border: none !important;
+         }
+         
+         .stats-expanded {
+           max-height: 500px;
+           opacity: 1;
+         }
+         
+         .card-body-collapsed {
+           padding-bottom: 1rem !important;
+         }
+         
+         .card-collapsed {
+           height: 350px !important;
+           transition: height 0.4s ease;
+         }
+         
+         .dashboard-card {
+           transition: height 0.4s ease;
+         }
       `}</style>
 
       <div className="dashboard-container">
@@ -322,23 +408,54 @@ export default function ModernDashboard() {
           </div>
         </div>
 
-
+        {/* Sezione Toggle Globale */}
+        <div className="container-fluid mb-4">
+          <div className="row">
+            <div className="col-12 d-flex justify-content-center">
+              <button 
+                className="btn btn-outline-primary d-flex align-items-center px-4 py-2"
+                onClick={toggleAllStats}
+                title={allExpanded ? "Comprimi tutte le statistiche" : "Espandi tutte le statistiche"}
+                style={{
+                  borderRadius: '25px',
+                  fontWeight: '500',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                {allExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                <span className="ms-2">
+                  {allExpanded ? "Comprimi Tutto" : "Espandi Tutto"}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
 
         {/* Cards Dashboard */}
         <div className="row g-4">
           {/* Anagrafiche */}
           <div className="col-lg-4 col-md-6">
-            <div className="card dashboard-card h-100">
+            <div className={`card dashboard-card ${!toggleStates.anagrafiche ? 'card-collapsed' : ''}`}>
               <div className="card-header card-header-purple text-white">
-                <div className="d-flex align-items-center">
-                  <Users className="me-3" size={24} />
-                  <div>
-                    <h5 className="mb-0">🏢 Anagrafiche</h5>
-                    <small className="opacity-75">Gestione clienti e fornitori</small>
-                  </div>
-                </div>
-              </div>
-              <div className="card-body">
+                 <div className="d-flex align-items-center justify-content-between w-100">
+                   <div className="d-flex align-items-center flex-grow-1">
+                     <Users className="me-3" size={24} />
+                     <div>
+                       <h5 className="mb-0">🏢 Anagrafiche</h5>
+                       <small className="opacity-75">Gestione clienti e fornitori</small>
+                     </div>
+                   </div>
+                   <button 
+                     className="toggle-btn ms-auto"
+                     onClick={() => toggleStats('anagrafiche')}
+                     title={toggleStates.anagrafiche ? "Nascondi statistiche" : "Mostra statistiche"}
+                   >
+                     {toggleStates.anagrafiche ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                   </button>
+                 </div>
+               </div>
+              <div className={`card-body ${!toggleStates.anagrafiche ? 'card-body-collapsed' : ''}`}>
                 <div className="row g-2 mb-3">
                   <div className="col-6">
                     <Link href="/vehicles/suppliers" className="btn btn-outline-primary btn-action btn-sm w-100">
@@ -353,40 +470,49 @@ export default function ModernDashboard() {
                     </Link>
                   </div>
                 </div>
-                <hr />
-                <div className="stats-container">
-                  {dashboardData?.anagrafiche?.map((stat, index) => (
-                    <div key={index} className="stat-row d-flex justify-content-between align-items-center py-2">
-                      <span className="text-muted">{stat.title}:</span>
-                      <div className="d-flex align-items-center gap-2">
-                        <strong className="h6 mb-0">
-                          <AnimatedCounter value={stat.value} />
-                        </strong>
-                        <span className={`trend-badge ${stat.trend > 0 ? 'bg-success' : stat.trend < 0 ? 'bg-danger' : 'bg-secondary'} text-white`}>
-                          {stat.trend > 0 ? <TrendingUp size={12} /> : stat.trend < 0 ? <TrendingDown size={12} /> : <Activity size={12} />}
-                          {stat.trend > 0 ? '+' : ''}{stat.trend}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                {toggleStates.anagrafiche && <hr />}
+                 <div className={`stats-container ${toggleStates.anagrafiche ? 'stats-expanded' : 'stats-collapsed'}`}>
+                   {dashboardData?.anagrafiche?.map((stat, index) => (
+                     <div key={index} className="stat-row d-flex justify-content-between align-items-center py-2">
+                       <span className="text-muted">{stat.title}:</span>
+                       <div className="d-flex align-items-center gap-2">
+                         <strong className="h6 mb-0">
+                           <AnimatedCounter value={stat.value} />
+                         </strong>
+                         <span className={`trend-badge ${stat.trend > 0 ? 'bg-success' : stat.trend < 0 ? 'bg-danger' : 'bg-secondary'} text-white`}>
+                           {stat.trend > 0 ? <TrendingUp size={12} /> : stat.trend < 0 ? <TrendingDown size={12} /> : <Activity size={12} />}
+                           {stat.trend > 0 ? '+' : ''}{stat.trend}
+                         </span>
+                       </div>
+                     </div>
+                   ))}
+                 </div>
               </div>
             </div>
           </div>
 
           {/* Analytics */}
           <div className="col-lg-4 col-md-6">
-            <div className="card dashboard-card h-100">
+            <div className={`card dashboard-card ${!toggleStates.analytics ? 'card-collapsed' : ''}`}>
               <div className="card-header card-header-blue text-white">
-                <div className="d-flex align-items-center">
-                  <BarChart3 className="me-3" size={24} />
-                  <div>
-                    <h5 className="mb-0">📊 Analytics</h5>
-                    <small className="opacity-75">Reports e performance</small>
-                  </div>
-                </div>
-              </div>
-              <div className="card-body">
+                 <div className="d-flex align-items-center justify-content-between w-100">
+                   <div className="d-flex align-items-center flex-grow-1">
+                     <BarChart3 className="me-3" size={24} />
+                     <div>
+                       <h5 className="mb-0">📊 Analytics</h5>
+                       <small className="opacity-75">Reports e performance</small>
+                     </div>
+                   </div>
+                   <button 
+                     className="toggle-btn ms-auto"
+                     onClick={() => toggleStats('analytics')}
+                     title={toggleStates.analytics ? "Nascondi statistiche" : "Mostra statistiche"}
+                   >
+                     {toggleStates.analytics ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                   </button>
+                 </div>
+               </div>
+              <div className={`card-body ${!toggleStates.analytics ? 'card-body-collapsed' : ''}`}>
                 <div className="row g-2 mb-3">
                   <div className="col-6">
                     <Link href="/delivery-analytics" className="btn btn-outline-primary btn-action btn-sm w-100">
@@ -425,8 +551,8 @@ export default function ModernDashboard() {
                     </button>
                   </div>
                 </div>
-                <hr />
-                <div className="stats-container">
+                {toggleStates.analytics && <hr />}
+                <div className={`stats-container ${toggleStates.analytics ? 'stats-expanded' : 'stats-collapsed'}`}>
                   {dashboardData?.analytics?.map((stat, index) => (
                     <div key={index} className="stat-row d-flex justify-content-between align-items-center py-2">
                       <span className="text-muted">{stat.title}:</span>
@@ -448,17 +574,26 @@ export default function ModernDashboard() {
 
           {/* Fatturazione */}
           <div className="col-lg-4 col-md-6">
-            <div className="card dashboard-card h-100">
+            <div className={`card dashboard-card ${!toggleStates.fatturazione ? 'card-collapsed' : ''}`}>
               <div className="card-header card-header-green text-white">
-                <div className="d-flex align-items-center">
-                  <DollarSign className="me-3" size={24} />
-                  <div>
-                    <h5 className="mb-0">💰 Fatturazione</h5>
-                    <small className="opacity-75">Gestione economica</small>
+                <div className="d-flex align-items-center justify-content-between w-100">
+                  <div className="d-flex align-items-center flex-grow-1">
+                    <DollarSign className="me-3" size={24} />
+                    <div>
+                      <h5 className="mb-0">💰 Fatturazione</h5>
+                      <small className="opacity-75">Gestione economica</small>
+                    </div>
                   </div>
+                  <button 
+                    className="toggle-btn ms-auto"
+                    onClick={() => toggleStats('fatturazione')}
+                    title={toggleStates.fatturazione ? "Nascondi statistiche" : "Mostra statistiche"}
+                  >
+                    {toggleStates.fatturazione ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                  </button>
                 </div>
               </div>
-              <div className="card-body">
+              <div className={`card-body ${!toggleStates.fatturazione ? 'card-body-collapsed' : ''}`}>
                 <div className="row g-2 mb-3">
                   <div className="col-6">
                     <Link href="/fatturazione-terzisti" className="btn btn-outline-primary btn-action btn-sm w-100">
@@ -479,8 +614,8 @@ export default function ModernDashboard() {
                     </Link>
                   </div>
                 </div>
-                <hr />
-                <div className="stats-container">
+                {toggleStates.fatturazione && <hr />}
+                <div className={`stats-container ${toggleStates.fatturazione ? 'stats-expanded' : 'stats-collapsed'}`}>
                   {dashboardData?.fatturazione?.map((stat, index) => (
                     <div key={index} className="stat-row d-flex justify-content-between align-items-center py-2">
                       <span className="text-muted">{stat.title}:</span>
@@ -502,17 +637,26 @@ export default function ModernDashboard() {
 
           {/* Import */}
           <div className="col-lg-4 col-md-6">
-            <div className="card dashboard-card h-100">
+            <div className={`card dashboard-card ${!toggleStates.import ? 'card-collapsed' : ''}`}>
               <div className="card-header card-header-cyan text-white">
-                <div className="d-flex align-items-center">
-                  <Upload className="me-3" size={24} />
-                  <div>
-                    <h5 className="mb-0">📤 Import</h5>
-                    <small className="opacity-75">Caricamento dati</small>
+                <div className="d-flex align-items-center justify-content-between w-100">
+                  <div className="d-flex align-items-center flex-grow-1">
+                    <Upload className="me-3" size={24} />
+                    <div>
+                      <h5 className="mb-0">📤 Import</h5>
+                      <small className="opacity-75">Caricamento dati</small>
+                    </div>
                   </div>
+                  <button 
+                    className="toggle-btn ms-auto"
+                    onClick={() => toggleStats('import')}
+                    title={toggleStates.import ? "Nascondi statistiche" : "Mostra statistiche"}
+                  >
+                    {toggleStates.import ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                  </button>
                 </div>
               </div>
-              <div className="card-body">
+              <div className={`card-body ${!toggleStates.import ? 'card-body-collapsed' : ''}`}>
                 <div className="row g-2 mb-3">
                   <div className="col-6">
                     <Link href="/import_viaggi_PoD" className="btn btn-outline-primary btn-action btn-sm w-100">
@@ -528,8 +672,8 @@ export default function ModernDashboard() {
                   </div>
 
                 </div>
-                <hr />
-                <div className="stats-container">
+                {toggleStates.import && <hr />}
+                <div className={`stats-container ${toggleStates.import ? 'stats-expanded' : 'stats-collapsed'}`}>
                   {dashboardData?.import?.map((stat, index) => (
                     <div key={index} className="stat-row d-flex justify-content-between align-items-center py-2">
                       <span className="text-muted">{stat.title}:</span>
@@ -551,17 +695,26 @@ export default function ModernDashboard() {
 
           {/* Veicoli */}
           <div className="col-lg-4 col-md-6">
-            <div className="card dashboard-card h-100">
+            <div className={`card dashboard-card ${!toggleStates.veicoli ? 'card-collapsed' : ''}`}>
               <div className="card-header card-header-orange text-white">
-                <div className="d-flex align-items-center">
-                  <Truck className="me-3" size={24} />
-                  <div>
-                    <h5 className="mb-0">🚗 Veicoli</h5>
-                    <small className="opacity-75">Fleet management</small>
+                <div className="d-flex align-items-center justify-content-between w-100">
+                  <div className="d-flex align-items-center flex-grow-1">
+                    <Truck className="me-3" size={24} />
+                    <div>
+                      <h5 className="mb-0">🚗 Veicoli</h5>
+                      <small className="opacity-75">Fleet management</small>
+                    </div>
                   </div>
+                  <button 
+                    className="toggle-btn ms-auto"
+                    onClick={() => toggleStats('veicoli')}
+                    title={toggleStates.veicoli ? "Nascondi statistiche" : "Mostra statistiche"}
+                  >
+                    {toggleStates.veicoli ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                  </button>
                 </div>
               </div>
-              <div className="card-body">
+              <div className={`card-body ${!toggleStates.veicoli ? 'card-body-collapsed' : ''}`}>
                 <div className="row g-2 mb-3">
                   <div className="col-6">
                     <Link href="/vehicles/list" className="btn btn-outline-primary btn-action btn-sm w-100">
@@ -594,8 +747,8 @@ export default function ModernDashboard() {
                     </Link>
                   </div>
                 </div>
-                <hr />
-                <div className="stats-container">
+                {toggleStates.veicoli && <hr />}
+                <div className={`stats-container ${toggleStates.veicoli ? 'stats-expanded' : 'stats-collapsed'}`}>
                   {dashboardData?.veicoli?.map((stat, index) => (
                     <div key={index} className="stat-row d-flex justify-content-between align-items-center py-2">
                       <span className="text-muted">{stat.title}:</span>
@@ -617,17 +770,26 @@ export default function ModernDashboard() {
 
           {/* Supporto */}
           <div className="col-lg-4 col-md-6">
-            <div className="card dashboard-card h-100">
+            <div className={`card dashboard-card ${!toggleStates.supporto ? 'card-collapsed' : ''}`}>
               <div className="card-header card-header-purple text-white">
-                <div className="d-flex align-items-center">
-                  <HelpCircle className="me-3" size={24} />
-                  <div>
-                    <h5 className="mb-0">📚 Supporto</h5>
-                    <small className="opacity-75">Guide e documentazione</small>
+                <div className="d-flex align-items-center justify-content-between w-100">
+                  <div className="d-flex align-items-center flex-grow-1">
+                    <HelpCircle className="me-3" size={24} />
+                    <div>
+                      <h5 className="mb-0">📚 Supporto</h5>
+                      <small className="opacity-75">Guide e documentazione</small>
+                    </div>
                   </div>
+                  <button 
+                    className="toggle-btn ms-auto"
+                    onClick={() => toggleStats('supporto')}
+                    title={toggleStates.supporto ? "Nascondi statistiche" : "Mostra statistiche"}
+                  >
+                    {toggleStates.supporto ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                  </button>
                 </div>
               </div>
-              <div className="card-body">
+              <div className={`card-body ${!toggleStates.supporto ? 'card-body-collapsed' : ''}`}>
                 <div className="row g-2 mb-3">
                   <div className="col-6">
                     <Link href="/funzionalita" className="btn btn-outline-primary btn-action btn-sm w-100">
@@ -648,8 +810,8 @@ export default function ModernDashboard() {
                     </Link>
                   </div>
                 </div>
-                <hr />
-                <div className="stats-container">
+                {toggleStates.supporto && <hr />}
+                <div className={`stats-container ${toggleStates.supporto ? 'stats-expanded' : 'stats-collapsed'}`}>
                   {dashboardData?.supporto?.map((stat, index) => (
                     <div key={index} className="stat-row d-flex justify-content-between align-items-center py-2">
                       <span className="text-muted">{stat.title}:</span>
@@ -671,17 +833,26 @@ export default function ModernDashboard() {
 
           {/* Viaggi */}
           <div className="col-lg-4 col-md-6">
-            <div className="card dashboard-card h-100">
+            <div className={`card dashboard-card ${!toggleStates.viaggi ? 'card-collapsed' : ''}`}>
               <div className="card-header card-header-blue text-white">
-                <div className="d-flex align-items-center">
-                  <Truck className="me-3" size={24} />
-                  <div>
-                    <h5 className="mb-0">🚛 Viaggi</h5>
-                    <small className="opacity-75">Gestione e monitoraggio viaggi</small>
+                <div className="d-flex align-items-center justify-content-between w-100">
+                  <div className="d-flex align-items-center flex-grow-1">
+                    <Truck className="me-3" size={24} />
+                    <div>
+                      <h5 className="mb-0">🚛 Viaggi</h5>
+                      <small className="opacity-75">Gestione e monitoraggio viaggi</small>
+                    </div>
                   </div>
+                  <button 
+                    className="toggle-btn ms-auto"
+                    onClick={() => toggleStats('viaggi')}
+                    title={toggleStates.viaggi ? "Nascondi statistiche" : "Mostra statistiche"}
+                  >
+                    {toggleStates.viaggi ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                  </button>
                 </div>
               </div>
-              <div className="card-body">
+              <div className={`card-body ${!toggleStates.viaggi ? 'card-body-collapsed' : ''}`}>
                 <div className="row g-2 mb-3">
                   <div className="col-6">
                     <Link href="/viaggi" className="btn btn-outline-primary btn-action btn-sm w-100">
@@ -702,8 +873,8 @@ export default function ModernDashboard() {
                     </Link>
                   </div>
                 </div>
-                <hr />
-                <div className="stats-container">
+                {toggleStates.viaggi && <hr />}
+                <div className={`stats-container ${toggleStates.viaggi ? 'stats-expanded' : 'stats-collapsed'}`}>
                   {dashboardData?.viaggi?.map((stat, index) => {
                     // Rendi cliccabili 'Monitoraggi Pending' e 'Viaggi Pod Pending'
                     const isClickable = stat.title === 'Monitoraggi Pending' || stat.title === 'Viaggi Pod Pending';
@@ -743,17 +914,26 @@ export default function ModernDashboard() {
 
           {/* Sistema */}
           <div className="col-lg-4 col-md-6">
-            <div className="card dashboard-card h-100">
+            <div className={`card dashboard-card ${!toggleStates.sistema ? 'card-collapsed' : ''}`}>
               <div className="card-header card-header-red text-white">
-                <div className="d-flex align-items-center">
-                  <Settings className="me-3" size={24} />
-                  <div>
-                    <h5 className="mb-0">⚙️ Sistema</h5>
-                    <small className="opacity-75">Amministrazione</small>
+                <div className="d-flex align-items-center justify-content-between w-100">
+                  <div className="d-flex align-items-center flex-grow-1">
+                    <Settings className="me-3" size={24} />
+                    <div>
+                      <h5 className="mb-0">⚙️ Sistema</h5>
+                      <small className="opacity-75">Amministrazione</small>
+                    </div>
                   </div>
+                  <button 
+                    className="toggle-btn ms-auto"
+                    onClick={() => toggleStats('sistema')}
+                    title={toggleStates.sistema ? "Nascondi statistiche" : "Mostra statistiche"}
+                  >
+                    {toggleStates.sistema ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                  </button>
                 </div>
               </div>
-              <div className="card-body">
+              <div className={`card-body ${!toggleStates.sistema ? 'card-body-collapsed' : ''}`}>
                 <div className="row g-2 mb-3">
                   <div className="col-6">
                     <Link href="/sistema/configurazioni" className="btn btn-outline-primary btn-action btn-sm w-100">
@@ -780,8 +960,8 @@ export default function ModernDashboard() {
                     </Link>
                   </div>
                 </div>
-                <hr />
-                <div className="stats-container">
+                {toggleStates.sistema && <hr />}
+                <div className={`stats-container ${toggleStates.sistema ? 'stats-expanded' : 'stats-collapsed'}`}>
                   {dashboardData?.sistema?.map((stat, index) => (
                     <div key={index} className="stat-row d-flex justify-content-between align-items-center py-2">
                       <span className="text-muted">{stat.title}:</span>

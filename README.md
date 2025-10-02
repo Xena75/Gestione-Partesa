@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.28.0
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.30.1
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -115,6 +115,43 @@ WHERE status = 'completed' AND created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)
 - **Struttura logica**: Organizzazione coerente statistiche per categoria funzionale
 - **Manutenibilità**: Codice centralizzato per calcoli trend riutilizzabile
 - **Monitoraggio operativo**: Visibilità real-time su performance settimanali sistema
+
+### 🎛️ **Sistema Toggle Dashboard Cards con Ottimizzazione Spazio - v2.30.1** ⭐ **NUOVO**
+
+#### 🎯 **Sistema Toggle Completo per Dashboard Cards**
+- **Pulsante toggle globale**: Controllo centralizzato per espandere/comprimere tutte le 8 cards simultaneamente
+- **Toggle individuali**: Pulsanti specifici per ogni card posizionati alla fine dell'header
+- **Stato iniziale compresso**: Tutte le cards si aprono in modalità compressa per ottimizzazione spazio
+- **Altezza uniforme**: Cards collassate con altezza fissa di 350px per visualizzazione coerente
+- **Persistenza stato**: Mantenimento stato espansione/compressione durante la sessione
+
+#### 🎨 **Ottimizzazioni Layout e User Experience**
+- **Posizionamento strategico**: Pulsante globale posizionato sotto l'header per accesso immediato
+- **Design Bootstrap**: Utilizzo classi `w-100`, `flex-grow-1`, `ms-auto` per layout robusto e responsive
+- **Icone dinamiche**: ChevronUp/ChevronDown con cambio automatico basato su stato card
+- **Tooltip informativi**: Tooltip "Espandi Tutto"/"Comprimi Tutto" e "Mostra/Nascondi statistiche"
+- **Transizioni fluide**: Animazioni CSS smooth per espansione/compressione cards
+
+#### 🔧 **Implementazione Tecnica**
+- **useState centralizzato**: Gestione stato con oggetto `toggleStates` per tutte le 8 cards
+- **Funzione toggleStats()**: Controllo individuale per ogni card (anagrafiche, analytics, fatturazione, import, veicoli, supporto, viaggi, sistema)
+- **Funzione toggleAll()**: Controllo globale che inverte stato di tutte le cards simultaneamente
+- **CSS classes dinamiche**: `card-collapsed` e `card-body-collapsed` per gestione altezze
+- **Layout ottimizzato**: Header con `justify-content-between` per allineamento perfetto elementi
+
+#### 📊 **Cards Ottimizzate per Spazio**
+- **Visualizzazione compressa**: Solo titolo, sottotitolo e link di navigazione visibili
+- **Statistiche nascoste**: Grafici, trend e dati numerici nascosti in modalità compressa
+- **Link sempre accessibili**: Pulsanti di navigazione sempre visibili per accesso rapido funzionalità
+- **Scroll ottimizzato**: Riduzione scroll verticale con visualizzazione compatta
+- **Responsive design**: Adattamento perfetto su desktop, tablet e mobile
+
+#### ✅ **Benefici Implementati**
+- **Ottimizzazione spazio**: Riduzione significativa scroll verticale con visualizzazione compatta
+- **Controllo granulare**: Possibilità di espandere solo le cards di interesse
+- **User experience migliorata**: Accesso rapido a tutte le funzionalità senza perdita informazioni
+- **Performance superiori**: Rendering ottimizzato con meno elementi DOM visibili
+- **Flessibilità operativa**: Adattamento interfaccia alle esigenze specifiche dell'utente
 
 ### 📊 **Dashboard Moderna con Statistiche Reali - v2.29.0** ⭐ **CONSOLIDATO**
 

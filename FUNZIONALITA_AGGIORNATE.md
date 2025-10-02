@@ -1,6 +1,43 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.30.0
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.30.1
 
-## 🚀 **VERSIONE 2.30.0** - Trend Settimanali Reali e Ottimizzazioni Dashboard ⭐ **NUOVO**
+## 🚀 **VERSIONE 2.30.1** - Sistema Toggle Dashboard Cards con Ottimizzazione Spazio ⭐ **NUOVO**
+
+### 🎛️ **SISTEMA TOGGLE COMPLETO PER DASHBOARD CARDS**
+- **Pulsante toggle globale**: Implementazione controllo centralizzato per espandere/comprimere tutte le 8 cards simultaneamente
+- **Toggle individuali per card**: Pulsanti specifici per ogni card (Anagrafiche, Analytics, Fatturazione, Import, Veicoli, Supporto, Viaggi, Sistema)
+- **Stato iniziale compresso**: Tutte le cards si aprono in modalità compressa per ottimizzazione immediata dello spazio verticale
+- **Altezza uniforme collassata**: Cards compresse con altezza fissa di 350px per visualizzazione coerente e professionale
+- **Persistenza stato sessione**: Mantenimento stato espansione/compressione durante la navigazione nella sessione corrente
+
+### 🎨 **OTTIMIZZAZIONI LAYOUT E USER EXPERIENCE**
+- **Posizionamento strategico globale**: Pulsante toggle globale posizionato sotto l'header per accesso immediato e visibilità
+- **Design Bootstrap robusto**: Utilizzo classi `w-100`, `flex-grow-1`, `ms-auto` per layout responsive e allineamento perfetto
+- **Icone dinamiche**: ChevronUp/ChevronDown con cambio automatico basato su stato espansione card
+- **Tooltip informativi**: Tooltip "Espandi Tutto"/"Comprimi Tutto" per pulsante globale e "Mostra/Nascondi statistiche" per individuali
+- **Transizioni fluide**: Animazioni CSS smooth per espansione/compressione cards con effetti hover professionali
+
+### 🔧 **IMPLEMENTAZIONE TECNICA DETTAGLIATA**
+- **useState centralizzato**: Gestione stato con oggetto `toggleStates` per controllo granulare di tutte le 8 cards
+- **Funzione toggleStats()**: Controllo individuale per ogni card con parametro dinamico (anagrafiche, analytics, fatturazione, import, veicoli, supporto, viaggi, sistema)
+- **Funzione toggleAll()**: Controllo globale che inverte stato di tutte le cards simultaneamente con logica intelligente
+- **CSS classes dinamiche**: `card-collapsed` e `card-body-collapsed` per gestione altezze e transizioni
+- **Layout header ottimizzato**: Header con `justify-content-between` per allineamento perfetto tra contenuto e pulsante toggle
+
+### 📊 **CARDS OTTIMIZZATE PER GESTIONE SPAZIO**
+- **Visualizzazione compressa intelligente**: Solo titolo, sottotitolo e link di navigazione visibili in modalità compressa
+- **Statistiche nascoste**: Grafici, trend, dati numerici e sezioni analytics nascoste per riduzione scroll verticale
+- **Link sempre accessibili**: Pulsanti di navigazione sempre visibili per accesso rapido alle funzionalità principali
+- **Scroll ottimizzato**: Riduzione significativa scroll verticale con visualizzazione compatta ma funzionale
+- **Responsive design completo**: Adattamento perfetto su desktop, tablet e mobile con mantenimento usabilità
+
+### ✅ **BENEFICI OPERATIVI IMPLEMENTATI**
+- **Ottimizzazione spazio**: Riduzione drastica scroll verticale con possibilità di visualizzare tutte le 8 cards in una schermata
+- **Controllo granulare**: Possibilità di espandere selettivamente solo le cards di interesse per workflow specifici
+- **User experience migliorata**: Accesso rapido a tutte le funzionalità senza perdita di informazioni o navigabilità
+- **Performance superiori**: Rendering ottimizzato con meno elementi DOM visibili simultaneamente
+- **Flessibilità operativa**: Adattamento interfaccia alle esigenze specifiche dell'utente e del contesto lavorativo
+
+## 🚀 **VERSIONE 2.30.0** - Trend Settimanali Reali e Ottimizzazioni Dashboard ⭐ **CONSOLIDATO**
 
 ### 📈 **IMPLEMENTAZIONE TREND SETTIMANALI REALI**
 - **Sostituzione dati simulati**: Eliminazione completa trend simulati con implementazione calcoli reali basati su dati storici database
