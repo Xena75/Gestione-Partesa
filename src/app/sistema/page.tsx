@@ -44,7 +44,8 @@ export default function SistemaPage() {
   const [editFormData, setEditFormData] = useState({
     username: '',
     email: '',
-    role: 'user'
+    role: 'user',
+    password: ''
   });
   const [editFormLoading, setEditFormLoading] = useState(false);
   const [editFormMessage, setEditFormMessage] = useState({ type: '', text: '' });
@@ -133,7 +134,8 @@ export default function SistemaPage() {
     setEditFormData({
       username: user.username,
       email: user.email,
-      role: user.role
+      role: user.role,
+      password: user.password || ''
     });
     setEditFormMessage({ type: '', text: '' });
     setShowEditModal(true);
@@ -505,6 +507,7 @@ export default function SistemaPage() {
                         <tr>
                           <th>Username</th>
                           <th>Email</th>
+                          <th>Password</th>
                           <th>Ruolo</th>
                           <th>Data Creazione</th>
                           <th>Azioni</th>
@@ -515,6 +518,11 @@ export default function SistemaPage() {
                           <tr key={user.id}>
                             <td>{user.username}</td>
                             <td>{user.email}</td>
+                            <td>
+                              <span className="font-monospace text-muted small">
+                                {user.password || '••••••••'}
+                              </span>
+                            </td>
                             <td>
                               <span className={`badge bg-${user.role === 'admin' ? 'danger' : 'primary'}`}>
                                 {user.role === 'admin' ? 'Admin' : 'Utente'}
@@ -910,6 +918,17 @@ export default function SistemaPage() {
                       value={editFormData.email}
                       onChange={handleEditFormChange}
                       required
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Password</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="password"
+                      value={editFormData.password}
+                      onChange={handleEditFormChange}
+                      placeholder="Inserisci nuova password (lascia vuoto per non modificare)"
                     />
                   </div>
                   <div className="mb-3">

@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LogOut, User, Settings, Sun, Moon } from 'lucide-react';
+import { LogOut, User, Settings, Sun, Moon, Calendar } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import UserSwitcher from './UserSwitcher';
 
@@ -86,10 +86,11 @@ export default function Navbar() {
                   📋 Monitoraggio
                 </Link>
                 <Link 
-                  className={`nav-link ${pathname === '/delivery-analytics' ? 'active' : ''}`} 
-                  href="/delivery-analytics"
+                  className={`nav-link ${pathname === '/vehicles/schedules/calendar' ? 'active' : ''}`} 
+                  href="/vehicles/schedules/calendar"
                 >
-                  📊 Analytics
+                  <Calendar size={16} className="me-1" />
+                  Calendario
                 </Link>
 
               </div>

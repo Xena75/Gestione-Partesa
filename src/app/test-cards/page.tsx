@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { 
   Users, Package, Truck, Calendar, AlertTriangle, CheckCircle, 
   FileText, Clock, Home, BarChart3, DollarSign, Upload, 
@@ -11,6 +12,7 @@ import {
 } from 'lucide-react';
 import PodMancantiModal from '@/components/PodMancantiModal';
 import TravelsNotInTabModal from '@/components/TravelsNotInTabModal';
+import DocumentExpiryAlert from '@/components/DocumentExpiryAlert';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Interfacce per i dati
@@ -34,6 +36,7 @@ interface DashboardData {
 
 export default function ModernDashboard() {
   const { user } = useAuth();
+  const router = useRouter();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -270,24 +273,6 @@ export default function ModernDashboard() {
           transform: scale(1.05);
         }
         
-        .floating-btn {
-          position: fixed;
-          bottom: 30px;
-          right: 30px;
-          width: 60px;
-          height: 60px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, #0d6efd, #0056b3);
-          border: none;
-          box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3);
-          z-index: 1000;
-          transition: all 0.3s ease;
-        }
-        
-        .floating-btn:hover {
-          transform: scale(1.1);
-          box-shadow: 0 6px 20px rgba(13, 110, 253, 0.4);
-        }
         
 
         
@@ -408,10 +393,11 @@ export default function ModernDashboard() {
           </div>
         </div>
 
-        {/* Sezione Toggle Globale */}
+        {/* Sezione Toggle Globale e Dashboard */}
         <div className="container-fluid mb-4">
           <div className="row">
-            <div className="col-12 d-flex justify-content-center">
+            <div className="col-12 d-flex justify-content-between align-items-center">
+              {/* Toggle Espandi/Comprimi */}
               <button 
                 className="btn btn-outline-primary d-flex align-items-center px-4 py-2"
                 onClick={toggleAllStats}
@@ -425,12 +411,28 @@ export default function ModernDashboard() {
               >
                 {allExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                 <span className="ms-2">
-                  {allExpanded ? "Comprimi Tutto" : "Espandi Tutto"}
+                  {allExpanded ? "Comprimi Statistiche" : "Espandi Statistiche"}
                 </span>
               </button>
+
+              {/* Toggle Dashboard Version */}
+              <div className="btn-group" role="group">
+                <button 
+                  className="btn btn-outline-secondary"
+                  onClick={() => router.push('/dashboard')}
+                >
+                  🏠 Dashboard Classica
+                </button>
+                <button className="btn btn-primary">
+                  📊 Dashboard Moderna
+                </button>
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Alert Scadenze Documenti */}
+        <DocumentExpiryAlert className="mb-4" />
 
         {/* Cards Dashboard */}
         <div className="row g-4">
@@ -981,11 +983,6 @@ export default function ModernDashboard() {
             </div>
           </div>
         </div>
-
-        {/* Quick Actions Floating Button */}
-        <button className="floating-btn text-white" title="Quick Actions">
-          <Plus size={24} />
-        </button>
 
         {/* Footer */}
         <div className="text-center mt-5 pt-4 border-top">

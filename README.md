@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.30.1
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.30.2
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -69,7 +69,33 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
 
-### 📈 **Trend Settimanali Reali e Ottimizzazioni Dashboard - v2.30.0** ⭐ **NUOVO**
+### 🔄 **Sistema Toggle Dashboard e Ottimizzazioni UX - v2.30.2** ⭐ **NUOVO**
+
+#### 🎯 **Toggle Dashboard Integrato**
+- **Navigazione fluida**: Sistema di toggle per passaggio rapido tra Dashboard Classica e Dashboard Moderna
+- **Posizionamento strategico**: Toggle posizionati in entrambe le dashboard per accesso immediato
+- **Design coerente**: Utilizzo di emoji e stili Bootstrap per interfaccia uniforme
+- **UX ottimizzata**: Pulsanti chiaramente identificabili con stato attivo/inattivo
+
+#### 📱 **Ottimizzazioni Layout Dashboard Moderna**
+- **Layout unificato**: Toggle "Espandi/Comprimi Statistiche" e "Dashboard Version" sulla stessa riga
+- **Spazio ottimizzato**: Riduzione ingombro verticale con layout `justify-content-between`
+- **Rimozione elementi**: Eliminazione pulsante floating "+" per interfaccia più pulita
+- **Label specifiche**: Cambio da "Espandi Tutto/Comprimi Tutto" a "Espandi Statistiche/Comprimi Statistiche"
+
+#### 🔧 **Implementazioni Tecniche**
+- **useRouter integration**: Implementazione navigazione programmatica con Next.js
+- **Bootstrap responsive**: Utilizzo classi `d-flex`, `justify-content-between`, `align-items-center`
+- **Gestione stato**: Mantenimento stato toggle e preferenze utente
+- **Performance**: Navigazione client-side senza ricarica pagina
+
+#### ✅ **Benefici UX**
+- **Accesso rapido**: Passaggio immediato tra versioni dashboard senza navigazione menu
+- **Interfaccia pulita**: Rimozione elementi superflui per focus su funzionalità essenziali
+- **Coerenza visiva**: Design uniforme tra Dashboard Classica e Moderna
+- **Usabilità migliorata**: Label più descrittive e posizionamento intuitivo controlli
+
+### 📈 **Trend Settimanali Reali e Ottimizzazioni Dashboard - v2.30.0** ⭐ **CONSOLIDATO**
 
 #### 🎯 **Implementazione Trend Settimanali Reali**
 - **Sostituzione dati simulati**: Eliminazione completa trend simulati con calcoli reali da database

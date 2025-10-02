@@ -367,6 +367,23 @@ const SectionSkeleton = () => (
         </div>
       )}
 
+      {/* Toggle Dashboard Version */}
+      <div className="dashboard-toggle-buttons mb-4">
+        <div className="d-flex justify-content-center">
+          <div className="btn-group" role="group">
+            <button className="btn btn-primary">
+              🏠 Dashboard Classica
+            </button>
+            <button 
+              className="btn btn-outline-secondary"
+              onClick={() => router.push('/test-cards')}
+            >
+              📊 Dashboard Moderna
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Alert documenti in scadenza */}
       <DocumentExpiryAlert className="mb-6" />
 
@@ -497,7 +514,7 @@ const SectionSkeleton = () => (
           <div className="footer-badges">
             <span className="footer-badge version">
               <Code size={14} />
-              <span>Versione 2.17.0</span>
+              <span>Versione 2.30.2</span>
             </span>
             <span className="footer-badge status">
               <Shield size={14} />
