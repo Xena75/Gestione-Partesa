@@ -13,12 +13,13 @@ const pool = mysql.createPool({
   charset: 'utf8mb4',
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0,
-  timeout: 60000
+  queueLimit: 0
 });
 
 // GET - Recupera preventivi
 export async function GET(request: NextRequest) {
+  let connection: any = null;
+  
   try {
     const { searchParams } = new URL(request.url);
     const vehicleId = searchParams.get('vehicleId');
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const supplierId = searchParams.get('supplierId');
 
-    const connection = await pool.getConnection();
+    connection = await pool.getConnection();
 
     let query = `
       SELECT 
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
         v.modello,
         vs.schedule_type,
         vs.data_scadenza,
-        s.name as supplier_name,
+        COALESCE(s.name, 'Fornitore non trovato') as supplier_name,
         s.email as supplier_email,
         s.phone as supplier_phone,
         s.contact_person as supplier_contact,
@@ -45,7 +46,7 @@ export async function GET(request: NextRequest) {
       FROM maintenance_quotes mq
       JOIN vehicles v ON mq.vehicle_id = v.id
       LEFT JOIN vehicle_schedules vs ON mq.schedule_id = vs.id
-      JOIN suppliers s ON mq.supplier_id = s.id
+      LEFT JOIN suppliers s ON mq.supplier_id = s.id
       LEFT JOIN intervention_types it ON mq.intervention_type = it.id
       WHERE 1=1
     `;
@@ -86,13 +87,30 @@ export async function GET(request: NextRequest) {
       })
     );
 
-    connection.release();
+    if (connection) {
+      connection.release();
+    }
 
     return NextResponse.json({ success: true, data: quotesWithDocuments });
   } catch (error) {
     console.error('Errore nel recupero preventivi:', error);
+    console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
+    
+    // Rilascia la connessione in caso di errore
+    if (connection) {
+      try {
+        connection.release();
+      } catch (releaseError) {
+        console.error('Errore nel rilascio connessione:', releaseError);
+      }
+    }
+    
     return NextResponse.json(
-      { success: false, error: 'Errore nel recupero dei preventivi' },
+      { 
+        success: false, 
+        error: 'Errore nel recupero dei preventivi',
+        details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : undefined
+      },
       { status: 500 }
     );
   }
@@ -133,16 +151,67 @@ export async function POST(request: NextRequest) {
       supplier_id,
       amount,
       description,
+      intervention_type,
       valid_until,
       notes,
+      quote_number,
+      quote_date,
       attachment: attachment ? { name: attachment.name, size: attachment.size } : null
     });
 
     // Validazione campi obbligatori
     if (!vehicle_id || !supplier_id || !amount || !description || !valid_until) {
-      console.log('Validazione fallita - campi mancanti');
+      console.log('Validazione fallita - campi mancanti:', {
+        vehicle_id: !!vehicle_id,
+        supplier_id: !!supplier_id,
+        amount: !!amount,
+        description: !!description,
+        valid_until: !!valid_until
+      });
       return NextResponse.json(
         { success: false, error: 'Campi obbligatori mancanti' },
+        { status: 400 }
+      );
+    }
+
+    // Validazione formato dati
+    try {
+      if (isNaN(parseFloat(amount))) {
+        console.log('Errore: amount non è un numero valido:', amount);
+        return NextResponse.json(
+          { success: false, error: 'Importo non valido' },
+          { status: 400 }
+        );
+      }
+      
+      if (isNaN(parseInt(supplier_id))) {
+        console.log('Errore: supplier_id non è un numero valido:', supplier_id);
+        return NextResponse.json(
+          { success: false, error: 'ID fornitore non valido' },
+          { status: 400 }
+        );
+      }
+
+      // Validazione date se fornite
+      if (quote_date && isNaN(Date.parse(quote_date))) {
+        console.log('Errore: quote_date non è una data valida:', quote_date);
+        return NextResponse.json(
+          { success: false, error: 'Data preventivo non valida' },
+          { status: 400 }
+        );
+      }
+
+      if (isNaN(Date.parse(valid_until))) {
+        console.log('Errore: valid_until non è una data valida:', valid_until);
+        return NextResponse.json(
+          { success: false, error: 'Data validità non valida' },
+          { status: 400 }
+        );
+      }
+    } catch (validationError) {
+      console.log('Errore nella validazione dati:', validationError);
+      return NextResponse.json(
+        { success: false, error: 'Errore nella validazione dei dati' },
         { status: 400 }
       );
     }
@@ -178,82 +247,46 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Inserisci il preventivo
-    const query = `
+    // Inserimento del preventivo
+    const insertQuery = `
       INSERT INTO maintenance_quotes (
-        schedule_id, vehicle_id, supplier_id, amount, description, intervention_type,
-        valid_until, notes, quote_number, quote_date, created_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        vehicle_id, supplier_id, amount, description, 
+        intervention_type, valid_until, notes, quote_number, quote_date
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
-    console.log('Eseguendo query INSERT con parametri:', {
-      schedule_id: schedule_id ? parseInt(schedule_id) : null,
-      vehicle_id,
-      supplier_id: parseInt(supplier_id),
-      amount: parseFloat(amount),
-      description,
-      valid_until,
-      notes: notes || null
-    });
-
-    const [result] = await connection.execute(query, [
-      schedule_id ? parseInt(schedule_id) : null,
+    const insertValues = [
       vehicle_id,
       parseInt(supplier_id),
       parseFloat(amount),
       description,
-      intervention_type ? parseInt(intervention_type) : 1,
+      intervention_type || 'Manutenzione generale', // Valore di default se non specificato
       valid_until,
       notes || null,
       quote_number || null,
-      quote_date || null,
-      userCheck.user?.id
-    ]);
+      quote_date || null
+    ];
 
-    const quoteId = (result as any).insertId;
-
-    // Gestisci il file allegato se presente
-    if (attachment && attachment.size > 0) {
-      try {
-        // Verifica dimensione file (max 10MB)
-        if (attachment.size > 10 * 1024 * 1024) {
-          connection.release();
-          return NextResponse.json(
-            { success: false, error: 'File troppo grande (max 10MB)' },
-            { status: 400 }
-          );
-        }
-        
-        // Verifica tipo file
-        const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
-        if (!allowedTypes.includes(attachment.type)) {
-          connection.release();
-          return NextResponse.json(
-            { success: false, error: 'Tipo di file non supportato' },
-            { status: 400 }
-          );
-        }
-
-        // Genera nome file unico per Vercel Blob Storage
-        const timestamp = Date.now();
-        const fileName = `quote-documents/${timestamp}-${attachment.name}`;
-
-        // Carica su Vercel Blob Storage
-        const blob = await put(fileName, attachment, {
-          access: 'public',
-        });
-
-        // Salva i metadati del file nel database con l'URL del blob
-        await connection.execute(
-          `INSERT INTO quote_documents (quote_id, file_name, file_path, file_type, file_size) 
-           VALUES (?, ?, ?, ?, ?)`,
-          [quoteId, attachment.name, blob.url, attachment.type, attachment.size]
-        );
-      } catch (fileError) {
-        console.error('Errore nel salvataggio del file su Vercel Blob Storage:', fileError);
-        // Non bloccare la creazione del preventivo se il file fallisce
-      }
+    console.log('Preparazione query INSERT...');
+    console.log('Query:', insertQuery);
+    console.log('Valori:', insertValues);
+    console.log('Tipi dei valori:', insertValues.map(v => typeof v));
+    
+    let result: any;
+    try {
+      [result] = await connection.execute(insertQuery, insertValues);
+      console.log('Query INSERT eseguita con successo, result:', result);
+    } catch (insertError) {
+      console.error('Errore durante l\'inserimento:', insertError);
+      console.error('Codice errore MySQL:', insertError.code);
+      console.error('Messaggio errore MySQL:', insertError.message);
+      console.error('SQL State:', insertError.sqlState);
+      console.error('Errno:', insertError.errno);
+      throw insertError;
     }
+
+    const quoteId = result.insertId;
+    console.log('Preventivo creato con successo, ID:', quoteId);
 
     connection.release();
 
@@ -261,13 +294,14 @@ export async function POST(request: NextRequest) {
       success: true,
       data: { 
         id: quoteId, 
-        schedule_id: schedule_id ? parseInt(schedule_id) : null,
         vehicle_id,
         supplier_id: parseInt(supplier_id),
         amount: parseFloat(amount),
         description,
         valid_until,
-        notes
+        notes,
+        quote_number,
+        quote_date
       }
     });
   } catch (error) {
