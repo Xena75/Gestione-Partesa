@@ -1724,3 +1724,42 @@ body {
     font-size: 0.875rem;
   }
 }
+
+/* Miglioramento leggibilità testo header card */
+.card-header small {
+  opacity: 0.9 !important; /* Aumenta opacità da 0.75 a 0.9 */
+  font-weight: 500 !important; /* Aumenta peso del font */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important; /* Aggiunge ombra per contrasto */
+  color: rgba(255, 255, 255, 0.95) !important; /* Colore più visibile */
+}
+
+/* Stili specifici per ogni colore di header */
+.card-header-purple-soft small,
+.card-header-purple small {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+}
+
+.card-header-blue-soft small,
+.card-header-blue small {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+}
+
+.card-header-green-soft small,
+.card-header-green small {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+}
+
+.card-header-orange-soft small,
+.card-header-orange small {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+}
+
+.card-header-red-soft small,
+.card-header-red small {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+}
+
+.card-header-cyan-soft small,
+.card-header-cyan small {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+}

@@ -142,49 +142,8 @@ export default function ModernDashboard() {
 
 
 
-  // Effetti parallax e animazioni
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = (e.clientX - rect.left - rect.width / 2) / rect.width;
-    const y = (e.clientY - rect.top - rect.height / 2) / rect.height;
-    setMousePosition({ x, y });
-  };
-
   const AnimatedCounter = ({ value }: { value: number | string }) => {
-    const [displayValue, setDisplayValue] = useState(0);
-    const [isAnimated, setIsAnimated] = useState(false);
-    
-    useEffect(() => {
-      if (typeof value === 'number' && value > 0) {
-        const duration = 1000;
-        const steps = 60;
-        const increment = value / steps;
-        let current = 0;
-        
-        const timer = setInterval(() => {
-          current += increment;
-          if (current >= value) {
-            setDisplayValue(value);
-            setIsAnimated(true);
-            clearInterval(timer);
-          } else {
-            setDisplayValue(Math.floor(current));
-          }
-        }, duration / steps);
-        
-        return () => clearInterval(timer);
-      } else {
-        setDisplayValue(typeof value === 'number' ? value : 0);
-      }
-    }, [value]);
-    
-    return (
-      <span className={`stat-value ${isAnimated ? 'animate' : ''}`}>
-        {typeof value === 'number' ? displayValue.toLocaleString() : value}
-      </span>
-    );
+    return <span>{value}</span>;
   };
 
   // Loading state
@@ -391,150 +350,6 @@ export default function ModernDashboard() {
          .dashboard-card {
            transition: height 0.4s ease;
          }
-         
-         /* Soft Elevation Styles */
-         .dashboard-card-soft {
-           border-radius: 12px !important;
-           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
-           border: 1px solid rgba(255, 255, 255, 0.1) !important;
-           transition: all 0.2s ease-in-out !important;
-           backdrop-filter: blur(10px);
-         }
-         
-         .dashboard-card-soft:hover {
-           transform: translateY(-2px) rotateX(2deg) rotateY(1deg) !important;
-           box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12), 0 0 20px var(--glow-color, rgba(0, 123, 255, 0.3)) !important;
-           border: 1px solid var(--glow-color, rgba(0, 123, 255, 0.5)) !important;
-         }
-         
-         .card-header-soft {
-           border-radius: 12px 12px 0 0 !important;
-           background: linear-gradient(135deg, var(--header-color), var(--header-color-light)) !important;
-           border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-         }
-         
-         .card-header-purple-soft {
-           --header-color: #6f42c1;
-           --header-color-light: #8a63d2;
-           --glow-color: rgba(111, 66, 193, 0.4);
-         }
-         
-         .card-header-blue-soft {
-           --header-color: #0d6efd;
-           --header-color-light: #3d8bfd;
-           --glow-color: rgba(13, 110, 253, 0.4);
-         }
-         
-         .card-header-green-soft {
-           --header-color: #198754;
-           --header-color-light: #20c997;
-           --glow-color: rgba(25, 135, 84, 0.4);
-         }
-         
-         .card-header-cyan-soft {
-           --header-color: #0dcaf0;
-           --header-color-light: #3dd5f3;
-           --glow-color: rgba(13, 202, 240, 0.4);
-         }
-         
-         .card-header-orange-soft {
-           --header-color: #fd7e14;
-           --header-color-light: #fd9843;
-           --glow-color: rgba(253, 126, 20, 0.4);
-         }
-         
-         .card-header-red-soft {
-           --header-color: #dc3545;
-           --header-color-light: #e15759;
-           --glow-color: rgba(220, 53, 69, 0.4);
-         }
-         
-         .card-body-soft {
-           background: rgba(255, 255, 255, 0.95);
-           backdrop-filter: blur(10px);
-           position: relative;
-           overflow: hidden;
-         }
-         
-         /* Gradiente animato di sfondo */
-         .card-body-soft::before {
-           content: '';
-           position: absolute;
-           top: 0;
-           left: -100%;
-           width: 100%;
-           height: 100%;
-           background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-           animation: shimmer 3s infinite;
-           z-index: 0;
-         }
-         
-         @keyframes shimmer {
-           0% { left: -100%; }
-           100% { left: 100%; }
-         }
-         
-         /* Effetto breathing per i badge */
-         .trend-badge {
-           animation: breathing 2s ease-in-out infinite;
-         }
-         
-         @keyframes breathing {
-           0%, 100% { transform: scale(1); opacity: 1; }
-           50% { transform: scale(1.05); opacity: 0.9; }
-         }
-         
-         /* Animazione contatori */
-         .stat-value {
-           transition: all 0.3s ease;
-         }
-         
-         .stat-value.animate {
-           animation: countUp 1s ease-out;
-         }
-         
-         @keyframes countUp {
-           0% { transform: scale(0.8); opacity: 0; }
-           50% { transform: scale(1.1); }
-           100% { transform: scale(1); opacity: 1; }
-         }
-         
-         /* Effetto parallax per le icone */
-         .icon-parallax {
-           transition: transform 0.1s ease-out;
-         }
-         
-         /* Particelle fluttuanti */
-         .floating-particles {
-           position: absolute;
-           top: 0;
-           left: 0;
-           width: 100%;
-           height: 100%;
-           pointer-events: none;
-           overflow: hidden;
-         }
-         
-         .particle {
-           position: absolute;
-           width: 4px;
-           height: 4px;
-           background: var(--glow-color, rgba(0, 123, 255, 0.3));
-           border-radius: 50%;
-           animation: float 6s infinite ease-in-out;
-         }
-         
-         .particle:nth-child(1) { top: 10%; left: 10%; animation-delay: 0s; }
-         .particle:nth-child(2) { top: 20%; right: 10%; animation-delay: 1s; }
-         .particle:nth-child(3) { bottom: 10%; left: 15%; animation-delay: 2s; }
-         .particle:nth-child(4) { bottom: 20%; right: 15%; animation-delay: 3s; }
-         
-         @keyframes float {
-           0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.3; }
-           25% { transform: translateY(-10px) rotate(90deg); opacity: 0.6; }
-           50% { transform: translateY(-5px) rotate(180deg); opacity: 0.8; }
-           75% { transform: translateY(-15px) rotate(270deg); opacity: 0.6; }
-         }
       `}</style>
 
       <div className="dashboard-container">
@@ -623,26 +438,11 @@ export default function ModernDashboard() {
         <div className="row g-4">
           {/* Anagrafiche */}
           <div className="col-lg-3 col-md-6">
-            <div 
-              className={`card dashboard-card dashboard-card-soft card-header-purple-soft ${!toggleStates.anagrafiche ? 'card-collapsed' : ''}`}
-              onMouseMove={handleMouseMove}
-            >
-              <div className="floating-particles">
-                <div className="particle"></div>
-                <div className="particle"></div>
-                <div className="particle"></div>
-                <div className="particle"></div>
-              </div>
-              <div className="card-header card-header-purple card-header-purple-soft card-header-soft text-white">
+            <div className={`card dashboard-card ${!toggleStates.anagrafiche ? 'card-collapsed' : ''}`}>
+              <div className="card-header card-header-purple text-white">
                  <div className="d-flex align-items-center justify-content-between w-100">
                    <div className="d-flex align-items-center flex-grow-1">
-                     <Users 
-                       className="me-3 icon-parallax" 
-                       size={24}
-                       style={{
-                         transform: `translate(${mousePosition.x * -5}px, ${mousePosition.y * -5}px)`
-                       }}
-                     />
+                     <Users className="me-3" size={24} />
                      <div>
                        <h5 className="mb-0">🏢 Anagrafiche</h5>
                        <small className="opacity-75">Gestione clienti e fornitori</small>
@@ -657,7 +457,7 @@ export default function ModernDashboard() {
                    </button>
                  </div>
                </div>
-              <div className={`card-body card-body-soft ${!toggleStates.anagrafiche ? 'card-body-collapsed' : ''}`}>
+              <div className={`card-body ${!toggleStates.anagrafiche ? 'card-body-collapsed' : ''}`}>
                 <div className="row g-2 mb-3">
                   <div className="col-6">
                     <Link href="/vehicles/suppliers" className="btn btn-outline-primary btn-action btn-sm w-100">
@@ -694,27 +494,12 @@ export default function ModernDashboard() {
           </div>
 
           {/* Analytics */}
-          <div className="col-lg-3 col-md-6">
-            <div 
-              className={`card dashboard-card dashboard-card-soft card-header-blue-soft ${!toggleStates.analytics ? 'card-collapsed' : ''}`}
-              onMouseMove={handleMouseMove}
-            >
-              <div className="floating-particles">
-                <div className="particle"></div>
-                <div className="particle"></div>
-                <div className="particle"></div>
-                <div className="particle"></div>
-              </div>
-              <div className="card-header card-header-blue card-header-blue-soft card-header-soft text-white">
+            <div className="col-lg-3 col-md-6">
+            <div className={`card dashboard-card ${!toggleStates.analytics ? 'card-collapsed' : ''}`}>
+              <div className="card-header card-header-blue text-white">
                  <div className="d-flex align-items-center justify-content-between w-100">
                    <div className="d-flex align-items-center flex-grow-1">
-                     <BarChart3 
-                       className="me-3 icon-parallax" 
-                       size={24}
-                       style={{
-                         transform: `translate(${mousePosition.x * -5}px, ${mousePosition.y * -5}px)`
-                       }}
-                     />
+                     <BarChart3 className="me-3" size={24} />
                      <div>
                        <h5 className="mb-0">📊 Analytics</h5>
                        <small className="opacity-75">Reports e performance</small>
@@ -729,7 +514,7 @@ export default function ModernDashboard() {
                    </button>
                  </div>
                </div>
-              <div className={`card-body card-body-soft ${!toggleStates.analytics ? 'card-body-collapsed' : ''}`}>
+              <div className={`card-body ${!toggleStates.analytics ? 'card-body-collapsed' : ''}`}>
                 <div className="row g-2 mb-3">
                   <div className="col-6">
                     <Link href="/delivery-analytics" className="btn btn-outline-primary btn-action btn-sm w-100">
@@ -791,26 +576,11 @@ export default function ModernDashboard() {
 
           {/* Fatturazione */}
             <div className="col-lg-3 col-md-6">
-            <div 
-              className={`card dashboard-card dashboard-card-soft card-header-green-soft ${!toggleStates.fatturazione ? 'card-collapsed' : ''}`}
-              onMouseMove={handleMouseMove}
-            >
-              <div className="floating-particles">
-                <div className="particle"></div>
-                <div className="particle"></div>
-                <div className="particle"></div>
-                <div className="particle"></div>
-              </div>
-              <div className="card-header card-header-green card-header-green-soft card-header-soft text-white">
+            <div className={`card dashboard-card ${!toggleStates.fatturazione ? 'card-collapsed' : ''}`}>
+              <div className="card-header card-header-green text-white">
                 <div className="d-flex align-items-center justify-content-between w-100">
                   <div className="d-flex align-items-center flex-grow-1">
-                    <DollarSign 
-                      className="me-3 icon-parallax" 
-                      size={24}
-                      style={{
-                        transform: `translate(${mousePosition.x * -5}px, ${mousePosition.y * -5}px)`
-                      }}
-                    />
+                    <DollarSign className="me-3" size={24} />
                     <div>
                       <h5 className="mb-0">💰 Fatturazione</h5>
                       <small className="opacity-75">Gestione economica</small>
@@ -825,7 +595,7 @@ export default function ModernDashboard() {
                   </button>
                 </div>
               </div>
-              <div className={`card-body card-body-soft ${!toggleStates.fatturazione ? 'card-body-collapsed' : ''}`}>
+              <div className={`card-body ${!toggleStates.fatturazione ? 'card-body-collapsed' : ''}`}>
                 <div className="row g-2 mb-3">
                   <div className="col-6">
                     <Link href="/fatturazione-terzisti" className="btn btn-outline-primary btn-action btn-sm w-100">
@@ -869,26 +639,11 @@ export default function ModernDashboard() {
 
           {/* Import */}
           <div className="col-lg-3 col-md-6">
-            <div 
-              className={`card dashboard-card dashboard-card-soft card-header-cyan-soft ${!toggleStates.import ? 'card-collapsed' : ''}`}
-              onMouseMove={handleMouseMove}
-            >
-              <div className="floating-particles">
-                <div className="particle"></div>
-                <div className="particle"></div>
-                <div className="particle"></div>
-                <div className="particle"></div>
-              </div>
-              <div className="card-header card-header-cyan card-header-cyan-soft card-header-soft text-white">
+            <div className={`card dashboard-card ${!toggleStates.import ? 'card-collapsed' : ''}`}>
+              <div className="card-header card-header-cyan text-white">
                 <div className="d-flex align-items-center justify-content-between w-100">
                   <div className="d-flex align-items-center flex-grow-1">
-                    <Upload 
-                      className="me-3 icon-parallax" 
-                      size={24}
-                      style={{
-                        transform: `translate(${mousePosition.x * -5}px, ${mousePosition.y * -5}px)`
-                      }}
-                    />
+                    <Upload className="me-3" size={24} />
                     <div>
                       <h5 className="mb-0">📤 Import</h5>
                       <small className="opacity-75">Caricamento dati</small>
@@ -903,7 +658,7 @@ export default function ModernDashboard() {
                   </button>
                 </div>
               </div>
-              <div className={`card-body card-body-soft ${!toggleStates.import ? 'card-body-collapsed' : ''}`}>
+              <div className={`card-body ${!toggleStates.import ? 'card-body-collapsed' : ''}`}>
                 <div className="row g-2 mb-3">
                   <div className="col-6">
                     <Link href="/import_viaggi_PoD" className="btn btn-outline-primary btn-action btn-sm w-100">
@@ -942,26 +697,11 @@ export default function ModernDashboard() {
 
           {/* Veicoli */}
             <div className="col-lg-3 col-md-6">
-            <div 
-              className={`card dashboard-card dashboard-card-soft card-header-orange-soft ${!toggleStates.veicoli ? 'card-collapsed' : ''}`}
-              onMouseMove={handleMouseMove}
-            >
-              <div className="floating-particles">
-                <div className="particle"></div>
-                <div className="particle"></div>
-                <div className="particle"></div>
-                <div className="particle"></div>
-              </div>
-              <div className="card-header card-header-orange card-header-orange-soft card-header-soft text-white">
+            <div className={`card dashboard-card ${!toggleStates.veicoli ? 'card-collapsed' : ''}`}>
+              <div className="card-header card-header-orange text-white">
                 <div className="d-flex align-items-center justify-content-between w-100">
                   <div className="d-flex align-items-center flex-grow-1">
-                    <Truck 
-                      className="me-3 icon-parallax" 
-                      size={24}
-                      style={{
-                        transform: `translate(${mousePosition.x * -5}px, ${mousePosition.y * -5}px)`
-                      }}
-                    />
+                    <Truck className="me-3" size={24} />
                     <div>
                       <h5 className="mb-0">🚗 Veicoli</h5>
                       <small className="opacity-75">Fleet management</small>
@@ -976,7 +716,7 @@ export default function ModernDashboard() {
                   </button>
                 </div>
               </div>
-              <div className={`card-body card-body-soft ${!toggleStates.veicoli ? 'card-body-collapsed' : ''}`}>
+              <div className={`card-body ${!toggleStates.veicoli ? 'card-body-collapsed' : ''}`}>
                 <div className="row g-2 mb-3">
                   <div className="col-6">
                     <Link href="/vehicles/list" className="btn btn-outline-primary btn-action btn-sm w-100">
@@ -1032,26 +772,11 @@ export default function ModernDashboard() {
 
           {/* Supporto */}
           <div className="col-lg-3 col-md-6">
-            <div 
-              className={`card dashboard-card dashboard-card-soft card-header-purple-soft ${!toggleStates.supporto ? 'card-collapsed' : ''}`}
-              onMouseMove={handleMouseMove}
-            >
-              <div className="floating-particles">
-                <div className="particle"></div>
-                <div className="particle"></div>
-                <div className="particle"></div>
-                <div className="particle"></div>
-              </div>
-              <div className="card-header card-header-purple card-header-purple-soft card-header-soft text-white">
+            <div className={`card dashboard-card ${!toggleStates.supporto ? 'card-collapsed' : ''}`}>
+              <div className="card-header card-header-purple text-white">
                 <div className="d-flex align-items-center justify-content-between w-100">
                   <div className="d-flex align-items-center flex-grow-1">
-                    <HelpCircle 
-                      className="me-3 icon-parallax" 
-                      size={24}
-                      style={{
-                        transform: `translate(${mousePosition.x * -5}px, ${mousePosition.y * -5}px)`
-                      }}
-                    />
+                    <HelpCircle className="me-3" size={24} />
                     <div>
                       <h5 className="mb-0">📚 Supporto</h5>
                       <small className="opacity-75">Guide e documentazione</small>
@@ -1066,7 +791,7 @@ export default function ModernDashboard() {
                   </button>
                 </div>
               </div>
-              <div className={`card-body card-body-soft ${!toggleStates.supporto ? 'card-body-collapsed' : ''}`}>
+              <div className={`card-body ${!toggleStates.supporto ? 'card-body-collapsed' : ''}`}>
                 <div className="row g-2 mb-3">
                   <div className="col-6">
                     <Link href="/funzionalita" className="btn btn-outline-primary btn-action btn-sm w-100">
@@ -1110,26 +835,11 @@ export default function ModernDashboard() {
 
           {/* Viaggi */}
             <div className="col-lg-3 col-md-6">
-            <div 
-              className={`card dashboard-card dashboard-card-soft card-header-blue-soft ${!toggleStates.viaggi ? 'card-collapsed' : ''}`}
-              onMouseMove={handleMouseMove}
-            >
-              <div className="floating-particles">
-                <div className="particle"></div>
-                <div className="particle"></div>
-                <div className="particle"></div>
-                <div className="particle"></div>
-              </div>
-              <div className="card-header card-header-blue card-header-blue-soft card-header-soft text-white">
+            <div className={`card dashboard-card ${!toggleStates.viaggi ? 'card-collapsed' : ''}`}>
+              <div className="card-header card-header-blue text-white">
                 <div className="d-flex align-items-center justify-content-between w-100">
                   <div className="d-flex align-items-center flex-grow-1">
-                    <Truck 
-                      className="me-3 icon-parallax" 
-                      size={24}
-                      style={{
-                        transform: `translate(${mousePosition.x * -5}px, ${mousePosition.y * -5}px)`
-                      }}
-                    />
+                    <Truck className="me-3" size={24} />
                     <div>
                       <h5 className="mb-0">🚛 Viaggi</h5>
                       <small className="opacity-75">Gestione e monitoraggio viaggi</small>
@@ -1144,7 +854,7 @@ export default function ModernDashboard() {
                   </button>
                 </div>
               </div>
-              <div className={`card-body card-body-soft ${!toggleStates.viaggi ? 'card-body-collapsed' : ''}`}>
+              <div className={`card-body ${!toggleStates.viaggi ? 'card-body-collapsed' : ''}`}>
                 <div className="row g-2 mb-3">
                   <div className="col-6">
                     <Link href="/viaggi" className="btn btn-outline-primary btn-action btn-sm w-100">
@@ -1206,26 +916,11 @@ export default function ModernDashboard() {
 
           {/* Sistema */}
             <div className="col-lg-3 col-md-6">
-            <div 
-              className={`card dashboard-card dashboard-card-soft card-header-red-soft ${!toggleStates.sistema ? 'card-collapsed' : ''}`}
-              onMouseMove={handleMouseMove}
-            >
-              <div className="floating-particles">
-                <div className="particle"></div>
-                <div className="particle"></div>
-                <div className="particle"></div>
-                <div className="particle"></div>
-              </div>
-              <div className="card-header card-header-red card-header-red-soft card-header-soft text-white">
+            <div className={`card dashboard-card ${!toggleStates.sistema ? 'card-collapsed' : ''}`}>
+              <div className="card-header card-header-red text-white">
                 <div className="d-flex align-items-center justify-content-between w-100">
                   <div className="d-flex align-items-center flex-grow-1">
-                    <Settings 
-                      className="me-3 icon-parallax" 
-                      size={24}
-                      style={{
-                        transform: `translate(${mousePosition.x * -5}px, ${mousePosition.y * -5}px)`
-                      }}
-                    />
+                    <Settings className="me-3" size={24} />
                     <div>
                       <h5 className="mb-0">⚙️ Sistema</h5>
                       <small className="opacity-75">Amministrazione</small>
@@ -1240,7 +935,7 @@ export default function ModernDashboard() {
                   </button>
                 </div>
               </div>
-              <div className={`card-body card-body-soft ${!toggleStates.sistema ? 'card-body-collapsed' : ''}`}>
+              <div className={`card-body ${!toggleStates.sistema ? 'card-body-collapsed' : ''}`}>
                 <div className="row g-2 mb-3">
                   <div className="col-6">
                     <Link href="/sistema/configurazioni" className="btn btn-outline-primary btn-action btn-sm w-100">

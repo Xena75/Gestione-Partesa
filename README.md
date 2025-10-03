@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.30.3
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.30.4
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -206,6 +206,44 @@ WHERE status = 'completed' AND created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)
 - **User experience migliorata**: Accesso rapido a tutte le funzionalità senza perdita informazioni
 - **Performance superiori**: Rendering ottimizzato con meno elementi DOM visibili
 - **Flessibilità operativa**: Adattamento interfaccia alle esigenze specifiche dell'utente
+
+### 🎨 **Effetti Visuali Avanzati e Ottimizzazioni UX - v2.30.4** ⭐ **NUOVO**
+
+#### ✨ **Implementazione Effetti Visuali Spettacolari**
+- **Effetti 3D e Parallax**: Implementazione completa di effetti tilt 3D e parallax sulle icone delle card
+- **Particelle fluttuanti**: Decorazioni animate negli angoli delle card per effetto dinamico
+- **Glow colorato**: Bagliore sui bordi delle card al hover che riprende il colore dell'header
+- **Animazioni contatori**: Micro-animazioni sui contatori statistici con effetto conteggio progressivo
+- **Breathing badges**: Effetto pulsazione leggera sui badge di trend per attirare l'attenzione
+- **Gradiente animato**: Sfondo con gradiente che cambia lentamente per dinamicità visiva
+
+#### 🎯 **Miglioramenti Leggibilità e Accessibilità**
+- **Ottimizzazione testo header**: Miglioramento drastico della leggibilità del testo nella seconda riga degli header
+- **Text-shadow avanzato**: Implementazione ombreggiature specifiche per ogni colore di header
+- **Contrasto ottimizzato**: Aumento opacità da 75% a 90% e peso font a 500 per maggiore visibilità
+- **Colore ottimizzato**: Utilizzo di `rgba(255, 255, 255, 0.95)` per massimo contrasto su sfondi colorati
+- **Ombra specifica**: Ombra `0 1px 3px rgba(0, 0, 0, 0.4)` per tutti i colori di header (viola, blu, verde, arancione, rosso, ciano)
+
+#### 🔧 **Implementazioni Tecniche Avanzate**
+- **Mouse tracking**: Sistema di tracciamento posizione mouse per effetti parallax realistici
+- **CSS transforms**: Utilizzo di `transform: translate()` per movimento fluido icone
+- **Floating particles**: Sistema di particelle CSS animate con keyframes personalizzati
+- **Hover states**: Transizioni fluide con `cubic-bezier` per effetti professionali
+- **Performance ottimizzate**: Utilizzo di `transform` e `opacity` per animazioni hardware-accelerated
+
+#### 🎨 **Layout e Design Migliorati**
+- **Layout 4 card per riga**: Ottimizzazione layout desktop con 4 card per riga per migliore utilizzo spazio
+- **Responsive perfetto**: Adattamento automatico a 2 card per riga su tablet e 1 su mobile
+- **Colori coordinati**: Ogni card mantiene la propria identità cromatica con effetti coordinati
+- **Eleganza professionale**: Tutti gli effetti sono sottili e raffinati per mantenere professionalità
+- **Accessibilità garantita**: Miglioramenti che non compromettono l'accessibilità del sistema
+
+#### ✅ **Benefici Implementati**
+- **User experience spettacolare**: Interfaccia moderna e coinvolgente che mantiene professionalità
+- **Leggibilità superiore**: Testo chiaramente visibile su tutti i sfondi colorati
+- **Performance fluide**: Animazioni ottimizzate per dispositivi di tutte le fasce
+- **Accessibilità migliorata**: Contrasto e leggibilità ottimizzati per tutti gli utenti
+- **Design contemporaneo**: Interfaccia allineata agli standard moderni di design
 
 ### 📊 **Dashboard Moderna con Statistiche Reali - v2.29.0** ⭐ **CONSOLIDATO**
 
