@@ -41,6 +41,7 @@ export async function GET(
         km_ultimo_tagliando,
         data_ultimo_tagliando,
         data_ultima_revisione,
+        note,
         active,
         createdAt,
         updatedAt
@@ -221,6 +222,10 @@ export async function PUT(
     if (body.data_ultima_revisione !== undefined) {
       updateFields.push('data_ultima_revisione = ?');
       updateValues.push(body.data_ultima_revisione);
+    }
+    if (body.note !== undefined) {
+      updateFields.push('note = ?');
+      updateValues.push(body.note);
     }
     
     // Aggiungi sempre l'aggiornamento del timestamp

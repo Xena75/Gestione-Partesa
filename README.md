@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.30.4
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.30.6
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -97,7 +97,44 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Esperienza utente**: Processo fluido di creazione preventivi con allegati
 - **Manutenibilità**: Codice robusto e ben documentato per future estensioni
 
-### 📅 **Sistema Alert Scadenze Programmate Avanzato - v2.30.5** ⭐ **NUOVO**
+### 🔧 **Correzioni e Miglioramenti Sistema Preventivi - v2.30.6** ⭐ **NUOVO**
+
+#### 🎯 **Correzione Filtro Scadenze Preventivi**
+- **Problema risolto**: Eliminata visualizzazione scadenze già completate nel campo "Scadenza" della pagina creazione preventivi
+- **Filtro migliorato**: Query SQL aggiornata con doppia condizione `completed_date IS NULL AND status != 'completed'`
+- **Logica robusta**: Gestione corretta scadenze con `status='completed'` ma `completed_date=null`
+- **API ottimizzata**: Endpoint `/api/vehicles/schedules` ora filtra correttamente tutte le scadenze completate
+- **User experience**: Campo "Scadenza" mostra solo scadenze effettivamente da completare
+
+#### 📅 **Formato Data Italiano per Preventivi**
+- **Campo "Data offerta"**: Implementato formato italiano `gg/mm/aaaa` per input utente
+- **Conversione automatica**: Funzione `formatDateToISO()` per conversione al formato database
+- **Validazione real-time**: Controllo formato con `isValidItalianDate()` e feedback immediato
+- **Compatibilità database**: Mantenimento formato ISO per storage e query
+- **Pattern validation**: Regex `/^\d{2}\/\d{2}\/\d{4}$/` per validazione formato
+
+#### 🚗 **Miglioramenti Gestione Veicoli**
+- **Campo "Note" veicoli**: Aggiunta visualizzazione e modifica note per ogni veicolo
+- **Dropdown "Proprietà"**: Campo proprietà ora editabile con dropdown + input personalizzato
+- **Interfaccia ottimizzata**: Layout responsive con Bootstrap per tutti i nuovi campi
+- **Validazione form**: Controlli di validità per tutti i campi modificati
+- **Persistenza dati**: Salvataggio automatico modifiche nel database `viaggi_db`
+
+#### 🔧 **Implementazioni Tecniche**
+- **Query SQL ottimizzate**: Filtri migliorati per performance e accuratezza risultati
+- **Funzioni utility**: `formatDateToISO()`, `isValidItalianDate()` per gestione date
+- **Validazione client-side**: `setCustomValidity()` per feedback immediato errori
+- **API robuste**: Gestione errori e fallback per tutti gli endpoint modificati
+- **TypeScript**: Tipizzazione completa per nuovi campi e funzioni
+
+#### ✅ **Benefici Operativi**
+- **Dati accurati**: Eliminazione confusione da scadenze già completate
+- **Formato locale**: Date in formato italiano per conformità e usabilità
+- **Gestione completa**: Informazioni veicoli più dettagliate con note e proprietà
+- **Workflow migliorato**: Processo creazione preventivi più fluido e intuitivo
+- **Manutenibilità**: Codice pulito e ben documentato per future estensioni
+
+### 📅 **Sistema Alert Scadenze Programmate Avanzato - v2.30.5** ⭐ **CONSOLIDATO**
 
 #### 🎯 **Layout a Due Colonne per Alert Scadenze**
 - **Colonna sinistra**: Scadenze critiche (scadute e entro 7 giorni) con alert rossi

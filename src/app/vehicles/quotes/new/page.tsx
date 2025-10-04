@@ -196,6 +196,16 @@ function NewQuotePageContent() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    
+    // Validazione speciale per il campo quote_date
+    if (name === 'quote_date' && value && !isValidItalianDate(value)) {
+      // Mostra un messaggio di errore se il formato non è valido
+      e.target.setCustomValidity('Inserire la data nel formato gg/mm/aaaa');
+    } else if (name === 'quote_date') {
+      // Rimuovi il messaggio di errore se il formato è valido
+      e.target.setCustomValidity('');
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -271,8 +281,10 @@ function NewQuotePageContent() {
         console.log('DEBUG - quote_number è vuoto, non aggiunto al FormData');
       }
       if (formData.quote_date) {
-        submitData.append('quote_date', formData.quote_date);
-        console.log('DEBUG - quote_date aggiunto al FormData:', formData.quote_date);
+        const isoDate = formatDateToISO(formData.quote_date);
+        submitData.append('quote_date', isoDate);
+        console.log('DEBUG - quote_date aggiunto al FormData (formato italiano):', formData.quote_date);
+        console.log('DEBUG - quote_date convertito in ISO:', isoDate);
       } else {
         console.log('DEBUG - quote_date è vuoto, non aggiunto al FormData');
       }
@@ -528,12 +540,15 @@ function NewQuotePageContent() {
                       Data Offerta
                     </label>
                     <input
-                      type="date"
+                      type="text"
                       id="quote_date"
                       name="quote_date"
                       className="form-control"
                       value={formData.quote_date}
                       onChange={handleInputChange}
+                      placeholder="gg/mm/aaaa"
+                      pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\d{4}$"
+                      title="Inserire la data nel formato gg/mm/aaaa"
                     />
                   </div>
 

@@ -19,6 +19,7 @@ interface Vehicle {
   km_ultimo_tagliando: number | null;
   data_ultimo_tagliando: string | null;
   data_ultima_revisione: string | null;
+  note?: string;
   active: number;
   createdAt: string;
   updatedAt: string;
@@ -87,6 +88,7 @@ interface FormData {
   km_ultimo_tagliando: string;
   data_ultimo_tagliando: string;
   data_ultima_revisione: string;
+  note: string;
 }
 
 export default function VehicleDetailPage() {
@@ -109,14 +111,17 @@ export default function VehicleDetailPage() {
     pallet_kg: '',
     km_ultimo_tagliando: '',
     data_ultimo_tagliando: '',
-    data_ultima_revisione: ''
+    data_ultima_revisione: '',
+    note: ''
   });
   const [updateLoading, setUpdateLoading] = useState(false);
   const [updateMessage, setUpdateMessage] = useState('');
+  const [proprietaOptions, setProprietaOptions] = useState<string[]>([]);
 
   useEffect(() => {
     fetchVehicle();
     fetchDocuments();
+    fetchProprietaOptions();
   }, [plate]);
 
   const fetchVehicle = async () => {
@@ -137,7 +142,8 @@ export default function VehicleDetailPage() {
           pallet_kg: data.vehicle.pallet_kg?.toString() || '',
           km_ultimo_tagliando: data.vehicle.km_ultimo_tagliando?.toString() || '',
           data_ultimo_tagliando: data.vehicle.data_ultimo_tagliando ? formatDate(data.vehicle.data_ultimo_tagliando) : '',
-          data_ultima_revisione: data.vehicle.data_ultima_revisione ? formatDate(data.vehicle.data_ultima_revisione) : ''
+          data_ultima_revisione: data.vehicle.data_ultima_revisione ? formatDate(data.vehicle.data_ultima_revisione) : '',
+          note: data.vehicle.note || ''
         });
       } else {
         // Gestione errori specifici
@@ -181,7 +187,21 @@ export default function VehicleDetailPage() {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const fetchProprietaOptions = async () => {
+    try {
+      const response = await fetch('/api/vehicles/proprieta');
+      const data = await response.json();
+      
+      if (Array.isArray(data)) {
+        const options = data.map((item: any) => item.proprieta);
+        setProprietaOptions(options);
+      }
+    } catch (err) {
+      console.error('Errore nel caricamento opzioni proprietà:', err);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -210,7 +230,8 @@ export default function VehicleDetailPage() {
           pallet_kg: parseFloat(formData.pallet_kg) || 0,
           km_ultimo_tagliando: parseInt(formData.km_ultimo_tagliando) || null,
           data_ultimo_tagliando: convertItalianDateToDatabase(formData.data_ultimo_tagliando),
-          data_ultima_revisione: convertItalianDateToDatabase(formData.data_ultima_revisione)
+          data_ultima_revisione: convertItalianDateToDatabase(formData.data_ultima_revisione),
+          note: formData.note
         })
       });
 
@@ -572,19 +593,22 @@ export default function VehicleDetailPage() {
                     </div>
                     <div className="col-md-6 mb-3">
                       <label htmlFor="proprieta" className="form-label">Proprietà</label>
-                      <select
-                        className="form-select"
+                      <input
+                        type="text"
+                        className="form-control"
                         id="proprieta"
                         name="proprieta"
                         value={formData.proprieta}
                         onChange={handleInputChange}
+                        list="proprieta-options"
+                        placeholder="Seleziona o inserisci una proprietà"
                         required
-                      >
-                        <option value="">Seleziona...</option>
-                        <option value="Propria">Propria</option>
-                        <option value="Noleggio">Noleggio</option>
-                        <option value="Leasing">Leasing</option>
-                      </select>
+                      />
+                      <datalist id="proprieta-options">
+                        {proprietaOptions.map((option, index) => (
+                          <option key={index} value={option} />
+                        ))}
+                      </datalist>
                     </div>
                     <div className="col-md-6 mb-3">
                       <label htmlFor="portata" className="form-label">Portata (kg)</label>
@@ -670,6 +694,18 @@ export default function VehicleDetailPage() {
                         value={formData.data_ultima_revisione}
                         onChange={handleInputChange}
                         placeholder="gg/mm/aaaa"
+                      />
+                    </div>
+                    <div className="col-md-12 mb-3">
+                      <label htmlFor="note" className="form-label">Note</label>
+                      <textarea
+                        className="form-control"
+                        id="note"
+                        name="note"
+                        value={formData.note}
+                        onChange={handleInputChange}
+                        rows={3}
+                        placeholder="Inserisci note personalizzate per il veicolo..."
                       />
                     </div>
                   </div>
@@ -758,6 +794,10 @@ export default function VehicleDetailPage() {
                   <div className="col-md-6 mb-3">
                     <strong>Data Ultima Revisione:</strong>
                     <p className="mb-0">{vehicle.data_ultima_revisione ? formatDate(vehicle.data_ultima_revisione) : 'N/A'}</p>
+                  </div>
+                  <div className="col-md-12 mb-3">
+                    <strong>Note:</strong>
+                    <p className="mb-0">{vehicle.note && vehicle.note.trim() !== '' ? vehicle.note : 'Nessuna nota'}</p>
                   </div>
                   <div className="col-md-6 mb-3">
                     <strong>Creato il:</strong>

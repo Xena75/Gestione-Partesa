@@ -839,6 +839,7 @@ pallet_kg             int(11)      YES       NULL
 active                tinyint(1)   NO    MUL  1                                
 createdAt             datetime(3)  NO        current_timestamp(3)             
 updatedAt             datetime(3)  NO        current_timestamp(3)             on update current_timestamp(3)
+note                  text         YES       NULL                             
 ```
 
 **Utilizzo nel progetto:**
@@ -1188,17 +1189,36 @@ CREATE TABLE vehicles (
 #### Tabella: `vehicle_schedules`
 ```sql
 CREATE TABLE vehicle_schedules (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    vehicle_id INT NOT NULL,
-    tipo_scadenza VARCHAR(100) NOT NULL,
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    vehicle_id VARCHAR(20) NOT NULL,
+    schedule_type VARCHAR(100) NOT NULL,
     data_scadenza DATE NOT NULL,
-    descrizione TEXT,
-    completato BOOLEAN DEFAULT FALSE,
+    completed_date DATE NULL,
+    booking_date DATE NULL,
+    status ENUM('pending', 'completed', 'cancelled') DEFAULT 'pending',
+    priority ENUM('low', 'medium', 'high') DEFAULT 'medium',
+    description TEXT,
+    cost_estimate DECIMAL(10,2),
+    provider VARCHAR(255),
+    notes TEXT,
+    quote_number VARCHAR(50),
+    quote_date DATE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE
+    
+    FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE,
+    INDEX idx_vehicle_schedule (vehicle_id, schedule_type),
+    INDEX idx_data_scadenza (data_scadenza),
+    INDEX idx_status (status),
+    INDEX idx_completed_date (completed_date)
 );
 ```
+
+**Note importanti:**
+- Il campo `status` indica lo stato della scadenza: 'pending' (in attesa), 'completed' (completata), 'cancelled' (annullata)
+- Il campo `completed_date` viene popolato quando una scadenza viene marcata come completata
+- Le query per le scadenze attive devono filtrare per `completed_date IS NULL AND status != 'completed'`
+- Il campo `vehicle_id` è VARCHAR(20) per compatibilità con le targhe dei veicoli
 
 #### Tabella: `employees`
 ```sql

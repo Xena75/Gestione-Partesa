@@ -3,6 +3,7 @@
 
 import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { formatDateItalian } from '@/lib/date-utils';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -51,6 +52,7 @@ interface RevisionCheckResult {
 
 function VehicleSchedulesContent() {
   const { theme } = useTheme();
+  const searchParams = useSearchParams();
   
   // Classi dinamiche basate sul tema
   const textClass = theme === 'dark' ? 'text-light' : 'text-dark';
@@ -83,6 +85,14 @@ function VehicleSchedulesContent() {
   useEffect(() => {
     fetchSchedules();
   }, []);
+
+  // Effetto per leggere il parametro vehicle dall'URL
+  useEffect(() => {
+    const vehicleParam = searchParams.get('vehicle');
+    if (vehicleParam) {
+      setFilterPlate(vehicleParam);
+    }
+  }, [searchParams]);
 
   const fetchSchedules = async () => {
     try {

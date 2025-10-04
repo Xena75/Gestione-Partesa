@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
         v.modello
       FROM vehicle_schedules vs
       JOIN vehicles v ON vs.vehicle_id = v.id
-      WHERE 1=1
+      WHERE vs.completed_date IS NULL AND vs.status != 'completed'
     `;
     const params: any[] = [];
 

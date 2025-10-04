@@ -37,6 +37,7 @@ export async function GET(request: NextRequest) {
         data_ultimo_tagliando,
         data_ultima_revisione,
         active,
+        note,
         createdAt,
         updatedAt
       FROM vehicles 

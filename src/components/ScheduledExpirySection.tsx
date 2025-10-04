@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, Calendar, RefreshCw } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface VehicleScheduleData {
   id: number;
@@ -45,6 +46,7 @@ const ScheduledExpirySection: React.FC<ScheduledExpirySectionProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const router = useRouter();
 
   const fetchScheduledExpiryData = async () => {
     try {
@@ -115,6 +117,11 @@ const ScheduledExpirySection: React.FC<ScheduledExpirySectionProps> = ({
       default:
         return '📅';
     }
+  };
+
+  const handleScheduleClick = (schedule: VehicleScheduleData) => {
+    // Naviga direttamente alla pagina di dettaglio della scadenza specifica
+    router.push(`/vehicles/schedules/${schedule.id}`);
   };
 
   if (isLoading) {
@@ -202,27 +209,58 @@ const ScheduledExpirySection: React.FC<ScheduledExpirySectionProps> = ({
           </h6>
           {criticalAlerts.length > 0 ? (
             criticalAlerts.map(schedule => (
-              <div key={schedule.id} className="alert alert-danger d-flex align-items-start mb-2" role="alert">
+              <div 
+                key={schedule.id} 
+                className="alert alert-danger d-flex align-items-start mb-2 clickable-alert" 
+                role="alert"
+                onClick={() => handleScheduleClick(schedule)}
+                style={{ 
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease-in-out'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '';
+                }}
+              >
                 <AlertTriangle className="me-2 mt-1 flex-shrink-0" size={20} />
                 <div className="flex-grow-1">
                   <div className={compact ? 'small' : ''}>
-                    <span className="me-1">{getScheduleTypeIcon(schedule.schedule_type)}</span>
-                    <strong>{schedule.vehicle_brand} {schedule.vehicle_model} ({schedule.vehicle_plate})</strong>
-                    <span className="text-muted"> - {schedule.schedule_type}</span>
-                    <br />
-                    <small className="text-muted">
-                      Scadenza: {formatDate(schedule.scheduled_date)} 
-                      {schedule.days_until_expiry <= 0 ? 
-                        <span className="text-danger fw-bold"> (SCADUTA)</span> : 
-                        <span> (tra {schedule.days_until_expiry} giorni)</span>
-                      }
-                      {schedule.programmed_date && schedule.programmed_date !== schedule.original_due_date && (
-                        <><br />Data programmata: {formatDate(schedule.programmed_date)}</>
-                      )}
-                      {schedule.provider && (
-                        <><br />Fornitore: {schedule.provider}</>
-                      )}
-                    </small>
+                    {/* Prima riga: Veicolo, tipo scadenza e data */}
+                    <div className="d-flex justify-content-between align-items-center">
+                      <span>
+                        <span className="me-1">{getScheduleTypeIcon(schedule.schedule_type)}</span>
+                        <strong>{schedule.vehicle_brand} {schedule.vehicle_model} ({schedule.vehicle_plate})</strong>
+                        <span className="text-muted"> - {schedule.schedule_type}</span>
+                      </span>
+                      <small className="text-muted ms-2 flex-shrink-0">
+                        {formatDate(schedule.original_due_date)}
+                        {schedule.days_until_expiry <= 0 ? 
+                          <span className="text-danger fw-bold"> (SCADUTA)</span> : 
+                          <span> ({schedule.days_until_expiry}g)</span>
+                        }
+                      </small>
+                    </div>
+                    
+                    {/* Seconda riga: Fornitore e data programmata (se presenti) */}
+                    {(schedule.provider || (schedule.programmed_date && schedule.programmed_date !== schedule.original_due_date)) && (
+                      <div className="d-flex justify-content-between align-items-center mt-1">
+                        <small className="text-muted">
+                          {schedule.provider && (
+                            <span>🏢 <strong>{schedule.provider}</strong></span>
+                          )}
+                        </small>
+                        {schedule.programmed_date && schedule.programmed_date !== schedule.original_due_date && (
+                          <small className="text-muted flex-shrink-0">
+                            📅 Programmata: {formatDate(schedule.programmed_date)}
+                          </small>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -243,23 +281,54 @@ const ScheduledExpirySection: React.FC<ScheduledExpirySectionProps> = ({
           </h6>
           {warningAlerts.length > 0 ? (
             warningAlerts.map(schedule => (
-              <div key={schedule.id} className="alert alert-warning d-flex align-items-start mb-2" role="alert">
+              <div 
+                key={schedule.id} 
+                className="alert alert-warning d-flex align-items-start mb-2 clickable-alert" 
+                role="alert"
+                onClick={() => handleScheduleClick(schedule)}
+                style={{ 
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease-in-out'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '';
+                }}
+              >
                 <AlertTriangle className="me-2 mt-1 flex-shrink-0" size={20} />
                 <div className="flex-grow-1">
                   <div className={compact ? 'small' : ''}>
-                    <span className="me-1">{getScheduleTypeIcon(schedule.schedule_type)}</span>
-                    <strong>{schedule.vehicle_brand} {schedule.vehicle_model} ({schedule.vehicle_plate})</strong>
-                    <span className="text-muted"> - {schedule.schedule_type}</span>
-                    <br />
-                    <small className="text-muted">
-                      Scadenza: {formatDate(schedule.scheduled_date)} (tra {schedule.days_until_expiry} giorni)
-                      {schedule.programmed_date && schedule.programmed_date !== schedule.original_due_date && (
-                        <><br />Data programmata: {formatDate(schedule.programmed_date)}</>
-                      )}
-                      {schedule.provider && (
-                        <><br />Fornitore: {schedule.provider}</>
-                      )}
-                    </small>
+                    {/* Prima riga: Veicolo, tipo scadenza e data */}
+                    <div className="d-flex justify-content-between align-items-center">
+                      <span>
+                        <span className="me-1">{getScheduleTypeIcon(schedule.schedule_type)}</span>
+                        <strong>{schedule.vehicle_brand} {schedule.vehicle_model} ({schedule.vehicle_plate})</strong>
+                        <span className="text-muted"> - {schedule.schedule_type}</span>
+                      </span>
+                      <small className="text-muted ms-2 flex-shrink-0">
+                        {formatDate(schedule.original_due_date)} ({schedule.days_until_expiry}g)
+                      </small>
+                    </div>
+                    
+                    {/* Seconda riga: Fornitore e data programmata (se presenti) */}
+                    {(schedule.provider || (schedule.programmed_date && schedule.programmed_date !== schedule.original_due_date)) && (
+                      <div className="d-flex justify-content-between align-items-center mt-1">
+                        <small className="text-muted">
+                          {schedule.provider && (
+                            <span>🏢 <strong>{schedule.provider}</strong></span>
+                          )}
+                        </small>
+                        {schedule.programmed_date && schedule.programmed_date !== schedule.original_due_date && (
+                          <small className="text-muted flex-shrink-0">
+                            📅 Programmata: {formatDate(schedule.programmed_date)}
+                          </small>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

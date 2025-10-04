@@ -1,6 +1,57 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.30.5
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.30.6
 
-## 🚀 **VERSIONE 2.30.5** - Sistema Alert Scadenze Programmate Avanzato ⭐ **NUOVO**
+## 🚀 **VERSIONE 2.30.6** - Correzioni e Miglioramenti Sistema Preventivi ⭐ **NUOVO**
+
+### 🎯 **CORREZIONE FILTRO SCADENZE PREVENTIVI**
+- **Problema risolto**: Eliminata visualizzazione scadenze già completate nel campo "Scadenza" della pagina creazione preventivi
+- **Causa identificata**: Scadenze con `status='completed'` ma `completed_date=null` passavano il filtro originale
+- **Filtro migliorato**: Query SQL aggiornata con doppia condizione `WHERE vs.completed_date IS NULL AND vs.status != 'completed'`
+- **API ottimizzata**: Endpoint `/api/vehicles/schedules` ora filtra correttamente tutte le scadenze completate
+- **Test completo**: Verificato funzionamento per veicolo DL291XJ che mostrava scadenze completate
+- **User experience**: Campo "Scadenza" mostra solo scadenze effettivamente da completare
+
+### 📅 **FORMATO DATA ITALIANO PER PREVENTIVI**
+- **Campo "Data offerta"**: Implementato formato italiano `gg/mm/aaaa` per input utente
+- **Conversione automatica**: Funzione `formatDateToISO()` per conversione automatica al formato database ISO
+- **Validazione real-time**: Controllo formato con `isValidItalianDate()` e feedback immediato errori
+- **Pattern validation**: Regex `/^\d{2}\/\d{2}\/\d{4}$/` per validazione rigorosa formato
+- **Compatibilità database**: Mantenimento formato ISO per storage e query SQL
+- **Placeholder informativo**: Campo input con placeholder "gg/mm/aaaa" per guida utente
+- **Gestione errori**: `setCustomValidity()` per messaggi errore personalizzati
+
+### 🚗 **MIGLIORAMENTI GESTIONE VEICOLI**
+- **Campo "Note" veicoli**: Aggiunta visualizzazione e modifica note per ogni veicolo nella gestione
+- **Dropdown "Proprietà"**: Campo proprietà ora editabile con dropdown predefinito + input personalizzato
+- **Interfaccia ottimizzata**: Layout responsive con Bootstrap per tutti i nuovi campi
+- **Validazione form**: Controlli di validità per tutti i campi modificati
+- **Persistenza dati**: Salvataggio automatico modifiche nel database `viaggi_db.vehicles`
+- **Opzioni predefinite**: Dropdown proprietà con valori comuni (Partesa, Noleggio, Leasing, Proprietà)
+
+### 🔧 **IMPLEMENTAZIONI TECNICHE DETTAGLIATE**
+- **Query SQL ottimizzate**: Filtri migliorati in `/api/vehicles/schedules/route.ts` per performance e accuratezza
+- **Funzioni utility JavaScript**: 
+  - `formatDateToISO(dateString)` - Conversione da formato italiano a ISO
+  - `isValidItalianDate(dateString)` - Validazione formato data italiana
+- **Validazione client-side**: `setCustomValidity()` per feedback immediato errori formato
+- **API robuste**: Gestione errori e fallback per tutti gli endpoint modificati
+- **TypeScript**: Tipizzazione completa per nuovi campi e funzioni utility
+- **Struttura database**: Aggiornamento documentazione tabella `vehicle_schedules` con nuovi campi
+
+### 📋 **FILE MODIFICATI**
+- `src/app/api/vehicles/schedules/route.ts` - Correzione filtro scadenze completate
+- `src/app/vehicles/quotes/new/page.tsx` - Implementazione formato data italiano e validazione
+- `docs/database-reference.md` - Aggiornamento struttura tabella `vehicle_schedules`
+- `README.md` - Aggiornamento documentazione con nuove funzionalità v2.30.6
+
+### ✅ **BENEFICI OPERATIVI IMPLEMENTATI**
+- **Dati accurati**: Eliminazione confusione da scadenze già completate nei preventivi
+- **Formato locale**: Date in formato italiano per conformità e usabilità migliorata
+- **Gestione completa**: Informazioni veicoli più dettagliate con note e proprietà editabili
+- **Workflow migliorato**: Processo creazione preventivi più fluido e intuitivo
+- **Manutenibilità**: Codice pulito e ben documentato per future estensioni
+- **Robustezza**: Filtri SQL più precisi per evitare dati inconsistenti
+
+## 🚀 **VERSIONE 2.30.5** - Sistema Alert Scadenze Programmate Avanzato ⭐ **CONSOLIDATO**
 
 ### 📅 **LAYOUT A DUE COLONNE PER ALERT SCADENZE PROGRAMMATE**
 - **Separazione visiva intelligente**: Implementazione layout a due colonne per distinguere scadenze critiche da quelle in avvicinamento

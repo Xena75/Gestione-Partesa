@@ -19,6 +19,7 @@ interface Vehicle {
   data_ultimo_tagliando?: string;
   data_ultima_revisione?: string;
   active: boolean;
+  note?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -513,13 +514,14 @@ export default function VehicleListPage() {
                       <ArrowUpDown size={14} className="ms-1" />
                     </div>
                   </th>
+                  <th scope="col">Note</th>
                   <th scope="col" className="text-center">Azioni</th>
                 </tr>
               </thead>
               <tbody>
                 {paginatedVehicles.length === 0 ? (
                   <tr>
-                    <td colSpan={13} className="text-center py-4 text-muted">
+                    <td colSpan={14} className="text-center py-4 text-muted">
                       Nessun veicolo trovato
                     </td>
                   </tr>
@@ -554,6 +556,13 @@ export default function VehicleListPage() {
                         <span className={`badge ${vehicle.active ? 'bg-success' : 'bg-secondary'}`}>
                           {vehicle.active ? 'Attivo' : 'Inattivo'}
                         </span>
+                      </td>
+                      <td className="text-white">
+                        {vehicle.note && vehicle.note.trim() !== '' ? (
+                          vehicle.note.length > 50 ? 
+                            `${vehicle.note.substring(0, 50)}...` : 
+                            vehicle.note
+                        ) : '-'}
                       </td>
                       <td className="text-center">
                         <div className="d-flex gap-1 justify-content-center">
