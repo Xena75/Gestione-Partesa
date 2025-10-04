@@ -1,55 +1,41 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.30.6
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.31.0
 
-## 🚀 **VERSIONE 2.30.6** - Correzioni e Miglioramenti Sistema Preventivi ⭐ **NUOVO**
+## 🚀 **VERSIONE 2.31.0** - Metriche di Efficienza Viaggi ⭐ **NUOVO**
 
-### 🎯 **CORREZIONE FILTRO SCADENZE PREVENTIVI**
-- **Problema risolto**: Eliminata visualizzazione scadenze già completate nel campo "Scadenza" della pagina creazione preventivi
-- **Causa identificata**: Scadenze con `status='completed'` ma `completed_date=null` passavano il filtro originale
-- **Filtro migliorato**: Query SQL aggiornata con doppia condizione `WHERE vs.completed_date IS NULL AND vs.status != 'completed'`
-- **API ottimizzata**: Endpoint `/api/vehicles/schedules` ora filtra correttamente tutte le scadenze completate
-- **Test completo**: Verificato funzionamento per veicolo DL291XJ che mostrava scadenze completate
-- **User experience**: Campo "Scadenza" mostra solo scadenze effettivamente da completare
+### 📊 **NUOVE CARD STATISTICHE VIAGGI - COLLI/VIAGGIO E KM/VIAGGIO**
+- **Metrica Colli/Viaggio**: Implementazione calcolo efficienza media colli trasportati per viaggio (totalColli ÷ totalTrasporti)
+- **Metrica Km/Viaggio**: Implementazione calcolo efficienza media chilometri percorsi per viaggio (totalKm ÷ totalTrasporti)
+- **Layout espanso**: Modifica struttura da 4 a 6 card nella sezione statistiche pagina `/viaggi`
+- **Griglia responsive**: Aggiornamento da `col-md-3` a `col-md-2` per ospitare 6 card in una riga
+- **Formattazione italiana**: Numeri con 1 decimale e separatori italiani per leggibilità ottimale
 
-### 📅 **FORMATO DATA ITALIANO PER PREVENTIVI**
-- **Campo "Data offerta"**: Implementato formato italiano `gg/mm/aaaa` per input utente
-- **Conversione automatica**: Funzione `formatDateToISO()` per conversione automatica al formato database ISO
-- **Validazione real-time**: Controllo formato con `isValidItalianDate()` e feedback immediato errori
-- **Pattern validation**: Regex `/^\d{2}\/\d{2}\/\d{4}$/` per validazione rigorosa formato
-- **Compatibilità database**: Mantenimento formato ISO per storage e query SQL
-- **Placeholder informativo**: Campo input con placeholder "gg/mm/aaaa" per guida utente
-- **Gestione errori**: `setCustomValidity()` per messaggi errore personalizzati
+### 🎨 **DESIGN E VISUAL IDENTITY**
+- **Colori distintivi**: Card "Colli/Viaggio" con testo rosso (`text-danger`), "Km/Viaggio" con testo scuro (`text-dark`)
+- **Stati di caricamento**: Emoji "⏳" sincronizzata con altre card durante fetch dati
+- **Layout coerente**: Mantenimento stile esistente con integrazione seamless nelle card attuali
+- **Responsive design**: Adattamento automatico su tutti i dispositivi con griglia Bootstrap
+- **Accessibilità**: Contrasti e dimensioni ottimizzati per leggibilità universale
 
-### 🚗 **MIGLIORAMENTI GESTIONE VEICOLI**
-- **Campo "Note" veicoli**: Aggiunta visualizzazione e modifica note per ogni veicolo nella gestione
-- **Dropdown "Proprietà"**: Campo proprietà ora editabile con dropdown predefinito + input personalizzato
-- **Interfaccia ottimizzata**: Layout responsive con Bootstrap per tutti i nuovi campi
-- **Validazione form**: Controlli di validità per tutti i campi modificati
-- **Persistenza dati**: Salvataggio automatico modifiche nel database `viaggi_db.vehicles`
-- **Opzioni predefinite**: Dropdown proprietà con valori comuni (Partesa, Noleggio, Leasing, Proprietà)
+### 🔧 **IMPLEMENTAZIONE TECNICA AVANZATA**
+- **Calcoli real-time**: Metriche calcolate dinamicamente dai dati esistenti senza query database aggiuntive
+- **Gestione edge cases**: Protezione divisione per zero con controllo `stats && stats.totalTrasporti > 0`
+- **Formattazione avanzata**: Utilizzo `toLocaleString('it-IT', { minimumFractionDigits: 1, maximumFractionDigits: 1 })`
+- **Performance ottimizzate**: Calcoli client-side per ridurre carico server e latenza
+- **TypeScript safety**: Tipizzazione completa per prevenzione errori runtime
 
-### 🔧 **IMPLEMENTAZIONI TECNICHE DETTAGLIATE**
-- **Query SQL ottimizzate**: Filtri migliorati in `/api/vehicles/schedules/route.ts` per performance e accuratezza
-- **Funzioni utility JavaScript**: 
-  - `formatDateToISO(dateString)` - Conversione da formato italiano a ISO
-  - `isValidItalianDate(dateString)` - Validazione formato data italiana
-- **Validazione client-side**: `setCustomValidity()` per feedback immediato errori formato
-- **API robuste**: Gestione errori e fallback per tutti gli endpoint modificati
-- **TypeScript**: Tipizzazione completa per nuovi campi e funzioni utility
-- **Struttura database**: Aggiornamento documentazione tabella `vehicle_schedules` con nuovi campi
+### 📈 **BENEFICI OPERATIVI E KPI**
+- **Metriche di efficienza**: Visibilità immediata su performance operative medie per viaggio
+- **Analisi comparative**: Possibilità di confrontare efficienza tra periodi diversi
+- **Ottimizzazione logistica**: Identificazione opportunità di miglioramento operativo
+- **Monitoraggio trend**: Tracking performance nel tempo per decisioni strategiche
+- **Dashboard completa**: Visione olistica con 6 metriche chiave in un'unica schermata
 
 ### 📋 **FILE MODIFICATI**
-- `src/app/api/vehicles/schedules/route.ts` - Correzione filtro scadenze completate
-- `src/app/vehicles/quotes/new/page.tsx` - Implementazione formato data italiano e validazione
-- `docs/database-reference.md` - Aggiornamento struttura tabella `vehicle_schedules`
-- `README.md` - Aggiornamento documentazione con nuove funzionalità v2.30.6
+- `src/app/viaggi/page.tsx` - Aggiunta nuove card con calcoli e formattazione
+- `README.md` - Aggiornamento documentazione con nuove funzionalità
+- `FUNZIONALITA_AGGIORNATE.md` - Documentazione implementazione v2.31.0
 
-### ✅ **BENEFICI OPERATIVI IMPLEMENTATI**
-- **Dati accurati**: Eliminazione confusione da scadenze già completate nei preventivi
-- **Formato locale**: Date in formato italiano per conformità e usabilità migliorata
-- **Gestione completa**: Informazioni veicoli più dettagliate con note e proprietà editabili
-- **Workflow migliorato**: Processo creazione preventivi più fluido e intuitivo
-- **Manutenibilità**: Codice pulito e ben documentato per future estensioni
-- **Robustezza**: Filtri SQL più precisi per evitare dati inconsistenti
+---
 
 ## 🚀 **VERSIONE 2.30.5** - Sistema Alert Scadenze Programmate Avanzato ⭐ **CONSOLIDATO**
 

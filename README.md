@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.30.6
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.30.4
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -97,44 +97,7 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Esperienza utente**: Processo fluido di creazione preventivi con allegati
 - **Manutenibilità**: Codice robusto e ben documentato per future estensioni
 
-### 🔧 **Correzioni e Miglioramenti Sistema Preventivi - v2.30.6** ⭐ **NUOVO**
-
-#### 🎯 **Correzione Filtro Scadenze Preventivi**
-- **Problema risolto**: Eliminata visualizzazione scadenze già completate nel campo "Scadenza" della pagina creazione preventivi
-- **Filtro migliorato**: Query SQL aggiornata con doppia condizione `completed_date IS NULL AND status != 'completed'`
-- **Logica robusta**: Gestione corretta scadenze con `status='completed'` ma `completed_date=null`
-- **API ottimizzata**: Endpoint `/api/vehicles/schedules` ora filtra correttamente tutte le scadenze completate
-- **User experience**: Campo "Scadenza" mostra solo scadenze effettivamente da completare
-
-#### 📅 **Formato Data Italiano per Preventivi**
-- **Campo "Data offerta"**: Implementato formato italiano `gg/mm/aaaa` per input utente
-- **Conversione automatica**: Funzione `formatDateToISO()` per conversione al formato database
-- **Validazione real-time**: Controllo formato con `isValidItalianDate()` e feedback immediato
-- **Compatibilità database**: Mantenimento formato ISO per storage e query
-- **Pattern validation**: Regex `/^\d{2}\/\d{2}\/\d{4}$/` per validazione formato
-
-#### 🚗 **Miglioramenti Gestione Veicoli**
-- **Campo "Note" veicoli**: Aggiunta visualizzazione e modifica note per ogni veicolo
-- **Dropdown "Proprietà"**: Campo proprietà ora editabile con dropdown + input personalizzato
-- **Interfaccia ottimizzata**: Layout responsive con Bootstrap per tutti i nuovi campi
-- **Validazione form**: Controlli di validità per tutti i campi modificati
-- **Persistenza dati**: Salvataggio automatico modifiche nel database `viaggi_db`
-
-#### 🔧 **Implementazioni Tecniche**
-- **Query SQL ottimizzate**: Filtri migliorati per performance e accuratezza risultati
-- **Funzioni utility**: `formatDateToISO()`, `isValidItalianDate()` per gestione date
-- **Validazione client-side**: `setCustomValidity()` per feedback immediato errori
-- **API robuste**: Gestione errori e fallback per tutti gli endpoint modificati
-- **TypeScript**: Tipizzazione completa per nuovi campi e funzioni
-
-#### ✅ **Benefici Operativi**
-- **Dati accurati**: Eliminazione confusione da scadenze già completate
-- **Formato locale**: Date in formato italiano per conformità e usabilità
-- **Gestione completa**: Informazioni veicoli più dettagliate con note e proprietà
-- **Workflow migliorato**: Processo creazione preventivi più fluido e intuitivo
-- **Manutenibilità**: Codice pulito e ben documentato per future estensioni
-
-### 📅 **Sistema Alert Scadenze Programmate Avanzato - v2.30.5** ⭐ **CONSOLIDATO**
+### 📅 **Sistema Alert Scadenze Programmate Avanzato - v2.30.5** ⭐ **NUOVO**
 
 #### 🎯 **Layout a Due Colonne per Alert Scadenze**
 - **Colonna sinistra**: Scadenze critiche (scadute e entro 7 giorni) con alert rossi
@@ -318,6 +281,36 @@ WHERE status = 'completed' AND created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)
 - **Performance fluide**: Animazioni ottimizzate per dispositivi di tutte le fasce
 - **Accessibilità migliorata**: Contrasto e leggibilità ottimizzati per tutti gli utenti
 - **Design contemporaneo**: Interfaccia allineata agli standard moderni di design
+
+### 📊 **Metriche di Efficienza Viaggi - v2.31.0** ⭐ **NUOVO**
+
+#### 🎯 **Nuove Card Statistiche Viaggi**
+- **Colli/Viaggio**: Metrica di efficienza per media colli trasportati per viaggio (totalColli ÷ totalTrasporti)
+- **Km/Viaggio**: Metrica di efficienza per media chilometri percorsi per viaggio (totalKm ÷ totalTrasporti)
+- **Layout ottimizzato**: Espansione da 4 a 6 card nella sezione statistiche con layout `col-md-2`
+- **Formattazione italiana**: Visualizzazione numeri con 1 decimale e separatori italiani
+- **Gestione edge cases**: Protezione divisione per zero con fallback a "0.0"
+
+#### 🎨 **Design e User Experience**
+- **Colori distintivi**: Rosso (`text-danger`) per Colli/Viaggio, scuro (`text-dark`) per Km/Viaggio
+- **Stati di caricamento**: Sincronizzazione con emoji "⏳" durante il caricamento dati
+- **Layout responsive**: Adattamento automatico su tutti i dispositivi con griglia Bootstrap
+- **Coerenza visiva**: Mantenimento stile esistente con integrazione seamless nelle card attuali
+- **Accessibilità**: Contrasti e dimensioni ottimizzati per leggibilità su tutti i dispositivi
+
+#### 🔧 **Implementazione Tecnica**
+- **Calcoli real-time**: Metriche calcolate dinamicamente dai dati esistenti senza query aggiuntive
+- **Formattazione avanzata**: Utilizzo `toLocaleString('it-IT', { minimumFractionDigits: 1, maximumFractionDigits: 1 })`
+- **Validazione dati**: Controllo `stats && stats.totalTrasporti > 0` per prevenire errori
+- **Performance ottimizzate**: Calcoli client-side per ridurre carico server
+- **TypeScript safety**: Tipizzazione completa per prevenzione errori runtime
+
+#### 📈 **Benefici Operativi**
+- **KPI di efficienza**: Visibilità immediata su performance operative medie per viaggio
+- **Analisi comparative**: Possibilità di confrontare efficienza tra periodi diversi
+- **Ottimizzazione logistica**: Identificazione opportunità di miglioramento operativo
+- **Monitoraggio trend**: Tracking performance nel tempo per decisioni strategiche
+- **Dashboard completa**: Visione olistica con 6 metriche chiave in un'unica schermata
 
 ### 📊 **Dashboard Moderna con Statistiche Reali - v2.29.0** ⭐ **CONSOLIDATO**
 

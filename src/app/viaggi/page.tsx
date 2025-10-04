@@ -88,6 +88,7 @@ function ViaggiPageContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isSyncingTerzisti, setIsSyncingTerzisti] = useState(false);
   const [filtersApplied, setFiltersApplied] = useState(false);
   const [isLoadingStats, setIsLoadingStats] = useState(false);
   const [selectedViaggio, setSelectedViaggio] = useState<string | null>(null);
@@ -190,6 +191,38 @@ function ViaggiPageContent() {
     }
   };
 
+  // Funzione per sincronizzare i dati dei terzisti
+  const handleSyncTerzisti = async () => {
+    if (!confirm('Questa operazione sincronizzerà i dati dei TERZISTI degli ultimi 4 giorni e richiederà pochi secondi. Continuare?')) {
+      return;
+    }
+    
+    setIsSyncingTerzisti(true);
+    try {
+      const response = await fetch('/api/viaggi/sync-tab-terzisti?days=4', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert(`✅ ${result.message}`);
+        // Ricarica la pagina per mostrare i nuovi dati
+        window.location.reload();
+      } else {
+        alert(`❌ Errore: ${result.error || 'Errore sconosciuto'}`);
+      }
+    } catch (error) {
+      console.error('Errore durante la sincronizzazione terzisti:', error);
+      alert('❌ Errore durante la sincronizzazione terzisti. Controlla la console per i dettagli.');
+    } finally {
+      setIsSyncingTerzisti(false);
+    }
+  };
+
   const fetchViaggioImages = async (numeroViaggio: string) => {
     setIsLoadingImages(true);
     setImageError(null);
@@ -255,13 +288,21 @@ function ViaggiPageContent() {
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1>🚚 Gestione Viaggi</h1>
         <div className="d-flex gap-2">
+               <button
+                 onClick={handleSyncTerzisti}
+                 disabled={isSyncingTerzisti}
+                 className="btn btn-warning"
+                 style={{ borderColor: '#ffc107', color: '#212529', backgroundColor: '#ffc107' }}
+               >
+                 {isSyncingTerzisti ? '⏳ Sincronizzando...' : '🚛 Sincronizza Dati Terzista'}
+               </button>
 
                <button
                  onClick={handleSync}
                  disabled={isSyncing}
                  className="btn btn-primary"
                >
-                 {isSyncing ? '⏳ Sincronizzando...' : '🔄 Sincronizza Dati'}
+                 {isSyncing ? '⏳ Sincronizzando...' : '🔄 Sincronizza Dati Dipendente'}
                </button>
           <Link href="/" className="btn btn-outline-secondary">
             ← Torna alla Dashboard
@@ -271,7 +312,7 @@ function ViaggiPageContent() {
       
       {/* Dashboard Statistiche */}
       <div className="row mb-4">
-        <div className="col-md-3">
+        <div className="col-md-2">
           <div className="card shadow-sm">
             <div className="card-body text-center">
               <h2 className="text-primary mb-0">
@@ -281,7 +322,7 @@ function ViaggiPageContent() {
             </div>
           </div>
         </div>
-        <div className="col-md-3">
+        <div className="col-md-2">
           <div className="card shadow-sm">
             <div className="card-body text-center">
               <h2 className="text-info mb-0">
@@ -291,7 +332,7 @@ function ViaggiPageContent() {
             </div>
           </div>
         </div>
-        <div className="col-md-3">
+        <div className="col-md-2">
           <div className="card shadow-sm">
             <div className="card-body text-center">
               <h2 className="text-success mb-0">
@@ -301,13 +342,41 @@ function ViaggiPageContent() {
             </div>
           </div>
         </div>
-        <div className="col-md-3">
+        <div className="col-md-2">
           <div className="card shadow-sm">
             <div className="card-body text-center">
               <h2 className="text-warning mb-0">
                 {isLoadingStats ? '⏳' : stats?.trasportiMese?.toLocaleString('it-IT') || '0'}
               </h2>
               <p className="text-muted mb-0">Viaggi del Mese</p>
+            </div>
+          </div>
+        </div>
+        <div className="col-md-2">
+          <div className="card shadow-sm">
+            <div className="card-body text-center">
+              <h2 className="text-danger mb-0">
+                {isLoadingStats ? '⏳' : 
+                  stats && stats.totalTrasporti > 0 
+                    ? (stats.totalColli / stats.totalTrasporti).toLocaleString('it-IT', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+                    : '0.0'
+                }
+              </h2>
+              <p className="text-muted mb-0">Colli/Viaggio</p>
+            </div>
+          </div>
+        </div>
+        <div className="col-md-2">
+          <div className="card shadow-sm">
+            <div className="card-body text-center">
+              <h2 className="text-dark mb-0">
+                {isLoadingStats ? '⏳' : 
+                  stats && stats.totalTrasporti > 0 
+                    ? (stats.totalKm / stats.totalTrasporti).toLocaleString('it-IT', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+                    : '0.0'
+                }
+              </h2>
+              <p className="text-muted mb-0">Km/Viaggio</p>
             </div>
           </div>
         </div>

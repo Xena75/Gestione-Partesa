@@ -529,6 +529,17 @@ updated_at timestamp   NO        current_timestamp()  on update current_timestam
   - `VIAGGI_DB_PASSWORD`
   - `VIAGGI_DB_NAME`
 
+### 📊 Metriche di Efficienza Viaggi (v2.31.0)
+**Nuove metriche calcolate client-side nella pagina `/viaggi`:**
+- **Colli/Viaggio**: Media colli trasportati per viaggio (totalColli ÷ totalTrasporti)
+- **Km/Viaggio**: Media chilometri percorsi per viaggio (totalKm ÷ totalTrasporti)
+
+**Implementazione:**
+- Calcoli real-time basati su dati aggregati esistenti
+- Nessuna modifica alle tabelle database richiesta
+- Formattazione italiana con 1 decimale
+- Gestione divisione per zero con fallback "0.0"
+
 ### Tabelle
 
 #### automation_logs
@@ -1189,36 +1200,17 @@ CREATE TABLE vehicles (
 #### Tabella: `vehicle_schedules`
 ```sql
 CREATE TABLE vehicle_schedules (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    vehicle_id VARCHAR(20) NOT NULL,
-    schedule_type VARCHAR(100) NOT NULL,
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    vehicle_id INT NOT NULL,
+    tipo_scadenza VARCHAR(100) NOT NULL,
     data_scadenza DATE NOT NULL,
-    completed_date DATE NULL,
-    booking_date DATE NULL,
-    status ENUM('pending', 'completed', 'cancelled') DEFAULT 'pending',
-    priority ENUM('low', 'medium', 'high') DEFAULT 'medium',
-    description TEXT,
-    cost_estimate DECIMAL(10,2),
-    provider VARCHAR(255),
-    notes TEXT,
-    quote_number VARCHAR(50),
-    quote_date DATE,
+    descrizione TEXT,
+    completato BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
-    FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE,
-    INDEX idx_vehicle_schedule (vehicle_id, schedule_type),
-    INDEX idx_data_scadenza (data_scadenza),
-    INDEX idx_status (status),
-    INDEX idx_completed_date (completed_date)
+    FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE
 );
 ```
-
-**Note importanti:**
-- Il campo `status` indica lo stato della scadenza: 'pending' (in attesa), 'completed' (completata), 'cancelled' (annullata)
-- Il campo `completed_date` viene popolato quando una scadenza viene marcata come completata
-- Le query per le scadenze attive devono filtrare per `completed_date IS NULL AND status != 'completed'`
-- Il campo `vehicle_id` è VARCHAR(20) per compatibilità con le targhe dei veicoli
 
 #### Tabella: `employees`
 ```sql

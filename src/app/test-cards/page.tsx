@@ -90,6 +90,10 @@ export default function ModernDashboard() {
   const [isPodMancantiModalOpen, setIsPodMancantiModalOpen] = useState(false);
   const [isTravelsNotInTabModalOpen, setIsTravelsNotInTabModalOpen] = useState(false);
 
+  // Stati per i loading dei pulsanti di sincronizzazione
+  const [isSyncingTerzisti, setIsSyncingTerzisti] = useState(false);
+  const [isSyncingDipendenti, setIsSyncingDipendenti] = useState(false);
+
   // Aggiorna l'orologio ogni secondo
   useEffect(() => {
     const timer = setInterval(() => {
@@ -141,6 +145,66 @@ export default function ModernDashboard() {
 
     return () => clearInterval(refreshTimer);
   }, []);
+
+  // Funzione per sincronizzare i dati dei terzisti (copiata da pagina viaggi)
+  const handleSyncTerzisti = async () => {
+    if (!confirm('Questa operazione sincronizzerà i dati dei TERZISTI degli ultimi 4 giorni e richiederà pochi secondi. Continuare?')) {
+      return;
+    }
+    
+    setIsSyncingTerzisti(true);
+    try {
+      const response = await fetch('/api/viaggi/sync-tab-terzisti?days=4', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert(`✅ ${result.message}`);
+      } else {
+        alert(`❌ ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Errore sincronizzazione terzisti:', error);
+      alert('❌ Errore durante la sincronizzazione dei terzisti');
+    } finally {
+      setIsSyncingTerzisti(false);
+    }
+  };
+
+  // Funzione per sincronizzare i dati dei dipendenti (copiata da pagina viaggi)
+  const handleSyncDipendenti = async () => {
+    if (!confirm('Questa operazione sincronizzerà i dati degli ultimi 4 giorni e richiederà pochi secondi. Continuare?')) {
+      return;
+    }
+    
+    setIsSyncingDipendenti(true);
+    try {
+      const response = await fetch('/api/viaggi/sync-tab-viaggi?days=4', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert(`✅ ${result.message}`);
+      } else {
+        alert(`❌ ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Errore sincronizzazione dipendenti:', error);
+      alert('❌ Errore durante la sincronizzazione dei dipendenti');
+    } finally {
+      setIsSyncingDipendenti(false);
+    }
+  };
 
 
 
@@ -1165,6 +1229,27 @@ export default function ModernDashboard() {
                       <Package size={16} className="me-1" />
                       Viaggi POD
                     </Link>
+                  </div>
+                  <div className="col-6">
+                    <button 
+                      onClick={handleSyncTerzisti}
+                      disabled={isSyncingTerzisti}
+                      className="btn btn-outline-warning btn-action btn-sm w-100" 
+                      style={{ borderColor: '#ffc107', color: 'black', backgroundColor: '#ffc107', WebkitTextFillColor: 'black' }}
+                    >
+                      <RefreshCw size={16} className={`me-1 ${isSyncingTerzisti ? 'spin' : ''}`} />
+                      {isSyncingTerzisti ? 'Sincronizzando...' : '🚛 Sincronizza Terzista'}
+                    </button>
+                  </div>
+                  <div className="col-6">
+                    <button 
+                      onClick={handleSyncDipendenti}
+                      disabled={isSyncingDipendenti}
+                      className="btn btn-primary btn-action btn-sm w-100"
+                    >
+                      <RefreshCw size={16} className={`me-1 ${isSyncingDipendenti ? 'spin' : ''}`} />
+                      {isSyncingDipendenti ? 'Sincronizzando...' : '🔄 Sincronizza Dipendente'}
+                    </button>
                   </div>
                 </div>
                 {toggleStates.viaggi && <hr />}
