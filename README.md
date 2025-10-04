@@ -97,6 +97,43 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Esperienza utente**: Processo fluido di creazione preventivi con allegati
 - **Manutenibilità**: Codice robusto e ben documentato per future estensioni
 
+### 📅 **Sistema Alert Scadenze Programmate Avanzato - v2.30.5** ⭐ **NUOVO**
+
+#### 🎯 **Layout a Due Colonne per Alert Scadenze**
+- **Colonna sinistra**: Scadenze critiche (scadute e entro 7 giorni) con alert rossi
+- **Colonna destra**: Scadenze in avvicinamento (8-30 giorni) con alert gialli
+- **Layout responsivo**: Utilizzo sistema griglia Bootstrap per adattamento automatico
+- **Gestione stati vuoti**: Messaggi informativi quando non ci sono scadenze per categoria
+- **Consistenza design**: Allineamento con layout alert manutenzione esistenti
+
+#### 📊 **Visualizzazione Informazioni Estese**
+- **Data programmata**: Visualizzazione `booking_date` quando diversa da `data_scadenza`
+- **Informazioni fornitore**: Mostra provider quando disponibile negli alert
+- **Logica date intelligente**: Priorità a `booking_date` per pianificazione operativa
+- **Formattazione italiana**: Date in formato dd/mm/yyyy per conformità locale
+- **Icone informative**: Calendar e Building per identificazione rapida informazioni
+
+#### 🔧 **Implementazioni Tecniche**
+- **API estesa**: Endpoint `/api/vehicles/schedules/expiring` aggiornato con campi `provider` e `cost`
+- **Interfaccia TypeScript**: Aggiornamento `VehicleScheduleData` con nuovi campi opzionali
+- **Query SQL ottimizzate**: Inclusione campi `provider`, `cost`, `booking_date` nelle query
+- **Componente aggiornato**: `ScheduledExpirySection.tsx` con logica visualizzazione estesa
+- **Filtro automatico**: Esclusione scadenze completate dagli alert
+
+#### 📱 **User Experience Migliorata**
+- **Pagina test dedicata**: `/test-cards` per visualizzazione e testing alert
+- **Alert individuali**: Ogni scadenza in card separata per migliore leggibilità
+- **Informazioni contestuali**: Dettagli aggiuntivi solo quando rilevanti e disponibili
+- **Layout pulito**: Organizzazione chiara informazioni senza sovraccarico visivo
+- **Accessibilità**: Contrasti e dimensioni ottimizzati per tutti gli utenti
+
+#### ✅ **Benefici Operativi**
+- **Pianificazione migliorata**: Visibilità immediata su scadenze critiche vs pianificate
+- **Gestione fornitori**: Identificazione rapida provider per coordinamento interventi
+- **Monitoraggio costi**: Visibilità su costi programmati per budget planning
+- **Efficienza operativa**: Separazione visiva per prioritizzazione interventi
+- **Tracciabilità completa**: Storico completo scadenze con tutti i dettagli rilevanti
+
 ### 🔄 **Sistema Toggle Dashboard e Ottimizzazioni UX - v2.30.2** ⭐ **CONSOLIDATO**
 
 #### 🎯 **Toggle Dashboard Integrato**

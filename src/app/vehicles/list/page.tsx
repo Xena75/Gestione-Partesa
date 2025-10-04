@@ -537,12 +537,12 @@ export default function VehicleListPage() {
                       <td className="text-white">{vehicle.marca}</td>
                       <td className="text-white">{vehicle.modello}</td>
                       <td className="text-white">{vehicle.proprieta}</td>
-                      <td className="text-white">{vehicle.portata.toLocaleString()}</td>
+                      <td className="text-white">{vehicle.portata.toLocaleString('it-IT')}</td>
                       <td className="text-white">{vehicle.n_palt}</td>
                       <td className="text-white">{vehicle.tipo_patente}</td>
                       <td className="text-white">{vehicle.pallet_kg}</td>
                       <td className="text-white">
-                        {vehicle.km_ultimo_tagliando ? vehicle.km_ultimo_tagliando.toLocaleString() : '-'}
+                        {vehicle.km_ultimo_tagliando ? vehicle.km_ultimo_tagliando.toLocaleString('it-IT') : '-'}
                       </td>
                       <td className="text-white">
                         {vehicle.data_ultimo_tagliando ? new Date(vehicle.data_ultimo_tagliando).toLocaleDateString('it-IT') : '-'}

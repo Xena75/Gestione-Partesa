@@ -120,7 +120,7 @@ function MonitoraggioPageContent() {
         <div className="col-md-4">
           <div className="card shadow-sm">
             <div className="card-body text-center">
-              <h2 className="text-primary mb-0">{stats.totalRecords.toLocaleString()}</h2>
+              <h2 className="text-primary mb-0">{stats.totalRecords.toLocaleString('it-IT')}</h2>
               <p className="text-muted mb-0">Record Totali</p>
             </div>
           </div>

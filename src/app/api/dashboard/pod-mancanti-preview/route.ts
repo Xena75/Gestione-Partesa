@@ -5,13 +5,22 @@ import { verifyUserAccess } from '@/lib/auth';
 export async function GET(request: NextRequest) {
   try {
     // Verifica autenticazione
-  const authResult = await verifyUserAccess(request);
-  if (!authResult.success) {
-    return NextResponse.json(
-      { error: authResult.message || 'Non autorizzato' },
-      { status: 401 }
-    );
-  }
+    const authResult = await verifyUserAccess(request);
+    if (!authResult.success) {
+      console.error('Errore autenticazione POD mancanti:', {
+        message: authResult.message,
+        hasToken: !!request.cookies.get('auth-token')?.value,
+        hasAuthHeader: !!request.headers.get('authorization'),
+        userAgent: request.headers.get('user-agent')
+      });
+      return NextResponse.json(
+        { 
+          error: authResult.message || 'Non autorizzato',
+          details: 'Sessione scaduta o token non valido. Effettua nuovamente il login.'
+        },
+        { status: 401 }
+      );
+    }
 
     // Parametri di paginazione
     const { searchParams } = new URL(request.url);

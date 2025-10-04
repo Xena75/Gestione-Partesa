@@ -17,43 +17,40 @@ export async function GET(request: NextRequest) {
     
     const query = `
       SELECT 
-        vd.id,
-        vd.vehicle_id,
+        vs.id,
+        vs.vehicle_id,
         v.targa as vehicle_plate,
         v.marca as vehicle_brand,
         v.modello as vehicle_model,
-        vd.document_type,
-        vd.file_name,
-        vd.expiry_date,
-        DATEDIFF(vd.expiry_date, CURDATE()) as days_until_expiry
-      FROM vehicle_documents vd
-      INNER JOIN vehicles v ON vd.vehicle_id = v.id
-      WHERE vd.expiry_date IS NOT NULL
-        AND vd.expiry_date <= DATE_ADD(CURDATE(), INTERVAL ? DAY)
-      ORDER BY vd.expiry_date ASC, v.targa ASC
+        vs.schedule_type,
+        COALESCE(vs.booking_date, vs.data_scadenza) as scheduled_date,
+        vs.data_scadenza as original_due_date,
+        vs.booking_date as programmed_date,
+        vs.description,
+        vs.status,
+        vs.priority,
+        vs.provider,
+        vs.cost,
+        DATEDIFF(COALESCE(vs.booking_date, vs.data_scadenza), CURDATE()) as days_until_expiry
+      FROM vehicle_schedules vs
+      INNER JOIN vehicles v ON vs.vehicle_id = v.id
+      WHERE vs.completed_date IS NULL
+        AND vs.status != 'completed'
+        AND COALESCE(vs.booking_date, vs.data_scadenza) <= DATE_ADD(CURDATE(), INTERVAL ? DAY)
+      ORDER BY COALESCE(vs.booking_date, vs.data_scadenza) ASC, v.targa ASC
     `;
 
     const connection = await mysql.createConnection(dbConfig);
-    
-    // Log per verificare quanti record ci sono nella tabella
-    const [countResult] = await connection.execute('SELECT COUNT(*) as total FROM vehicle_documents');
-    console.log('Total records in vehicle_documents:', countResult);
-    
-    // Log per verificare quanti record hanno expiry_date
-    const [expiryCountResult] = await connection.execute('SELECT COUNT(*) as total FROM vehicle_documents WHERE expiry_date IS NOT NULL');
-    console.log('Records with expiry_date:', expiryCountResult);
-    
     const [rows] = await connection.execute(query, [daysAhead]);
-    console.log('Query result for expiring documents:', rows);
     await connection.end();
     
     return NextResponse.json({
       success: true,
-      documents: rows
+      schedules: rows
     });
 
   } catch (error) {
-    console.error('Errore nel recupero documenti in scadenza:', error);
+    console.error('Errore nel recupero scadenze programmate:', error);
     return NextResponse.json(
       { 
         success: false, 

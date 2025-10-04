@@ -44,12 +44,36 @@ export default function PodMancantiModal({ isOpen, onClose }: PodMancantiModalPr
     }
   }, [isOpen]);
 
-  const loadPodMancantiViaggi = async (page: number) => {
+  const loadPodMancantiViaggi = async (page: number, retryCount = 0) => {
     try {
       setLoading(true);
+      
+      // Verifica che ci sia un token di autenticazione
+      const hasAuthCookie = document.cookie.includes('auth-token');
+      if (!hasAuthCookie && retryCount === 0) {
+        console.warn('Token di autenticazione mancante, tentativo di refresh...');
+        // Prova a fare un refresh dell'autenticazione
+        try {
+          const authResponse = await fetch('/api/auth/verify', { credentials: 'include' });
+          if (!authResponse.ok) {
+            console.error('Refresh autenticazione fallito');
+            return;
+          }
+        } catch (authError) {
+          console.error('Errore refresh autenticazione:', authError);
+          return;
+        }
+      }
+      
       const response = await fetch(`/api/dashboard/pod-mancanti-preview?page=${page}&limit=10`, {
-        credentials: 'include'
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
       });
+      
       if (response.ok) {
         const data = await response.json();
         setViaggi(data.data || []);
@@ -62,12 +86,46 @@ export default function PodMancantiModal({ isOpen, onClose }: PodMancantiModalPr
           hasPrev: false
         });
         setCurrentPage(page);
+        console.log(`Caricati ${data.data?.length || 0} viaggi POD mancanti per pagina ${page}`);
       } else {
         const errorData = await response.json().catch(() => ({}));
         console.error('Errore nel caricamento viaggi POD mancanti:', response.status, errorData);
+        
+        // Gestione specifica per errore 401 con retry intelligente
+        if (response.status === 401) {
+          if (retryCount < 2) {
+            console.warn(`Tentativo ${retryCount + 1}/3: Sessione non valida, riprovo dopo refresh autenticazione...`);
+            
+            // Prova a fare un refresh dell'autenticazione prima del retry
+            try {
+              const authResponse = await fetch('/api/auth/verify', { credentials: 'include' });
+              if (authResponse.ok) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                return loadPodMancantiViaggi(page, retryCount + 1);
+              }
+            } catch (authError) {
+              console.error('Errore refresh autenticazione:', authError);
+            }
+            
+            // Retry normale se il refresh fallisce
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            return loadPodMancantiViaggi(page, retryCount + 1);
+          } else {
+            console.error('Autenticazione fallita dopo 3 tentativi. Sessione scaduta.');
+            // Forza un refresh della pagina per far ripartire l'autenticazione
+            window.location.reload();
+          }
+        }
       }
     } catch (error) {
       console.error('Errore nel caricamento viaggi POD mancanti:', error);
+      
+      // Retry anche per errori di rete
+      if (retryCount < 2) {
+        console.warn(`Tentativo ${retryCount + 1}/3: Errore di rete, riprovo...`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return loadPodMancantiViaggi(page, retryCount + 1);
+      }
     } finally {
       setLoading(false);
     }

@@ -1,6 +1,66 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.30.4
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.30.5
 
-## 🚀 **VERSIONE 2.30.4** - Effetti Visuali Avanzati e Ottimizzazioni UX ⭐ **NUOVO**
+## 🚀 **VERSIONE 2.30.5** - Sistema Alert Scadenze Programmate Avanzato ⭐ **NUOVO**
+
+### 📅 **LAYOUT A DUE COLONNE PER ALERT SCADENZE PROGRAMMATE**
+- **Separazione visiva intelligente**: Implementazione layout a due colonne per distinguere scadenze critiche da quelle in avvicinamento
+- **Colonna sinistra - Scadenze Critiche**: Alert rossi per scadenze scadute e entro 7 giorni con priorità massima
+- **Colonna destra - Scadenze in Avvicinamento**: Alert gialli per scadenze tra 8-30 giorni per pianificazione anticipata
+- **Layout responsivo Bootstrap**: Utilizzo sistema griglia `col-md-6` per adattamento automatico desktop/mobile
+- **Gestione stati vuoti**: Messaggi informativi specifici quando non ci sono scadenze per categoria
+
+### 📊 **VISUALIZZAZIONE INFORMAZIONI ESTESE NEGLI ALERT**
+- **Data programmata intelligente**: Visualizzazione `booking_date` quando diversa da `data_scadenza` per pianificazione operativa
+- **Informazioni fornitore**: Mostra campo `provider` quando disponibile per coordinamento interventi
+- **Logica date prioritaria**: Sistema che privilegia `booking_date` per scadenze programmate vs `data_scadenza` per scadenze fisse
+- **Formattazione italiana**: Date in formato dd/mm/yyyy per conformità locale e leggibilità
+- **Icone informative**: Calendar per date programmate, Building per fornitori per identificazione rapida
+
+### 🔧 **IMPLEMENTAZIONI TECNICHE BACKEND**
+- **API estesa**: Aggiornamento endpoint `/api/vehicles/schedules/expiring` per includere campi `provider`, `cost`, `booking_date`
+- **Query SQL ottimizzate**: Modifica query per recuperare campi aggiuntivi dalla tabella `vehicle_schedules`
+- **Interfaccia TypeScript**: Estensione `VehicleScheduleData` con campi opzionali `provider`, `cost`, `original_due_date`, `programmed_date`
+- **Filtro automatico scadenze**: Esclusione automatica scadenze completate (`completed_date IS NULL`) dagli alert
+- **Gestione null values**: Controllo presenza dati prima della visualizzazione per robustezza
+
+### 🎨 **MIGLIORAMENTI USER EXPERIENCE**
+- **Componente ScheduledExpirySection aggiornato**: Logica visualizzazione estesa per gestire nuove informazioni
+- **Alert individuali**: Ogni scadenza in card separata per migliore leggibilità e organizzazione
+- **Informazioni contestuali**: Dettagli aggiuntivi mostrati solo quando rilevanti e disponibili
+- **Layout pulito**: Organizzazione chiara informazioni senza sovraccarico visivo
+- **Pagina test dedicata**: `/test-cards` per visualizzazione e testing funzionalità alert
+
+### 📱 **CONSISTENZA DESIGN E ACCESSIBILITÀ**
+- **Allineamento con alert manutenzione**: Stesso layout a due colonne per coerenza interfaccia
+- **Colori semantici**: Rosso per criticità, giallo per attenzione, mantenendo standard UX
+- **Contrasti ottimizzati**: Leggibilità garantita su tutti i dispositivi e condizioni
+- **Responsive design**: Adattamento perfetto da desktop a mobile con stack verticale
+- **Accessibilità**: Supporto screen reader e navigazione da tastiera
+
+### ✅ **BENEFICI OPERATIVI IMPLEMENTATI**
+- **Pianificazione migliorata**: Separazione visiva immediata tra urgenze e pianificazione
+- **Gestione fornitori**: Identificazione rapida provider per coordinamento interventi
+- **Monitoraggio costi**: Visibilità su costi programmati per budget planning
+- **Efficienza operativa**: Prioritizzazione automatica interventi basata su criticità
+- **Tracciabilità completa**: Storico completo scadenze con tutti i dettagli rilevanti
+
+### 📋 **FILE MODIFICATI**
+- `src/app/api/vehicles/schedules/expiring/route.ts` - Estensione query SQL con nuovi campi
+- `src/components/ScheduledExpirySection.tsx` - Aggiornamento interfaccia e logica visualizzazione
+- `docs/database-reference.md` - Aggiornamento documentazione tabella `vehicle_schedules`
+- `README.md` - Documentazione nuove funzionalità versione 2.30.5
+- `FUNZIONALITA_AGGIORNATE.md` - Changelog dettagliato implementazioni
+
+### 📋 **FUNZIONALITÀ TESTATE**
+- ✅ **Layout due colonne**: Separazione corretta scadenze critiche/in avvicinamento
+- ✅ **Visualizzazione date**: Data programmata mostrata quando diversa da scadenza
+- ✅ **Informazioni fornitore**: Provider visualizzato quando disponibile
+- ✅ **Responsività**: Adattamento corretto desktop/tablet/mobile
+- ✅ **API estesa**: Campi aggiuntivi restituiti correttamente
+- ✅ **Filtro completate**: Scadenze completate escluse automaticamente
+- ✅ **Gestione stati vuoti**: Messaggi informativi per categorie senza scadenze
+
+## 🚀 **VERSIONE 2.30.4** - Effetti Visuali Avanzati e Ottimizzazioni UX ⭐ **CONSOLIDATO**
 
 ### 🎨 **IMPLEMENTAZIONE EFFETTI VISUALI SPETTACOLARI**
 - **Effetti 3D e Parallax**: Sistema completo di effetti tilt 3D e parallax sulle icone delle card dashboard

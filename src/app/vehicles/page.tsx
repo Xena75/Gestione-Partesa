@@ -241,6 +241,20 @@ export default function VehiclesDashboard() {
                   </Link>
                 </div>
               </div>
+              <div className="row">
+                <div className="col-md-6 col-lg-3 mb-3">
+                  <Link href="/vehicles/maintenance-monitoring" className="btn btn-outline-warning w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
+                    <AlertTriangle size={32} className="mb-2" />
+                    <span>Monitoraggio Tagliandi</span>
+                  </Link>
+                </div>
+                <div className="col-md-6 col-lg-3 mb-3">
+                  <Link href="/vehicles/maintenance-settings" className="btn btn-outline-secondary w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
+                    <Settings size={32} className="mb-2" />
+                    <span>Configurazione Soglie</span>
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         </div>

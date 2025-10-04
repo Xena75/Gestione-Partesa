@@ -13,6 +13,8 @@ import {
 import PodMancantiModal from '@/components/PodMancantiModal';
 import TravelsNotInTabModal from '@/components/TravelsNotInTabModal';
 import DocumentExpiryAlert from '@/components/DocumentExpiryAlert';
+import MaintenanceWarningSection from '@/components/MaintenanceWarningSection';
+import ScheduledExpirySection from '@/components/ScheduledExpirySection';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Interfacce per i dati
@@ -182,7 +184,7 @@ export default function ModernDashboard() {
     
     return (
       <span className={`stat-value ${isAnimated ? 'animate' : ''}`}>
-        {typeof value === 'number' ? displayValue.toLocaleString() : value}
+        {typeof value === 'number' ? displayValue.toLocaleString('it-IT') : value}
       </span>
     );
   };
@@ -1286,6 +1288,31 @@ export default function ModernDashboard() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Sezione Avvisi Manutenzione */}
+        <div className="row mt-5">
+          <div className="col-12">
+            <MaintenanceWarningSection 
+              className="mb-4"
+              maxAlerts={3}
+              showTitle={true}
+              compact={false}
+            />
+          </div>
+        </div>
+
+        {/* Sezione Scadenze Programmate */}
+        <div className="row mt-4">
+          <div className="col-12">
+            <ScheduledExpirySection 
+              className="mb-4"
+              maxAlerts={5}
+              showTitle={true}
+              compact={false}
+              daysAhead={30}
+            />
           </div>
         </div>
 

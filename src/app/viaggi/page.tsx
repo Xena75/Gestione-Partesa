@@ -275,7 +275,7 @@ function ViaggiPageContent() {
           <div className="card shadow-sm">
             <div className="card-body text-center">
               <h2 className="text-primary mb-0">
-                {isLoadingStats ? '⏳' : stats?.totalTrasporti?.toLocaleString() || '0'}
+                {isLoadingStats ? '⏳' : stats?.totalTrasporti?.toLocaleString('it-IT') || '0'}
               </h2>
               <p className="text-muted mb-0">Viaggi</p>
             </div>
@@ -285,7 +285,7 @@ function ViaggiPageContent() {
           <div className="card shadow-sm">
             <div className="card-body text-center">
               <h2 className="text-info mb-0">
-                {isLoadingStats ? '⏳' : stats?.totalKm?.toLocaleString() || '0'}
+                {isLoadingStats ? '⏳' : stats?.totalKm?.toLocaleString('it-IT') || '0'}
               </h2>
               <p className="text-muted mb-0">Km Totali</p>
             </div>
@@ -295,7 +295,7 @@ function ViaggiPageContent() {
           <div className="card shadow-sm">
             <div className="card-body text-center">
               <h2 className="text-success mb-0">
-                {isLoadingStats ? '⏳' : stats?.totalColli?.toLocaleString() || '0'}
+                {isLoadingStats ? '⏳' : stats?.totalColli?.toLocaleString('it-IT') || '0'}
               </h2>
               <p className="text-muted mb-0">Colli Totali</p>
             </div>
@@ -305,7 +305,7 @@ function ViaggiPageContent() {
           <div className="card shadow-sm">
             <div className="card-body text-center">
               <h2 className="text-warning mb-0">
-                {isLoadingStats ? '⏳' : stats?.trasportiMese?.toLocaleString() || '0'}
+                {isLoadingStats ? '⏳' : stats?.trasportiMese?.toLocaleString('it-IT') || '0'}
               </h2>
               <p className="text-muted mb-0">Viaggi del Mese</p>
             </div>

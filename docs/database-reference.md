@@ -794,20 +794,32 @@ updated_at    timestamp                                               NO        
 ```sql
 Field              Type                                                                                           Null  Key  Default              Extra
 id                 int(11)                                                                                        NO    PRI  NULL                 auto_increment
-vehicle_id         int(11)                                                                                        NO    MUL  NULL                 
-schedule_type      enum('altro','manutenzione','Manutenzione Ordinaria','Manutenzione Straordinaria','revisione','assicurazione','bollo','patente_conducente','tagliando') NO        NULL                 
-scheduled_date     date                                                                                           NO        NULL                 
-description        text                                                                                           YES        NULL                 
-is_completed       tinyint(1)                                                                                     NO        0                    
+vehicle_id         varchar(191)                                                                                   NO    MUL  NULL                 
+schedule_type      enum('altro','manutenzione','Manutenzione Ordinaria','Manutenzione Straordinaria','revisione','assicurazione','bollo','patente_conducente','tagliando') YES  MUL  NULL                 
+data_scadenza      date                                                                                           YES  MUL  NULL                 
 completed_date     date                                                                                           YES        NULL                 
+booking_date       date                                                                                           YES        NULL                 
+provider           varchar(255)                                                                                   YES        NULL                 
+cost               decimal(10,2)                                                                                  YES        NULL                 
+priority           enum('low','medium','high')                                                                    YES        medium               
+reminder_days      int(11)                                                                                        YES        30                   
 notes              text                                                                                           YES        NULL                 
 created_at         timestamp                                                                                      NO        current_timestamp()  
 updated_at         timestamp                                                                                      NO        current_timestamp()  on update current_timestamp()
-reminder_days      int(11)                                                                                        YES        7                    
-is_recurring       tinyint(1)                                                                                     NO        0                    
-recurrence_interval int(11)                                                                                     YES        NULL                 
-recurrence_unit    enum('days','weeks','months','years')                                                          YES        NULL                 
+quote_number       varchar(50)                                                                                    YES        NULL                 
+quote_date         date                                                                                           YES        NULL                 
 ```
+
+**Utilizzo nel progetto:**
+- **Pagine**: `/vehicles` - Gestione scadenze veicoli, `/test-cards` - Visualizzazione alert scadenze
+- **API**: `/api/vehicles/schedules/expiring` per recupero scadenze in scadenza
+- **Componenti**: `ScheduledExpirySection.tsx` per visualizzazione alert scadenze programmate
+- **Funzionalità**: 
+  - Monitoraggio scadenze veicoli con alert a due colonne (critiche/in avvicinamento)
+  - Gestione date programmate (priorità a booking_date se presente)
+  - Visualizzazione fornitore e costi negli alert
+  - Filtro automatico per escludere scadenze completate
+- **Dashboard**: Alert scadenze con layout responsivo Bootstrap
 
 #### vehicles
 ```sql

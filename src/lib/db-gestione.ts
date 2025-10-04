@@ -12,9 +12,12 @@ const pool = mysql.createPool({
   connectionLimit: 20, // Aumentato per gestire più richieste simultanee
   queueLimit: 0,
   dateStrings: true, // Mantiene le date come stringhe
-  // 🚀 NUOVE OPZIONI PER PERFORMANCE
+  // 🚀 NUOVE OPZIONI PER PERFORMANCE E STABILITÀ
   multipleStatements: false, // Sicurezza
-  charset: 'utf8mb4'
+  charset: 'utf8mb4',
+  acquireTimeout: 60000,
+  timeout: 60000,
+  reconnect: true
 });
 
 export default pool;

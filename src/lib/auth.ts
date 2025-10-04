@@ -109,22 +109,56 @@ export async function authenticateUser(username: string, password: string): Prom
 // Verifica sessione attiva
 export async function verifySession(token: string): Promise<User | null> {
   try {
-    // Verifica JWT
+    // Prima verifica JWT
     const user = verifyToken(token);
     if (!user) {
+      console.log('Token JWT non valido o scaduto');
       return null;
     }
 
-    // Verifica sessione nel database
+    // Verifica sessione nel database con logging dettagliato
     const [rows] = await pool.execute(
-      'SELECT user_id FROM user_sessions WHERE token = ? AND expires_at > NOW()',
+      'SELECT user_id, expires_at FROM user_sessions WHERE token = ?',
       [token]
     );
 
     const sessions = rows as any[];
+    
     if (sessions.length === 0) {
+      console.log('Sessione non trovata nel database per token:', token.substring(0, 20) + '...');
+      
+      // Se il JWT è valido ma la sessione non esiste, ricreiamo la sessione
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 ore
+      try {
+        await pool.execute(
+          'INSERT INTO user_sessions (user_id, token, expires_at) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE expires_at = VALUES(expires_at)',
+          [user.id, token, expiresAt]
+        );
+        console.log('Sessione ricreata per utente:', user.username);
+        return user;
+      } catch (insertError) {
+        console.error('Errore ricreazione sessione:', insertError);
+        return null;
+      }
+    }
+
+    const session = sessions[0];
+    const now = new Date();
+    const expiresAt = new Date(session.expires_at);
+    
+    if (expiresAt <= now) {
+      console.log('Sessione scaduta per utente:', user.username);
+      // Rimuovi sessione scaduta
+      await pool.execute('DELETE FROM user_sessions WHERE token = ?', [token]);
       return null;
     }
+
+    // Estendi la sessione se è valida
+    const newExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await pool.execute(
+      'UPDATE user_sessions SET expires_at = ? WHERE token = ?',
+      [newExpiresAt, token]
+    );
 
     return user;
   } catch (error) {
@@ -169,14 +203,18 @@ export async function verifyUserAccess(request: NextRequest): Promise<{ success:
   try {
     const token = getTokenFromRequest(request);
     if (!token) {
+      console.log('Token di autenticazione mancante - Cookie:', !!request.cookies.get('auth-token')?.value, 'Auth Header:', !!request.headers.get('authorization'));
       return { success: false, message: 'Token di autenticazione mancante' };
     }
 
+    console.log('Verifica accesso per token:', token.substring(0, 20) + '...');
     const user = await verifySession(token);
     if (!user) {
+      console.log('Verifica sessione fallita per token:', token.substring(0, 20) + '...');
       return { success: false, message: 'Sessione non valida o scaduta' };
     }
 
+    console.log('Accesso verificato con successo per utente:', user.username);
     return { success: true, user };
   } catch (error) {
     console.error('Errore verifica accesso utente:', error);
