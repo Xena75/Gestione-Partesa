@@ -1,6 +1,52 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.31.0
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.30.6
 
-## 🚀 **VERSIONE 2.31.0** - Metriche di Efficienza Viaggi ⭐ **NUOVO**
+## 🚀 **VERSIONE 2.30.6** - Sistema Gestione Immagini Monitoraggio Viaggi ⭐ **NUOVO**
+
+### 📸 **SISTEMA COMPLETO GESTIONE IMMAGINI VIAGGI**
+- **Upload immagini**: Implementazione sistema completo per caricamento immagini associate ai viaggi nel monitoraggio
+- **Tipi supportati**: Categorizzazione immagini in `mezzo`, `ritiri`, `altro`, `scontrino` per organizzazione ottimale
+- **Eliminazione sicura**: Funzionalità di rimozione immagini con conferma utente e pulizia database/storage
+- **Visualizzazione ottimizzata**: Griglia responsive per visualizzazione immagini caricate con layout Bootstrap
+- **Integrazione database**: Utilizzo tabella `travel_images` con struttura ottimizzata e relazioni corrette
+
+### 🔧 **API RESTFUL COMPLETE E ROBUSTE**
+- **POST `/api/monitoraggio/[id]/images`**: Endpoint per caricamento nuove immagini con validazione completa
+- **GET `/api/monitoraggio/[id]/images`**: Recupero immagini associate al viaggio con ordinamento per data
+- **DELETE `/api/monitoraggio/[id]/images/[imageId]`**: Eliminazione sicura immagini con pulizia storage
+- **Validazione FormData**: Gestione corretta campo `image` dal frontend con controllo MIME type
+- **Logging dettagliato**: Sistema di debug completo per tracciamento operazioni e troubleshooting
+
+### 🛡️ **STORAGE DUAL-MODE E SICUREZZA AVANZATA**
+- **Vercel Blob Storage**: Utilizzo in produzione per scalabilità, performance e CDN globale
+- **Filesystem locale**: Fallback robusto per ambiente di sviluppo con gestione directory automatica
+- **Validazione MIME rigorosa**: Controllo tipi file accettati (JPG, PNG, GIF, WebP) per sicurezza
+- **Gestione errori avanzata**: Sistema robusto con fallback, retry logic e logging errori dettagliato
+- **ID univoci UUID**: Generazione automatica ID per prevenire conflitti e garantire unicità
+
+### 📊 **STRUTTURA DATABASE OTTIMIZZATA E CORRETTA**
+- **Risoluzione errori critici**: Fix errore "Field 'id' doesn't have a default value" con identificazione struttura reale
+- **Campi corretti**: Allineamento API con struttura reale: `id` (varchar), `filename`, `url`, `type`, `size`, `mimeType`
+- **Relazioni database**: Foreign key `travelId` con `travels(id)` e cascade delete per integrità referenziale
+- **Metadati completi**: Tracciamento `createdAt`, `updatedAt`, `nominativoId` per audit trail completo
+- **Performance ottimizzate**: Indici database per query rapide e operazioni efficienti
+
+### ✅ **BENEFICI OPERATIVI E TECNICI**
+- **Documentazione viaggi**: Possibilità di allegare foto di mezzi, ritiri, scontrini per tracciabilità completa
+- **Esperienza utente**: Interfaccia intuitiva per upload e gestione immagini con feedback visivo
+- **Scalabilità produzione**: Sistema pronto per produzione con Vercel Blob Storage e CDN
+- **Manutenibilità**: Codice ben strutturato, documentato e testato per future estensioni
+- **Stabilità API**: Eliminazione completa errori 500 e problemi parsing FormData
+
+### 📋 **FILE MODIFICATI E IMPLEMENTAZIONI**
+- `src/app/api/monitoraggio/[id]/images/route.ts` - API completa POST/GET con struttura database corretta
+- `src/app/api/monitoraggio/[id]/images/[imageId]/route.ts` - API DELETE per eliminazione sicura
+- `docs/database-reference.md` - Aggiornamento documentazione con struttura reale tabella `travel_images`
+- `README.md` - Documentazione completa nuove funzionalità v2.30.6
+- `FUNZIONALITA_AGGIORNATE.md` - Documentazione dettagliata implementazione
+
+---
+
+## 🚀 **VERSIONE 2.31.0** - Metriche di Efficienza Viaggi ⭐ **CONSOLIDATO**
 
 ### 📊 **NUOVE CARD STATISTICHE VIAGGI - COLLI/VIAGGIO E KM/VIAGGIO**
 - **Metrica Colli/Viaggio**: Implementazione calcolo efficienza media colli trasportati per viaggio (totalColli ÷ totalTrasporti)

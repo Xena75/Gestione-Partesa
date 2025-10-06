@@ -743,14 +743,25 @@ updated_at  timestamp    NO        current_timestamp()  on update current_timest
 
 #### travel_images
 ```sql
-Field       Type         Null  Key  Default              Extra
-id          int(11)      NO    PRI  NULL                 auto_increment
-travel_id   varchar(191) NO    MUL  NULL                 
-image_path  varchar(500) NO        NULL                 
-image_type  enum('before','after','damage','other') YES other
-description text         YES        NULL                 
-uploaded_at timestamp    NO        current_timestamp()  
+Field         Type         Null  Key  Default                    Extra
+id            varchar(191) NO    PRI  NULL                       
+filename      varchar(191) NO         NULL                       
+url           varchar(191) NO         NULL                       
+type          varchar(191) NO         NULL                       
+size          int(11)      YES        NULL                       
+mimeType      varchar(191) YES        NULL                       
+createdAt     datetime(3)  NO         current_timestamp(3)       
+updatedAt     datetime(3)  NO         NULL                       
+travelId      varchar(191) NO    MUL  NULL                       
+nominativoId  varchar(191) YES        NULL                       
 ```
+
+**Note sulla struttura REALE:**
+- `id` è varchar(191) PRIMARY KEY SENZA auto_increment
+- `travelId` è FOREIGN KEY che referenzia `travels(id)`
+- `createdAt` e `updatedAt` sono datetime(3) per precisione millisecondi
+- `type` è varchar(191) che accetta valori come 'mezzo', 'ritiri', 'altro', 'scontrino'
+- Constraint: `FOREIGN KEY (travelId) REFERENCES travels(id) ON DELETE CASCADE`
 
 #### travels
 ```sql

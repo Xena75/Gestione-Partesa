@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { AlertTriangle, Calendar, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -70,33 +70,24 @@ const ScheduledExpirySection: React.FC<ScheduledExpirySectionProps> = ({
   };
 
   useEffect(() => {
-    console.log('ScheduledExpirySection - Component mounted, fetching data...');
     fetchScheduledExpiryData();
   }, [daysAhead]);
 
-  const getCriticalAlerts = () => {
+  const criticalAlerts = useMemo(() => {
     if (!data) return [];
     
     // Scadenze critiche: scadute o entro 7 giorni
     const criticalSchedules = data.schedules.filter(s => s.days_until_expiry <= 7);
     return criticalSchedules.slice(0, maxAlerts);
-  };
+  }, [data, maxAlerts]);
 
-  const getWarningAlerts = () => {
+  const warningAlerts = useMemo(() => {
     if (!data) return [];
     
     // Scadenze in avvicinamento: tra 8 e 30 giorni
     const warningSchedules = data.schedules.filter(s => s.days_until_expiry > 7 && s.days_until_expiry <= 30);
-    console.log('ScheduledExpirySection - Warning schedules found:', warningSchedules.length, warningSchedules);
     return warningSchedules.slice(0, maxAlerts);
-  };
-
-  const criticalAlerts = getCriticalAlerts();
-  const warningAlerts = getWarningAlerts();
-  
-  console.log('ScheduledExpirySection - Data:', data);
-  console.log('ScheduledExpirySection - Critical alerts:', criticalAlerts.length);
-  console.log('ScheduledExpirySection - Warning alerts:', warningAlerts.length);
+  }, [data, maxAlerts]);
 
   const formatDate = (dateString: string): string => {
     try {

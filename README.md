@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.30.4
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.30.6
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -70,6 +70,39 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
 
+### 📸 **Sistema Gestione Immagini Monitoraggio Viaggi - v2.30.6** ⭐ **NUOVO**
+
+#### 🔧 **Risoluzione Errori Critici API**
+- **Fix struttura database**: Identificata e corretta struttura reale tabella `travel_images`
+- **Campo ID corretto**: Risolto errore "Field 'id' doesn't have a default value" con generazione UUID
+- **Validazione campi**: Allineamento API con campi reali: `id`, `filename`, `url`, `type`, `size`, `mimeType`, `createdAt`, `updatedAt`, `travelId`, `nominativoId`
+- **Compatibilità frontend**: Correzione campo FormData da `file` a `image` per allineamento con backend
+
+#### 📁 **Sistema Upload Immagini Completo**
+- **Upload automatico**: Caricamento immagini durante modifica viaggi nel monitoraggio
+- **Validazione file**: Controllo tipo e dimensione per immagini (JPG, PNG, GIF, WebP)
+- **Tipi supportati**: `mezzo`, `ritiri`, `altro`, `scontrino` per categorizzazione immagini
+- **Storage dual-mode**: Vercel Blob Storage (produzione) / Filesystem locale (sviluppo)
+- **Database integration**: Metadati salvati in tabella `travel_images` con struttura corretta
+
+#### 🛡️ **Sicurezza e Robustezza**
+- **Validazione MIME type**: Controllo rigoroso tipi immagine accettati
+- **Gestione errori**: Upload robusto con logging dettagliato per debugging
+- **Nomenclatura file**: Pattern UUID per unicità e sicurezza
+- **API RESTful**: Endpoint `/api/monitoraggio/[id]/images` per operazioni CRUD complete
+
+#### 📊 **Funzionalità Gestione Immagini**
+- **Visualizzazione immagini**: Galleria immagini associate a ogni viaggio
+- **Eliminazione immagini**: Funzionalità di rimozione con conferma utente
+- **Categorizzazione**: Organizzazione per tipo (mezzo, ritiri, altro, scontrino)
+- **Metadati completi**: Tracking filename, dimensione, tipo MIME, date creazione/modifica
+
+#### ✅ **Benefici Implementati**
+- **Funzionalità completa**: Sistema immagini ora funzionante al 100% senza errori 500
+- **Stabilità API**: Eliminati errori di parsing FormData e campi database
+- **Esperienza utente**: Caricamento e gestione immagini fluida nel monitoraggio viaggi
+- **Documentazione aggiornata**: `docs/database-reference.md` allineato con struttura reale
+
 ### 📎 **Sistema Upload Allegati Preventivi - v2.28.0** ⭐ **NUOVO**
 
 #### 🔧 **Risoluzione Errori Critici API**
@@ -96,6 +129,43 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Stabilità API**: Eliminati errori 500 su endpoint preventivi
 - **Esperienza utente**: Processo fluido di creazione preventivi con allegati
 - **Manutenibilità**: Codice robusto e ben documentato per future estensioni
+
+### 📸 **Sistema Gestione Immagini Monitoraggio Viaggi - v2.30.6** ⭐ **NUOVO**
+
+#### 🎯 **Funzionalità Complete di Upload e Gestione Immagini**
+- **Upload immagini**: Sistema completo per caricamento immagini associate ai viaggi
+- **Tipi supportati**: Mezzo, Ritiri, Scontrino, Altro con validazione automatica
+- **Eliminazione sicura**: Funzionalità di eliminazione immagini con conferma utente
+- **Visualizzazione ottimizzata**: Griglia responsive per visualizzazione immagini caricate
+- **Integrazione database**: Utilizzo tabella `travel_images` con struttura ottimizzata
+
+#### 🔧 **API RESTful Complete**
+- **POST `/api/monitoraggio/[id]/images`**: Endpoint per caricamento nuove immagini
+- **GET `/api/monitoraggio/[id]/images`**: Recupero immagini associate al viaggio
+- **DELETE `/api/monitoraggio/[id]/images/[imageId]`**: Eliminazione sicura immagini
+- **Validazione FormData**: Gestione corretta campo `image` dal frontend
+- **Logging dettagliato**: Sistema di debug per tracciamento operazioni
+
+#### 🛡️ **Storage Dual-Mode e Sicurezza**
+- **Vercel Blob Storage**: Utilizzo in produzione per scalabilità e performance
+- **Filesystem locale**: Fallback per ambiente di sviluppo
+- **Validazione MIME**: Controllo rigoroso tipi file accettati (JPG, PNG, GIF, WebP)
+- **Gestione errori**: Sistema robusto con fallback e logging errori
+- **ID univoci**: Generazione automatica ID per prevenire conflitti
+
+#### 📊 **Struttura Database Ottimizzata**
+- **Tabella `travel_images`**: Struttura con campi `id`, `filename`, `url`, `type`, `size`, `mimeType`
+- **Relazioni**: Foreign key `travelId` con `travels(id)` e cascade delete
+- **Metadati completi**: Tracciamento `createdAt`, `updatedAt`, `nominativoId`
+- **Tipi immagine**: Supporto per 'mezzo', 'ritiri', 'scontrino', 'altro'
+- **Performance**: Indici ottimizzati per query rapide
+
+#### ✅ **Benefici Operativi**
+- **Documentazione viaggi**: Possibilità di allegare foto di mezzi, ritiri, scontrini
+- **Tracciabilità completa**: Storico immagini per ogni viaggio con metadati
+- **Esperienza utente**: Interfaccia intuitiva per upload e gestione immagini
+- **Scalabilità**: Sistema pronto per produzione con Vercel Blob Storage
+- **Manutenibilità**: Codice ben strutturato e documentato per future estensioni
 
 ### 📅 **Sistema Alert Scadenze Programmate Avanzato - v2.30.5** ⭐ **NUOVO**
 

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface TravelImage {
   id: string;
@@ -42,11 +43,19 @@ interface Viaggio {
 export default function ModificaMonitoraggioPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user, isLoading: authLoading, isAuthenticated } = useAuth();
   const [viaggio, setViaggio] = useState<Viaggio | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  // Redirect se non autenticato
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [authLoading, isAuthenticated, router]);
   
   // Stati separati per i campi data in formato italiano
   const [dataInizioItaliana, setDataInizioItaliana] = useState<string>('');
@@ -68,6 +77,8 @@ export default function ModificaMonitoraggioPage({ params }: { params: Promise<{
   const fetchViaggio = useCallback(async () => {
     try {
       const { id } = await params;
+      
+      // Carica i dati del viaggio
       const response = await fetch(`/api/monitoraggio/${id}`);
       if (!response.ok) {
         let errorMessage = 'Viaggio non trovato';
@@ -82,6 +93,23 @@ export default function ModificaMonitoraggioPage({ params }: { params: Promise<{
         throw new Error(errorMessage);
       }
       const data = await response.json();
+      
+      // Carica le immagini del viaggio
+      try {
+        const imagesResponse = await fetch(`/api/monitoraggio/${id}/images`);
+        if (imagesResponse.ok) {
+          const imagesData = await imagesResponse.json();
+          // Aggiorna il viaggio con le immagini caricate
+          data.viaggio.images = imagesData.images || [];
+        } else {
+          console.warn('⚠️ Impossibile caricare le immagini:', imagesResponse.status);
+          data.viaggio.images = [];
+        }
+      } catch (imagesError) {
+        console.warn('⚠️ Errore nel caricamento immagini:', imagesError);
+        data.viaggio.images = [];
+      }
+      
       setViaggio(data.viaggio);
       
       // Inizializza gli stati italiani con i valori formattati
@@ -266,19 +294,63 @@ export default function ModificaMonitoraggioPage({ params }: { params: Promise<{
         throw new Error(errorMessage);
       }
 
-      // Ricarica i dati del viaggio per mostrare la nuova immagine
+      // Ricarica i dati del viaggio per aggiornare la lista immagini
       await fetchViaggio();
       
       // Reset del form
       setNewImageFile(null);
       setNewImageType('');
       setSuccess('Immagine caricata con successo!');
-      
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Errore nel caricamento dell\'immagine');
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleImageDelete = async (imageId: string, filename: string) => {
+    if (!viaggio) return;
+
+    // Conferma eliminazione
+    const confirmDelete = window.confirm(
+      `Sei sicuro di voler eliminare l'immagine "${filename}"?\n\nQuesta azione non può essere annullata.`
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      setError(null);
+      const { id } = await params;
+
+      const response = await fetch(`/api/monitoraggio/${id}/images/${imageId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        let errorMessage = 'Errore nell\'eliminazione dell\'immagine';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (jsonError) {
+          console.error('❌ Errore nel parsing della risposta eliminazione:', jsonError);
+          errorMessage = `Errore ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+      console.log('✅ Immagine eliminata con successo:', result);
+
+      // Ricarica i dati del viaggio per aggiornare la lista immagini
+      await fetchViaggio();
+      
+      setSuccess(`Immagine "${filename}" eliminata con successo!`);
+      setTimeout(() => setSuccess(null), 3000);
+
+    } catch (error) {
+      console.error('❌ Errore eliminazione immagine:', error);
+      setError(error instanceof Error ? error.message : 'Errore nell\'eliminazione dell\'immagine');
     }
   };
 
@@ -326,7 +398,25 @@ export default function ModificaMonitoraggioPage({ params }: { params: Promise<{
     } catch {
       return null;
     }
-  };
+  }
+
+  // Mostra loading durante l'autenticazione
+  if (authLoading) {
+    return (
+      <div className="container-fluid py-4">
+        <div className="d-flex justify-content-center">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Caricamento...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Se non autenticato, non mostrare nulla (il redirect è già gestito)
+  if (!isAuthenticated) {
+    return null;
+  }
 
   if (isLoading) {
     return (
@@ -819,6 +909,14 @@ export default function ModificaMonitoraggioPage({ params }: { params: Promise<{
                          <p className="card-text small text-muted">
                            Caricata: {formatDateToItalian(image.createdAt)}
                          </p>
+                         <button 
+                           type="button" 
+                           className="btn btn-danger btn-sm"
+                           onClick={() => handleImageDelete(image.id, image.filename)}
+                           title="Elimina immagine"
+                         >
+                           <i className="bi bi-trash"></i> Elimina
+                         </button>
                        </div>
                      </div>
                    </div>

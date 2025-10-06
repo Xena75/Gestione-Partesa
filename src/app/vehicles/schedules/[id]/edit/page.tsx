@@ -622,13 +622,15 @@ export default function EditSchedulePage() {
                     Data Scadenza
                   </label>
                   <input
-                    type="date"
+                    type="text"
                     name="data_scadenza"
                     value={editForm.data_scadenza}
                     onChange={handleInputChange}
                     className={`form-control ${formClass} ${
                       validationErrors.data_scadenza ? 'is-invalid' : ''
                     }`}
+                    placeholder="gg/mm/aaaa"
+                    pattern="[0-9]{2}/[0-9]{2}/[0-9]{4}"
                   />
                   {validationErrors.data_scadenza && (
                     <div className="invalid-feedback">{validationErrors.data_scadenza}</div>
@@ -642,13 +644,15 @@ export default function EditSchedulePage() {
                     Data Completamento
                   </label>
                   <input
-                    type="date"
+                    type="text"
                     name="completed_date"
                     value={editForm.completed_date}
                     onChange={handleInputChange}
                     className={`form-control ${formClass} ${
                       validationErrors.completed_date ? 'is-invalid' : ''
                     }`}
+                    placeholder="gg/mm/aaaa"
+                    pattern="[0-9]{2}/[0-9]{2}/[0-9]{4}"
                   />
                   {validationErrors.completed_date && (
                     <div className="invalid-feedback">{validationErrors.completed_date}</div>
@@ -662,11 +666,13 @@ export default function EditSchedulePage() {
                     Data Prenotazione
                   </label>
                   <input
-                    type="date"
+                    type="text"
                     name="booking_date"
                     value={editForm.booking_date}
                     onChange={handleInputChange}
                     className="form-control ${formClass}"
+                    placeholder="gg/mm/aaaa"
+                    pattern="[0-9]{2}/[0-9]{2}/[0-9]{4}"
                   />
                 </div>
 
@@ -719,18 +725,40 @@ export default function EditSchedulePage() {
                     <i className="fas fa-building me-2"></i>
                     Fornitore
                   </label>
-                  <input
-                    type="text"
-                    name="provider"
-                    value={editForm.provider}
-                    onChange={handleInputChange}
-                    className={`form-control ${formClass} ${
-                      validationErrors.provider ? 'is-invalid' : ''
-                    }`}
-                    placeholder="Nome fornitore..."
-                  />
+                  {loadingSuppliers ? (
+                    <div className={`form-control ${formClass} d-flex align-items-center`}>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      Caricamento fornitori...
+                    </div>
+                  ) : (
+                    <select
+                      name="provider"
+                      value={editForm.provider}
+                      onChange={handleInputChange}
+                      className={`form-select ${formClass} ${
+                        validationErrors.provider ? 'is-invalid' : ''
+                      }`}
+                      style={{ '--bs-form-select-bg-img': 'none' } as React.CSSProperties}
+                    >
+                      <option value="">Seleziona fornitore...</option>
+                      {suppliers.filter(supplier => supplier.active).map((supplier) => (
+                        <option key={supplier.id} value={supplier.name}>
+                          {supplier.name} ({supplier.category})
+                        </option>
+                      ))}
+                      {suppliers.length === 0 && (
+                        <option value="" disabled>Nessun fornitore disponibile</option>
+                      )}
+                    </select>
+                  )}
                   {validationErrors.provider && (
                     <div className="invalid-feedback">{validationErrors.provider}</div>
+                  )}
+                  {!loadingSuppliers && suppliers.length === 0 && (
+                    <small className="text-muted mt-1 d-block">
+                      <i className="fas fa-info-circle me-1"></i>
+                      Nessun fornitore attivo trovato. Puoi aggiungerne uno dalla sezione Fornitori.
+                    </small>
                   )}
                 </div>
 
