@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.30.7
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.30.8
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -167,7 +167,37 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Scalabilità**: Sistema pronto per produzione con Vercel Blob Storage
 - **Manutenibilità**: Codice ben strutturato e documentato per future estensioni
 
-### 💶 **Sistema Fatturazione Preventivi Ottimizzato - v2.30.7** ⭐ **NUOVO**
+### 📅 **Formattazione Automatica Campi Data - v2.30.8** ⭐ **NUOVO**
+
+#### 🎯 **Input Intelligente per Date**
+- **Formattazione automatica**: Inserimento automatico barre `/` dopo 2 e 4 cifre durante digitazione
+- **Pagine interessate**: `/vehicles/quotes/new` e `/vehicles/schedules/new` con tutti i campi data
+- **Validazione migliorata**: Controllo formato `gg/mm/aaaa` in tempo reale con messaggi personalizzati
+- **UX ottimizzata**: Placeholder uniformi, tooltip informativi e messaggi di aiuto
+- **Compatibilità mobile**: `inputMode="numeric"` per tastiera numerica su dispositivi touch
+
+#### 🔧 **Implementazione Tecnica**
+- **Funzione `formatDateInput`**: Logica che rimuove caratteri non numerici e aggiunge barre automaticamente
+- **Gestione intelligente**: Limitazione a 8 cifre numeriche con formattazione progressiva (es: `12032024` → `12/03/2024`)
+- **Attributi HTML**: `pattern="[0-9/]*"`, `inputMode="numeric"`, `maxLength={10}` per esperienza ottimale
+- **Integrazione esistente**: Compatibilità con funzioni `validateItalianDate` e `formatDateToDatabase`
+- **Gestione errori**: Messaggi specifici per formato data non valido
+
+#### 📱 **Campi Interessati**
+- **Preventivi Veicoli**: `quote_date` (Data Offerta), `valid_until` (Valido Fino Al)
+- **Scadenze Veicoli**: `data_scadenza` (Data Scadenza), `booking_date` (Data Prenotazione), `quote_date` (Data Preventivo)
+- **Placeholder uniformi**: Tutti i campi utilizzano `"gg/mm/aaaa"` come placeholder
+- **Indicatori chiari**: Distinzione tra campi obbligatori e opzionali
+- **Feedback visivo**: Formattazione in tempo reale durante la digitazione
+
+#### ✅ **Benefici Operativi**
+- **Riduzione errori**: Formattazione automatica previene errori di formato data
+- **Velocità inserimento**: Utenti digitano solo numeri, sistema formatta automaticamente
+- **Consistenza dati**: Formato uniforme `gg/mm/aaaa` garantito in tutto il sistema
+- **Esperienza migliorata**: Interfaccia più intuitiva e user-friendly per tutti gli utenti
+- **Ottimizzazione mobile**: Tastiera numerica automatica su dispositivi touch
+
+### 💶 **Sistema Fatturazione Preventivi Ottimizzato - v2.30.7**
 
 #### 🎯 **Dashboard Preventivi con Valore Fatture**
 - **Card "Valore Fatture"**: Nuova card con emoji 💶 e visualizzazione `stats.totalInvoicedValue`

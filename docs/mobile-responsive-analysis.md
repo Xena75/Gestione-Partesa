@@ -4,7 +4,7 @@
 
 **Data Analisi**: $(Get-Date -Format "dd/MM/yyyy HH:mm")  
 **Branch**: feature/mobile-responsive  
-**Versione**: v2.30.7  
+**Versione**: v2.30.8  
 **Focus**: Dashboard principale (ex test-cards) ora unificata
 
 ---

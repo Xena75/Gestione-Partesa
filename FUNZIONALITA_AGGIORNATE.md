@@ -1,6 +1,50 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.30.7
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.30.8
 
-## 🚀 **VERSIONE 2.30.7** - Sistema Fatturazione Preventivi Ottimizzato ⭐ **NUOVO**
+## 🚀 **VERSIONE 2.30.8** - Formattazione Automatica Campi Data ⭐ **NUOVO**
+
+### 📅 **FORMATTAZIONE AUTOMATICA CAMPI DATA**
+- **Pagina Preventivi Veicoli** (`/vehicles/quotes/new`): Implementazione formattazione automatica per campi `quote_date` e `valid_until`
+- **Pagina Scadenze Veicoli** (`/vehicles/schedules/new`): Implementazione formattazione automatica per campi `data_scadenza`, `booking_date` e `quote_date`
+- **Input intelligente**: Inserimento automatico barre `/` dopo 2 e 4 cifre durante la digitazione
+- **Validazione migliorata**: Controllo formato `gg/mm/aaaa` in tempo reale con messaggi di errore personalizzati
+- **UX ottimizzata**: Placeholder uniformi, tooltip informativi e messaggi di aiuto per guidare l'utente
+
+### 🔧 **IMPLEMENTAZIONI TECNICHE DETTAGLIATE**
+- **Funzione `formatDateInput`**: Logica di formattazione che rimuove caratteri non numerici e aggiunge barre automaticamente
+- **Gestione input intelligente**: Limitazione a 8 cifre numeriche con formattazione progressiva (es: `12032024` → `12/03/2024`)
+- **Attributi HTML ottimizzati**: `pattern="[0-9/]*"`, `inputMode="numeric"`, `maxLength={10}` per migliore esperienza mobile
+- **Validazione esistente mantenuta**: Integrazione con funzioni `validateItalianDate` e `formatDateToDatabase` esistenti
+- **Gestione errori migliorata**: Messaggi di errore specifici per formato data non valido
+
+### 🎨 **MIGLIORAMENTI USER EXPERIENCE**
+- **Placeholder uniformi**: Tutti i campi data utilizzano `"gg/mm/aaaa"` come placeholder
+- **Tooltip informativi**: `title` attribute che spiega il funzionamento della formattazione automatica
+- **Messaggi di aiuto**: Testi esplicativi sotto ogni campo con esempi pratici (es: "Digita solo i numeri (es: 15032024 diventerà 15/03/2024)")
+- **Indicatori opzionalità**: Chiarezza su quali campi sono obbligatori vs opzionali
+- **Feedback visivo**: Formattazione in tempo reale durante la digitazione
+
+### 🛠️ **FUNZIONALITÀ IMPLEMENTATE**
+- **Auto-formattazione progressiva**: Barre inserite automaticamente dopo 2° e 4° carattere numerico
+- **Pulizia input**: Rimozione automatica di caratteri non numerici durante la digitazione
+- **Gestione backspace**: Rimozione intelligente delle barre quando l'utente cancella
+- **Limitazione lunghezza**: Massimo 10 caratteri (8 numeri + 2 barre) per prevenire input eccessivi
+- **Compatibilità mobile**: `inputMode="numeric"` per tastiera numerica su dispositivi touch
+
+### ✅ **BENEFICI OPERATIVI**
+- **Riduzione errori**: Formattazione automatica previene errori di formato data
+- **Velocità inserimento**: Utenti digitano solo numeri, sistema formatta automaticamente
+- **Consistenza dati**: Formato uniforme `gg/mm/aaaa` garantito in tutto il sistema
+- **Esperienza utente migliorata**: Interfaccia più intuitiva e user-friendly
+- **Compatibilità mobile**: Ottimizzazione per dispositivi touch con tastiera numerica
+
+### 📋 **FILE MODIFICATI**
+- `src/app/vehicles/quotes/new/page.tsx` - Implementazione formattazione automatica campi `quote_date` e `valid_until`
+- `src/app/vehicles/schedules/new/page.tsx` - Implementazione formattazione automatica campi `data_scadenza`, `booking_date` e `quote_date`
+- Aggiornamento placeholder, attributi HTML e messaggi di aiuto per tutti i campi data
+
+---
+
+## 🚀 **VERSIONE 2.30.7** - Sistema Fatturazione Preventivi Ottimizzato
 
 ### 💶 **DASHBOARD PREVENTIVI CON VALORE FATTURE**
 - **Card "Valore Fatture"**: Implementazione nuova card con emoji 💶 e visualizzazione `stats.totalInvoicedValue`
