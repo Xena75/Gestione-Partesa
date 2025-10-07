@@ -163,7 +163,7 @@
 - **Alert individuali**: Ogni scadenza in card separata per migliore leggibilità e organizzazione
 - **Informazioni contestuali**: Dettagli aggiuntivi mostrati solo quando rilevanti e disponibili
 - **Layout pulito**: Organizzazione chiara informazioni senza sovraccarico visivo
-- **Pagina test dedicata**: `/test-cards` per visualizzazione e testing funzionalità alert
+- **Dashboard principale**: `/dashboard` per visualizzazione e gestione funzionalità alert
 
 ### 📱 **CONSISTENZA DESIGN E ACCESSIBILITÀ**
 - **Allineamento con alert manutenzione**: Stesso layout a due colonne per coerenza interfaccia
@@ -322,7 +322,7 @@
 ## 🚀 **VERSIONE 2.30.2** - Sistema Toggle Dashboard e Ottimizzazioni UX ⭐ **CONSOLIDATO**
 
 ### 🔄 **IMPLEMENTAZIONE TOGGLE DASHBOARD INTEGRATO**
-- **Navigazione fluida tra dashboard**: Sistema di toggle per passaggio rapido tra Dashboard Classica (`/dashboard`) e Dashboard Moderna (`/test-cards`)
+- **Dashboard unificata**: La Dashboard Moderna è ora la dashboard principale accessibile tramite `/dashboard`
 - **Posizionamento strategico**: Toggle implementati in entrambe le dashboard per accesso immediato senza navigazione menu
 - **Design coerente**: Utilizzo emoji 📊 e 🚀 con stili Bootstrap per interfaccia uniforme e riconoscibile
 - **Stato attivo/inattivo**: Pulsanti con indicazione visiva chiara dello stato corrente (attivo/inattivo) per orientamento utente
@@ -458,7 +458,7 @@ WHERE created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)
 
 ### 🛠️ **FILE MODIFICATI**
 - `src/app/api/dashboard-stats/route.ts` - Implementazione trend reali e rimozione simulazioni
-- `src/app/test-cards/page.tsx` - Rimozione link "Clienti (WIP)" e "Utenti (WIP)" da card Anagrafiche
+- `src/app/dashboard/page.tsx` - Rimozione link "Clienti (WIP)" e "Utenti (WIP)" da card Anagrafiche
 - `docs/database-reference.md` - Aggiornamento documentazione con query settimanali e struttura API
 - `README.md` - Aggiunta sezione trend settimanali reali v2.30.0
 - `FUNZIONALITA_AGGIORNATE.md` - Documentazione completa implementazione trend reali
@@ -523,9 +523,8 @@ WHERE created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)
 - **Business intelligence**: Dashboard operativa per monitoraggio KPI e trend aziendali in tempo reale
 
 ### 🛠️ **FILE CREATI E MODIFICATI**
-- `src/app/test-cards/page.tsx` - Nuova dashboard moderna con statistiche reali
+- `src/app/dashboard/page.tsx` - Dashboard moderna con statistiche reali (ex test-cards)
 - `src/app/api/dashboard-stats/route.ts` - API endpoint per statistiche aggregate
-- `src/app/test-cards/layout.tsx` - Layout specifico per dashboard moderna
 - `src/app/globals.css` - Stili CSS custom per gradients e animazioni
 - `src/components/ui/` - Componenti riutilizzabili per cards e animazioni
 

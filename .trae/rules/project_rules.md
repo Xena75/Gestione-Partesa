@@ -25,3 +25,9 @@
 - se ti dico deploy, fai in sequenza testa la build e poi commit e push.
 - se ti dico fai pulizia, fai sempre pulizia dei file non necessari, come cache, build, o file temporanei. non cancellare file che servono a vercel. se hai dubbi controlla se il file è necessario e se viene utilizzato
 - usa sembre bootstrap e non tailwind css per mantenere la linea grafica del progetto
+
+## REGOLE CAMBIO BRANCH
+
+- "Vai sul main" → Cambio su main
+- "Torna al mobile" → Cambio su feature/mobile-responsive  
+- "Branch delle modifiche" → Cambio su feature/updates

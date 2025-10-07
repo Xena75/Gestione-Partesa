@@ -55,6 +55,24 @@ export default function NewSchedulePage() {
 
   // Funzioni di utilità per le date
 
+  // Funzione per formattare automaticamente la data
+  const formatDateInput = (value: string): string => {
+    // Rimuovi tutti i caratteri non numerici
+    const numbersOnly = value.replace(/\D/g, '');
+    
+    // Limita a 8 cifre (ggmmaaaa)
+    const limitedNumbers = numbersOnly.slice(0, 8);
+    
+    // Applica la formattazione
+    if (limitedNumbers.length <= 2) {
+      return limitedNumbers;
+    } else if (limitedNumbers.length <= 4) {
+      return `${limitedNumbers.slice(0, 2)}/${limitedNumbers.slice(2)}`;
+    } else {
+      return `${limitedNumbers.slice(0, 2)}/${limitedNumbers.slice(2, 4)}/${limitedNumbers.slice(4)}`;
+    }
+  };
+
   // Converte da formato italiano (gg/mm/aaaa) a formato database (YYYY-MM-DD)
   const formatDateToDatabase = (dateString: string) => {
     if (!dateString) return '';
@@ -140,11 +158,26 @@ export default function NewSchedulePage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    let processedValue = value;
+    
+    // Formattazione automatica per i campi data
+    if (name === 'data_scadenza' || name === 'booking_date' || name === 'quote_date') {
+      processedValue = formatDateInput(value);
+      
+      // Validazione del formato finale
+      if (processedValue && processedValue.length === 10 && !validateItalianDate(processedValue)) {
+        // Mostra un messaggio di errore se il formato non è valido
+        e.target.setCustomValidity('Inserire una data valida nel formato gg/mm/aaaa');
+      } else {
+        // Rimuovi il messaggio di errore se il formato è valido o incompleto
+        e.target.setCustomValidity('');
+      }
+    }
     
     // Per tutti i campi, aggiorna sempre lo stato per permettere la digitazione
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: processedValue
     }));
   };
 
@@ -301,8 +334,15 @@ export default function NewSchedulePage() {
                       value={formData.data_scadenza}
                       onChange={handleInputChange}
                       placeholder="gg/mm/aaaa"
+                      pattern="[0-9/]*"
+                      inputMode="numeric"
+                      maxLength={10}
+                      title="Digita solo i numeri della data, le barre verranno aggiunte automaticamente"
                       required
                     />
+                    <div className="form-text">
+                      Digita solo i numeri (es: 15032024 diventerà 15/03/2024)
+                    </div>
                   </div>
 
                   {/* Data Prenotazione */}
@@ -317,10 +357,14 @@ export default function NewSchedulePage() {
                       className="form-control"
                       value={formData.booking_date}
                       onChange={handleInputChange}
-                      placeholder="gg/mm/aaaa (opzionale)"
+                      placeholder="gg/mm/aaaa"
+                      pattern="[0-9/]*"
+                      inputMode="numeric"
+                      maxLength={10}
+                      title="Digita solo i numeri della data, le barre verranno aggiunte automaticamente"
                     />
                     <div className="form-text">
-                      Inserire solo se l'appuntamento è già stato prenotato
+                      Digita solo i numeri (es: 20032024 diventerà 20/03/2024) - Opzionale
                     </div>
                   </div>
 
@@ -431,10 +475,14 @@ export default function NewSchedulePage() {
                       className="form-control"
                       value={formData.quote_date}
                       onChange={handleInputChange}
-                      placeholder="gg/mm/aaaa (opzionale)"
+                      placeholder="gg/mm/aaaa"
+                      pattern="[0-9/]*"
+                      inputMode="numeric"
+                      maxLength={10}
+                      title="Digita solo i numeri della data, le barre verranno aggiunte automaticamente"
                     />
                     <div className="form-text">
-                      Data di emissione del preventivo
+                      Digita solo i numeri (es: 25032024 diventerà 25/03/2024) - Opzionale
                     </div>
                   </div>
 

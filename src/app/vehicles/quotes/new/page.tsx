@@ -194,21 +194,45 @@ function NewQuotePageContent() {
     }
   };
 
+  // Funzione per formattare automaticamente la data
+  const formatDateInput = (value: string): string => {
+    // Rimuovi tutti i caratteri non numerici
+    const numbersOnly = value.replace(/\D/g, '');
+    
+    // Limita a 8 cifre (ggmmaaaa)
+    const limitedNumbers = numbersOnly.slice(0, 8);
+    
+    // Applica la formattazione
+    if (limitedNumbers.length <= 2) {
+      return limitedNumbers;
+    } else if (limitedNumbers.length <= 4) {
+      return `${limitedNumbers.slice(0, 2)}/${limitedNumbers.slice(2)}`;
+    } else {
+      return `${limitedNumbers.slice(0, 2)}/${limitedNumbers.slice(2, 4)}/${limitedNumbers.slice(4)}`;
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    let processedValue = value;
     
-    // Validazione speciale per il campo quote_date
-    if (name === 'quote_date' && value && !isValidItalianDate(value)) {
-      // Mostra un messaggio di errore se il formato non è valido
-      e.target.setCustomValidity('Inserire la data nel formato gg/mm/aaaa');
-    } else if (name === 'quote_date') {
-      // Rimuovi il messaggio di errore se il formato è valido
-      e.target.setCustomValidity('');
+    // Formattazione automatica per i campi data
+    if (name === 'quote_date' || name === 'valid_until') {
+      processedValue = formatDateInput(value);
+      
+      // Validazione del formato finale
+      if (processedValue && processedValue.length === 10 && !isValidItalianDate(processedValue)) {
+        // Mostra un messaggio di errore se il formato non è valido
+        e.target.setCustomValidity('Inserire una data valida nel formato gg/mm/aaaa');
+      } else {
+        // Rimuovi il messaggio di errore se il formato è valido o incompleto
+        e.target.setCustomValidity('');
+      }
     }
     
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: processedValue
     }));
   };
 
@@ -421,11 +445,12 @@ function NewQuotePageContent() {
                       onChange={handleInputChange}
                       placeholder="gg/mm/aaaa"
                       pattern="(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\d{4}"
-                      title="Inserire la data nel formato gg/mm/aaaa"
+                      title="Digita solo i numeri della data, le barre verranno aggiunte automaticamente"
+                      maxLength={10}
                       required
                     />
                     <div className="form-text">
-                      Formato richiesto: gg/mm/aaaa (es. 15/03/2024)
+                      Digita solo i numeri (es: 15032024 diventerà 15/03/2024)
                     </div>
                     {formData.valid_until && !isValidItalianDate(formData.valid_until) && (
                       <div className="invalid-feedback">
@@ -548,8 +573,12 @@ function NewQuotePageContent() {
                       onChange={handleInputChange}
                       placeholder="gg/mm/aaaa"
                       pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\d{4}$"
-                      title="Inserire la data nel formato gg/mm/aaaa"
+                      title="Digita solo i numeri della data, le barre verranno aggiunte automaticamente"
+                      maxLength={10}
                     />
+                    <div className="form-text">
+                      Digita solo i numeri (es: 12032024 diventerà 12/03/2024)
+                    </div>
                   </div>
 
                   {/* Note */}

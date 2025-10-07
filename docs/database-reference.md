@@ -846,7 +846,7 @@ quote_date         date                                                         
 ```
 
 **Utilizzo nel progetto:**
-- **Pagine**: `/vehicles` - Gestione scadenze veicoli, `/test-cards` - Visualizzazione alert scadenze
+- **Pagine**: `/vehicles` - Gestione scadenze veicoli, `/dashboard` - Visualizzazione alert scadenze
 - **API**: `/api/vehicles/schedules/expiring` per recupero scadenze in scadenza
 - **Componenti**: `ScheduledExpirySection.tsx` per visualizzazione alert scadenze programmate
 - **Funzionalità**: 

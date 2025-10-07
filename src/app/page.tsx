@@ -8,7 +8,7 @@ export default function Home() {
 
   useEffect(() => {
     // Reindirizza automaticamente alla dashboard moderna
-    router.push('/test-cards');
+    router.push('/dashboard');
   }, [router]);
 
   return (

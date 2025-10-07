@@ -228,7 +228,7 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Filtro automatico**: Esclusione scadenze completate dagli alert
 
 #### 📱 **User Experience Migliorata**
-- **Pagina test dedicata**: `/test-cards` per visualizzazione e testing alert
+- **Dashboard principale**: `/dashboard` per visualizzazione e gestione alert
 - **Alert individuali**: Ogni scadenza in card separata per migliore leggibilità
 - **Informazioni contestuali**: Dettagli aggiuntivi solo quando rilevanti e disponibili
 - **Layout pulito**: Organizzazione chiara informazioni senza sovraccarico visivo
