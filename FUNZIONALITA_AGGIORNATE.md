@@ -1,4 +1,56 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.30.6
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.30.7
+
+## 🚀 **VERSIONE 2.30.7** - Sistema Fatturazione Preventivi Ottimizzato ⭐ **NUOVO**
+
+### 💶 **DASHBOARD PREVENTIVI CON VALORE FATTURE**
+- **Card "Valore Fatture"**: Implementazione nuova card con emoji 💶 e visualizzazione `stats.totalInvoicedValue`
+- **Layout filtri ottimizzato**: Riorganizzazione filtri su singola riga per migliore utilizzo spazio schermo
+- **Persistenza filtri URL**: Stato "Ordina per" e "Ordine" mantenuto tramite parametri URL con `useRouter` e `useSearchParams`
+- **Badge colorati semantici**: Verde per "Fatturato", giallo per "Da Fatturare" e "Parziale" per identificazione immediata
+- **Esperienza utente fluida**: Navigazione senza perdita contesto filtri tra ricaricamenti pagina
+
+### 🔧 **CORREZIONI CRITICHE STATI FATTURAZIONE**
+- **Enum database aggiornato**: `invoice_status` con valori corretti `not_invoiced`, `invoiced`, `partial`
+- **Migrazione dati massiva**: 56 record aggiornati da "n/a" a "not_invoiced" nel database `viaggi_db.maintenance_quotes`
+- **Funzioni frontend corrette**: `getInvoiceStatusBadge` e `getInvoiceStatusText` allineate ai nuovi valori enum
+- **Eliminazione "N/A"**: Rimozione definitiva di valori "N/A" dall'interfaccia utente
+- **Database consistency**: Struttura `maintenance_quotes` aggiornata con nuovo enum e documentazione
+
+### 📊 **IMPLEMENTAZIONE PERSISTENZA STATO FILTRI**
+- **URL Parameters management**: Utilizzo hook Next.js `useRouter` e `useSearchParams` per gestione stato
+- **Filtri persistenti**: "Ordina per" (`sortBy`) e "Ordine" (`sortOrder`) mantengono stato al ricaricamento
+- **Valori default intelligenti**: Fallback a `created_at` e `desc` per nuove sessioni utente
+- **Funzioni dedicate**: `handleSortByChange` e `handleSortOrderChange` per gestione pulita URL
+- **URL management**: Aggiornamento parametri senza duplicazioni, conflitti o perdita stato
+
+### 🎨 **MIGLIORAMENTI LAYOUT E DESIGN**
+- **Layout responsive Bootstrap**: Filtri organizzati su singola riga con classi `col-md-3` ottimizzate
+- **Badge semantici intuitivi**: Colori significativi per stati fatturazione (verde=completato, giallo=pending)
+- **Spazio ottimizzato**: Migliore utilizzo area disponibile per filtri e contenuti principali
+- **Consistenza design system**: Allineamento con pattern esistenti del progetto
+- **Accessibilità migliorata**: Contrasti e dimensioni ottimizzati per tutti gli utenti
+
+### 🛠️ **IMPLEMENTAZIONI TECNICHE DETTAGLIATE**
+- **Hook Next.js**: Integrazione `useRouter` e `useSearchParams` da `next/navigation`
+- **State management**: Inizializzazione stato da URL parameters con fallback values
+- **URL update functions**: `updateURLParams()` per gestione pulita parametri URL
+- **Event handlers**: Gestori eventi personalizzati per sincronizzazione stato-URL
+- **TypeScript types**: Tipizzazione corretta per enum `invoice_status` e parametri URL
+
+### ✅ **BENEFICI OPERATIVI E TECNICI**
+- **Efficienza operativa**: Filtri persistenti riducono tempo navigazione e re-configurazione
+- **Chiarezza visiva**: Identificazione immediata stato fatturazione con colori semantici
+- **Tracciabilità finanziaria**: Monitoraggio preciso valore fatture e stati preventivi
+- **User Experience**: Navigazione fluida senza perdita contesto o necessità ri-filtro
+- **Manutenibilità codice**: Funzioni dedicate, codice pulito e pattern riutilizzabili
+
+### 📋 **FILE MODIFICATI E IMPLEMENTAZIONI**
+- `src/app/vehicles/quotes/page.tsx` - Implementazione persistenza filtri e correzione funzioni badge
+- `docs/database-reference.md` - Aggiornamento documentazione tabella `maintenance_quotes` con `invoice_status`
+- `README.md` - Documentazione completa nuove funzionalità v2.30.7
+- `FUNZIONALITA_AGGIORNATE.md` - Documentazione dettagliata implementazione tecnica
+
+---
 
 ## 🚀 **VERSIONE 2.30.6** - Sistema Gestione Immagini Monitoraggio Viaggi ⭐ **NUOVO**
 

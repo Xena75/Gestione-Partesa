@@ -27,6 +27,16 @@ interface Quote {
   approved_by_username?: string;
   approved_at?: string;
   intervention_type?: string;
+  // Campi fatturazione
+  invoice_number?: string;
+  invoice_date?: string;
+  invoice_amount?: number;
+  invoice_status?: string;
+  invoice_notes?: string;
+  invoice_document_path?: string;
+  difference_amount?: number;
+  difference_percentage?: number;
+  discrepancy_level?: string;
 }
 
 interface Supplier {
@@ -73,7 +83,13 @@ export default function EditQuotePage() {
     scheduled_date: '',
     quote_number: '',
     quote_date: '',
-    intervention_type: ''
+    intervention_type: '',
+    // Campi fatturazione
+    invoice_number: '',
+    invoice_date: '',
+    invoice_amount: '',
+    invoice_status: '',
+    invoice_notes: ''
   });
 
   useEffect(() => {
@@ -119,7 +135,13 @@ export default function EditQuotePage() {
           scheduled_date: quoteData.scheduled_date ? formatDateToItalian(quoteData.scheduled_date) : '',
           quote_number: quoteData.quote_number || '',
           quote_date: quoteData.quote_date ? formatDateToItalian(quoteData.quote_date) : '',
-          intervention_type: quoteData.intervention_type || ''
+          intervention_type: quoteData.intervention_type || '',
+          // Campi fatturazione
+          invoice_number: quoteData.invoice_number || '',
+          invoice_date: quoteData.invoice_date ? formatDateToItalian(quoteData.invoice_date) : '',
+          invoice_amount: quoteData.invoice_amount?.toString() || '',
+          invoice_status: quoteData.invoice_status || 'pending',
+          invoice_notes: quoteData.invoice_notes || ''
         });
       } else {
         setError(data.error || 'Errore nel caricamento del preventivo');
@@ -134,11 +156,14 @@ export default function EditQuotePage() {
     try {
       const response = await fetch('/api/vehicles/suppliers?active=true');
       const data = await response.json();
-      if (data.success) {
+      if (data.success && data.data) {
         setSuppliers(data.data);
+      } else {
+        setSuppliers([]); // Inizializza array vuoto se fallisce
       }
     } catch (err) {
       console.error('Errore nel caricamento fornitori:', err);
+      setSuppliers([]); // Inizializza array vuoto in caso di errore
     } finally {
       setLoading(false);
     }
@@ -148,11 +173,14 @@ export default function EditQuotePage() {
     try {
       const response = await fetch('/api/vehicles/intervention-types');
       const data = await response.json();
-      if (data.success) {
+      if (data.success && data.data) {
         setInterventionTypes(data.data);
+      } else {
+        setInterventionTypes([]); // Inizializza array vuoto se fallisce
       }
     } catch (err) {
       console.error('Errore nel caricamento tipi di intervento:', err);
+      setInterventionTypes([]); // Inizializza array vuoto in caso di errore
     }
   };
 
@@ -160,11 +188,14 @@ export default function EditQuotePage() {
     try {
       const response = await fetch(`/api/vehicles/quotes/${quoteId}/documents`);
       const data = await response.json();
-      if (data.success) {
-        setDocuments(data.documents);
+      if (data.success && data.data) {
+        setDocuments(data.data);
+      } else {
+        setDocuments([]); // Inizializza array vuoto se fallisce
       }
     } catch (err) {
       console.error('Errore nel caricamento documenti:', err);
+      setDocuments([]); // Inizializza array vuoto in caso di errore
     }
   };
 
@@ -262,7 +293,7 @@ export default function EditQuotePage() {
     const { name, value } = e.target;
     
     // Validazione speciale per i campi data
-    if ((name === 'valid_until' || name === 'scheduled_date' || name === 'quote_date') && value) {
+    if ((name === 'valid_until' || name === 'scheduled_date' || name === 'quote_date' || name === 'invoice_date') && value) {
       // Permetti solo numeri e slash
       const cleanValue = value.replace(/[^\d\/]/g, '');
       
@@ -312,6 +343,11 @@ export default function EditQuotePage() {
       return;
     }
 
+    if (formData.invoice_date && !isValidItalianDate(formData.invoice_date)) {
+      alert('La data fattura deve essere nel formato gg/mm/aaaa e deve essere una data valida');
+      return;
+    }
+
     try {
       setSaving(true);
       const response = await fetch(`/api/vehicles/quotes/${quoteId}`, {
@@ -329,7 +365,13 @@ export default function EditQuotePage() {
           scheduled_date: formData.scheduled_date ? formatDateToISO(formData.scheduled_date) : null,
           quote_number: formData.quote_number || null,
           quote_date: formData.quote_date ? formatDateToISO(formData.quote_date) : null,
-          intervention_type: formData.intervention_type || null
+          intervention_type: formData.intervention_type || null,
+          // Campi fatturazione
+          invoice_number: formData.invoice_number || null,
+          invoice_date: formData.invoice_date ? formatDateToISO(formData.invoice_date) : null,
+          invoice_amount: formData.invoice_amount ? parseFloat(formData.invoice_amount) : null,
+          invoice_status: formData.invoice_status || null,
+          invoice_notes: formData.invoice_notes || null
         }),
       });
 
@@ -351,7 +393,7 @@ export default function EditQuotePage() {
               const checkResponse = await fetch(`/api/vehicles/schedules?quote_number=${encodeURIComponent(formData.quote_number || quoteId)}`);
               const existingSchedules = await checkResponse.json();
               
-              if (existingSchedules.success && existingSchedules.data && existingSchedules.data.length > 0) {
+              if (existingSchedules.success && existingSchedules.data && Array.isArray(existingSchedules.data) && existingSchedules.data.length > 0) {
                 // Evento già esistente, non creare duplicato
                 alert('Preventivo aggiornato con successo!\n\nL\'evento è già presente nel calendario.');
                 // Reindirizza alla lista preventivi se l'evento esiste già
@@ -359,7 +401,7 @@ export default function EditQuotePage() {
                 return;
               } else {
                 // Nessun evento esistente, procedi con la creazione
-                const supplierName = suppliers.find(s => s.id === parseInt(formData.supplier_id))?.name || 'Fornitore sconosciuto';
+                const supplierName = suppliers && suppliers.find(s => s.id === parseInt(formData.supplier_id))?.name || 'Fornitore sconosciuto';
                 
                 const scheduleResponse = await fetch('/api/vehicles/schedules', {
                   method: 'POST',
@@ -429,6 +471,44 @@ export default function EditQuotePage() {
   const formatDate = (dateString: string) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('it-IT');
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('it-IT', {
+      style: 'currency',
+      currency: 'EUR'
+    }).format(amount);
+  };
+
+  const calculateDifference = () => {
+    if (!formData.amount || !formData.invoice_amount) return null;
+    
+    const originalAmount = parseFloat(formData.amount);
+    const invoiceAmount = parseFloat(formData.invoice_amount);
+    const difference = invoiceAmount - originalAmount;
+    const percentage = ((difference / originalAmount) * 100);
+    
+    return {
+      amount: difference,
+      percentage: percentage,
+      level: Math.abs(percentage) <= 1 ? 'none' : 
+             Math.abs(percentage) <= 10 ? 'low' : 
+             Math.abs(percentage) <= 20 ? 'medium' : 'high'
+    };
+  };
+
+  const getDifferenceColor = (level: string) => {
+    switch (level) {
+      case 'none':
+      case 'low':
+        return 'text-success';
+      case 'medium':
+        return 'text-warning';
+      case 'high':
+        return 'text-danger';
+      default:
+        return 'text-muted';
+    }
   };
 
   if (loading) {
@@ -565,7 +645,7 @@ export default function EditQuotePage() {
                       onChange={handleInputChange}
                     >
                       <option value="">Seleziona tipo</option>
-                      {interventionTypes.map((type) => (
+                      {interventionTypes && interventionTypes.map((type) => (
                         <option key={type.id} value={type.id}>
                           {type.name}
                         </option>
@@ -586,7 +666,7 @@ export default function EditQuotePage() {
                       required
                     >
                       <option value="">Seleziona fornitore</option>
-                      {suppliers.map((supplier) => (
+                      {suppliers && suppliers.map((supplier) => (
                         <option key={supplier.id} value={supplier.id}>
                           {supplier.name}
                         </option>
@@ -596,7 +676,7 @@ export default function EditQuotePage() {
 
                   <div className="col-md-6 mb-3">
                     <label htmlFor="amount" className="form-label">
-                      Importo (€) <span className="text-danger">*</span>
+                      Importo Preventivo (€) <span className="text-danger">*</span>
                     </label>
                     <input
                       type="number"
@@ -760,6 +840,157 @@ export default function EditQuotePage() {
             </div>
           </div>
 
+          {/* Sezione Dati Fatturazione */}
+          {formData.status === 'approved' && (
+            <div className="card mt-4">
+              <div className="card-header">
+                <h5 className="card-title mb-0">
+                  <i className="fas fa-file-invoice me-2"></i>
+                  Dati Fatturazione
+                </h5>
+              </div>
+              <div className="card-body">
+                <div className="row">
+                  <div className="col-md-4 mb-3">
+                    <label htmlFor="invoice_status" className="form-label">
+                      Stato Fatturazione
+                    </label>
+                    <select
+                      id="invoice_status"
+                      name="invoice_status"
+                      className="form-select"
+                      value={formData.invoice_status}
+                      onChange={handleInputChange}
+                    >
+                      <option value="pending">Da Fatturare</option>
+                      <option value="invoiced">Fatturato</option>
+                      <option value="paid">Pagato</option>
+                      <option value="cancelled">Annullato</option>
+                    </select>
+                  </div>
+
+                  <div className="col-md-4 mb-3">
+                    <label htmlFor="invoice_number" className="form-label">
+                      Numero Fattura
+                    </label>
+                    <input
+                      type="text"
+                      id="invoice_number"
+                      name="invoice_number"
+                      className="form-control"
+                      value={formData.invoice_number}
+                      onChange={handleInputChange}
+                      placeholder="Es. FAT-2024-001"
+                    />
+                  </div>
+
+                  <div className="col-md-4 mb-3">
+                    <label htmlFor="invoice_date" className="form-label">
+                      Data Fattura
+                    </label>
+                    <input
+                      type="text"
+                      id="invoice_date"
+                      name="invoice_date"
+                      className="form-control"
+                      value={formData.invoice_date}
+                      onChange={handleInputChange}
+                      placeholder="gg/mm/aaaa"
+                      pattern="\d{2}/\d{2}/\d{4}"
+                      title="Inserisci la data nel formato gg/mm/aaaa"
+                    />
+                  </div>
+
+                  <div className="col-md-6 mb-3">
+                    <label htmlFor="invoice_amount" className="form-label">
+                      Importo Fatturato (€)
+                    </label>
+                    <input
+                      type="number"
+                      id="invoice_amount"
+                      name="invoice_amount"
+                      className="form-control"
+                      value={formData.invoice_amount}
+                      onChange={handleInputChange}
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                    />
+                  </div>
+
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">Differenza</label>
+                    <div className="form-control-plaintext">
+                      {(() => {
+                        const diff = calculateDifference();
+                        if (!diff) return <span className="text-muted">-</span>;
+                        
+                        return (
+                          <span className={getDifferenceColor(diff.level)}>
+                            <strong>
+                              {diff.amount > 0 ? '+' : ''}{formatCurrency(Math.abs(diff.amount))}
+                            </strong>
+                            <small className="ms-2">
+                              ({diff.percentage > 0 ? '+' : ''}{diff.percentage.toFixed(1)}%)
+                            </small>
+                            {diff.level !== 'none' && (
+                              <span className={`badge ms-2 ${
+                                diff.level === 'low' ? 'bg-success' :
+                                diff.level === 'medium' ? 'bg-warning' : 'bg-danger'
+                              }`}>
+                                {diff.level === 'low' ? 'Bassa' :
+                                 diff.level === 'medium' ? 'Media' : 'Alta'}
+                              </span>
+                            )}
+                          </span>
+                        );
+                      })()}
+                    </div>
+                  </div>
+
+                  <div className="col-12 mb-3">
+                    <label htmlFor="invoice_notes" className="form-label">
+                      Note Fatturazione
+                    </label>
+                    <textarea
+                      id="invoice_notes"
+                      name="invoice_notes"
+                      className="form-control"
+                      rows={3}
+                      value={formData.invoice_notes}
+                      onChange={handleInputChange}
+                      placeholder="Note relative alla fatturazione..."
+                    ></textarea>
+                  </div>
+                </div>
+
+                {/* Alert per discrepanze */}
+                {(() => {
+                  const diff = calculateDifference();
+                  if (!diff || diff.level === 'none') return null;
+                  
+                  return (
+                    <div className={`alert ${
+                      diff.level === 'low' ? 'alert-success' :
+                      diff.level === 'medium' ? 'alert-warning' : 'alert-danger'
+                    } mt-3`}>
+                      <i className={`fas ${
+                        diff.level === 'low' ? 'fa-check-circle' :
+                        diff.level === 'medium' ? 'fa-exclamation-triangle' : 'fa-exclamation-circle'
+                      } me-2`}></i>
+                      <strong>Discrepanza rilevata:</strong> L'importo fatturato differisce dal preventivo originale di {formatCurrency(Math.abs(diff.amount))} ({Math.abs(diff.percentage).toFixed(1)}%).
+                      {diff.level === 'high' && (
+                        <div className="mt-2">
+                          <small>⚠️ Discrepanza elevata - Verificare i dati inseriti</small>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          )}
+
           {/* Sezione Allegati */}
           <div className="card mt-4">
             <div className="card-header">
@@ -797,7 +1028,7 @@ export default function EditQuotePage() {
               </div>
 
               {/* Lista Documenti */}
-              {documents.length > 0 ? (
+              {documents && documents.length > 0 ? (
                 <div className="table-responsive">
                   <table className="table table-hover">
                     <thead>
@@ -810,7 +1041,7 @@ export default function EditQuotePage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {documents.map((doc) => (
+                      {documents && documents.map((doc) => (
                         <tr key={doc.id}>
                           <td>
                             <i className="fas fa-file me-2"></i>

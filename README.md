@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.30.6
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.30.7
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -166,6 +166,43 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Esperienza utente**: Interfaccia intuitiva per upload e gestione immagini
 - **Scalabilità**: Sistema pronto per produzione con Vercel Blob Storage
 - **Manutenibilità**: Codice ben strutturato e documentato per future estensioni
+
+### 💶 **Sistema Fatturazione Preventivi Ottimizzato - v2.30.7** ⭐ **NUOVO**
+
+#### 🎯 **Dashboard Preventivi con Valore Fatture**
+- **Card "Valore Fatture"**: Nuova card con emoji 💶 e visualizzazione `stats.totalInvoicedValue`
+- **Layout ottimizzato**: Filtri organizzati su singola riga per migliore utilizzo spazio
+- **Persistenza filtri**: Stato "Ordina per" e "Ordine" mantenuto tramite parametri URL
+- **Badge colorati**: Verde per "Fatturato", giallo per "Da Fatturare" e "Parziale"
+- **Esperienza utente**: Navigazione fluida con stato persistente tra ricaricamenti
+
+#### 🔧 **Correzioni Stati Fatturazione**
+- **Enum aggiornato**: `invoice_status` con valori `not_invoiced`, `invoiced`, `partial`
+- **Migrazione dati**: 56 record aggiornati da "n/a" a "not_invoiced" nel database
+- **Funzioni corrette**: `getInvoiceStatusBadge` e `getInvoiceStatusText` allineate ai nuovi valori
+- **Visualizzazione coerente**: Eliminazione definitiva di valori "N/A" nell'interfaccia
+- **Database allineato**: Struttura `maintenance_quotes` aggiornata con nuovo enum
+
+#### 📊 **Persistenza Stato Filtri**
+- **URL Parameters**: Utilizzo `useRouter` e `useSearchParams` di Next.js
+- **Filtri persistenti**: "Ordina per" e "Ordine" mantengono stato al ricaricamento
+- **Valori default**: Fallback a `created_at` e `desc` per nuove sessioni
+- **Funzioni dedicate**: `handleSortByChange` e `handleSortOrderChange` per gestione URL
+- **URL puliti**: Aggiornamento parametri senza duplicazioni o conflitti
+
+#### 🎨 **Layout e Design Migliorati**
+- **Layout responsive**: Filtri su singola riga con classi Bootstrap ottimizzate
+- **Badge semantici**: Colori intuitivi per stati fatturazione (verde=fatturato)
+- **Spazio ottimizzato**: Migliore utilizzo area disponibile per filtri e contenuti
+- **Consistenza visiva**: Allineamento con design system esistente del progetto
+- **Accessibilità**: Contrasti e dimensioni ottimizzati per tutti gli utenti
+
+#### ✅ **Benefici Operativi**
+- **Efficienza operativa**: Filtri persistenti riducono tempo di navigazione
+- **Chiarezza stati**: Visualizzazione immediata stato fatturazione con colori semantici
+- **Tracciabilità**: Monitoraggio preciso valore fatture e stati preventivi
+- **User Experience**: Navigazione fluida senza perdita contesto filtri
+- **Manutenibilità**: Codice pulito e funzioni dedicate per gestione stato
 
 ### 📅 **Sistema Alert Scadenze Programmate Avanzato - v2.30.5** ⭐ **NUOVO**
 

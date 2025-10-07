@@ -434,10 +434,10 @@ function NewQuotePageContent() {
                     )}
                   </div>
 
-                  {/* Importo */}
+                  {/* Importo Preventivo */}
                   <div className="col-md-6 mb-3">
                     <label htmlFor="amount" className="form-label">
-                      Importo (€) <span className="text-danger">*</span>
+                      Importo Preventivo (€) <span className="text-danger">*</span>
                     </label>
                     <input
                       type="number"

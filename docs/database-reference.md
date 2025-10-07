@@ -626,10 +626,23 @@ amount        decimal(10,2)  NO        NULL
 quote_date    date           NO        NULL                 
 valid_until   date           YES        NULL                 
 status        enum('pending','approved','rejected','expired') NO  NULL
+invoice_status enum('not_invoiced','invoiced','partial') NO not_invoiced
 notes         text           YES        NULL                 
 created_at    timestamp      NO        current_timestamp()  
 updated_at    timestamp      NO        current_timestamp()  on update current_timestamp()
 ```
+
+**Utilizzo nel progetto:**
+- **Pagine**: `/vehicles/quotes` - Gestione preventivi veicoli
+- **API**: `/api/vehicles/quotes` per CRUD preventivi
+- **Componenti**: Sistema gestione preventivi e fatturazione
+- **Funzionalità**: Tracciamento stato fatturazione, gestione preventivi
+- **Dashboard**: Monitoraggio preventivi e fatture
+
+**Campo invoice_status (v2.30.7):**
+- `not_invoiced`: Preventivo non ancora fatturato (default)
+- `invoiced`: Preventivo completamente fatturato
+- `partial`: Preventivo parzialmente fatturato
 
 #### notification_settings
 ```sql

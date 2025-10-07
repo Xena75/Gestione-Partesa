@@ -258,7 +258,7 @@ export default function QuoteDetailPage() {
                   <p className="mb-0">{quote.supplier_name || 'N/A'}</p>
                 </div>
                 <div className="col-md-6 mb-3">
-                  <strong>Importo:</strong>
+                  <strong>Importo Preventivo:</strong>
                   <p className="mb-0 h5 text-primary">
                     € {quote.amount ? quote.amount.toLocaleString('it-IT', { minimumFractionDigits: 2 }) : '0,00'}
                   </p>

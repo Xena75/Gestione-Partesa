@@ -47,6 +47,11 @@ export async function GET(
         mq.created_by,
         mq.approved_by,
         mq.approved_at,
+        mq.invoice_number,
+        mq.invoice_date,
+        mq.invoice_amount,
+        mq.invoice_status,
+        mq.invoice_notes,
         s.name as supplier_name,
         v.targa as vehicle_targa,
         it.name as intervention_type_name,
@@ -115,7 +120,13 @@ export async function PUT(
       scheduled_date,
       quote_number,
       quote_date,
-      intervention_type
+      intervention_type,
+      // Campi fatturazione
+      invoice_number,
+      invoice_date,
+      invoice_amount,
+      invoice_status,
+      invoice_notes
     } = body;
     
     // Verifica che il preventivo esista
@@ -146,10 +157,15 @@ export async function PUT(
         quote_number = ?,
         quote_date = ?,
         intervention_type = ?,
+        invoice_number = ?,
+        invoice_date = ?,
+        invoice_amount = ?,
+        invoice_status = ?,
+        invoice_notes = ?,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `;
-    
+
     await connection.execute(updateQuery, [
       supplier_id,
       amount,
@@ -161,6 +177,11 @@ export async function PUT(
       quote_number,
       quote_date,
       intervention_type ? parseInt(intervention_type) : 1,
+      invoice_number,
+      invoice_date,
+      invoice_amount,
+      invoice_status,
+      invoice_notes,
       quoteId
     ]);
     

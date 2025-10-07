@@ -29,6 +29,8 @@ export async function GET(request: NextRequest) {
     const scheduleId = searchParams.get('scheduleId');
     const status = searchParams.get('status');
     const supplierId = searchParams.get('supplierId');
+    const invoiceStatus = searchParams.get('invoiceStatus');
+    const hasDiscrepancies = searchParams.get('hasDiscrepancies');
 
     connection = await pool.getConnection();
 
@@ -45,7 +47,28 @@ export async function GET(request: NextRequest) {
         s.phone as supplier_phone,
         s.contact_person as supplier_contact,
         it.name as intervention_type_name,
-        it.description as intervention_type_description
+        it.description as intervention_type_description,
+        -- Calcoli automatici per fatturazione
+        CASE 
+          WHEN mq.invoice_amount IS NOT NULL AND mq.amount IS NOT NULL 
+          THEN (mq.invoice_amount - mq.amount) 
+          ELSE NULL 
+        END as difference_amount,
+        CASE 
+          WHEN mq.invoice_amount IS NOT NULL AND mq.amount IS NOT NULL AND mq.amount > 0
+          THEN ROUND(((mq.invoice_amount - mq.amount) / mq.amount) * 100, 2)
+          ELSE NULL 
+        END as difference_percentage,
+        CASE 
+          WHEN mq.invoice_amount IS NOT NULL AND mq.amount IS NOT NULL AND mq.amount > 0
+          THEN 
+            CASE 
+              WHEN ABS(((mq.invoice_amount - mq.amount) / mq.amount) * 100) = 0 THEN 'exact'
+              WHEN ABS(((mq.invoice_amount - mq.amount) / mq.amount) * 100) <= 10 THEN 'minor'
+              ELSE 'major'
+            END
+          ELSE 'none'
+        END as discrepancy_level
       FROM maintenance_quotes mq
       JOIN vehicles v ON mq.vehicle_id = v.id
       LEFT JOIN vehicle_schedules vs ON mq.schedule_id = vs.id
@@ -73,6 +96,15 @@ export async function GET(request: NextRequest) {
     if (supplierId) {
       query += ' AND mq.supplier_id = ?';
       params.push(supplierId);
+    }
+
+    if (invoiceStatus) {
+      query += ' AND mq.invoice_status = ?';
+      params.push(invoiceStatus);
+    }
+
+    if (hasDiscrepancies === 'true') {
+      query += ' AND mq.invoice_amount IS NOT NULL AND mq.amount IS NOT NULL AND ABS(mq.invoice_amount - mq.amount) > 0';
     }
 
     query += ' ORDER BY mq.created_at DESC';
@@ -424,7 +456,13 @@ export async function PUT(request: NextRequest) {
       amount,
       description,
       intervention_type,
-      valid_until
+      valid_until,
+      invoice_number,
+      invoice_date,
+      invoice_amount,
+      invoice_status,
+      invoice_notes,
+      invoice_document_path
     } = body;
 
     if (!id) {
@@ -480,6 +518,36 @@ export async function PUT(request: NextRequest) {
     if (valid_until !== undefined) {
       query += ', valid_until = ?';
       params.push(valid_until);
+    }
+
+    if (invoice_number !== undefined) {
+      query += ', invoice_number = ?';
+      params.push(invoice_number);
+    }
+
+    if (invoice_date !== undefined) {
+      query += ', invoice_date = ?';
+      params.push(invoice_date);
+    }
+
+    if (invoice_amount !== undefined) {
+      query += ', invoice_amount = ?';
+      params.push(invoice_amount);
+    }
+
+    if (invoice_status !== undefined) {
+      query += ', invoice_status = ?';
+      params.push(invoice_status);
+    }
+
+    if (invoice_notes !== undefined) {
+      query += ', invoice_notes = ?';
+      params.push(invoice_notes);
+    }
+
+    if (invoice_document_path !== undefined) {
+      query += ', invoice_document_path = ?';
+      params.push(invoice_document_path);
     }
 
     query += ' WHERE id = ?';
