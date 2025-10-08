@@ -140,6 +140,11 @@ function VehicleQuotesContent() {
     fetchQuotes();
   }, []);
 
+  // Ricarica i dati quando i filtri cambiano
+  useEffect(() => {
+    fetchQuotes();
+  }, [filterInvoiceStatus, filterDiscrepancies]);
+
   const fetchQuotes = async () => {
     try {
       setLoading(true);
@@ -156,7 +161,6 @@ function VehicleQuotesContent() {
         throw new Error('Errore nel caricamento dei preventivi');
       }
       const data = await response.json();
-      console.log('API Response:', data); // Debug log
       setQuotes(data.data || []);
       calculateStats(data.data || []);
     } catch (err) {
@@ -655,10 +659,9 @@ function VehicleQuotesContent() {
                     onChange={(e) => setFilterInvoiceStatus(e.target.value)}
                   >
                     <option value="all">Tutti</option>
-                    <option value="pending">Da Fatturare</option>
+                    <option value="not_invoiced">Da Fatturare</option>
                     <option value="invoiced">Fatturato</option>
-                    <option value="paid">Pagato</option>
-                    <option value="cancelled">Annullato</option>
+                    <option value="partial">Parziale</option>
                   </select>
                 </div>
                 <div className="col-lg-1 col-md-2 col-sm-12 mb-3">

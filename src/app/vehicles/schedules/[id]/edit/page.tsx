@@ -135,6 +135,24 @@ function formatCurrency(amount: number | null | undefined): string {
   }).format(amount);
 }
 
+// Funzione per formattare automaticamente la data
+function formatDateInput(value: string): string {
+  // Rimuovi tutti i caratteri non numerici
+  const numbersOnly = value.replace(/\D/g, '');
+  
+  // Limita a 8 cifre (ggmmaaaa)
+  const limitedNumbers = numbersOnly.slice(0, 8);
+  
+  // Applica la formattazione
+  if (limitedNumbers.length <= 2) {
+    return limitedNumbers;
+  } else if (limitedNumbers.length <= 4) {
+    return `${limitedNumbers.slice(0, 2)}/${limitedNumbers.slice(2)}`;
+  } else {
+    return `${limitedNumbers.slice(0, 2)}/${limitedNumbers.slice(2, 4)}/${limitedNumbers.slice(4)}`;
+  }
+}
+
 export default function EditSchedulePage() {
   const router = useRouter();
   const params = useParams();
@@ -359,7 +377,23 @@ export default function EditSchedulePage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setEditForm(prev => ({ ...prev, [name]: value }));
+    let processedValue = value;
+    
+    // Formattazione automatica per i campi data
+    if (name === 'data_scadenza' || name === 'completed_date' || name === 'booking_date' || name === 'quote_date') {
+      processedValue = formatDateInput(value);
+      
+      // Validazione del formato finale
+      if (processedValue && processedValue.length === 10 && !isValidItalianDate(processedValue)) {
+        // Mostra un messaggio di errore se il formato non è valido
+        (e.target as HTMLInputElement).setCustomValidity('Inserire una data valida nel formato gg/mm/aaaa');
+      } else {
+        // Rimuovi il messaggio di errore se il formato è valido o incompleto
+        (e.target as HTMLInputElement).setCustomValidity('');
+      }
+    }
+    
+    setEditForm(prev => ({ ...prev, [name]: processedValue }));
     
     // Rimuovi l'errore di validazione quando l'utente inizia a digitare
     if (validationErrors[name]) {
@@ -630,7 +664,10 @@ export default function EditSchedulePage() {
                       validationErrors.data_scadenza ? 'is-invalid' : ''
                     }`}
                     placeholder="gg/mm/aaaa"
-                    pattern="[0-9]{2}/[0-9]{2}/[0-9]{4}"
+                    pattern="[0-9/]*"
+                    inputMode="numeric"
+                    maxLength={10}
+                    title="Digita solo numeri, le barre verranno aggiunte automaticamente"
                   />
                   {validationErrors.data_scadenza && (
                     <div className="invalid-feedback">{validationErrors.data_scadenza}</div>
@@ -652,7 +689,10 @@ export default function EditSchedulePage() {
                       validationErrors.completed_date ? 'is-invalid' : ''
                     }`}
                     placeholder="gg/mm/aaaa"
-                    pattern="[0-9]{2}/[0-9]{2}/[0-9]{4}"
+                    pattern="[0-9/]*"
+                    inputMode="numeric"
+                    maxLength={10}
+                    title="Digita solo numeri, le barre verranno aggiunte automaticamente"
                   />
                   {validationErrors.completed_date && (
                     <div className="invalid-feedback">{validationErrors.completed_date}</div>
@@ -670,9 +710,12 @@ export default function EditSchedulePage() {
                     name="booking_date"
                     value={editForm.booking_date}
                     onChange={handleInputChange}
-                    className="form-control ${formClass}"
+                    className={`form-control ${formClass}`}
                     placeholder="gg/mm/aaaa"
-                    pattern="[0-9]{2}/[0-9]{2}/[0-9]{4}"
+                    pattern="[0-9/]*"
+                    inputMode="numeric"
+                    maxLength={10}
+                    title="Digita solo numeri, le barre verranno aggiunte automaticamente"
                   />
                 </div>
 

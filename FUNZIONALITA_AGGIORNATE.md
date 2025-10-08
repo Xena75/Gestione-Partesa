@@ -1,6 +1,51 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.30.8
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.30.9
 
-## 🚀 **VERSIONE 2.30.8** - Formattazione Automatica Campi Data ⭐ **NUOVO**
+## 🚀 **VERSIONE 2.30.9** - Bug Fix e Miglioramenti UX ⭐ **NUOVO**
+
+### 🐛 **BUG FIX CALENDARIO SCADENZE VEICOLI**
+- **Problema risolto**: Eventi completati non più visibili nel calendario delle scadenze
+- **Modifica API**: Rimosso filtro `AND vs.status != 'completed'` in `/api/vehicles/schedules/route.ts`
+- **Comportamento corretto**: Gli eventi completati ora rimangono visibili e cambiano colore in verde
+- **Sistema colorazione**: Eventi completati mostrati con colore verde e classe CSS `force-green-event`
+- **Beneficio**: Visibilità completa dello storico scadenze per migliore tracciabilità
+
+### 🔧 **BUG FIX FILTRO STATO FATTURAZIONE**
+- **Problema risolto**: Filtro "Stato Fatturazione" non funzionante in `/vehicles/quotes`
+- **Valori corretti**: Allineamento opzioni filtro con database (`not_invoiced`, `invoiced`, `partial`)
+- **Valori rimossi**: Eliminati valori inesistenti (`pending`, `paid`, `cancelled`)
+- **Reattività filtro**: Aggiunto `useEffect` per richiamare API automaticamente al cambio filtro
+- **Esperienza utente**: Filtro ora funziona correttamente con aggiornamento dati in tempo reale
+
+### 📅 **FORMATTAZIONE AUTOMATICA DATE - PAGINA MODIFICA SCADENZE**
+- **Nuova implementazione**: Formattazione automatica in `/vehicles/schedules/[id]/edit`
+- **Campi interessati**: `data_scadenza`, `completed_date`, `booking_date`
+- **Funzionalità**: Inserimento automatico `/` durante digitazione (es: `12032024` → `12/03/2024`)
+- **Validazione**: Controllo formato italiano in tempo reale con messaggi di errore
+- **Attributi ottimizzati**: `pattern="[0-9/]*"`, `inputMode="numeric"`, `maxLength={10}`
+- **Tooltip informativi**: Guida utente con `title="Digita solo numeri, le barre verranno aggiunte automaticamente"`
+
+### 🛠️ **IMPLEMENTAZIONI TECNICHE**
+- **Funzione `formatDateInput`**: Logica riutilizzabile per formattazione automatica date
+- **Gestione `handleInputChange`**: Applicazione formattazione selettiva per campi data
+- **Validazione integrata**: Utilizzo funzione `isValidItalianDate` esistente
+- **Compatibilità mobile**: Tastiera numerica su dispositivi touch
+- **Mantenimento validazioni**: Tutte le validazioni esistenti preservate
+
+### ✅ **BENEFICI OPERATIVI**
+- **Calendario completo**: Visibilità eventi completati per storico completo
+- **Filtri funzionanti**: Ricerca preventivi per stato fatturazione efficace
+- **Input veloce**: Digitazione solo numeri con formattazione automatica
+- **Consistenza dati**: Formato date uniforme in tutto il sistema
+- **UX migliorata**: Interfaccia più intuitiva e reattiva
+
+### 📋 **FILE MODIFICATI**
+- `src/app/api/vehicles/schedules/route.ts` - Rimosso filtro eventi completati
+- `src/app/vehicles/quotes/page.tsx` - Corretti valori filtro e aggiunta reattività
+- `src/app/vehicles/schedules/[id]/edit/page.tsx` - Implementata formattazione automatica date
+
+---
+
+## 🚀 **VERSIONE 2.30.8** - Formattazione Automatica Campi Data
 
 ### 📅 **FORMATTAZIONE AUTOMATICA CAMPI DATA**
 - **Pagina Preventivi Veicoli** (`/vehicles/quotes/new`): Implementazione formattazione automatica per campi `quote_date` e `valid_until`

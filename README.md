@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.30.8
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.30.9
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -167,7 +167,34 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Scalabilità**: Sistema pronto per produzione con Vercel Blob Storage
 - **Manutenibilità**: Codice ben strutturato e documentato per future estensioni
 
-### 📅 **Formattazione Automatica Campi Data - v2.30.8** ⭐ **NUOVO**
+### 🔧 **Bug Fix e Miglioramenti Sistema - v2.30.9** ⭐ **NUOVO**
+
+#### 📅 **Fix Calendario Scadenze Veicoli**
+- **Problema risolto**: Eventi completati ora visibili nel calendario
+- **Modifica API**: Rimosso filtro `AND vs.status != 'completed'` in `/api/vehicles/schedules`
+- **Comportamento corretto**: Eventi completati diventano verdi e rimangono visibili
+- **Esperienza migliorata**: Storico completo delle scadenze sempre accessibile
+
+#### 🔍 **Fix Filtro Stato Fatturazione Preventivi**
+- **Valori corretti**: Allineati con database - `not_invoiced`, `invoiced`, `partial`
+- **Rimossi valori inesistenti**: `pending`, `paid`, `cancelled` non più presenti
+- **Reattività filtro**: Chiamata API automatica al cambio selezione
+- **Pagina interessata**: `/vehicles/quotes` con filtri funzionanti al 100%
+
+#### 📝 **Formattazione Automatica Date - Modifica Scadenze**
+- **Estensione funzionalità**: Implementata in `/vehicles/schedules/[id]/edit`
+- **Campi interessati**: `data_scadenza`, `completed_date`, `booking_date`
+- **Inserimento automatico**: Barre `/` aggiunte automaticamente durante digitazione
+- **Validazione tempo reale**: Controllo formato italiano con messaggi di errore personalizzati
+- **Attributi ottimizzati**: `pattern="[0-9/]*"`, `inputMode="numeric"`, `maxLength={10}`
+
+#### ✅ **Benefici Implementati**
+- **Calendario funzionale**: Visibilità completa eventi completati e in corso
+- **Filtri accurati**: Stato fatturazione allineato con dati reali del database
+- **UX migliorata**: Inserimento date più veloce e intuitivo anche in modifica
+- **Consistenza sistema**: Formattazione date uniforme in tutte le pagine
+
+### 📅 **Formattazione Automatica Campi Data - v2.30.8**
 
 #### 🎯 **Input Intelligente per Date**
 - **Formattazione automatica**: Inserimento automatico barre `/` dopo 2 e 4 cifre durante digitazione
