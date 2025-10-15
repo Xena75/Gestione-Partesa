@@ -18,6 +18,7 @@ interface Vehicle {
   km_ultimo_tagliando?: number;
   data_ultimo_tagliando?: string;
   data_ultima_revisione?: string;
+  data_revisione_tachigrafo?: string;
   active: boolean;
   note?: string;
   createdAt: string;
@@ -155,6 +156,7 @@ export default function VehicleListPage() {
       'Km Ultimo Tagliando': vehicle.km_ultimo_tagliando || '',
       'Data Ultimo Tagliando': vehicle.data_ultimo_tagliando ? new Date(vehicle.data_ultimo_tagliando).toLocaleDateString('it-IT') : '',
       'Data Ultima Revisione': vehicle.data_ultima_revisione ? new Date(vehicle.data_ultima_revisione).toLocaleDateString('it-IT') : '',
+      'Data Revisione Tachigrafo': vehicle.data_revisione_tachigrafo ? new Date(vehicle.data_revisione_tachigrafo).toLocaleDateString('it-IT') : '',
       Stato: vehicle.active ? 'Attivo' : 'Inattivo'
     }));
 
@@ -504,6 +506,7 @@ export default function VehicleListPage() {
                   <th scope="col">Km Ultimo Tagliando</th>
                   <th scope="col">Data Ultimo Tagliando</th>
                   <th scope="col">Data Ultima Revisione</th>
+                  <th scope="col">Data Revisione Tachigrafo</th>
                   <th 
                     scope="col" 
                     className="cursor-pointer user-select-none"
@@ -521,7 +524,7 @@ export default function VehicleListPage() {
               <tbody>
                 {paginatedVehicles.length === 0 ? (
                   <tr>
-                    <td colSpan={14} className="text-center py-4 text-muted">
+                    <td colSpan={15} className="text-center py-4 text-muted">
                       Nessun veicolo trovato
                     </td>
                   </tr>
@@ -551,6 +554,9 @@ export default function VehicleListPage() {
                       </td>
                       <td className="text-white">
                         {vehicle.data_ultima_revisione ? new Date(vehicle.data_ultima_revisione).toLocaleDateString('it-IT') : '-'}
+                      </td>
+                      <td className="text-white">
+                        {vehicle.data_revisione_tachigrafo ? new Date(vehicle.data_revisione_tachigrafo).toLocaleDateString('it-IT') : '-'}
                       </td>
                       <td>
                         <span className={`badge ${vehicle.active ? 'bg-success' : 'bg-secondary'}`}>

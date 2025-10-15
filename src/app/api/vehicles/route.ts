@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
         km_ultimo_tagliando,
         data_ultimo_tagliando,
         data_ultima_revisione,
+        data_revisione_tachigrafo,
         active,
         note,
         createdAt,
@@ -81,7 +82,8 @@ export async function POST(request: NextRequest) {
       pallet_kg,
       km_ultimo_tagliando,
       data_ultimo_tagliando,
-      data_ultima_revisione
+      data_ultima_revisione,
+      data_revisione_tachigrafo
     } = body;
 
     // Validazione campi obbligatori
@@ -120,10 +122,11 @@ export async function POST(request: NextRequest) {
         km_ultimo_tagliando,
         data_ultimo_tagliando,
         data_ultima_revisione,
+        data_revisione_tachigrafo,
         active,
         createdAt,
         updatedAt
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())
     `;
 
     const [result] = await connection.execute(insertQuery, [
@@ -137,7 +140,8 @@ export async function POST(request: NextRequest) {
       pallet_kg,
       km_ultimo_tagliando || null,
       data_ultimo_tagliando || null,
-      data_ultima_revisione || null
+      data_ultima_revisione || null,
+      data_revisione_tachigrafo || null
     ]);
 
     await connection.end();

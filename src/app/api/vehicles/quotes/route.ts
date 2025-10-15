@@ -31,6 +31,8 @@ export async function GET(request: NextRequest) {
     const supplierId = searchParams.get('supplierId');
     const invoiceStatus = searchParams.get('invoiceStatus');
     const hasDiscrepancies = searchParams.get('hasDiscrepancies');
+    const sortBy = searchParams.get('sortBy') || 'created_at';
+    const sortOrder = searchParams.get('sortOrder') || 'desc';
 
     connection = await pool.getConnection();
 
@@ -107,7 +109,25 @@ export async function GET(request: NextRequest) {
       query += ' AND mq.invoice_amount IS NOT NULL AND mq.amount IS NOT NULL AND ABS(mq.invoice_amount - mq.amount) > 0';
     }
 
-    query += ' ORDER BY mq.created_at DESC';
+    // Mappatura dei campi frontend ai campi database per l'ordinamento
+    const sortFieldMap: { [key: string]: string } = {
+      'created_at': 'mq.created_at',
+      'quote_date': 'mq.quote_date',
+      'difference_amount': 'difference_amount',
+      'supplier': 'supplier_name',
+      'amount': 'mq.amount',
+      'invoice_amount': 'mq.invoice_amount',
+      'quote_number': 'mq.quote_number',
+      'invoice_number': 'mq.invoice_number',
+      'valid_until': 'mq.valid_until',
+      'targa': 'v.targa'
+    };
+
+    // Validazione del campo di ordinamento
+    const validSortField = sortFieldMap[sortBy] || 'mq.created_at';
+    const validSortOrder = (sortOrder === 'asc' || sortOrder === 'desc') ? sortOrder : 'desc';
+
+    query += ` ORDER BY ${validSortField} ${validSortOrder.toUpperCase()}`;
 
     const [rows] = await connection.execute(query, params);
     

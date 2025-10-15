@@ -40,6 +40,11 @@ interface RevisionStats {
   vehiclesWithRevisions: number;
   vehiclesWithoutRevisions: number;
   nextRevisionsDue: number;
+  // Campi tachigrafo
+  totalTachographVehicles: number;
+  vehiclesWithTachographRevisions: number;
+  vehiclesWithoutTachographRevisions: number;
+  nextTachographRevisionsDue: number;
 }
 
 interface RevisionCheckResult {
@@ -161,8 +166,8 @@ function VehicleSchedulesContent() {
         throw new Error(result.error || 'Errore nel controllo delle revisioni');
       }
       
-      // Calcola le statistiche dai dati ricevuti
-      const vehicles = result.data;
+      // Calcola le statistiche dai dati ricevuti per le revisioni normali
+      const vehicles = result.data.vehicles || [];
       const totalVehicles = vehicles.length;
       const vehiclesWithRevisions = vehicles.filter((v: any) => v.future_revisions_count > 0).length;
       const vehiclesWithoutRevisions = totalVehicles - vehiclesWithRevisions;
@@ -177,11 +182,27 @@ function VehicleSchedulesContent() {
         return revisionDate <= thirtyDaysFromNow;
       }).length;
       
+      // Calcola le statistiche per i tachigrafi
+      const tachographVehicles = result.data.tachograph_vehicles || [];
+      const totalTachographVehicles = tachographVehicles.length;
+      const vehiclesWithTachographRevisions = tachographVehicles.filter((v: any) => v.future_tachograph_revisions_count > 0).length;
+      const vehiclesWithoutTachographRevisions = totalTachographVehicles - vehiclesWithTachographRevisions;
+      
+      const nextTachographRevisionsDue = tachographVehicles.filter((v: any) => {
+        if (!v.next_tachograph_revision_date) return false;
+        const revisionDate = new Date(v.next_tachograph_revision_date);
+        return revisionDate <= thirtyDaysFromNow;
+      }).length;
+      
       const stats: RevisionStats = {
         totalVehicles,
         vehiclesWithRevisions,
         vehiclesWithoutRevisions,
-        nextRevisionsDue
+        nextRevisionsDue,
+        totalTachographVehicles,
+        vehiclesWithTachographRevisions,
+        vehiclesWithoutTachographRevisions,
+        nextTachographRevisionsDue
       };
       
       setRevisionStats(stats);
@@ -271,7 +292,31 @@ function VehicleSchedulesContent() {
   };
 
   const filteredSchedules = schedules.filter(schedule => {
-    if (filterStatus !== 'all' && schedule.status !== filterStatus) return false;
+    // Gestione speciale per il filtro "overdue"
+    if (filterStatus === 'overdue') {
+      // Include scadenze con status "overdue" O scadenze "pending" con data passata
+      if (schedule.status === 'overdue') {
+        // Scadenze già marcate come scadute
+      } else if (schedule.status === 'pending') {
+        // Controlla se la scadenza pending è effettivamente scaduta
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        
+        const relevantDate = schedule.booking_date 
+          ? new Date(schedule.booking_date) 
+          : new Date(schedule.data_scadenza);
+        relevantDate.setHours(0, 0, 0, 0);
+        
+        if (relevantDate >= now) {
+          return false; // Non è scaduta
+        }
+      } else {
+        return false; // Non è né overdue né pending scaduta
+      }
+    } else if (filterStatus !== 'all' && schedule.status !== filterStatus) {
+      return false;
+    }
+    
     if (filterPriority !== 'all' && schedule.priority !== filterPriority) return false;
     if (filterPlate && !schedule.vehicle?.targa.toLowerCase().includes(filterPlate.toLowerCase())) return false;
     return true;
@@ -581,48 +626,108 @@ function VehicleSchedulesContent() {
                     )}
                     
                     {revisionStats && (
-                      <div className="row">
-                        <div className="col-md-6">
-                          <div className={`card ${cardClass} mb-3`}>
-                            <div className="card-body text-center">
-                              <h5 className="card-title text-primary">
-                                <i className="fas fa-car me-2"></i>
-                                Veicoli Totali
-                              </h5>
-                              <h2 className="text-primary">{revisionStats.totalVehicles}</h2>
+                      <div>
+                        {/* Sezione Revisioni Normali */}
+                        <h6 className={`${textClass} mb-3`}>
+                          <i className="fas fa-tools me-2"></i>
+                          Revisioni Normali
+                        </h6>
+                        <div className="row mb-4">
+                          <div className="col-md-6">
+                            <div className={`card ${cardClass} mb-3`}>
+                              <div className="card-body text-center">
+                                <h5 className="card-title text-primary">
+                                  <i className="fas fa-car me-2"></i>
+                                  Veicoli Totali
+                                </h5>
+                                <h2 className="text-primary">{revisionStats.totalVehicles}</h2>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="col-md-6">
+                            <div className={`card ${cardClass} mb-3`}>
+                              <div className="card-body text-center">
+                                <h5 className="card-title text-success">
+                                  <i className="fas fa-check-circle me-2"></i>
+                                  Con Revisioni
+                                </h5>
+                                <h2 className="text-success">{revisionStats.vehiclesWithRevisions}</h2>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="col-md-6">
+                            <div className={`card ${cardClass} mb-3`}>
+                              <div className="card-body text-center">
+                                <h5 className="card-title text-danger">
+                                  <i className="fas fa-exclamation-triangle me-2"></i>
+                                  Senza Revisioni
+                                </h5>
+                                <h2 className="text-danger">{revisionStats.vehiclesWithoutRevisions}</h2>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="col-md-6">
+                            <div className={`card ${cardClass} mb-3`}>
+                              <div className="card-body text-center">
+                                <h5 className="card-title text-warning">
+                                  <i className="fas fa-clock me-2"></i>
+                                  Prossime Scadenze
+                                </h5>
+                                <h2 className="text-warning">{revisionStats.nextRevisionsDue}</h2>
+                              </div>
                             </div>
                           </div>
                         </div>
-                        <div className="col-md-6">
-                          <div className={`card ${cardClass} mb-3`}>
-                            <div className="card-body text-center">
-                              <h5 className="card-title text-success">
-                                <i className="fas fa-check-circle me-2"></i>
-                                Con Revisioni
-                              </h5>
-                              <h2 className="text-success">{revisionStats.vehiclesWithRevisions}</h2>
+
+                        {/* Sezione Revisioni Tachigrafo */}
+                        <hr className={`${borderClass} my-4`} />
+                        <h6 className={`${textClass} mb-3`}>
+                          <i className="fas fa-tachometer-alt me-2"></i>
+                          Revisioni Tachigrafo
+                        </h6>
+                        <div className="row">
+                          <div className="col-md-6">
+                            <div className={`card ${cardClass} mb-3`}>
+                              <div className="card-body text-center">
+                                <h5 className="card-title text-info">
+                                  <i className="fas fa-truck me-2"></i>
+                                  Veicoli con Tachigrafo
+                                </h5>
+                                <h2 className="text-info">{revisionStats.totalTachographVehicles}</h2>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div className="col-md-6">
-                          <div className={`card ${cardClass} mb-3`}>
-                            <div className="card-body text-center">
-                              <h5 className="card-title text-danger">
-                                <i className="fas fa-exclamation-triangle me-2"></i>
-                                Senza Revisioni
-                              </h5>
-                              <h2 className="text-danger">{revisionStats.vehiclesWithoutRevisions}</h2>
+                          <div className="col-md-6">
+                            <div className={`card ${cardClass} mb-3`}>
+                              <div className="card-body text-center">
+                                <h5 className="card-title text-success">
+                                  <i className="fas fa-check-circle me-2"></i>
+                                  Con Revisioni Tachigrafo
+                                </h5>
+                                <h2 className="text-success">{revisionStats.vehiclesWithTachographRevisions}</h2>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div className="col-md-6">
-                          <div className={`card ${cardClass} mb-3`}>
-                            <div className="card-body text-center">
-                              <h5 className="card-title text-warning">
-                                <i className="fas fa-clock me-2"></i>
-                                Prossime Scadenze
-                              </h5>
-                              <h2 className="text-warning">{revisionStats.nextRevisionsDue}</h2>
+                          <div className="col-md-6">
+                            <div className={`card ${cardClass} mb-3`}>
+                              <div className="card-body text-center">
+                                <h5 className="card-title text-danger">
+                                  <i className="fas fa-exclamation-triangle me-2"></i>
+                                  Senza Revisioni Tachigrafo
+                                </h5>
+                                <h2 className="text-danger">{revisionStats.vehiclesWithoutTachographRevisions}</h2>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="col-md-6">
+                            <div className={`card ${cardClass} mb-3`}>
+                              <div className="card-body text-center">
+                                <h5 className="card-title text-warning">
+                                  <i className="fas fa-clock me-2"></i>
+                                  Prossime Scadenze Tachigrafo
+                                </h5>
+                                <h2 className="text-warning">{revisionStats.nextTachographRevisionsDue}</h2>
+                              </div>
                             </div>
                           </div>
                         </div>

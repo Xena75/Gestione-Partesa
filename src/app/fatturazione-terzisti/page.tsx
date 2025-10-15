@@ -1,14 +1,15 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { TerzistiData, TerzistiStats, TerzistiFilters, TerzistiFilterOptions } from '@/lib/data-terzisti';
 import { formatDateEuropean, formatDateISO } from '@/lib/date-utils';
 import SortableHeader from '@/components/SortableHeader';
 import ExportTerzistiButton from '@/components/ExportTerzistiButton';
 
-export default function FatturazioneTerzistiPage() {
+function FatturazioneTerzistiContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   
   // Alias per la funzione di formattazione date
   const formatDate = formatDateEuropean;
@@ -54,6 +55,10 @@ export default function FatturazioneTerzistiPage() {
   const [viewType, setViewType] = useState<'detailed' | 'grouped'>('grouped');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [rowDetails, setRowDetails] = useState<Record<string, any[]>>({});
+  
+  // Stati locali per i campi data durante la digitazione
+  const [localDataDa, setLocalDataDa] = useState('');
+  const [localDataA, setLocalDataA] = useState('');
 
   // Carica i dati
   const loadData = useCallback(async () => {
@@ -307,9 +312,50 @@ export default function FatturazioneTerzistiPage() {
   };
 
   // Effetti
+  // Inizializza filtri dai parametri URL all'avvio
+  useEffect(() => {
+    const initialFilters: TerzistiFilters = {};
+    
+    // Leggi tutti i parametri URL
+    const dataDa = searchParams.get('dataDa');
+    const dataA = searchParams.get('dataA');
+    const azienda = searchParams.get('azienda');
+    const vettore = searchParams.get('vettore');
+    const divisione = searchParams.get('divisione');
+    const viaggio = searchParams.get('viaggio');
+    const cliente = searchParams.get('cliente');
+    const ordine = searchParams.get('ordine');
+    const consegna = searchParams.get('consegna');
+    const mese = searchParams.get('mese');
+    
+    // Imposta i filtri se presenti
+    if (dataDa) initialFilters.dataDa = dataDa;
+    if (dataA) initialFilters.dataA = dataA;
+    if (azienda) initialFilters.azienda = decodeURIComponent(azienda.replace(/\+/g, ' '));
+    if (vettore) initialFilters.vettore = decodeURIComponent(vettore.replace(/\+/g, ' '));
+    if (divisione) initialFilters.divisione = divisione;
+    if (viaggio) initialFilters.viaggio = viaggio;
+    if (cliente) initialFilters.cliente = decodeURIComponent(cliente.replace(/\+/g, ' '));
+    if (ordine) initialFilters.ordine = ordine;
+    if (consegna) initialFilters.consegna = consegna;
+    if (mese) initialFilters.mese = mese;
+    
+    // Imposta i filtri solo se ci sono parametri URL
+    if (Object.keys(initialFilters).length > 0) {
+      setFilters(initialFilters);
+      setShowFilters(true); // Mostra i filtri se ci sono parametri URL
+    }
+  }, []); // Esegui solo al mount
+
   useEffect(() => {
     loadFilterOptions();
   }, [loadFilterOptions]);
+
+  // Sincronizza stati locali con i filtri
+  useEffect(() => {
+    setLocalDataDa(filters.dataDa ? formatDateEuropean(filters.dataDa) : '');
+    setLocalDataA(filters.dataA ? formatDateEuropean(filters.dataA) : '');
+  }, [filters.dataDa, filters.dataA]);
 
   // Carica dati all'avvio e quando cambiano i filtri
   useEffect(() => {
@@ -656,19 +702,49 @@ export default function FatturazioneTerzistiPage() {
                   <div className="col-md-2">
                     <label className="form-label">Data Da</label>
                     <input
-                      type="date"
+                      type="text"
                       className="form-control"
-                      value={formatDateISO(filters.dataDa) || ''}
-                      onChange={(e) => handleFilterChange('dataDa', e.target.value)}
+                      value={localDataDa}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setLocalDataDa(value);
+                        
+                        if (value === '') {
+                          handleFilterChange('dataDa', '');
+                        } else if (value.match(/^\d{2}-\d{2}-\d{4}$/)) {
+                          // Converte da formato europeo (dd-mm-yyyy) a ISO (yyyy-mm-dd)
+                          const [day, month, year] = value.split('-');
+                          const isoDate = `${year}-${month}-${day}`;
+                          handleFilterChange('dataDa', isoDate);
+                        }
+                      }}
+                      placeholder="gg-mm-aaaa"
+                      pattern="\d{2}-\d{2}-\d{4}"
+                      title="Formato: gg-mm-aaaa (es: 01-08-2025)"
                     />
                   </div>
                   <div className="col-md-2">
                     <label className="form-label">Data A</label>
                     <input
-                      type="date"
+                      type="text"
                       className="form-control"
-                      value={formatDateISO(filters.dataA) || ''}
-                      onChange={(e) => handleFilterChange('dataA', e.target.value)}
+                      value={localDataA}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setLocalDataA(value);
+                        
+                        if (value === '') {
+                          handleFilterChange('dataA', '');
+                        } else if (value.match(/^\d{2}-\d{2}-\d{4}$/)) {
+                          // Converte da formato europeo (dd-mm-yyyy) a ISO (yyyy-mm-dd)
+                          const [day, month, year] = value.split('-');
+                          const isoDate = `${year}-${month}-${day}`;
+                          handleFilterChange('dataA', isoDate);
+                        }
+                      }}
+                      placeholder="gg-mm-aaaa"
+                      pattern="\d{2}-\d{2}-\d{4}"
+                      title="Formato: gg-mm-aaaa (es: 30-09-2025)"
                     />
                   </div>
                   <div className="col-md-2">
@@ -1100,5 +1176,21 @@ export default function FatturazioneTerzistiPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function FatturazioneTerzistiPage() {
+  return (
+    <Suspense fallback={
+      <div className="container-fluid mt-4">
+        <div className="d-flex justify-content-center">
+          <div className="spinner-border" role="status">
+            <span className="visually-hidden">Caricamento...</span>
+          </div>
+        </div>
+      </div>
+    }>
+      <FatturazioneTerzistiContent />
+    </Suspense>
   );
 }

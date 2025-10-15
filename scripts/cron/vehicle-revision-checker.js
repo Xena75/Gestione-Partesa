@@ -12,9 +12,15 @@
  * 
  * Funzionalità:
  * - Verifica tutti i veicoli senza revisioni future
- * - Calcola e inserisce revisioni mancanti
- * - Logga tutte le operazioni
- * - Invia report via console e log
+ * - Calcola e inserisce revisioni mancanti (normali e tachigrafo)
+ * - Gestisce revisioni normali (1-2 anni in base alla patente)
+ * - Gestisce revisioni tachigrafo (ogni 2 anni, esclusi patente B)
+ * - Logga tutte le operazioni con distinzione per tipo
+ * - Invia report dettagliato via console e log
+ * 
+ * Tipi di revisione supportati:
+ * - 'revisione': Revisioni normali veicoli (basate su data_ultima_revisione)
+ * - 'revisione tachigrafo': Revisioni tachigrafo (basate su data_revisione_tachigrafo)
  * 
  * Esecuzione: node scripts/cron/vehicle-revision-checker.js
  * =====================================================
@@ -106,22 +112,42 @@ function calculateNextRevisionDate(licenseType, dataUltimaRevisione) {
 }
 
 /**
+ * Calcola la prossima data di revisione tachigrafo basandosi su data_revisione_tachigrafo
+ */
+function calculateNextTachographRevisionDate(dataRevisioneTachigrafo) {
+  if (!dataRevisioneTachigrafo) {
+    throw new Error('data_revisione_tachigrafo è obbligatoria per il calcolo della prossima revisione tachigrafo');
+  }
+  
+  const baseDate = new Date(dataRevisioneTachigrafo);
+  const yearsToAdd = 2; // Revisione tachigrafo ogni 2 anni
+  
+  const nextDate = new Date(baseDate);
+  nextDate.setFullYear(nextDate.getFullYear() + yearsToAdd);
+  
+  return {
+    date: nextDate.toISOString().split('T')[0],
+    years: yearsToAdd
+  };
+}
+
+/**
  * Verifica e corregge revisioni mancanti per un singolo veicolo
  */
 async function checkAndFixVehicleRevisions(connection, vehicle) {
   const { id: vehicleId, tipo_patente: licenseType, targa, data_ultima_revisione } = vehicle;
   
   try {
-    // Verifica se esiste già una revisione futura
-    const [futureRevisions] = await connection.execute(
+    // Verifica se esiste già una revisione pending
+    const [existingRevisions] = await connection.execute(
       `SELECT COUNT(*) as count FROM vehicle_schedules 
        WHERE vehicle_id = ? AND schedule_type = 'revisione' 
-       AND status = 'pending' AND data_scadenza > CURDATE()`,
+       AND status = 'pending'`,
       [vehicleId]
     );
     
-    if (futureRevisions[0].count > 0) {
-      await log(`Veicolo ${targa} (${vehicleId}): revisione futura già presente`);
+    if (existingRevisions[0].count > 0) {
+      await log(`Veicolo ${targa} (${vehicleId}): revisione pending già presente`);
       return { status: 'already_exists', vehicleId, targa };
     }
     
@@ -172,6 +198,77 @@ async function checkAndFixVehicleRevisions(connection, vehicle) {
 }
 
 /**
+ * Verifica e corregge revisioni tachigrafo mancanti per un singolo veicolo
+ */
+async function checkAndFixVehicleTachographRevisions(connection, vehicle) {
+  const { id: vehicleId, tipo_patente: licenseType, targa, data_revisione_tachigrafo } = vehicle;
+  
+  try {
+    // Esclude veicoli con patente B (non hanno tachigrafo)
+    if (licenseType === 'B') {
+      await log(`Veicolo ${targa} (${vehicleId}): escluso da revisione tachigrafo (Patente B)`);
+      return { status: 'excluded', vehicleId, targa, reason: 'patente_b' };
+    }
+    
+    // Verifica se esiste già una revisione tachigrafo per questo veicolo
+    const [existingRevisions] = await connection.execute(
+      `SELECT COUNT(*) as count FROM vehicle_schedules 
+       WHERE vehicle_id = ? AND schedule_type = 'revisione tachigrafo'`,
+      [vehicleId]
+    );
+    
+    if (existingRevisions[0].count > 0) {
+      await log(`Veicolo ${targa} (${vehicleId}): revisione tachigrafo già presente`);
+      return { status: 'already_exists', vehicleId, targa };
+    }
+    
+    // Usa data_revisione_tachigrafo direttamente come data di scadenza
+    const dueDate = new Date(data_revisione_tachigrafo).toISOString().split('T')[0];
+    
+    // Inserisce la nuova revisione tachigrafo
+    const [result] = await connection.execute(
+      `INSERT INTO vehicle_schedules 
+       (vehicle_id, schedule_type, data_scadenza, description, status, reminder_days, created_at, updated_at) 
+       VALUES (?, 'revisione tachigrafo', ?, ?, 'pending', 30, NOW(), NOW())`,
+      [
+        vehicleId,
+        dueDate,
+        `Revisione tachigrafo - scadenza registrata`
+      ]
+    );
+    
+    const newScheduleId = result.insertId;
+    
+    // Log nel database
+    await logToDatabase(connection, 'cron_check', vehicleId, 'revisione tachigrafo', 
+      `Revisione tachigrafo inserita da cron job per ${dueDate}`, {
+        dueDate: dueDate,
+        licenseType: licenseType
+      });
+    
+    await log(`Veicolo ${targa} (${vehicleId}): inserita revisione tachigrafo per ${dueDate}`);
+    
+    return { 
+      status: 'inserted', 
+      vehicleId, 
+      targa, 
+      dueDate: dueDate, 
+      licenseType,
+      scheduleId: newScheduleId
+    };
+    
+  } catch (error) {
+    await log(`Errore elaborazione revisione tachigrafo veicolo ${targa} (${vehicleId}): ${error.message}`, 'ERROR');
+    
+    // Log errore nel database
+    await logToDatabase(connection, 'error', vehicleId, 'revisione tachigrafo', 
+      `Errore cron job tachigrafo: ${error.message}`);
+    
+    return { status: 'error', vehicleId, targa, error: error.message };
+  }
+}
+
+/**
  * Funzione principale del cron job
  */
 async function runRevisionChecker() {
@@ -193,13 +290,28 @@ async function runRevisionChecker() {
        ORDER BY targa`
     );
     
+    // Recupera tutti i veicoli attivi per tachigrafo (esclusi patente B)
+    const [tachographVehicles] = await connection.execute(
+      `SELECT id, targa, tipo_patente, data_revisione_tachigrafo FROM vehicles 
+       WHERE active = 1 AND data_revisione_tachigrafo IS NOT NULL AND tipo_patente != 'B'
+       ORDER BY targa`
+    );
+    
     // Conta i veicoli esclusi (con data_ultima_revisione NULL)
     const [excludedVehicles] = await connection.execute(
       `SELECT COUNT(*) as count FROM vehicles 
        WHERE active = 1 AND data_ultima_revisione IS NULL`
     );
     
-    await log(`Trovati ${vehicles.length} veicoli da verificare (con data_ultima_revisione valida)`);
+    // Conta i veicoli esclusi dal tachigrafo
+    const [excludedTachographVehicles] = await connection.execute(
+      `SELECT COUNT(*) as count FROM vehicles 
+       WHERE active = 1 AND (data_revisione_tachigrafo IS NULL OR tipo_patente = 'B')`
+    );
+    
+    await log(`Trovati ${vehicles.length} veicoli da verificare per revisioni (con data_ultima_revisione valida)`);
+    await log(`Trovati ${tachographVehicles.length} veicoli da verificare per tachigrafo (esclusi patente B)`);
+    
     if (excludedVehicles[0].count > 0) {
       await log(`Esclusi ${excludedVehicles[0].count} veicoli con data_ultima_revisione NULL`);
       
@@ -208,12 +320,20 @@ async function runRevisionChecker() {
         `${excludedVehicles[0].count} veicoli esclusi dal controllo automatico (data_ultima_revisione NULL)`);
     }
     
-    if (vehicles.length === 0) {
+    if (excludedTachographVehicles[0].count > 0) {
+      await log(`Esclusi ${excludedTachographVehicles[0].count} veicoli dal controllo tachigrafo (data_revisione_tachigrafo NULL o patente B)`);
+      
+      // Log nel database per veicoli esclusi tachigrafo
+      await logToDatabase(connection, 'cron_excluded', 'SYSTEM', 'revisione tachigrafo', 
+        `${excludedTachographVehicles[0].count} veicoli esclusi dal controllo automatico tachigrafo`);
+    }
+    
+    if (vehicles.length === 0 && tachographVehicles.length === 0) {
       await log('Nessun veicolo trovato per la verifica', 'WARN');
       return;
     }
     
-    // Statistiche
+    // Statistiche per revisioni normali
     const stats = {
       total: vehicles.length,
       alreadyExists: 0,
@@ -222,7 +342,18 @@ async function runRevisionChecker() {
       details: []
     };
     
-    // Elabora ogni veicolo
+    // Statistiche per revisioni tachigrafo
+    const tachographStats = {
+      total: tachographVehicles.length,
+      alreadyExists: 0,
+      inserted: 0,
+      errors: 0,
+      excluded: 0,
+      details: []
+    };
+    
+    // Elabora ogni veicolo per revisioni normali
+    await log('=== ELABORAZIONE REVISIONI NORMALI ===');
     for (const vehicle of vehicles) {
       const result = await checkAndFixVehicleRevisions(connection, vehicle);
       stats.details.push(result);
@@ -243,20 +374,57 @@ async function runRevisionChecker() {
       await new Promise(resolve => setTimeout(resolve, 100));
     }
     
+    // Elabora ogni veicolo per revisioni tachigrafo
+    await log('=== ELABORAZIONE REVISIONI TACHIGRAFO ===');
+    for (const vehicle of tachographVehicles) {
+      const result = await checkAndFixVehicleTachographRevisions(connection, vehicle);
+      tachographStats.details.push(result);
+      
+      switch (result.status) {
+        case 'already_exists':
+          tachographStats.alreadyExists++;
+          break;
+        case 'inserted':
+          tachographStats.inserted++;
+          break;
+        case 'error':
+          tachographStats.errors++;
+          break;
+        case 'excluded':
+          tachographStats.excluded++;
+          break;
+      }
+      
+      // Pausa breve tra le elaborazioni
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
     // Report finale
     const endTime = new Date();
     const duration = Math.round((endTime - startTime) / 1000);
     
     await log('=== REPORT FINALE ===');
+    await log('--- REVISIONI NORMALI ---');
     await log(`Veicoli totali: ${stats.total}`);
     await log(`Revisioni già presenti: ${stats.alreadyExists}`);
     await log(`Nuove revisioni inserite: ${stats.inserted}`);
     await log(`Errori: ${stats.errors}`);
-    await log(`Durata elaborazione: ${duration} secondi`);
     
-    // Log dettagliato degli inserimenti
+    await log('--- REVISIONI TACHIGRAFO ---');
+    await log(`Veicoli totali: ${tachographStats.total}`);
+    await log(`Revisioni tachigrafo già presenti: ${tachographStats.alreadyExists}`);
+    await log(`Nuove revisioni tachigrafo inserite: ${tachographStats.inserted}`);
+    await log(`Veicoli esclusi (patente B): ${tachographStats.excluded}`);
+    await log(`Errori tachigrafo: ${tachographStats.errors}`);
+    
+    await log('--- TOTALI GENERALI ---');
+    await log(`Durata elaborazione: ${duration} secondi`);
+    await log(`Totale inserimenti: ${stats.inserted + tachographStats.inserted}`);
+    await log(`Totale errori: ${stats.errors + tachographStats.errors}`);
+    
+    // Log dettagliato degli inserimenti revisioni normali
     if (stats.inserted > 0) {
-      await log('=== DETTAGLIO INSERIMENTI ===');
+      await log('=== DETTAGLIO INSERIMENTI REVISIONI NORMALI ===');
       stats.details
         .filter(d => d.status === 'inserted')
         .forEach(async (detail) => {
@@ -264,10 +432,30 @@ async function runRevisionChecker() {
         });
     }
     
-    // Log degli errori
+    // Log dettagliato degli inserimenti revisioni tachigrafo
+    if (tachographStats.inserted > 0) {
+      await log('=== DETTAGLIO INSERIMENTI REVISIONI TACHIGRAFO ===');
+      tachographStats.details
+        .filter(d => d.status === 'inserted')
+        .forEach(async (detail) => {
+          await log(`${detail.targa}: ${detail.dueDate} (Tachigrafo)`);
+        });
+    }
+    
+    // Log degli errori revisioni normali
     if (stats.errors > 0) {
-      await log('=== DETTAGLIO ERRORI ===', 'ERROR');
+      await log('=== DETTAGLIO ERRORI REVISIONI NORMALI ===', 'ERROR');
       stats.details
+        .filter(d => d.status === 'error')
+        .forEach(async (detail) => {
+          await log(`${detail.targa}: ${detail.error}`, 'ERROR');
+        });
+    }
+    
+    // Log degli errori revisioni tachigrafo
+    if (tachographStats.errors > 0) {
+      await log('=== DETTAGLIO ERRORI REVISIONI TACHIGRAFO ===', 'ERROR');
+      tachographStats.details
         .filter(d => d.status === 'error')
         .forEach(async (detail) => {
           await log(`${detail.targa}: ${detail.error}`, 'ERROR');

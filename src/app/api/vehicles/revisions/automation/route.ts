@@ -10,9 +10,14 @@ import { runRevisionChecker } from '../../../../../../scripts/cron/vehicle-revis
  * 
  * Endpoint per il controllo manuale del sistema di automazione
  * revisioni veicoli. Permette di:
- * - Eseguire manualmente il controllo revisioni
+ * - Eseguire manualmente il controllo revisioni (normali e tachigrafo)
  * - Visualizzare i log di automazione
  * - Ottenere statistiche del sistema
+ * - Monitorare stato revisioni normali e tachigrafo separatamente
+ * 
+ * Tipi di revisione supportati:
+ * - 'revisione': Revisioni normali veicoli (1-2 anni in base alla patente)
+ * - 'revisione tachigrafo': Revisioni tachigrafo (ogni 2 anni, esclusi patente B)
  * =====================================================
  */
 
@@ -81,7 +86,7 @@ export async function GET(request: NextRequest) {
             v.targa,
             v.tipo_patente
           FROM automation_logs al
-          LEFT JOIN vehicles v ON al.vehicle_id = v.id
+          LEFT JOIN vehicles v ON CAST(al.vehicle_id AS CHAR) = CAST(v.id AS CHAR)
           WHERE 1=1
         `;
         
@@ -139,9 +144,48 @@ export async function GET(request: NextRequest) {
           ORDER BY v.targa
         `);
         
+        // Stato revisioni tachigrafo per tutti i veicoli (esclusi patente B)
+        const [tachographResult] = await connection.execute(`
+          SELECT 
+            v.id,
+            v.targa,
+            v.tipo_patente,
+            v.active,
+            v.data_revisione_tachigrafo,
+            (
+              SELECT COUNT(*) 
+              FROM vehicle_schedules vs 
+              WHERE vs.vehicle_id = v.id 
+                AND vs.schedule_type = 'revisione tachigrafo' 
+                AND vs.status = 'pending' 
+                AND vs.data_scadenza > CURDATE()
+            ) as future_tachograph_revisions_count,
+            (
+              SELECT MIN(vs.data_scadenza) 
+              FROM vehicle_schedules vs 
+              WHERE vs.vehicle_id = v.id 
+                AND vs.schedule_type = 'revisione tachigrafo' 
+                AND vs.status = 'pending' 
+                AND vs.data_scadenza > CURDATE()
+            ) as next_tachograph_revision_date,
+            (
+              SELECT MAX(vs.completed_date) 
+              FROM vehicle_schedules vs 
+              WHERE vs.vehicle_id = v.id 
+                AND vs.schedule_type = 'revisione tachigrafo' 
+                AND vs.status = 'completed'
+            ) as last_completed_tachograph_revision
+          FROM vehicles v
+          WHERE v.active = 1 AND v.data_revisione_tachigrafo IS NOT NULL AND v.tipo_patente != 'B'
+          ORDER BY v.targa
+        `);
+        
         return NextResponse.json({
           success: true,
-          data: vehiclesResult
+          data: {
+            vehicles: vehiclesResult,
+            tachograph_vehicles: tachographResult
+          }
         });
         
       default:

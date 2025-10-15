@@ -143,6 +143,18 @@ export async function PUT(
       );
     }
     
+    // Logica per gestire i campi approved_by e approved_at in base allo stato
+    let approved_by = null;
+    let approved_at = null;
+    
+    if (status === 'approved') {
+      // Se il preventivo viene approvato, imposta l'utente corrente e la data attuale
+      // TODO: Implementare la gestione dell'utente corrente dalla sessione
+      approved_by = 'a4452332-9018-11f0-a6c2-b0416f16d716'; // UUID dell'admin per ora
+      approved_at = new Date().toISOString().slice(0, 19).replace('T', ' '); // Formato MySQL DATETIME
+    }
+    // Se status !== 'approved', approved_by e approved_at rimangono NULL
+    
     // Aggiorna il preventivo
     const updateQuery = `
       UPDATE maintenance_quotes 
@@ -162,6 +174,8 @@ export async function PUT(
         invoice_amount = ?,
         invoice_status = ?,
         invoice_notes = ?,
+        approved_by = ?,
+        approved_at = ?,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `;
@@ -182,6 +196,8 @@ export async function PUT(
       invoice_amount,
       invoice_status,
       invoice_notes,
+      approved_by,
+      approved_at,
       quoteId
     ]);
     

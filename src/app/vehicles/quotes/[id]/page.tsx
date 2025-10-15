@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 interface Quote {
@@ -28,6 +28,7 @@ interface Quote {
 export default function QuoteDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const quoteId = params.id as string;
   
   const [quote, setQuote] = useState<Quote | null>(null);
@@ -85,6 +86,12 @@ export default function QuoteDetailPage() {
     return statusMap[status] || status;
   };
 
+  // Funzione per preservare i parametri URL quando si torna alla lista
+  const getBackToListURL = () => {
+    const currentParams = searchParams.toString();
+    return currentParams ? `/vehicles/quotes?${currentParams}` : '/vehicles/quotes';
+  };
+
   const handleStatusChange = async (newStatus: string) => {
     if (!quote) return;
     
@@ -116,7 +123,11 @@ export default function QuoteDetailPage() {
   };
 
   const handleEdit = () => {
-    router.push(`/vehicles/quotes/${quote?.id}/edit`);
+    const currentParams = searchParams.toString();
+    const editURL = currentParams 
+      ? `/vehicles/quotes/${quote?.id}/edit?${currentParams}`
+      : `/vehicles/quotes/${quote?.id}/edit`;
+    router.push(editURL);
   };
 
   const handleDelete = async () => {
@@ -133,7 +144,7 @@ export default function QuoteDetailPage() {
 
         if (data.success) {
           alert('Preventivo eliminato con successo!');
-          router.push('/vehicles/quotes');
+          router.push(getBackToListURL());
         } else {
           alert(data.error || 'Errore nell\'eliminazione del preventivo');
         }
@@ -167,7 +178,7 @@ export default function QuoteDetailPage() {
               <h4 className="alert-heading">Errore</h4>
               <p>{error}</p>
               <hr />
-              <Link href="/vehicles/quotes" className="btn btn-outline-danger">
+              <Link href={getBackToListURL()} className="btn btn-outline-danger">
                 Torna ai Preventivi
               </Link>
             </div>
@@ -186,7 +197,7 @@ export default function QuoteDetailPage() {
               <h4 className="alert-heading">Preventivo non trovato</h4>
               <p>Il preventivo con ID <strong>{quoteId}</strong> non è stato trovato.</p>
               <hr />
-              <Link href="/vehicles/quotes" className="btn btn-outline-warning">
+              <Link href={getBackToListURL()} className="btn btn-outline-warning">
                 Torna ai Preventivi
               </Link>
             </div>
@@ -218,7 +229,7 @@ export default function QuoteDetailPage() {
                 Vai al Veicolo
               </Link>
               <Link 
-                href="/vehicles/quotes"
+                href={getBackToListURL()}
                 className="btn btn-outline-primary"
               >
                 <i className="fas fa-arrow-left me-1"></i>

@@ -19,6 +19,7 @@ interface Vehicle {
   km_ultimo_tagliando: number | null;
   data_ultimo_tagliando: string | null;
   data_ultima_revisione: string | null;
+  data_revisione_tachigrafo?: string | null;
   note?: string;
   active: number;
   createdAt: string;
@@ -88,6 +89,7 @@ interface FormData {
   km_ultimo_tagliando: string;
   data_ultimo_tagliando: string;
   data_ultima_revisione: string;
+  data_revisione_tachigrafo: string;
   note: string;
 }
 
@@ -143,6 +145,7 @@ export default function VehicleDetailPage() {
           km_ultimo_tagliando: data.vehicle.km_ultimo_tagliando?.toString() || '',
           data_ultimo_tagliando: data.vehicle.data_ultimo_tagliando ? formatDate(data.vehicle.data_ultimo_tagliando) : '',
           data_ultima_revisione: data.vehicle.data_ultima_revisione ? formatDate(data.vehicle.data_ultima_revisione) : '',
+          data_revisione_tachigrafo: data.vehicle.data_revisione_tachigrafo ? formatDate(data.vehicle.data_revisione_tachigrafo) : '',
           note: data.vehicle.note || ''
         });
       } else {
@@ -231,6 +234,7 @@ export default function VehicleDetailPage() {
           km_ultimo_tagliando: parseInt(formData.km_ultimo_tagliando) || null,
           data_ultimo_tagliando: convertItalianDateToDatabase(formData.data_ultimo_tagliando),
           data_ultima_revisione: convertItalianDateToDatabase(formData.data_ultima_revisione),
+          data_revisione_tachigrafo: convertItalianDateToDatabase(formData.data_revisione_tachigrafo),
           note: formData.note
         })
       });
@@ -696,6 +700,18 @@ export default function VehicleDetailPage() {
                         placeholder="gg/mm/aaaa"
                       />
                     </div>
+                    <div className="col-md-6 mb-3">
+                      <label htmlFor="data_revisione_tachigrafo" className="form-label">Data Revisione Tachigrafo</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        id="data_revisione_tachigrafo"
+                        name="data_revisione_tachigrafo"
+                        value={formData.data_revisione_tachigrafo}
+                        onChange={handleInputChange}
+                        placeholder="gg/mm/aaaa"
+                      />
+                    </div>
                     <div className="col-md-12 mb-3">
                       <label htmlFor="note" className="form-label">Note</label>
                       <textarea
@@ -744,7 +760,9 @@ export default function VehicleDetailPage() {
                           pallet_kg: vehicle.pallet_kg?.toString() || '',
                           km_ultimo_tagliando: vehicle.km_ultimo_tagliando?.toString() || '',
                           data_ultimo_tagliando: vehicle.data_ultimo_tagliando || '',
-                          data_ultima_revisione: vehicle.data_ultima_revisione || ''
+                          data_ultima_revisione: vehicle.data_ultima_revisione || '',
+                          data_revisione_tachigrafo: vehicle.data_revisione_tachigrafo || '',
+                          note: vehicle.note || ''
                         });
                       }}
                     >
@@ -794,6 +812,10 @@ export default function VehicleDetailPage() {
                   <div className="col-md-6 mb-3">
                     <strong>Data Ultima Revisione:</strong>
                     <p className="mb-0">{vehicle.data_ultima_revisione ? formatDate(vehicle.data_ultima_revisione) : 'N/A'}</p>
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <strong>Data Revisione Tachigrafo:</strong>
+                    <p className="mb-0">{vehicle.data_revisione_tachigrafo ? formatDate(vehicle.data_revisione_tachigrafo) : 'N/A'}</p>
                   </div>
                   <div className="col-md-12 mb-3">
                     <strong>Note:</strong>

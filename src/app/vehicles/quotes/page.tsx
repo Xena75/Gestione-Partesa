@@ -93,32 +93,83 @@ function VehicleQuotesContent() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [filterSupplier, setFilterSupplier] = useState<string>('all');
-  const [filterInvoiceStatus, setFilterInvoiceStatus] = useState<string>('all');
-  const [filterDiscrepancies, setFilterDiscrepancies] = useState<string>('all');
-  const [searchTarga, setSearchTarga] = useState<string>('');
+  // Inizializza tutti i filtri dai parametri URL
+  const [filterStatus, setFilterStatus] = useState<string>(searchParams.get('filterStatus') || 'all');
+  const [filterSupplier, setFilterSupplier] = useState<string>(searchParams.get('filterSupplier') || 'all');
+  const [filterInvoiceStatus, setFilterInvoiceStatus] = useState<string>(searchParams.get('filterInvoiceStatus') || 'all');
+  const [filterDiscrepancies, setFilterDiscrepancies] = useState<string>(searchParams.get('filterDiscrepancies') || 'all');
+  const [searchTarga, setSearchTarga] = useState<string>(searchParams.get('searchTarga') || '');
+  const [searchTargaInput, setSearchTargaInput] = useState<string>(searchParams.get('searchTarga') || ''); // Stato locale per l'input
   const [sortBy, setSortBy] = useState<string>(searchParams.get('sortBy') || 'created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>((searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc');
 
-  // Funzione per aggiornare i parametri URL
-  const updateURLParams = (newSortBy?: string, newSortOrder?: 'asc' | 'desc') => {
-    const params = new URLSearchParams(searchParams.toString());
-    
-    if (newSortBy !== undefined) {
-      if (newSortBy === 'created_at') {
-        params.delete('sortBy');
-      } else {
-        params.set('sortBy', newSortBy);
+  // Debounce per la ricerca per targa
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchTargaInput !== searchTarga) {
+        setSearchTarga(searchTargaInput);
       }
+    }, 500); // 500ms di debounce
+
+    return () => clearTimeout(timer);
+  }, [searchTargaInput, searchTarga]); // Dipende da searchTargaInput e searchTarga
+
+  // Aggiorna URL quando searchTarga cambia (dopo il debounce)
+  useEffect(() => {
+    updateURLParams({ searchTarga });
+  }, [searchTarga]);
+
+  // Sincronizza searchTargaInput con i parametri URL (per navigazione browser)
+  useEffect(() => {
+    const urlSearchTarga = searchParams.get('searchTarga') || '';
+    if (urlSearchTarga !== searchTargaInput) {
+      setSearchTargaInput(urlSearchTarga);
+      setSearchTarga(urlSearchTarga);
     }
+  }, [searchParams]);
+
+  // Funzione per aggiornare i parametri URL con tutti i filtri
+  const updateURLParams = (updates: {
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+    filterStatus?: string;
+    filterSupplier?: string;
+    filterInvoiceStatus?: string;
+    filterDiscrepancies?: string;
+    searchTarga?: string;
+  } = {}) => {
+    const params = new URLSearchParams();
     
-    if (newSortOrder !== undefined) {
-      if (newSortOrder === 'desc') {
-        params.delete('sortOrder');
-      } else {
-        params.set('sortOrder', newSortOrder);
-      }
+    // Usa i valori aggiornati o quelli correnti
+    const currentSortBy = updates.sortBy !== undefined ? updates.sortBy : sortBy;
+    const currentSortOrder = updates.sortOrder !== undefined ? updates.sortOrder : sortOrder;
+    const currentFilterStatus = updates.filterStatus !== undefined ? updates.filterStatus : filterStatus;
+    const currentFilterSupplier = updates.filterSupplier !== undefined ? updates.filterSupplier : filterSupplier;
+    const currentFilterInvoiceStatus = updates.filterInvoiceStatus !== undefined ? updates.filterInvoiceStatus : filterInvoiceStatus;
+    const currentFilterDiscrepancies = updates.filterDiscrepancies !== undefined ? updates.filterDiscrepancies : filterDiscrepancies;
+    const currentSearchTarga = updates.searchTarga !== undefined ? updates.searchTarga : searchTarga;
+    
+    // Aggiungi parametri solo se diversi dai valori di default
+    if (currentSortBy !== 'created_at') {
+      params.set('sortBy', currentSortBy);
+    }
+    if (currentSortOrder !== 'desc') {
+      params.set('sortOrder', currentSortOrder);
+    }
+    if (currentFilterStatus !== 'all') {
+      params.set('filterStatus', currentFilterStatus);
+    }
+    if (currentFilterSupplier !== 'all') {
+      params.set('filterSupplier', currentFilterSupplier);
+    }
+    if (currentFilterInvoiceStatus !== 'all') {
+      params.set('filterInvoiceStatus', currentFilterInvoiceStatus);
+    }
+    if (currentFilterDiscrepancies !== 'all') {
+      params.set('filterDiscrepancies', currentFilterDiscrepancies);
+    }
+    if (currentSearchTarga !== '') {
+      params.set('searchTarga', currentSearchTarga);
     }
     
     const newURL = params.toString() ? `?${params.toString()}` : '';
@@ -128,32 +179,103 @@ function VehicleQuotesContent() {
   // Funzioni per gestire i cambiamenti dei filtri
   const handleSortByChange = (value: string) => {
     setSortBy(value);
-    updateURLParams(value, sortOrder);
+    updateURLParams({ sortBy: value });
   };
 
   const handleSortOrderChange = (value: 'asc' | 'desc') => {
     setSortOrder(value);
-    updateURLParams(sortBy, value);
+    updateURLParams({ sortOrder: value });
+  };
+
+  const handleFilterStatusChange = (value: string) => {
+    setFilterStatus(value);
+    updateURLParams({ filterStatus: value });
+  };
+
+  const handleFilterSupplierChange = (value: string) => {
+    setFilterSupplier(value);
+    updateURLParams({ filterSupplier: value });
+  };
+
+  const handleFilterInvoiceStatusChange = (value: string) => {
+    setFilterInvoiceStatus(value);
+    updateURLParams({ filterInvoiceStatus: value });
+  };
+
+  const handleFilterDiscrepanciesChange = (value: string) => {
+    setFilterDiscrepancies(value);
+    updateURLParams({ filterDiscrepancies: value });
+  };
+
+  const handleSearchTargaChange = (value: string) => {
+    setSearchTargaInput(value); // Aggiorna solo lo stato locale dell'input
+  };
+
+  // Funzione per generare URL con filtri correnti per la navigazione
+  const getCurrentFiltersURL = () => {
+    const params = new URLSearchParams();
+    
+    if (sortBy !== 'created_at') {
+      params.set('sortBy', sortBy);
+    }
+    if (sortOrder !== 'desc') {
+      params.set('sortOrder', sortOrder);
+    }
+    if (filterStatus !== 'all') {
+      params.set('filterStatus', filterStatus);
+    }
+    if (filterSupplier !== 'all') {
+      params.set('filterSupplier', filterSupplier);
+    }
+    if (filterInvoiceStatus !== 'all') {
+      params.set('filterInvoiceStatus', filterInvoiceStatus);
+    }
+    if (filterDiscrepancies !== 'all') {
+      params.set('filterDiscrepancies', filterDiscrepancies);
+    }
+    if (searchTarga !== '') {
+      params.set('searchTarga', searchTarga);
+    }
+    
+    return params.toString() ? `?${params.toString()}` : '';
   };
 
   useEffect(() => {
     fetchQuotes();
   }, []);
 
-  // Ricarica i dati quando i filtri cambiano
+  // Ricarica i dati quando i filtri o l'ordinamento cambiano
   useEffect(() => {
     fetchQuotes();
-  }, [filterInvoiceStatus, filterDiscrepancies]);
+  }, [filterStatus, filterSupplier, filterInvoiceStatus, filterDiscrepancies, searchTarga, sortBy, sortOrder]);
 
   const fetchQuotes = async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
+      
+      // Aggiungi tutti i filtri ai parametri API
+      if (filterStatus !== 'all') {
+        params.append('status', filterStatus);
+      }
+      if (filterSupplier !== 'all') {
+        params.append('supplier', filterSupplier);
+      }
       if (filterInvoiceStatus !== 'all') {
         params.append('invoiceStatus', filterInvoiceStatus);
       }
       if (filterDiscrepancies !== 'all') {
         params.append('hasDiscrepancies', filterDiscrepancies);
+      }
+      if (searchTarga !== '') {
+        params.append('targa', searchTarga);
+      }
+      // Aggiungi parametri di ordinamento
+      if (sortBy !== 'created_at') {
+        params.append('sortBy', sortBy);
+      }
+      if (sortOrder !== 'desc') {
+        params.append('sortOrder', sortOrder);
       }
       
       const response = await fetch(`/api/vehicles/quotes?${params.toString()}`);
@@ -173,6 +295,76 @@ function VehicleQuotesContent() {
   const calculateStats = (quotes: MaintenanceQuote[]) => {
     const now = new Date();
     const stats = quotes.reduce(
+      (acc, quote) => {
+        const validUntil = new Date(quote.valid_until);
+        
+        switch (quote.status) {
+          case 'pending':
+            if (validUntil < now) {
+              acc.expired++;
+            } else {
+              acc.pending++;
+            }
+            break;
+          case 'approved':
+            acc.approved++;
+            break;
+          case 'rejected':
+            acc.rejected++;
+            break;
+        }
+        
+        // Statistiche fatturazione (per tutti i preventivi, non solo approvati)
+        switch (quote.invoice_status) {
+          case 'not_invoiced':
+            acc.pendingInvoices++;
+            break;
+          case 'invoiced':
+            acc.invoiced++;
+            break;
+          case 'partial':
+            // Partial viene contato come invoiced per semplicità
+            acc.invoiced++;
+            break;
+        }
+        
+        if (quote.invoice_amount) {
+          const invoiceAmount = parseFloat(quote.invoice_amount) || 0;
+          acc.totalInvoicedValue += invoiceAmount;
+        }
+        
+        // Discrepanze: solo quando c'è vera differenza tra amount e invoice_amount
+        if (quote.invoice_amount && quote.amount && 
+            Math.abs(quote.invoice_amount - quote.amount) > 0.01) {
+          acc.discrepancies++;
+        }
+        
+        acc.total++;
+        const amount = parseFloat(quote.amount) || 0;
+        acc.totalValue += amount;
+        return acc;
+      },
+      { 
+        pending: 0, 
+        approved: 0, 
+        rejected: 0, 
+        expired: 0, 
+        total: 0, 
+        totalValue: 0,
+        pendingInvoices: 0,
+        invoiced: 0,
+        discrepancies: 0,
+        totalInvoicedValue: 0
+      }
+    );
+    
+    setStats(stats);
+  };
+
+  // Funzione per calcolare le statistiche sui dati filtrati
+  const calculateFilteredStats = (filteredQuotes: MaintenanceQuote[]) => {
+    const now = new Date();
+    const stats = filteredQuotes.reduce(
       (acc, quote) => {
         const validUntil = new Date(quote.valid_until);
         
@@ -465,6 +657,26 @@ function VehicleQuotesContent() {
     };
   });
 
+  // Ricalcola le statistiche sui dati filtrati ogni volta che cambiano i filtri o i dati
+  useEffect(() => {
+    if (quotes.length > 0) {
+      // Verifica se ci sono filtri attivi
+      const hasActiveFilters = filterStatus !== 'all' || 
+                              filterSupplier !== 'all' || 
+                              filterInvoiceStatus !== 'all' || 
+                              filterDiscrepancies !== 'all' || 
+                              searchTarga.trim() !== '';
+      
+      if (hasActiveFilters) {
+        // Se ci sono filtri attivi, calcola le statistiche sui dati filtrati
+        calculateFilteredStats(filteredAndSortedQuotes);
+      } else {
+        // Se non ci sono filtri attivi, calcola le statistiche su tutti i dati
+        calculateStats(quotes);
+      }
+    }
+  }, [quotes, filterStatus, filterSupplier, filterInvoiceStatus, filterDiscrepancies, searchTarga, sortBy, sortOrder]);
+
   if (loading) {
     return (
       <div className="container-fluid">
@@ -618,8 +830,8 @@ function VehicleQuotesContent() {
                     type="text"
                     className="form-control"
                     placeholder="Inserisci targa..."
-                    value={searchTarga}
-                    onChange={(e) => setSearchTarga(e.target.value)}
+                    value={searchTargaInput}
+                    onChange={(e) => handleSearchTargaChange(e.target.value)}
                   />
                 </div>
                 <div className="col-lg-1 col-md-2 col-sm-12 mb-3">
@@ -627,7 +839,7 @@ function VehicleQuotesContent() {
                   <select 
                     className="form-select"
                     value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
+                    onChange={(e) => handleFilterStatusChange(e.target.value)}
                   >
                     <option value="all">Tutti</option>
                     <option value="pending">In attesa</option>
@@ -641,7 +853,7 @@ function VehicleQuotesContent() {
                   <select 
                     className="form-select"
                     value={filterSupplier}
-                    onChange={(e) => setFilterSupplier(e.target.value)}
+                    onChange={(e) => handleFilterSupplierChange(e.target.value)}
                   >
                     <option value="all">Tutti</option>
                     {uniqueSuppliers.map((supplier) => (
@@ -656,7 +868,7 @@ function VehicleQuotesContent() {
                   <select 
                     className="form-select"
                     value={filterInvoiceStatus}
-                    onChange={(e) => setFilterInvoiceStatus(e.target.value)}
+                    onChange={(e) => handleFilterInvoiceStatusChange(e.target.value)}
                   >
                     <option value="all">Tutti</option>
                     <option value="not_invoiced">Da Fatturare</option>
@@ -669,7 +881,7 @@ function VehicleQuotesContent() {
                   <select 
                     className="form-select"
                     value={filterDiscrepancies}
-                    onChange={(e) => setFilterDiscrepancies(e.target.value)}
+                    onChange={(e) => handleFilterDiscrepanciesChange(e.target.value)}
                   >
                     <option value="all">Tutti</option>
                     <option value="true">Con</option>
@@ -690,6 +902,7 @@ function VehicleQuotesContent() {
                     <option value="amount">Importo Preventivo</option>
                     <option value="invoice_amount">Importo Fattura</option>
                     <option value="quote_number">Numero offerta</option>
+                    <option value="invoice_number">Numero Fattura</option>
                     <option value="valid_until">Scadenza</option>
                     <option value="targa">Veicolo</option>
                   </select>
@@ -863,13 +1076,13 @@ function VehicleQuotesContent() {
                           <td>
                             <div className="btn-group btn-group-sm">
                               <Link 
-                                href={`/vehicles/quotes/${quote.id}`}
+                                href={`/vehicles/quotes/${quote.id}${getCurrentFiltersURL()}`}
                                 className="btn btn-outline-primary"
                               >
                                 <i className="fas fa-eye"></i>
                               </Link>
                               <Link 
-                                href={`/vehicles/quotes/${quote.id}/edit`}
+                                href={`/vehicles/quotes/${quote.id}/edit${getCurrentFiltersURL()}`}
                                 className="btn btn-outline-warning"
                                 title="Modifica"
                               >

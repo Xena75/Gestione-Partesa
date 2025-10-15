@@ -1,6 +1,41 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.30.9
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.30.10
 
-## 🚀 **VERSIONE 2.30.9** - Bug Fix e Miglioramenti UX ⭐ **NUOVO**
+## 🚀 **VERSIONE 2.30.10** - Bug Fix Sistema Revisioni Automatiche ⭐ **NUOVO**
+
+### 🔧 **BUG FIX FILTRO SCADENZE VEICOLI**
+- **Problema risolto**: Filtro "scadute" non includeva correttamente tutte le scadenze passate
+- **Logica corretta**: Il filtro ora include sia scadenze "overdue" che "pending" con data passata
+- **Comportamento migliorato**: Identificazione precisa di tutte le scadenze che richiedono attenzione
+- **Beneficio**: Controllo completo delle scadenze per evitare sanzioni e problemi legali
+
+### 🛠️ **BUG FIX MODALE CONTROLLO REVISIONI AUTOMATICHE**
+- **Problema risolto**: Statistiche revisioni tachigrafo non si aggiornavam correttamente nel modale
+- **Campi corretti**: 
+  - `future_revisions_count` → `future_tachograph_revisions_count`
+  - `next_revision_date` → `next_tachograph_revision_date`
+- **Funzionalità ripristinata**: Card "Con Revisioni Tachigrafo", "Senza Revisioni Tachigrafo" e "Prossime Scadenze Tachigrafo" ora si aggiornano correttamente
+- **Beneficio**: Monitoraggio accurato delle revisioni tachigrafo per conformità normativa
+
+### 🗑️ **PULIZIA DATABASE DUPLICATI REVISIONI**
+- **Problema identificato**: Bug nel CRON aveva creato duplicati delle revisioni normali
+- **Azione eseguita**: Rimossi 12 duplicati per il veicolo EZ182PF (mantenuta solo revisione ID: 52)
+- **Verifica completata**: Database pulito e consistente, nessun duplicato rimanente
+- **Prevenzione**: Sistema ora protetto da future duplicazioni
+
+### ✅ **BENEFICI OPERATIVI**
+- **Filtri precisi**: Identificazione corretta di tutte le scadenze che richiedono attenzione
+- **Statistiche accurate**: Monitoraggio affidabile delle revisioni tachigrafo
+- **Database pulito**: Eliminazione di dati duplicati per migliori performance
+- **Conformità normativa**: Controllo completo delle scadenze per evitare sanzioni
+- **Efficienza operativa**: Informazioni sempre aggiornate e precise
+
+### 📋 **FILE MODIFICATI**
+- `src/app/vehicles/schedules/page.tsx` - Corretti campi per statistiche revisioni tachigrafo
+- Database `viaggi_db.vehicle_schedules` - Rimossi duplicati revisioni normali
+
+---
+
+## 🚀 **VERSIONE 2.30.9** - Bug Fix e Miglioramenti UX
 
 ### 🐛 **BUG FIX CALENDARIO SCADENZE VEICOLI**
 - **Problema risolto**: Eventi completati non più visibili nel calendario delle scadenze

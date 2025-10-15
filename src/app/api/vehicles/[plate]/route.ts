@@ -41,6 +41,7 @@ export async function GET(
         km_ultimo_tagliando,
         data_ultimo_tagliando,
         data_ultima_revisione,
+        data_revisione_tachigrafo,
         note,
         active,
         createdAt,
@@ -222,6 +223,10 @@ export async function PUT(
     if (body.data_ultima_revisione !== undefined) {
       updateFields.push('data_ultima_revisione = ?');
       updateValues.push(body.data_ultima_revisione);
+    }
+    if (body.data_revisione_tachigrafo !== undefined) {
+      updateFields.push('data_revisione_tachigrafo = ?');
+      updateValues.push(body.data_revisione_tachigrafo);
     }
     if (body.note !== undefined) {
       updateFields.push('note = ?');

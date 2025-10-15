@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 interface Quote {
@@ -62,6 +62,7 @@ interface Document {
 export default function EditQuotePage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const quoteId = params.id as string;
   
   const [quote, setQuote] = useState<Quote | null>(null);
@@ -115,6 +116,12 @@ export default function EditQuotePage() {
     const [day, month, year] = italianDate.split('/');
     if (!day || !month || !year) return '';
     return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  };
+
+  // Funzione per preservare i parametri URL quando si torna alla lista
+  const getBackToListURL = () => {
+    const currentParams = searchParams.toString();
+    return currentParams ? `/vehicles/quotes?${currentParams}` : '/vehicles/quotes';
   };
 
   const fetchQuote = async () => {
@@ -378,6 +385,9 @@ export default function EditQuotePage() {
       const data = await response.json();
 
       if (data.success) {
+        // Ricarica i dati aggiornati dal database
+        await fetchQuote();
+        
         // Se il preventivo è approvato e ha una data programmata, verifica se creare un evento nel calendario
         if (formData.status === 'approved' && formData.scheduled_date && quote) {
           // Controlla se il preventivo era già approvato e aveva già una data programmata
@@ -397,7 +407,7 @@ export default function EditQuotePage() {
                 // Evento già esistente, non creare duplicato
                 alert('Preventivo aggiornato con successo!\n\nL\'evento è già presente nel calendario.');
                 // Reindirizza alla lista preventivi se l'evento esiste già
-                router.push('/vehicles/quotes');
+                router.push(getBackToListURL());
                 return;
               } else {
                 // Nessun evento esistente, procedi con la creazione
@@ -433,7 +443,7 @@ export default function EditQuotePage() {
                 } else {
                   alert('Preventivo aggiornato con successo!\n\nAttenzione: Non è stato possibile aggiungere l\'evento al calendario.');
                   // Reindirizza alla lista preventivi se la creazione dell'evento fallisce
-                  router.push('/vehicles/quotes');
+                  router.push(getBackToListURL());
                   return;
                 }
               }
@@ -441,20 +451,20 @@ export default function EditQuotePage() {
               console.error('Errore nella gestione dell\'evento calendario:', scheduleErr);
               alert('Preventivo aggiornato con successo!\n\nAttenzione: Non è stato possibile gestire l\'evento al calendario.');
               // Reindirizza alla lista preventivi in caso di errore
-              router.push('/vehicles/quotes');
+              router.push(getBackToListURL());
               return;
             }
           } else {
             // Preventivo già approvato con data programmata, non creare evento
             alert('Preventivo aggiornato con successo!');
             // Reindirizza alla lista preventivi se non viene creato alcun evento
-            router.push('/vehicles/quotes');
+            router.push(getBackToListURL());
             return;
           }
         } else {
           alert('Preventivo aggiornato con successo!');
           // Reindirizza alla lista preventivi se non ci sono condizioni per creare eventi
-          router.push('/vehicles/quotes');
+          router.push(getBackToListURL());
           return;
         }
       } else {
@@ -532,7 +542,7 @@ export default function EditQuotePage() {
               <h4 className="alert-heading">Errore</h4>
               <p>{error}</p>
               <hr />
-              <Link href="/vehicles/quotes" className="btn btn-outline-danger">
+              <Link href={getBackToListURL()} className="btn btn-outline-danger">
                 Torna ai Preventivi
               </Link>
             </div>
@@ -551,7 +561,7 @@ export default function EditQuotePage() {
               <h4 className="alert-heading">Preventivo non trovato</h4>
               <p>Il preventivo con ID <strong>{quoteId}</strong> non è stato trovato.</p>
               <hr />
-              <Link href="/vehicles/quotes" className="btn btn-outline-warning">
+              <Link href={getBackToListURL()} className="btn btn-outline-warning">
                 Torna ai Preventivi
               </Link>
             </div>

@@ -848,6 +848,11 @@ quote_date         date                                                         
 **Utilizzo nel progetto:**
 - **Pagine**: `/vehicles` - Gestione scadenze veicoli, `/dashboard` - Visualizzazione alert scadenze
 - **API**: `/api/vehicles/schedules/expiring` per recupero scadenze in scadenza
+
+**Note sui Fix Implementati (v2.30.10):**
+- **Pulizia duplicati**: Rimossi duplicati delle revisioni normali creati dal bug del CRON
+- **Filtri corretti**: Migliorata logica filtro "scadute" per includere sia "overdue" che "pending" con data passata
+- **Statistiche accurate**: Corretti campi per calcolo statistiche revisioni tachigrafo nel frontend
 - **Componenti**: `ScheduledExpirySection.tsx` per visualizzazione alert scadenze programmate
 - **Funzionalità**: 
   - Monitoraggio scadenze veicoli con alert a due colonne (critiche/in avvicinamento)
@@ -867,6 +872,7 @@ proprieta             varchar(255) YES       NULL
 km_ultimo_tagliando   int(11)      YES       NULL                             
 data_ultimo_tagliando date         YES       NULL                             
 data_ultima_revisione date         YES       NULL                             
+data_revisione_tachigrafo date     YES       NULL                             
 portata               int(11)      YES       NULL                             
 n_palt                int(11)      YES       NULL                             
 tipo_patente          varchar(10)  YES       NULL                             
@@ -879,10 +885,11 @@ note                  text         YES       NULL
 
 **Utilizzo nel progetto:**
 - **Pagine**: Sistema gestione veicoli
-- **API**: `/api/dashboard-stats` per statistiche veicoli
+- **API**: `/api/dashboard-stats` per statistiche veicoli, `/api/vehicles/revisions/automation` per controllo revisioni tachigrafo
 - **Componenti**: Gestione flotta veicoli
-- **Funzionalità**: Monitoraggio veicoli, manutenzione, documenti
+- **Funzionalità**: Monitoraggio veicoli, manutenzione, documenti, **revisioni tachigrafo automatiche**
 - **Dashboard**: Statistiche flotta, controllo scadenze
+- **Campo data_revisione_tachigrafo**: Utilizzato per calcolare scadenze revisioni tachigrafo, automazione CRON, filtri veicoli con patente diversa da B
 
 #### viaggi_pod
 ```sql
@@ -1216,6 +1223,16 @@ CREATE TABLE vehicles (
     anno_immatricolazione YEAR,
     tipo_veicolo VARCHAR(50),
     stato ENUM('attivo', 'inattivo', 'manutenzione') DEFAULT 'attivo',
+    km_ultimo_tagliando INT,
+    data_ultimo_tagliando DATE,
+    data_ultima_revisione DATE,
+    data_revisione_tachigrafo DATE,
+    portata INT,
+    n_palt INT,
+    tipo_patente VARCHAR(10),
+    pallet_kg INT,
+    active BOOLEAN DEFAULT TRUE,
+    note TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
