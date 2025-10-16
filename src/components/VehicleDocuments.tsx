@@ -23,6 +23,8 @@ const DOCUMENT_TYPES = {
   assicurazione: 'Assicurazione',
   bollo: 'Bollo Auto',
   revisione: 'Revisione',
+  revisione_tachigrafo: 'Revisione Tachigrafo',
+  ztl: 'ZTL',
   altro: 'Altro'
 };
 

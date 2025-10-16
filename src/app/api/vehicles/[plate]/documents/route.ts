@@ -114,7 +114,7 @@ export async function POST(
       );
     }
 
-    if (!documentType || !['libretto', 'assicurazione', 'bollo', 'revisione', 'altro'].includes(documentType)) {
+    if (!documentType || !['libretto', 'assicurazione', 'bollo', 'revisione', 'revisione_tachigrafo', 'ztl', 'altro'].includes(documentType)) {
       return NextResponse.json(
         { success: false, error: 'Tipo documento non valido' },
         { status: 400 }
