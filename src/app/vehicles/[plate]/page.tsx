@@ -204,12 +204,57 @@ export default function VehicleDetailPage() {
     }
   };
 
+  // Funzione per formattare automaticamente l'input delle date
+  const formatDateInput = (value: string): string => {
+    // Se il valore è già nel formato corretto (dd/mm/yyyy), non modificarlo
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+      return value;
+    }
+    
+    // Se il valore contiene già delle "/" in posizioni corrette, gestiscilo diversamente
+    if (value.includes('/')) {
+      // Verifica se è un formato parziale valido (dd/, dd/mm, dd/mm/)
+      if (/^\d{1,2}\/$/.test(value) || /^\d{1,2}\/\d{1,2}\/$/.test(value) || /^\d{1,2}\/\d{1,2}\/\d{0,4}$/.test(value)) {
+        return value;
+      }
+    }
+    
+    // Rimuovi tutti i caratteri non numerici
+    const numbersOnly = value.replace(/\D/g, '');
+    
+    // Limita a 8 cifre (ddmmyyyy)
+    const limited = numbersOnly.slice(0, 8);
+    
+    // Aggiungi le "/" automaticamente
+    if (limited.length >= 3 && limited.length <= 4) {
+      return `${limited.slice(0, 2)}/${limited.slice(2)}`;
+    } else if (limited.length >= 5) {
+      return `${limited.slice(0, 2)}/${limited.slice(2, 4)}/${limited.slice(4)}`;
+    } else if (limited.length >= 1) {
+      return limited;
+    }
+    
+    return '';
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    // Campi data che richiedono formattazione automatica
+    const dateFields = ['data_ultimo_tagliando', 'data_ultima_revisione', 'data_revisione_tachigrafo'];
+    
+    if (dateFields.includes(name)) {
+      const formattedValue = formatDateInput(value);
+      setFormData(prev => ({
+        ...prev,
+        [name]: formattedValue
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -686,6 +731,7 @@ export default function VehicleDetailPage() {
                         value={formData.data_ultimo_tagliando}
                         onChange={handleInputChange}
                         placeholder="gg/mm/aaaa"
+                        maxLength={10}
                       />
                     </div>
                     <div className="col-md-6 mb-3">
@@ -698,6 +744,7 @@ export default function VehicleDetailPage() {
                         value={formData.data_ultima_revisione}
                         onChange={handleInputChange}
                         placeholder="gg/mm/aaaa"
+                        maxLength={10}
                       />
                     </div>
                     <div className="col-md-6 mb-3">
@@ -710,6 +757,7 @@ export default function VehicleDetailPage() {
                         value={formData.data_revisione_tachigrafo}
                         onChange={handleInputChange}
                         placeholder="gg/mm/aaaa"
+                        maxLength={10}
                       />
                     </div>
                     <div className="col-md-12 mb-3">

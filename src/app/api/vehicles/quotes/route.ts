@@ -31,8 +31,12 @@ export async function GET(request: NextRequest) {
     const supplierId = searchParams.get('supplierId');
     const invoiceStatus = searchParams.get('invoiceStatus');
     const hasDiscrepancies = searchParams.get('hasDiscrepancies');
+    const targa = searchParams.get('targa');
     const sortBy = searchParams.get('sortBy') || 'created_at';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '50'); // Default 50 preventivi per pagina
+    const offset = (page - 1) * limit;
 
     connection = await pool.getConnection();
 
@@ -70,12 +74,26 @@ export async function GET(request: NextRequest) {
               ELSE 'major'
             END
           ELSE 'none'
-        END as discrepancy_level
+        END as discrepancy_level,
+        -- Documenti allegati (concatenati come stringa JSON)
+        CASE 
+          WHEN COUNT(qd.id) > 0 
+          THEN CONCAT('[', GROUP_CONCAT(
+            CASE 
+              WHEN qd.id IS NOT NULL 
+              THEN CONCAT('{"id":', qd.id, ',"quote_id":', qd.quote_id, ',"file_name":"', IFNULL(qd.file_name, ''), '","file_path":"', IFNULL(qd.file_path, ''), '","file_size":', IFNULL(qd.file_size, 0), ',"file_type":"', IFNULL(qd.file_type, ''), '","uploaded_at":"', IFNULL(qd.uploaded_at, ''), '"}')
+              ELSE NULL
+            END
+            SEPARATOR ','
+          ), ']')
+          ELSE '[]'
+        END as documents
       FROM maintenance_quotes mq
       JOIN vehicles v ON mq.vehicle_id = v.id
       LEFT JOIN vehicle_schedules vs ON mq.schedule_id = vs.id
       LEFT JOIN suppliers s ON mq.supplier_id = s.id
       LEFT JOIN intervention_types it ON mq.intervention_type = it.id
+      LEFT JOIN quote_documents qd ON mq.id = qd.quote_id
       WHERE 1=1
     `;
     const params: any[] = [];
@@ -109,6 +127,11 @@ export async function GET(request: NextRequest) {
       query += ' AND mq.invoice_amount IS NOT NULL AND mq.amount IS NOT NULL AND ABS(mq.invoice_amount - mq.amount) > 0';
     }
 
+    if (targa) {
+      query += ' AND v.targa LIKE ?';
+      params.push(`%${targa}%`);
+    }
+
     // Mappatura dei campi frontend ai campi database per l'ordinamento
     const sortFieldMap: { [key: string]: string } = {
       'created_at': 'mq.created_at',
@@ -127,26 +150,93 @@ export async function GET(request: NextRequest) {
     const validSortField = sortFieldMap[sortBy] || 'mq.created_at';
     const validSortOrder = (sortOrder === 'asc' || sortOrder === 'desc') ? sortOrder : 'desc';
 
+    // Aggiungi GROUP BY per gestire l'aggregazione dei documenti
+    query += ` GROUP BY mq.id, v.id, vs.id, s.id, it.id`;
     query += ` ORDER BY ${validSortField} ${validSortOrder.toUpperCase()}`;
+    
+    // Query per contare il totale (senza LIMIT)
+    const countQuery = `
+      SELECT COUNT(DISTINCT mq.id) as total
+      FROM maintenance_quotes mq
+      JOIN vehicles v ON mq.vehicle_id = v.id
+      LEFT JOIN vehicle_schedules vs ON mq.schedule_id = vs.id
+      LEFT JOIN suppliers s ON mq.supplier_id = s.id
+      LEFT JOIN intervention_types it ON mq.intervention_type = it.id
+      WHERE 1=1
+    `;
+    
+    // Aggiungi gli stessi filtri alla query di conteggio
+    let countQueryWithFilters = countQuery;
+    const countParams = [...params];
+    
+    if (vehicleId) {
+      countQueryWithFilters += ' AND mq.vehicle_id = ?';
+    }
+    if (scheduleId) {
+      countQueryWithFilters += ' AND mq.schedule_id = ?';
+    }
+    if (status) {
+      countQueryWithFilters += ' AND mq.status = ?';
+    }
+    if (supplierId) {
+      countQueryWithFilters += ' AND mq.supplier_id = ?';
+    }
+    if (invoiceStatus) {
+      countQueryWithFilters += ' AND mq.invoice_status = ?';
+    }
+    if (hasDiscrepancies === 'true') {
+       countQueryWithFilters += ' AND mq.invoice_amount IS NOT NULL AND mq.amount IS NOT NULL AND ABS(mq.invoice_amount - mq.amount) > 0';
+     }
+     if (targa) {
+       countQueryWithFilters += ' AND v.targa LIKE ?';
+     }
+    
+    // Aggiungi paginazione alla query principale
+    query += ` LIMIT ${limit} OFFSET ${offset}`;
 
+    // Esegui entrambe le query
+    const [countResult] = await connection.execute(countQueryWithFilters, countParams);
     const [rows] = await connection.execute(query, params);
     
-    // Per ogni preventivo, recupera anche i documenti allegati
-    const quotesWithDocuments = await Promise.all(
-      (rows as any[]).map(async (quote) => {
-        const [docs] = await connection.execute(
-          'SELECT * FROM quote_documents WHERE quote_id = ?',
-          [quote.id]
-        );
-        return { ...quote, documents: docs };
-      })
-    );
+    const totalCount = (countResult as any[])[0]?.total || 0;
+    const totalPages = Math.ceil(totalCount / limit);
+    
+    // Processa i documenti JSON aggregati
+    const quotesWithDocuments = (rows as any[]).map((quote) => {
+      let documents = [];
+      try {
+        // Parse dei documenti JSON aggregati
+        const docsJson = quote.documents;
+        if (docsJson && docsJson !== '[]') {
+          documents = JSON.parse(docsJson).filter((doc: any) => doc !== null);
+        }
+      } catch (error) {
+        console.error('Errore nel parsing documenti per preventivo', quote.id, error);
+        documents = [];
+      }
+      
+      return { 
+        ...quote, 
+        documents: documents 
+      };
+    });
 
     if (connection) {
       connection.release();
     }
 
-    return NextResponse.json({ success: true, data: quotesWithDocuments });
+    return NextResponse.json({ 
+      success: true, 
+      data: quotesWithDocuments,
+      pagination: {
+        page,
+        limit,
+        totalCount,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1
+      }
+    });
   } catch (error) {
     console.error('Errore nel recupero preventivi:', error);
     console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace');

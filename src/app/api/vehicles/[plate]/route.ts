@@ -253,6 +253,149 @@ export async function PUT(
 
     await connection.execute(updateQuery, updateValues);
 
+    // Se è stata aggiornata la data_revisione_tachigrafo, gestisci le scadenze
+    if (body.data_revisione_tachigrafo !== undefined) {
+      try {
+        // Prima controlla se esistono scadenze tachigrafo pending
+        const checkScheduleQuery = `
+          SELECT COUNT(*) as count 
+          FROM vehicle_schedules 
+          WHERE vehicle_id = ? 
+            AND schedule_type = 'revisione tachigrafo' 
+            AND status = 'pending'
+        `;
+        
+        const [checkResult] = await connection.execute(checkScheduleQuery, [vehicle.id]);
+        const existingCount = (checkResult as any)[0].count;
+
+        if (existingCount > 0) {
+          // Aggiorna le scadenze tachigrafo esistenti con status pending
+          const updateScheduleQuery = `
+            UPDATE vehicle_schedules 
+            SET 
+              data_scadenza = ?,
+              updated_at = NOW()
+            WHERE vehicle_id = ? 
+              AND schedule_type = 'revisione tachigrafo' 
+              AND status = 'pending'
+          `;
+          
+          const [updateResult] = await connection.execute(updateScheduleQuery, [
+            body.data_revisione_tachigrafo,
+            vehicle.id
+          ]);
+
+          console.log(`Aggiornate ${(updateResult as any).affectedRows} scadenze tachigrafo per veicolo ${plate}`);
+        } else {
+          // Crea una nuova scadenza tachigrafo se non ne esistono
+          const insertScheduleQuery = `
+            INSERT INTO vehicle_schedules (
+              vehicle_id, 
+              schedule_type, 
+              data_scadenza, 
+              status, 
+              notes,
+              created_at,
+              updated_at
+            ) VALUES (?, 'revisione tachigrafo', ?, 'pending', 'Scadenza creata automaticamente', NOW(), NOW())
+          `;
+          
+          await connection.execute(insertScheduleQuery, [
+            vehicle.id,
+            body.data_revisione_tachigrafo
+          ]);
+
+          console.log(`Creata nuova scadenza tachigrafo per veicolo ${plate} con data ${body.data_revisione_tachigrafo}`);
+        }
+      } catch (scheduleError) {
+        console.error('Errore nella gestione delle scadenze tachigrafo:', scheduleError);
+        // Non bloccare l'aggiornamento del veicolo se la gestione delle scadenze fallisce
+      }
+    }
+
+    // Se è stata aggiornata la data_ultima_revisione, gestisci le scadenze revisione normale
+    if (body.data_ultima_revisione !== undefined) {
+      try {
+        // Prima controlla se esistono scadenze revisione pending
+        const checkRevisionScheduleQuery = `
+          SELECT COUNT(*) as count 
+          FROM vehicle_schedules 
+          WHERE vehicle_id = ? 
+            AND schedule_type = 'revisione' 
+            AND status = 'pending'
+        `;
+        
+        const [checkRevisionResult] = await connection.execute(checkRevisionScheduleQuery, [vehicle.id]);
+        const existingRevisionCount = (checkRevisionResult as any)[0].count;
+
+        // Calcola la data di scadenza basata sul tipo di patente
+        const dataUltimaRevisione = new Date(body.data_ultima_revisione);
+        let dataScadenzaRevisione;
+        
+        // Recupera il tipo di patente del veicolo per calcolare la scadenza
+        const [vehicleInfo] = await connection.execute(
+          'SELECT tipo_patente FROM vehicles WHERE id = ?',
+          [vehicle.id]
+        );
+        const tipoPatente = (vehicleInfo as any)[0]?.tipo_patente || 'C';
+        
+        if (tipoPatente === 'B') {
+          // Patente B: revisione ogni 2 anni
+          dataScadenzaRevisione = new Date(dataUltimaRevisione);
+          dataScadenzaRevisione.setFullYear(dataScadenzaRevisione.getFullYear() + 2);
+        } else {
+          // Patente C, D, E: revisione ogni 1 anno
+          dataScadenzaRevisione = new Date(dataUltimaRevisione);
+          dataScadenzaRevisione.setFullYear(dataScadenzaRevisione.getFullYear() + 1);
+        }
+        
+        const dataScadenzaFormatted = dataScadenzaRevisione.toISOString().split('T')[0];
+
+        if (existingRevisionCount > 0) {
+          // Aggiorna le scadenze revisione esistenti con status pending
+          const updateRevisionScheduleQuery = `
+            UPDATE vehicle_schedules 
+            SET 
+              data_scadenza = ?,
+              updated_at = NOW()
+            WHERE vehicle_id = ? 
+              AND schedule_type = 'revisione' 
+              AND status = 'pending'
+          `;
+          
+          const [updateRevisionResult] = await connection.execute(updateRevisionScheduleQuery, [
+            dataScadenzaFormatted,
+            vehicle.id
+          ]);
+
+          console.log(`Aggiornate ${(updateRevisionResult as any).affectedRows} scadenze revisione per veicolo ${plate} (patente ${tipoPatente}) con data ${dataScadenzaFormatted}`);
+        } else {
+          // Crea una nuova scadenza revisione se non ne esistono
+          const insertRevisionScheduleQuery = `
+            INSERT INTO vehicle_schedules (
+              vehicle_id, 
+              schedule_type, 
+              data_scadenza, 
+              status, 
+              notes,
+              created_at,
+              updated_at
+            ) VALUES (?, 'revisione', ?, 'pending', 'Scadenza creata automaticamente', NOW(), NOW())
+          `;
+          
+          await connection.execute(insertRevisionScheduleQuery, [
+            vehicle.id,
+            dataScadenzaFormatted
+          ]);
+
+          console.log(`Creata nuova scadenza revisione per veicolo ${plate} (patente ${tipoPatente}) con data ${dataScadenzaFormatted}`);
+        }
+      } catch (revisionScheduleError) {
+        console.error('Errore nella gestione delle scadenze revisione:', revisionScheduleError);
+        // Non bloccare l'aggiornamento del veicolo se la gestione delle scadenze fallisce
+      }
+    }
+
     await connection.end();
 
     return NextResponse.json({

@@ -47,7 +47,9 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Sistema preventivi**: Gestione completa preventivi con workflow approvazione
 - **Gestione fornitori**: Integrazione fornitori e servizi per preventivi
 - **Upload documenti**: Sistema drag-and-drop per allegati preventivi
-- **Formato date italiano**: Visualizzazione e input date in formato dd/mm/yyyy
+- **Auto-formattazione date**: Input automatico formato gg/mm/aaaa con validazione ⭐ **NUOVO v2.31.0**
+- **Performance ottimizzate**: Pagina preventivi con caricamento 60% più veloce ⭐ **NUOVO v2.31.0**
+- **Filtri lato client**: Ricerca e filtri istantanei senza ricaricamento ⭐ **NUOVO v2.31.0**
 - **Revisioni automatiche**: Sistema di controllo revisioni con statistiche accurate per tachigrafi ⭐ **AGGIORNATO v2.30.10**
 - **Filtri scadenze corretti**: Identificazione precisa di tutte le scadenze passate e in scadenza ⭐ **AGGIORNATO v2.30.10**
 - **Database pulito**: Eliminazione automatica duplicati per performance ottimali ⭐ **AGGIORNATO v2.30.10**

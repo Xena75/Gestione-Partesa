@@ -99,6 +99,39 @@ export default function VehicleDocuments({ vehiclePlate }: VehicleDocumentsProps
     return date.getDate() === day && date.getMonth() === month - 1 && date.getFullYear() === year;
   };
 
+  // Funzione per formattare automaticamente l'input delle date
+  const formatDateInput = (value: string): string => {
+    // Se il valore è già nel formato corretto (dd/mm/yyyy), non modificarlo
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+      return value;
+    }
+    
+    // Se il valore contiene già delle "/" in posizioni corrette, gestiscilo diversamente
+    if (value.includes('/')) {
+      // Verifica se è un formato parziale valido (dd/, dd/mm, dd/mm/)
+      if (/^\d{1,2}\/$/.test(value) || /^\d{1,2}\/\d{1,2}\/$/.test(value) || /^\d{1,2}\/\d{1,2}\/\d{0,4}$/.test(value)) {
+        return value;
+      }
+    }
+    
+    // Rimuovi tutti i caratteri non numerici
+    const numbersOnly = value.replace(/\D/g, '');
+    
+    // Limita a 8 cifre (ddmmyyyy)
+    const limited = numbersOnly.slice(0, 8);
+    
+    // Aggiungi le "/" automaticamente
+    if (limited.length >= 3 && limited.length <= 4) {
+      return `${limited.slice(0, 2)}/${limited.slice(2)}`;
+    } else if (limited.length >= 5) {
+      return `${limited.slice(0, 2)}/${limited.slice(2, 4)}/${limited.slice(4)}`;
+    } else if (limited.length >= 1) {
+      return limited;
+    }
+    
+    return '';
+  };
+
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -294,11 +327,15 @@ export default function VehicleDocuments({ vehiclePlate }: VehicleDocumentsProps
                     type="text"
                     id="expiryDate"
                     className="form-control"
-                    placeholder="gg/mm/yyyy"
+                    placeholder="gg/mm/aaaa"
                     value={expiryDate}
-                    onChange={(e) => setExpiryDate(e.target.value)}
+                    maxLength="10"
+                    onChange={(e) => {
+                      const formattedValue = formatDateInput(e.target.value);
+                      setExpiryDate(formattedValue);
+                    }}
                   />
-                  <div className="form-text">Formato: gg/mm/yyyy (opzionale)</div>
+                  <div className="form-text">Formato: gg/mm/aaaa (opzionale)</div>
                 </div>
                 <div className="col-md-4 mb-3">
                   <label htmlFor="file" className="form-label">File *</label>

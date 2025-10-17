@@ -1,7 +1,7 @@
 // src/app/vehicles/quotes/page.tsx
 'use client';
 
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -78,7 +78,8 @@ function VehicleQuotesContent() {
   const cardClass = theme === 'dark' ? 'bg-dark border-secondary' : 'bg-white border-light';
   const mutedTextClass = theme === 'dark' ? 'text-white-50' : 'text-muted';
   
-  const [quotes, setQuotes] = useState<MaintenanceQuote[]>([]);
+  const [allQuotes, setAllQuotes] = useState<MaintenanceQuote[]>([]); // Tutti i dati dal server
+  const [quotes, setQuotes] = useState<MaintenanceQuote[]>([]); // Dati filtrati per la visualizzazione
   const [stats, setStats] = useState<QuoteStats>({
     pending: 0,
     approved: 0,
@@ -93,6 +94,14 @@ function VehicleQuotesContent() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 50,
+    totalCount: 0,
+    totalPages: 0,
+    hasNextPage: false,
+    hasPrevPage: false
+  });
   // Inizializza tutti i filtri dai parametri URL
   const [filterStatus, setFilterStatus] = useState<string>(searchParams.get('filterStatus') || 'all');
   const [filterSupplier, setFilterSupplier] = useState<string>(searchParams.get('filterSupplier') || 'all');
@@ -176,40 +185,40 @@ function VehicleQuotesContent() {
     router.push(`/vehicles/quotes${newURL}`, { scroll: false });
   };
 
-  // Funzioni per gestire i cambiamenti dei filtri
-  const handleSortByChange = (value: string) => {
+  // Funzioni per gestire i cambiamenti dei filtri (ottimizzate con useCallback)
+  const handleSortByChange = useCallback((value: string) => {
     setSortBy(value);
     updateURLParams({ sortBy: value });
-  };
+  }, []);
 
-  const handleSortOrderChange = (value: 'asc' | 'desc') => {
+  const handleSortOrderChange = useCallback((value: 'asc' | 'desc') => {
     setSortOrder(value);
     updateURLParams({ sortOrder: value });
-  };
+  }, []);
 
-  const handleFilterStatusChange = (value: string) => {
+  const handleFilterStatusChange = useCallback((value: string) => {
     setFilterStatus(value);
     updateURLParams({ filterStatus: value });
-  };
+  }, []);
 
-  const handleFilterSupplierChange = (value: string) => {
+  const handleFilterSupplierChange = useCallback((value: string) => {
     setFilterSupplier(value);
     updateURLParams({ filterSupplier: value });
-  };
+  }, []);
 
-  const handleFilterInvoiceStatusChange = (value: string) => {
+  const handleFilterInvoiceStatusChange = useCallback((value: string) => {
     setFilterInvoiceStatus(value);
     updateURLParams({ filterInvoiceStatus: value });
-  };
+  }, []);
 
-  const handleFilterDiscrepanciesChange = (value: string) => {
+  const handleFilterDiscrepanciesChange = useCallback((value: string) => {
     setFilterDiscrepancies(value);
     updateURLParams({ filterDiscrepancies: value });
-  };
+  }, []);
 
-  const handleSearchTargaChange = (value: string) => {
+  const handleSearchTargaChange = useCallback((value: string) => {
     setSearchTargaInput(value); // Aggiorna solo lo stato locale dell'input
-  };
+  }, []);
 
   // Funzione per generare URL con filtri correnti per la navigazione
   const getCurrentFiltersURL = () => {
@@ -244,47 +253,102 @@ function VehicleQuotesContent() {
     fetchQuotes();
   }, []);
 
-  // Ricarica i dati quando i filtri o l'ordinamento cambiano
-  useEffect(() => {
-    fetchQuotes();
-  }, [filterStatus, filterSupplier, filterInvoiceStatus, filterDiscrepancies, searchTarga, sortBy, sortOrder]);
+  // Filtri lato client con useMemo per ottimizzare le performance
+  const filteredAndSortedQuotes = useMemo(() => {
+    let filtered = [...allQuotes];
+    
+    // Applica filtri
+    if (filterStatus !== 'all') {
+      if (filterStatus === 'expired') {
+        const now = new Date();
+        filtered = filtered.filter(quote => 
+          quote.status === 'pending' && new Date(quote.valid_until) < now
+        );
+      } else {
+        filtered = filtered.filter(quote => quote.status === filterStatus);
+      }
+    }
+    
+    if (filterSupplier !== 'all') {
+      filtered = filtered.filter(quote => quote.supplier_id.toString() === filterSupplier);
+    }
+    
+    if (filterInvoiceStatus !== 'all') {
+      filtered = filtered.filter(quote => quote.invoice_status === filterInvoiceStatus);
+    }
+    
+    if (filterDiscrepancies !== 'all') {
+      if (filterDiscrepancies === 'true') {
+        filtered = filtered.filter(quote => 
+          quote.invoice_amount && quote.amount && 
+          Math.abs(quote.invoice_amount - quote.amount) > 0.01
+        );
+      }
+    }
+    
+    if (searchTarga) {
+      filtered = filtered.filter(quote => 
+        quote.targa.toLowerCase().includes(searchTarga.toLowerCase())
+      );
+    }
+    
+    // Applica ordinamento
+    const sortFieldMap: { [key: string]: (quote: MaintenanceQuote) => any } = {
+      'created_at': (quote) => new Date(quote.created_at),
+      'quote_date': (quote) => quote.quote_date ? new Date(quote.quote_date) : new Date(0),
+      'difference_amount': (quote) => quote.difference_amount || 0,
+      'supplier': (quote) => quote.supplier_name,
+      'amount': (quote) => quote.amount,
+      'invoice_amount': (quote) => quote.invoice_amount || 0,
+      'quote_number': (quote) => quote.quote_number,
+      'invoice_number': (quote) => quote.invoice_number || '',
+      'valid_until': (quote) => new Date(quote.valid_until),
+      'targa': (quote) => quote.targa
+    };
+    
+    const sortFunction = sortFieldMap[sortBy] || sortFieldMap['created_at'];
+    
+    filtered.sort((a, b) => {
+      const aValue = sortFunction(a);
+      const bValue = sortFunction(b);
+      
+      if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+    
+    return filtered;
+  }, [allQuotes, filterStatus, filterSupplier, filterInvoiceStatus, filterDiscrepancies, searchTarga, sortBy, sortOrder]);
 
-  const fetchQuotes = async () => {
+  // Aggiorna quotes quando i filtri cambiano
+  useEffect(() => {
+    setQuotes(filteredAndSortedQuotes);
+    calculateStats(filteredAndSortedQuotes);
+  }, [filteredAndSortedQuotes]);
+
+  const fetchQuotes = async (page = 1) => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
       
-      // Aggiungi tutti i filtri ai parametri API
-      if (filterStatus !== 'all') {
-        params.append('status', filterStatus);
-      }
-      if (filterSupplier !== 'all') {
-        params.append('supplier', filterSupplier);
-      }
-      if (filterInvoiceStatus !== 'all') {
-        params.append('invoiceStatus', filterInvoiceStatus);
-      }
-      if (filterDiscrepancies !== 'all') {
-        params.append('hasDiscrepancies', filterDiscrepancies);
-      }
-      if (searchTarga !== '') {
-        params.append('targa', searchTarga);
-      }
-      // Aggiungi parametri di ordinamento
-      if (sortBy !== 'created_at') {
-        params.append('sortBy', sortBy);
-      }
-      if (sortOrder !== 'desc') {
-        params.append('sortOrder', sortOrder);
-      }
+      // Carica tutti i dati senza filtri per permettere filtri lato client
+      params.append('page', page.toString());
+      params.append('limit', '1000'); // Carica un numero elevato di record
       
       const response = await fetch(`/api/vehicles/quotes?${params.toString()}`);
       if (!response.ok) {
         throw new Error('Errore nel caricamento dei preventivi');
       }
       const data = await response.json();
-      setQuotes(data.data || []);
-      calculateStats(data.data || []);
+      
+      if (page === 1) {
+        setAllQuotes(data.data || []);
+        setPagination(data.pagination || {});
+      } else {
+        // Aggiungi i dati alla lista esistente per la paginazione
+        setAllQuotes(prev => [...prev, ...(data.data || [])]);
+      }
+      
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Errore sconosciuto');
     } finally {
@@ -557,125 +621,17 @@ function VehicleQuotesContent() {
     return new Date(dateString).toLocaleDateString('it-IT');
   };
 
-  const filteredAndSortedQuotes = quotes
-    .filter(quote => {
-      if (filterStatus !== 'all') {
-        if (filterStatus === 'expired') {
-          return quote.status === 'pending' && new Date(quote.valid_until) < new Date();
-        }
-        return quote.status === filterStatus;
-      }
-      return true;
-    })
-    .filter(quote => {
-      if (filterSupplier !== 'all') {
-        return quote.supplier_id.toString() === filterSupplier;
-      }
-      return true;
-    })
-    .filter(quote => {
-      if (filterInvoiceStatus !== 'all') {
-        return quote.invoice_status === filterInvoiceStatus;
-      }
-      return true;
-    })
-    .filter(quote => {
-      if (filterDiscrepancies !== 'all') {
-        if (filterDiscrepancies === 'true') {
-          return quote.discrepancy_level && quote.discrepancy_level !== 'none';
-        } else if (filterDiscrepancies === 'false') {
-          return !quote.discrepancy_level || quote.discrepancy_level === 'none';
-        }
-      }
-      return true;
-    })
-    .filter(quote => {
-      if (searchTarga.trim() !== '') {
-        return quote.targa.toLowerCase().includes(searchTarga.toLowerCase());
-      }
-      return true;
-    })
-    .sort((a, b) => {
-      let aValue: any, bValue: any;
-      
-      switch (sortBy) {
-        case 'amount':
-          aValue = a.amount;
-          bValue = b.amount;
-          break;
-        case 'invoice_amount':
-          aValue = a.invoice_amount || 0;
-          bValue = b.invoice_amount || 0;
-          break;
-        case 'difference_amount':
-          aValue = a.difference_amount || 0;
-          bValue = b.difference_amount || 0;
-          break;
-        case 'valid_until':
-          aValue = new Date(a.valid_until);
-          bValue = new Date(b.valid_until);
-          break;
-        case 'supplier':
-          aValue = a.supplier_name || '';
-          bValue = b.supplier_name || '';
-          break;
-        case 'quote_date':
-          aValue = a.quote_date ? new Date(a.quote_date) : new Date(0);
-          bValue = b.quote_date ? new Date(b.quote_date) : new Date(0);
-          break;
-        case 'quote_number':
-          aValue = a.quote_number || '';
-          bValue = b.quote_number || '';
-          break;
-        case 'targa':
-          aValue = a.targa || '';
-          bValue = b.targa || '';
-          break;
-        case 'invoice_number':
-          aValue = a.invoice_number || '';
-          bValue = b.invoice_number || '';
-          break;
-        default:
-          aValue = new Date(a.created_at);
-          bValue = new Date(b.created_at);
-      }
-      
-      if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
-    });
+
 
   const uniqueSuppliers = Array.from(
-    new Set(quotes.map(q => q.supplier_name).filter(Boolean))
+    new Set(allQuotes.map(q => q.supplier_name).filter(Boolean))
   ).map(name => {
-    const quote = quotes.find(q => q.supplier_name === name);
+    const quote = allQuotes.find(q => q.supplier_name === name);
     return {
       id: quote?.supplier_id,
       name
     };
   });
-
-  // Ricalcola le statistiche sui dati filtrati ogni volta che cambiano i filtri o i dati
-  useEffect(() => {
-    if (quotes.length > 0) {
-      // Verifica se ci sono filtri attivi
-      const hasActiveFilters = filterStatus !== 'all' || 
-                              filterSupplier !== 'all' || 
-                              filterInvoiceStatus !== 'all' || 
-                              filterDiscrepancies !== 'all' || 
-                              searchTarga.trim() !== '';
-      
-      if (hasActiveFilters) {
-        // Se ci sono filtri attivi, calcola le statistiche sui dati filtrati
-        calculateFilteredStats(filteredAndSortedQuotes);
-      } else {
-        // Se non ci sono filtri attivi, calcola le statistiche su tutti i dati
-        calculateStats(quotes);
-      }
-    }
-  }, [quotes, filterStatus, filterSupplier, filterInvoiceStatus, filterDiscrepancies, searchTarga, sortBy, sortOrder]);
 
   if (loading) {
     return (
@@ -925,10 +881,10 @@ function VehicleQuotesContent() {
           {/* Quotes Table */}
           <div className={`card ${cardClass}`}>
             <div className="card-header">
-              <h5 className={`mb-0 ${textClass}`}>📋 Elenco Preventivi ({filteredAndSortedQuotes.length})</h5>
+              <h5 className={`mb-0 ${textClass}`}>📋 Elenco Preventivi ({quotes.length})</h5>
             </div>
             <div className="card-body">
-              {filteredAndSortedQuotes.length === 0 ? (
+              {quotes.length === 0 ? (
                 <div className="text-center py-4">
                   <p className={textClass}>Nessun preventivo trovato con i filtri selezionati.</p>
                 </div>
@@ -954,7 +910,7 @@ function VehicleQuotesContent() {
                         </tr>
                       </thead>
                     <tbody>
-                      {filteredAndSortedQuotes.map((quote) => (
+                      {quotes.map((quote) => (
                         <tr key={quote.id}>
                           {/* 1. N. Offerta */}
                           <td>
