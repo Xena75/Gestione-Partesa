@@ -60,11 +60,18 @@ interface QuoteStats {
   expired: number;
   total: number;
   totalValue: number;
-  // Nuove statistiche fatturazione
+  pendingValue: number; // Valore totale dei preventivi pending
+  approvedValue: number; // Valore totale dei preventivi approvati
+  rejectedValue: number; // Valore totale dei preventivi rifiutati
+  expiredValue: number; // Valore totale dei preventivi scaduti
+  // Statistiche fatturazione
   pendingInvoices: number;
   invoiced: number;
   discrepancies: number;
   totalInvoicedValue: number;
+  pendingInvoicesValue: number; // Valore totale dei preventivi da fatturare
+  invoicedValue: number; // Valore totale dei preventivi fatturati
+  discrepanciesValue: number; // Valore totale delle discrepanze
 }
 
 function VehicleQuotesContent() {
@@ -87,6 +94,10 @@ function VehicleQuotesContent() {
     expired: 0,
     total: 0,
     totalValue: 0,
+    pendingValue: 0,
+    approvedValue: 0,
+    rejectedValue: 0,
+    expiredValue: 0,
     pendingInvoices: 0,
     invoiced: 0,
     discrepancies: 0,
@@ -361,34 +372,49 @@ function VehicleQuotesContent() {
     const stats = quotes.reduce(
       (acc, quote) => {
         const validUntil = new Date(quote.valid_until);
+        const amount = parseFloat(quote.amount) || 0;
         
         switch (quote.status) {
           case 'pending':
             if (validUntil < now) {
               acc.expired++;
+              acc.expiredValue += amount;
             } else {
               acc.pending++;
+              acc.pendingValue += amount;
             }
             break;
           case 'approved':
             acc.approved++;
+            acc.approvedValue += amount;
             break;
           case 'rejected':
             acc.rejected++;
+            acc.rejectedValue += amount;
             break;
         }
         
         // Statistiche fatturazione (per tutti i preventivi, non solo approvati)
+        // Escludiamo i preventivi rifiutati dalla card "Da Fatturare"
         switch (quote.invoice_status) {
           case 'not_invoiced':
-            acc.pendingInvoices++;
+            if (quote.status !== 'rejected') {
+              acc.pendingInvoices++;
+              acc.pendingInvoicesValue += amount;
+            }
             break;
           case 'invoiced':
             acc.invoiced++;
+            if (quote.invoice_amount) {
+              acc.invoicedValue += parseFloat(quote.invoice_amount) || 0;
+            }
             break;
           case 'partial':
             // Partial viene contato come invoiced per semplicità
             acc.invoiced++;
+            if (quote.invoice_amount) {
+              acc.invoicedValue += parseFloat(quote.invoice_amount) || 0;
+            }
             break;
         }
         
@@ -401,11 +427,15 @@ function VehicleQuotesContent() {
         if (quote.invoice_amount && quote.amount && 
             Math.abs(quote.invoice_amount - quote.amount) > 0.01) {
           acc.discrepancies++;
+          // Calcolo corretto: Valore Fatture - Valore Preventivi (può essere negativo)
+          acc.discrepanciesValue += (parseFloat(quote.invoice_amount) || 0) - amount;
         }
         
-        acc.total++;
-        const amount = parseFloat(quote.amount) || 0;
-        acc.totalValue += amount;
+        // Escludiamo i preventivi rifiutati dal totale
+        if (quote.status !== 'rejected') {
+          acc.total++;
+          acc.totalValue += amount;
+        }
         return acc;
       },
       { 
@@ -415,10 +445,17 @@ function VehicleQuotesContent() {
         expired: 0, 
         total: 0, 
         totalValue: 0,
+        pendingValue: 0,
+        approvedValue: 0,
+        rejectedValue: 0,
+        expiredValue: 0,
         pendingInvoices: 0,
         invoiced: 0,
         discrepancies: 0,
-        totalInvoicedValue: 0
+        totalInvoicedValue: 0,
+        pendingInvoicesValue: 0,
+        invoicedValue: 0,
+        discrepanciesValue: 0
       }
     );
     
@@ -431,34 +468,49 @@ function VehicleQuotesContent() {
     const stats = filteredQuotes.reduce(
       (acc, quote) => {
         const validUntil = new Date(quote.valid_until);
+        const amount = parseFloat(quote.amount) || 0;
         
         switch (quote.status) {
           case 'pending':
             if (validUntil < now) {
               acc.expired++;
+              acc.expiredValue += amount;
             } else {
               acc.pending++;
+              acc.pendingValue += amount;
             }
             break;
           case 'approved':
             acc.approved++;
+            acc.approvedValue += amount;
             break;
           case 'rejected':
             acc.rejected++;
+            acc.rejectedValue += amount;
             break;
         }
         
         // Statistiche fatturazione (per tutti i preventivi, non solo approvati)
+        // Escludiamo i preventivi rifiutati dalla card "Da Fatturare"
         switch (quote.invoice_status) {
           case 'not_invoiced':
-            acc.pendingInvoices++;
+            if (quote.status !== 'rejected') {
+              acc.pendingInvoices++;
+              acc.pendingInvoicesValue += amount;
+            }
             break;
           case 'invoiced':
             acc.invoiced++;
+            if (quote.invoice_amount) {
+              acc.invoicedValue += parseFloat(quote.invoice_amount) || 0;
+            }
             break;
           case 'partial':
             // Partial viene contato come invoiced per semplicità
             acc.invoiced++;
+            if (quote.invoice_amount) {
+              acc.invoicedValue += parseFloat(quote.invoice_amount) || 0;
+            }
             break;
         }
         
@@ -471,11 +523,15 @@ function VehicleQuotesContent() {
         if (quote.invoice_amount && quote.amount && 
             Math.abs(quote.invoice_amount - quote.amount) > 0.01) {
           acc.discrepancies++;
+          // Calcolo corretto: Valore Fatture - Valore Preventivi (può essere negativo)
+          acc.discrepanciesValue += (parseFloat(quote.invoice_amount) || 0) - amount;
         }
         
-        acc.total++;
-        const amount = parseFloat(quote.amount) || 0;
-        acc.totalValue += amount;
+        // Escludiamo i preventivi rifiutati dal totale
+        if (quote.status !== 'rejected') {
+          acc.total++;
+          acc.totalValue += amount;
+        }
         return acc;
       },
       { 
@@ -485,10 +541,17 @@ function VehicleQuotesContent() {
         expired: 0, 
         total: 0, 
         totalValue: 0,
+        pendingValue: 0,
+        approvedValue: 0,
+        rejectedValue: 0,
+        expiredValue: 0,
         pendingInvoices: 0,
         invoiced: 0,
         discrepancies: 0,
-        totalInvoicedValue: 0
+        totalInvoicedValue: 0,
+        pendingInvoicesValue: 0,
+        invoicedValue: 0,
+        discrepanciesValue: 0
       }
     );
     
@@ -658,88 +721,80 @@ function VehicleQuotesContent() {
           )}
 
           {/* Statistics Overview */}
-          <div className="row mb-4">
-            <div className="col-md-2">
-              <div className="card border-warning">
+          <div className="row mb-4 g-3">
+            <div className="col-12 col-sm-6 col-md-4 col-lg">
+              <div className="card border-warning h-100">
                 <div className="card-body text-center">
                   <h5 className="card-title text-warning">⏳ In Attesa</h5>
                   <h2 className="text-warning">{stats.pending}</h2>
+                  <h6 className="text-warning">{formatCurrency(stats.pendingValue)}</h6>
                 </div>
               </div>
             </div>
-            <div className="col-md-2">
-              <div className="card border-success">
+            <div className="col-12 col-sm-6 col-md-4 col-lg">
+              <div className="card border-success h-100">
                 <div className="card-body text-center">
                   <h5 className="card-title text-success">✅ Approvati</h5>
                   <h2 className="text-success">{stats.approved}</h2>
+                  <h6 className="text-success">{formatCurrency(stats.approvedValue)}</h6>
                 </div>
               </div>
             </div>
-            <div className="col-md-2">
-              <div className="card border-danger">
-                <div className="card-body text-center">
-                  <h5 className="card-title text-danger">❌ Rifiutati</h5>
-                  <h2 className="text-danger">{stats.rejected}</h2>
-                </div>
-              </div>
-            </div>
-            <div className="col-md-2">
-              <div className="card border-secondary">
+            <div className="col-12 col-sm-6 col-md-4 col-lg">
+              <div className="card border-secondary h-100">
                 <div className="card-body text-center">
                   <h5 className="card-title text-secondary">⏰ Scaduti</h5>
                   <h2 className="text-secondary">{stats.expired}</h2>
+                  <h6 className="text-secondary">{formatCurrency(stats.expiredValue)}</h6>
                 </div>
               </div>
             </div>
-            <div className="col-md-2">
-              <div className="card border-primary">
+            <div className="col-12 col-sm-6 col-md-4 col-lg">
+              <div className="card border-primary h-100">
                 <div className="card-body text-center">
                   <h5 className="card-title text-primary">📊 Totali</h5>
                   <h2 className="text-primary">{stats.total}</h2>
+                  <h6 className="text-primary">{formatCurrency(stats.totalValue)}</h6>
                 </div>
               </div>
             </div>
-            <div className="col-md-2">
-              <div className="card border-info">
+            <div className="col-12 col-sm-6 col-md-4 col-lg">
+              <div className="card border-danger h-100">
                 <div className="card-body text-center">
-                  <h5 className="card-title text-info">💶 Valore Preventivo</h5>
-                  <h6 className="text-info">{formatCurrency(stats.totalValue)}</h6>
+                  <h5 className="card-title text-danger">❌ Rifiutati</h5>
+                  <h2 className="text-danger">{stats.rejected}</h2>
+                  <h6 className="text-danger">{formatCurrency(stats.rejectedValue)}</h6>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Statistiche Fatturazione */}
-          <div className="row mb-4">
-            <div className="col-md-3">
-              <div className="card text-center border-warning">
-                <div className="card-body">
-                  <h5 className="card-title text-warning">{stats.pendingInvoices}</h5>
-                  <p className="card-text">Da Fatturare</p>
+          <div className="row mb-4 g-3">
+            <div className="col-12 col-md-4">
+              <div className="card border-warning h-100">
+                <div className="card-body text-center">
+                  <h5 className="card-title text-warning">💰 Da Fatturare</h5>
+                  <h2 className="text-warning">{stats.pendingInvoices}</h2>
+                  <h6 className="text-warning">{formatCurrency(stats.pendingInvoicesValue)}</h6>
                 </div>
               </div>
             </div>
-            <div className="col-md-3">
-              <div className="card text-center border-info">
-                <div className="card-body">
-                  <h5 className="card-title text-info">{stats.invoiced}</h5>
-                  <p className="card-text">Fatturati</p>
+            <div className="col-12 col-md-4">
+              <div className="card border-info h-100">
+                <div className="card-body text-center">
+                  <h5 className="card-title text-info">✅ Fatturati</h5>
+                  <h2 className="text-info">{stats.invoiced}</h2>
+                  <h6 className="text-info">{formatCurrency(stats.invoicedValue)}</h6>
                 </div>
               </div>
             </div>
-            <div className="col-md-3">
-              <div className="card text-center border-danger">
-                <div className="card-body">
-                  <h5 className="card-title text-danger">{stats.discrepancies}</h5>
-                  <p className="card-text">Discrepanze</p>
-                </div>
-              </div>
-            </div>
-            <div className="col-md-3">
-              <div className="card text-center border-info">
-                <div className="card-body">
-                  <h5 className="card-title text-info">💶 Valore Fatture</h5>
-                  <h6 className="text-info">{formatCurrency(stats.totalInvoicedValue)}</h6>
+            <div className="col-12 col-md-4">
+              <div className="card border-danger h-100">
+                <div className="card-body text-center">
+                  <h5 className="card-title text-danger">⚠️ Discrepanze</h5>
+                  <h2 className="text-danger">{stats.discrepancies}</h2>
+                  <h6 className="text-danger">{formatCurrency(stats.discrepanciesValue)}</h6>
                 </div>
               </div>
             </div>

@@ -21,6 +21,25 @@ type Filters = {
   trimestre: string;
 };
 
+// Funzione helper per convertire le date dal formato YYYY-MM-DD al formato gg/mm/aaaa per la visualizzazione
+const convertDateForDisplay = (dateString: string): string => {
+  if (!dateString || dateString.length !== 10) return '';
+  
+  // Se è già nel formato gg/mm/aaaa, restituisci così com'è
+  if (dateString.includes('/')) return dateString;
+  
+  // Se è nel formato YYYY-MM-DD, convertilo
+  const parts = dateString.split('-');
+  if (parts.length !== 3) return dateString;
+  
+  const year = parts[0];
+  const month = parts[1];
+  const day = parts[2];
+  
+  // Formato italiano: gg/mm/aaaa
+  return `${day}/${month}/${year}`;
+};
+
 export default function FiltriViaggiPod() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -31,8 +50,8 @@ export default function FiltriViaggiPod() {
     viaggio: searchParams?.get('viaggio') || '',
     magazzino: searchParams?.get('magazzino') || '',
     trasportatore: searchParams?.get('trasportatore') || '',
-    dataInizio: searchParams?.get('dataInizio') || '',
-    dataFine: searchParams?.get('dataFine') || '',
+    dataInizio: convertDateForDisplay(searchParams?.get('dataInizio') || ''),
+    dataFine: convertDateForDisplay(searchParams?.get('dataFine') || ''),
     mese: searchParams?.get('mese') || '',
     trimestre: searchParams?.get('trimestre') || ''
   });
@@ -45,17 +64,80 @@ export default function FiltriViaggiPod() {
       .catch(error => console.error('Errore nel caricamento delle opzioni filtro:', error));
   }, []);
 
+  // Funzione per formattare automaticamente l'input delle date
+  const formatDateInput = (value: string) => {
+    // Rimuove tutti i caratteri non numerici
+    const numbersOnly = value.replace(/\D/g, '');
+    
+    // Limita a massimo 8 cifre
+    const limitedNumbers = numbersOnly.slice(0, 8);
+    
+    // Aggiunge le barre nelle posizioni corrette
+    let formatted = limitedNumbers;
+    if (limitedNumbers.length >= 3) {
+      formatted = limitedNumbers.slice(0, 2) + '/' + limitedNumbers.slice(2);
+    }
+    if (limitedNumbers.length >= 5) {
+      formatted = limitedNumbers.slice(0, 2) + '/' + limitedNumbers.slice(2, 4) + '/' + limitedNumbers.slice(4);
+    }
+    
+    return formatted;
+  };
+
   const handleFilterChange = (field: keyof Filters, value: string) => {
     setFilters(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleDateChange = (field: 'dataInizio' | 'dataFine', value: string) => {
+    const formattedValue = formatDateInput(value);
+    setFilters(prev => ({ ...prev, [field]: formattedValue }));
+  };
+
+  // Funzione per convertire le date dal formato gg/mm/aaaa al formato YYYY-MM-DD per il backend
+  const convertDateForBackend = (dateString: string): string | null => {
+    if (!dateString || dateString.length !== 10) return null;
+    
+    const parts = dateString.split('/');
+    if (parts.length !== 3) return null;
+    
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10);
+    const year = parseInt(parts[2], 10);
+    
+    // Validazione base
+    if (isNaN(day) || isNaN(month) || isNaN(year)) return null;
+    if (day < 1 || day > 31) return null;
+    if (month < 1 || month > 12) return null;
+    if (year < 1900 || year > 2100) return null;
+    
+    // Crea la data per validazione completa
+    const date = new Date(year, month - 1, day);
+    if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+      return null;
+    }
+    
+    // Formato per MySQL: YYYY-MM-DD
+    return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+  };
+
   const applyFilters = () => {
+    console.log('=== DEBUG APPLY FILTERS ===');
+    console.log('Filtri attuali:', filters);
+    
     const params = new URLSearchParams();
     
     // Aggiungi solo i filtri non vuoti
     Object.entries(filters).forEach(([key, value]) => {
       if (value) {
-        params.set(key, value);
+        // Converti le date dal formato gg/mm/aaaa al formato YYYY-MM-DD per il backend
+        if (key === 'dataInizio' || key === 'dataFine') {
+          const convertedDate = convertDateForBackend(value);
+          if (convertedDate) {
+            params.set(key, convertedDate);
+          }
+        } else {
+          params.set(key, value);
+        }
       }
     });
     
@@ -65,7 +147,11 @@ export default function FiltriViaggiPod() {
       params.set('page', '1');
     }
     
-    router.push(`/viaggi-pod?${params.toString()}`);
+    const finalUrl = `/viaggi-pod?${params.toString()}`;
+    console.log('URL finale costruito:', finalUrl);
+    console.log('Parametri URL:', params.toString());
+    
+    router.push(finalUrl);
   };
 
   const resetFilters = () => {
@@ -140,16 +226,13 @@ export default function FiltriViaggiPod() {
               
               <div className="col-md-4">
                 <label className="form-label">Viaggio</label>
-                <select
-                  className="form-select"
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Inserisci numero viaggio"
                   value={filters.viaggio}
                   onChange={(e) => handleFilterChange('viaggio', e.target.value)}
-                >
-                  <option value="">Tutti</option>
-                  {filterOptions.viaggi.map(viaggio => (
-                    <option key={viaggio} value={viaggio}>{viaggio}</option>
-                  ))}
-                </select>
+                />
               </div>
               
               <div className="col-md-4">
@@ -170,20 +253,24 @@ export default function FiltriViaggiPod() {
               <div className="col-md-3">
                 <label className="form-label">Data Inizio Da</label>
                 <input
-                  type="date"
+                  type="text"
                   className="form-control"
+                  placeholder="gg/mm/aaaa"
+                  maxLength="10"
                   value={filters.dataInizio}
-                  onChange={(e) => handleFilterChange('dataInizio', e.target.value)}
+                  onChange={(e) => handleDateChange('dataInizio', e.target.value)}
                 />
               </div>
               
               <div className="col-md-3">
                 <label className="form-label">Data Fine A</label>
                 <input
-                  type="date"
+                  type="text"
                   className="form-control"
+                  placeholder="gg/mm/aaaa"
+                  maxLength="10"
                   value={filters.dataFine}
-                  onChange={(e) => handleFilterChange('dataFine', e.target.value)}
+                  onChange={(e) => handleDateChange('dataFine', e.target.value)}
                 />
               </div>
               

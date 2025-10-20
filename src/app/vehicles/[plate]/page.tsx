@@ -516,7 +516,7 @@ export default function VehicleDetailPage() {
               <h4 className="alert-heading">Errore</h4>
               <p>{error}</p>
               <hr />
-              <Link href="/vehicles" className="btn btn-outline-danger">
+              <Link href="/vehicles/list" className="btn btn-outline-danger">
                 Torna ai Veicoli
               </Link>
             </div>
@@ -535,7 +535,7 @@ export default function VehicleDetailPage() {
               <h4 className="alert-heading">Veicolo non trovato</h4>
               <p>Il veicolo con targa <strong>{plate}</strong> non è stato trovato.</p>
               <hr />
-              <Link href="/vehicles" className="btn btn-outline-warning">
+              <Link href="/vehicles/list" className="btn btn-outline-warning">
                 Torna ai Veicoli
               </Link>
             </div>
@@ -572,9 +572,13 @@ export default function VehicleDetailPage() {
               <p className="text-muted mb-0">Targa: <strong>{vehicle.targa}</strong></p>
             </div>
             <div>
-              <Link href="/vehicles" className="btn btn-outline-secondary me-2">
+              <Link href="/vehicles/list" className="btn btn-outline-secondary me-2">
                 <i className="fas fa-arrow-left me-1"></i>
                 Torna ai Veicoli
+              </Link>
+              <Link href="/vehicles" className="btn btn-outline-primary me-2">
+                <i className="fas fa-tachometer-alt me-1"></i>
+                Dashboard Veicoli
               </Link>
               {!isEditing && (
                 <button 

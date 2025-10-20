@@ -1,4 +1,54 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.31.0
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.31.1
+
+## 🚀 **VERSIONE 2.31.1** - Risoluzione Filtri Data Viaggi POD ⭐ **NUOVO**
+
+### 🔧 **CORREZIONE FILTRI DATA VIAGGI POD**
+- **Problema risolto**: Filtri data non funzionanti nella pagina `/viaggi-pod`
+- **Causa identificata**: Conversione errata formato date da `gg/mm/aaaa` a `YYYY-MM-DD`
+- **Soluzione implementata**: Corretta funzione `convertDateForBackend` per gestione formato italiano
+- **Validazione completa**: Aggiunta validazione giorni, mesi e anni con controllo date reali
+
+### 📅 **GESTIONE FORMATO DATE MIGLIORATA**
+- **Input formato italiano**: Supporto completo formato `gg/mm/aaaa` (es: `16/10/2025`)
+- **Conversione backend**: Trasformazione automatica in formato MySQL `YYYY-MM-DD`
+- **Validazione robusta**: Controllo validità date con gestione anni bisestili e giorni per mese
+- **Gestione errori**: Restituzione `null` per date non valide con logging errori
+- **Compatibilità database**: Query SQL ottimizzate per confronto date con funzione `DATE()`
+
+### 🎯 **PROBLEMA DATABASE DATETIME RISOLTO**
+- **Causa tecnica**: Campi database in formato `DATETIME` causavano esclusione record con orari > 00:00:00
+- **Soluzione SQL**: Utilizzo funzione `DATE()` nelle condizioni `WHERE` per confronto solo data
+- **Query ottimizzate**: Modificate `getViaggiPodData` e `getViaggiPodStats` per gestione corretta date
+- **Performance mantenute**: Soluzioni efficienti senza impatto su velocità query
+- **Compatibilità**: Funzionamento corretto con tutti i formati datetime esistenti
+
+### 🔄 **CONVERSIONE BIDIREZIONALE DATE**
+- **Frontend → Backend**: Conversione `16/10/2025` → `2025-10-16` per API e database
+- **Backend → Frontend**: Conversione `2025-10-16` → `16/10/2025` per visualizzazione
+- **Persistenza URL**: Date mantenute in formato corretto nei parametri URL
+- **Ricaricamento pagina**: Conversione automatica da URL a formato visualizzazione
+- **Esperienza utente**: Formato italiano sempre visibile all'utente finale
+
+### 🛠️ **IMPLEMENTAZIONI TECNICHE**
+- **Funzione `convertDateForBackend`**: Validazione e conversione formato italiano → MySQL
+- **Funzione `convertDateForDisplay`**: Conversione formato MySQL → italiano per visualizzazione
+- **Gestione stato filtri**: Inizializzazione corretta con conversione automatica da URL
+- **Query SQL ottimizzate**: Uso `DATE(Data Inizio)` e `DATE(Data Fine)` per confronti precisi
+- **Logging debug**: Sistema tracciamento per identificazione problemi futuri
+
+### ✅ **BENEFICI OPERATIVI**
+- **Filtri funzionanti**: Ricerca per data finalmente operativa nella pagina viaggi POD
+- **Formato intuitivo**: Utenti utilizzano formato italiano familiare `gg/mm/aaaa`
+- **Risultati accurati**: Query database restituiscono dati corretti per range date
+- **Persistenza stato**: Filtri mantenuti al ricaricamento pagina
+- **Robustezza sistema**: Gestione errori e validazioni complete per prevenire problemi
+
+### 📋 **FILE MODIFICATI**
+- `src/components/FiltriViaggiPod.tsx` - Corrette funzioni conversione date e gestione stato
+- `src/lib/data-viaggi-pod.ts` - Ottimizzate query SQL con funzione `DATE()` per confronti
+- `docs/database-reference.md` - Aggiornata documentazione con dettagli implementazione
+
+---
 
 ## 🚀 **VERSIONE 2.31.0** - Ottimizzazioni Performance e Auto-formattazione Date ⭐ **NUOVO**
 

@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.30.10
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.31.1
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -6,6 +6,7 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 
 ### 📊 **Gestione Viaggi e Monitoraggio**
 - **Viaggi POD**: Sistema completo per gestione viaggi con Proof of Delivery
+- **Filtri data funzionanti**: Risolti problemi filtri data con formato italiano gg/mm/aaaa ⭐ **NUOVO v2.31.1**
 - **Monitoraggio avanzato**: Tracciamento in tempo reale di tutti i viaggi
 - **Import Excel**: Importazione automatica dati da file Excel con mappatura intelligente
 - **Sincronizzazione database**: Allineamento automatico tra database multipli con controllo corrispondenze
@@ -451,7 +452,37 @@ WHERE status = 'completed' AND created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)
 - **Accessibilità migliorata**: Contrasto e leggibilità ottimizzati per tutti gli utenti
 - **Design contemporaneo**: Interfaccia allineata agli standard moderni di design
 
-### 📊 **Metriche di Efficienza Viaggi - v2.31.0** ⭐ **NUOVO**
+### 🔧 **Risoluzione Filtri Data Viaggi POD - v2.31.1** ⭐ **NUOVO**
+
+#### 🎯 **Problema Filtri Data Risolto**
+- **Filtri funzionanti**: Risolti problemi filtri data nella pagina `/viaggi-pod`
+- **Formato italiano**: Supporto completo formato `gg/mm/aaaa` per input utente
+- **Conversione automatica**: Trasformazione automatica in formato MySQL `YYYY-MM-DD`
+- **Validazione robusta**: Controllo validità date con gestione anni bisestili
+- **Query ottimizzate**: Utilizzo funzione `DATE()` per confronti precisi con campi DATETIME
+
+#### 🔄 **Conversione Bidirezionale Date**
+- **Frontend → Backend**: Conversione `16/10/2025` → `2025-10-16` per API e database
+- **Backend → Frontend**: Conversione `2025-10-16` → `16/10/2025` per visualizzazione
+- **Persistenza URL**: Date mantenute in formato corretto nei parametri URL
+- **Ricaricamento pagina**: Conversione automatica da URL a formato visualizzazione
+- **Esperienza utente**: Formato italiano sempre visibile all'utente finale
+
+#### 🛠️ **Implementazioni Tecniche**
+- **Funzione `convertDateForBackend`**: Validazione e conversione formato italiano → MySQL
+- **Funzione `convertDateForDisplay`**: Conversione formato MySQL → italiano per visualizzazione
+- **Gestione stato filtri**: Inizializzazione corretta con conversione automatica da URL
+- **Query SQL ottimizzate**: Uso `DATE(Data Inizio)` e `DATE(Data Fine)` per confronti precisi
+- **Logging debug**: Sistema tracciamento per identificazione problemi futuri
+
+#### ✅ **Benefici Operativi**
+- **Filtri finalmente funzionanti**: Ricerca per data operativa nella pagina viaggi POD
+- **Formato intuitivo**: Utenti utilizzano formato italiano familiare `gg/mm/aaaa`
+- **Risultati accurati**: Query database restituiscono dati corretti per range date
+- **Persistenza stato**: Filtri mantenuti al ricaricamento pagina
+- **Robustezza sistema**: Gestione errori e validazioni complete
+
+### 📊 **Metriche di Efficienza Viaggi - v2.31.0** ⭐ **CONSOLIDATO**
 
 #### 🎯 **Nuove Card Statistiche Viaggi**
 - **Colli/Viaggio**: Metrica di efficienza per media colli trasportati per viaggio (totalColli ÷ totalTrasporti)

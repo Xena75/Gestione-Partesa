@@ -49,6 +49,33 @@ Questo documento contiene la documentazione completa delle tre basi di dati util
 
 ## Ottimizzazioni Performance Recenti
 
+### Filtri Data Viaggi POD (/viaggi-pod)
+**Data implementazione:** Gennaio 2025
+
+**Problemi risolti:**
+- Filtri data non funzionanti nella pagina `/viaggi-pod`
+- Conversione errata formato date da `gg/mm/aaaa` a `YYYY-MM-DD`
+- Esclusione record con orari > 00:00:00 nei campi DATETIME
+
+**Modifiche tecniche:**
+1. **Componente `FiltriViaggiPod.tsx`:**
+   - Corretta funzione `convertDateForBackend` per validazione formato italiano
+   - Aggiunta funzione `convertDateForDisplay` per conversione bidirezionale
+   - Gestione stato filtri con conversione automatica da URL
+   - Validazione robusta con controllo anni bisestili e giorni per mese
+
+2. **API `data-viaggi-pod.ts`:**
+   - Utilizzo funzione `DATE()` nelle condizioni WHERE per confronto solo data
+   - Query ottimizzate: `DATE(Data Inizio) >= ?` e `DATE(Data Fine) <= ?`
+   - Modificate funzioni `getViaggiPodData` e `getViaggiPodStats`
+   - Compatibilità con tutti i formati datetime esistenti
+
+**Benefici:**
+- Filtri data finalmente funzionanti
+- Formato italiano intuitivo per gli utenti
+- Risultati accurati per range date
+- Persistenza stato filtri al ricaricamento
+
 ### Pagina Preventivi (/vehicles/quotes)
 **Data implementazione:** Gennaio 2025
 

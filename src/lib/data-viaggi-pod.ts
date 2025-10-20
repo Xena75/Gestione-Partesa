@@ -53,6 +53,9 @@ export async function getViaggiPodData(
   filters: FiltriViaggioPod = {}
 ): Promise<{ viaggiPod: ViaggioPod[], totalPages: number, totalRecords: number }> {
   try {
+    console.log('=== DEBUG FILTRI VIAGGI POD ===');
+    console.log('Filtri ricevuti:', JSON.stringify(filters, null, 2));
+    
     const offset = (currentPage - 1) * recordsPerPage;
     
     // Validiamo i campi di ordinamento permessi
@@ -83,12 +86,12 @@ export async function getViaggiPodData(
     }
     
     if (filters.dataInizio) {
-      whereConditions.push('`Data Inizio` >= ?');
+      whereConditions.push('DATE(`Data Inizio`) >= ?');
       queryParams.push(filters.dataInizio);
     }
     
     if (filters.dataFine) {
-      whereConditions.push('`Data Fine` <= ?');
+      whereConditions.push('DATE(`Data Fine`) <= ?');
       queryParams.push(filters.dataFine);
     }
     
@@ -104,6 +107,15 @@ export async function getViaggiPodData(
     
     const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
     
+    console.log('Condizioni WHERE costruite:', whereConditions);
+    console.log('Parametri query:', queryParams);
+    console.log('WHERE clause finale:', whereClause);
+    
+    // Query di debug per vedere il range di date nel database
+    const debugSql = 'SELECT MIN(`Data Inizio`) as min_date, MAX(`Data Inizio`) as max_date, COUNT(*) as total_records FROM viaggi_pod';
+    const [debugResult] = await pool.query(debugSql);
+    console.log('Range date nel database:', debugResult);
+    
     // Query per ottenere i dati della pagina corrente
     const dataSql = `
       SELECT 
@@ -116,7 +128,18 @@ export async function getViaggiPodData(
     `;
     
     const dataParams = [...queryParams, recordsPerPage, offset];
+    
+    console.log('Query SQL finale:', dataSql);
+    console.log('Parametri finali:', dataParams);
+    
     const [rows] = await pool.query(dataSql, dataParams);
+    
+    console.log('Primi 3 risultati dalla query:', (rows as ViaggioPod[]).slice(0, 3).map(row => ({
+      ID: row.ID,
+      Viaggio: row.Viaggio,
+      'Data Inizio': row['Data Inizio'],
+      'Data Fine': row['Data Fine']
+    })));
     
     // Query per contare il numero totale di record
     const countSql = `SELECT COUNT(*) as total FROM viaggi_pod ${whereClause}`;
@@ -282,6 +305,9 @@ export async function updateViaggioPodData(id: number, viaggio: Partial<ViaggioP
 // --- FUNZIONE PER OTTENERE LE STATISTICHE DEI VIAGGI POD ---
 export async function getViaggiPodStats(filters: FiltriViaggioPod = {}): Promise<ViaggiPodStats> {
   try {
+    console.log('=== DEBUG FILTRI VIAGGI POD STATS ===');
+    console.log('Filtri ricevuti per stats:', JSON.stringify(filters, null, 2));
+    
     // Costruzione delle condizioni WHERE per i filtri
     const whereConditions: string[] = [];
     const queryParams: any[] = [];
@@ -302,12 +328,12 @@ export async function getViaggiPodStats(filters: FiltriViaggioPod = {}): Promise
     }
     
     if (filters.dataInizio) {
-      whereConditions.push('`Data Inizio` >= ?');
+      whereConditions.push('DATE(`Data Inizio`) >= ?');
       queryParams.push(filters.dataInizio);
     }
     
     if (filters.dataFine) {
-      whereConditions.push('`Data Fine` <= ?');
+      whereConditions.push('DATE(`Data Fine`) <= ?');
       queryParams.push(filters.dataFine);
     }
     
