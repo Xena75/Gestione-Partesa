@@ -256,7 +256,7 @@ export default function FiltriViaggiPod() {
                   type="text"
                   className="form-control"
                   placeholder="gg/mm/aaaa"
-                  maxLength="10"
+                  maxLength={10}
                   value={filters.dataInizio}
                   onChange={(e) => handleDateChange('dataInizio', e.target.value)}
                 />
@@ -268,7 +268,7 @@ export default function FiltriViaggiPod() {
                   type="text"
                   className="form-control"
                   placeholder="gg/mm/aaaa"
-                  maxLength="10"
+                  maxLength={10}
                   value={filters.dataFine}
                   onChange={(e) => handleDateChange('dataFine', e.target.value)}
                 />

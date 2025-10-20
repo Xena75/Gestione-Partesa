@@ -329,7 +329,7 @@ export default function VehicleDocuments({ vehiclePlate }: VehicleDocumentsProps
                     className="form-control"
                     placeholder="gg/mm/aaaa"
                     value={expiryDate}
-                    maxLength="10"
+                    maxLength={10}
                     onChange={(e) => {
                       const formattedValue = formatDateInput(e.target.value);
                       setExpiryDate(formattedValue);

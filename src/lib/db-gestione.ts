@@ -14,10 +14,7 @@ const pool = mysql.createPool({
   dateStrings: true, // Mantiene le date come stringhe
   // 🚀 NUOVE OPZIONI PER PERFORMANCE E STABILITÀ
   multipleStatements: false, // Sicurezza
-  charset: 'utf8mb4',
-  acquireTimeout: 60000,
-  timeout: 60000,
-  reconnect: true
+  charset: 'utf8mb4'
 });
 
 export default pool;
