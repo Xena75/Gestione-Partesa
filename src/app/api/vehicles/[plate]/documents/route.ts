@@ -30,53 +30,74 @@ export async function GET(
     const { plate } = await params;
     const connection = await mysql.createConnection(dbConfig);
 
-    // Recupera l'ID del veicolo dalla targa
-    const [vehicleRows] = await connection.execute(
-      'SELECT id, active FROM vehicles WHERE targa = ?',
-      [plate]
-    );
+    // Query ottimizzata: unisce verifica veicolo e recupero documenti in una sola chiamata
+    const optimizedQuery = `
+      SELECT 
+        v.id as vehicle_id,
+        v.active as vehicle_active,
+        v.targa,
+        v.marca,
+        v.modello,
+        vd.id,
+        vd.vehicle_id,
+        vd.document_type,
+        vd.file_name,
+        vd.file_path,
+        vd.file_size,
+        vd.expiry_date,
+        vd.uploaded_at,
+        CASE 
+          WHEN vd.expiry_date IS NULL THEN 'no_expiry'
+          WHEN vd.expiry_date < CURDATE() THEN 'expired'
+          WHEN vd.expiry_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 'expiring_soon'
+          ELSE 'valid'
+        END as expiry_status
+      FROM vehicles v
+      LEFT JOIN vehicle_documents vd ON v.id = vd.vehicle_id
+      WHERE v.targa = ?
+      ORDER BY vd.uploaded_at DESC
+    `;
 
-    if (!Array.isArray(vehicleRows) || vehicleRows.length === 0) {
-      await connection.end();
+    const [rows] = await connection.execute(optimizedQuery, [plate]);
+    await connection.end();
+
+    if (!Array.isArray(rows) || rows.length === 0) {
       return NextResponse.json(
         { success: false, error: 'Veicolo non trovato' },
         { status: 404 }
       );
     }
 
-    const vehicle = vehicleRows[0] as any;
-    if (vehicle.active === 0) {
-      await connection.end();
+    // Verifica se il veicolo è attivo (controllo sul primo risultato)
+    const firstRow = rows[0] as any;
+    if (firstRow.vehicle_active === 0) {
       return NextResponse.json(
         { success: false, error: 'Veicolo non attivo' },
         { status: 403 }
       );
     }
 
-    const vehicleId = (vehicleRows[0] as any).id; // Questo è già una stringa (targa) // Questo è già una stringa (targa)
-
-    // Recupera tutti i documenti del veicolo
-    const documentsQuery = `
-      SELECT 
-        id,
-        vehicle_id,
-        document_type,
-        file_name,
-        file_path,
-        file_size,
-        expiry_date,
-        uploaded_at
-      FROM vehicle_documents 
-      WHERE vehicle_id = ?
-      ORDER BY uploaded_at DESC
-    `;
-
-    const [documentsRows] = await connection.execute(documentsQuery, [vehicleId]);
-    await connection.end();
+    // Filtra solo i documenti (esclude righe dove non ci sono documenti)
+    const documents = rows
+      .filter((row: any) => row.id !== null) // Solo righe con documenti
+      .map((row: any) => ({
+        id: row.id,
+        vehicle_id: row.vehicle_id,
+        document_type: row.document_type,
+        file_name: row.file_name,
+        file_path: row.file_path,
+        file_size: row.file_size,
+        expiry_date: row.expiry_date,
+        uploaded_at: row.uploaded_at,
+        expiry_status: row.expiry_status,
+        targa: row.targa,
+        marca: row.marca,
+        modello: row.modello
+      }));
 
     return NextResponse.json({
       success: true,
-      documents: documentsRows
+      documents: documents
     });
   } catch (error) {
     console.error('Errore nel recupero documenti:', error);

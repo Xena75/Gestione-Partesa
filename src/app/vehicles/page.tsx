@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Car, Calendar, DollarSign, AlertTriangle, CheckCircle, 
-  Clock, TrendingUp, Users, Settings, Plus, Eye, List 
+  Clock, TrendingUp, Users, Settings, Plus, Eye, List, FileText 
 } from 'lucide-react';
 
 interface VehicleStats {
@@ -242,6 +242,12 @@ export default function VehiclesDashboard() {
                 </div>
               </div>
               <div className="row">
+                <div className="col-md-6 col-lg-3 mb-3">
+                  <Link href="/vehicles/documents" className="btn btn-outline-info w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
+                    <FileText size={32} className="mb-2" />
+                    <span>Gestione Documenti</span>
+                  </Link>
+                </div>
                 <div className="col-md-6 col-lg-3 mb-3">
                   <Link href="/vehicles/maintenance-monitoring" className="btn btn-outline-warning w-100 h-100 d-flex flex-column align-items-center justify-content-center py-3">
                     <AlertTriangle size={32} className="mb-2" />

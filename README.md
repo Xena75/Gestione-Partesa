@@ -74,6 +74,14 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **API complete**: Endpoint RESTful per tutte le operazioni CRUD
 - **Fix critici**: Risolti errori 500 su endpoint `/api/vehicles/quotes` ⭐ **NUOVO**
 
+### 📄 **Ottimizzazioni Pagina Documenti Veicoli** ⭐ **NUOVO v2.31.1**
+- **Campo Veicolo completo**: Aggiunto campo "Veicolo" nella tabella documenti con targa, marca e modello
+- **Performance migliorate**: Ottimizzazione API con riduzione 50% query database tramite LEFT JOIN
+- **Layout header ottimizzato**: Massima separazione tra titolo e pulsanti con `flex-grow-1`
+- **UX migliorata**: Colori pulsanti semantici - "Aggiorna" verde, "Chiudi" rosso
+- **API ottimizzata**: Endpoint `/api/vehicles/[plate]/documents` con query unificata
+- **Caricamento veloce**: Eliminazione query separate per dati veicolo
+
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
 
 ### 📸 **Sistema Gestione Immagini Monitoraggio Viaggi - v2.30.6** ⭐ **NUOVO**

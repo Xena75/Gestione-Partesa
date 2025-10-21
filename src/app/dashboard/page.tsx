@@ -1033,10 +1033,22 @@ export default function ModernDashboard() {
               </div>
               <div className={`card-body card-body-soft ${!toggleStates.veicoli ? 'card-body-collapsed' : ''}`}>
                 <div className="row g-2 mb-3">
+                  <div className="col-12">
+                    <Link href="/vehicles" className="btn btn-primary btn-action btn-sm w-100">
+                      <Car size={18} className="me-1" />
+                      Dashboard Veicoli
+                    </Link>
+                  </div>
                   <div className="col-6">
                     <Link href="/vehicles/list" className="btn btn-outline-primary btn-action btn-sm w-100">
                       <Car size={16} className="me-1" />
                       Lista Veicoli
+                    </Link>
+                  </div>
+                  <div className="col-6">
+                    <Link href="/vehicles/documents" className="btn btn-outline-primary btn-action btn-sm w-100">
+                      <FileText size={16} className="me-1" />
+                      Documenti Veicoli
                     </Link>
                   </div>
                   <div className="col-6">
@@ -1051,16 +1063,10 @@ export default function ModernDashboard() {
                       Calendario Veicoli
                     </Link>
                   </div>
-                  <div className="col-6">
+                  <div className="col-12">
                     <Link href="/vehicles/quotes" className="btn btn-outline-primary btn-action btn-sm w-100">
                       <DollarSign size={16} className="me-1" />
                       Preventivi Manutenzione
-                    </Link>
-                  </div>
-                  <div className="col-12">
-                    <Link href="/vehicles" className="btn btn-outline-primary btn-action btn-sm w-100">
-                      <Car size={16} className="me-1" />
-                      Dashboard Veicoli
                     </Link>
                   </div>
                 </div>

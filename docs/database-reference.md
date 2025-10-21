@@ -103,6 +103,35 @@ Questo documento contiene la documentazione completa delle tre basi di dati util
 - Ridotto carico sul database
 - Migliore esperienza utente
 
+### Pagina Documenti Veicoli (/vehicles/documents)
+**Data implementazione:** Gennaio 2025
+
+**Problemi risolti:**
+- Campo "Veicolo" mancante nella tabella documenti
+- Layout header documenti non ottimale
+- Colori pulsanti non intuitivi
+- Performance lente nel caricamento documenti per veicolo specifico
+
+**Modifiche tecniche:**
+1. **API `/api/vehicles/[plate]/documents/route.ts`:**
+   - Aggiunta query campi veicolo: `v.targa`, `v.marca`, `v.modello`
+   - Ottimizzazione query con LEFT JOIN invece di query separate
+   - Riduzione chiamate database del 50%
+   - Mappatura risultati aggiornata per includere dati veicolo
+
+2. **Frontend `/vehicles/documents/page.tsx`:**
+   - Aggiunto campo "Veicolo" nella tabella documenti con targa, marca e modello
+   - Ottimizzato layout header con `flex-grow-1` per massima separazione titolo-pulsanti
+   - Aggiornati colori pulsanti: "Aggiorna" verde (`btn-success`), "Chiudi" rosso (`btn-danger`)
+   - Migliorata UX con colori semanticamente corretti
+
+**Benefici:**
+- Campo "Veicolo" ora visibile e popolato correttamente
+- Caricamento documenti più veloce (riduzione 50% query database)
+- Layout header più pulito e bilanciato
+- Interfaccia più intuitiva con colori standard UX
+- Migliore esperienza utente complessiva
+
 ## Strutture Complete delle Tabelle
 
 ### Database: gestionelogistica
@@ -682,7 +711,7 @@ amount        decimal(10,2)  NO        NULL
 quote_date    date           NO        NULL                 
 valid_until   date           YES        NULL                 
 status        enum('pending','approved','rejected','expired') NO  NULL
-invoice_status enum('not_invoiced','invoiced','partial') NO not_invoiced
+invoice_status enum('not_invoiced','invoiced','partial','not_applicable') NO not_invoiced
 notes         text           YES        NULL                 
 created_at    timestamp      NO        current_timestamp()  
 updated_at    timestamp      NO        current_timestamp()  on update current_timestamp()
@@ -695,10 +724,11 @@ updated_at    timestamp      NO        current_timestamp()  on update current_ti
 - **Funzionalità**: Tracciamento stato fatturazione, gestione preventivi
 - **Dashboard**: Monitoraggio preventivi e fatture
 
-**Campo invoice_status (v2.30.7):**
+**Campo invoice_status (v2.30.8):**
 - `not_invoiced`: Preventivo non ancora fatturato (default)
 - `invoiced`: Preventivo completamente fatturato
 - `partial`: Preventivo parzialmente fatturato
+- `not_applicable`: Preventivo rifiutato, fatturazione non applicabile
 
 #### notification_settings
 ```sql
