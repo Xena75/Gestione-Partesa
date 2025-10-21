@@ -24,25 +24,28 @@ export async function GET(request: NextRequest) {
 
     const query = `
       SELECT 
-        id,
-        targa,
-        marca,
-        modello,
-        proprieta,
-        portata,
-        n_palt,
-        tipo_patente,
-        pallet_kg,
-        km_ultimo_tagliando,
-        data_ultimo_tagliando,
-        data_ultima_revisione,
-        data_revisione_tachigrafo,
-        active,
-        note,
-        createdAt,
-        updatedAt
-      FROM vehicles 
-      ORDER BY targa ASC
+        v.id,
+        v.targa,
+        v.marca,
+        v.modello,
+        v.proprieta,
+        v.portata,
+        v.n_palt,
+        v.tipo_patente,
+        v.pallet_kg,
+        v.km_ultimo_tagliando,
+        v.data_ultimo_tagliando,
+        v.data_ultima_revisione,
+        v.data_revisione_tachigrafo,
+        v.active,
+        v.note,
+        v.createdAt,
+        v.updatedAt,
+        COALESCE(COUNT(vd.id), 0) as total_documents
+      FROM vehicles v
+      LEFT JOIN vehicle_documents vd ON v.id = vd.vehicle_id
+      GROUP BY v.id, v.targa, v.marca, v.modello, v.proprieta, v.portata, v.n_palt, v.tipo_patente, v.pallet_kg, v.km_ultimo_tagliando, v.data_ultimo_tagliando, v.data_ultima_revisione, v.data_revisione_tachigrafo, v.active, v.note, v.createdAt, v.updatedAt
+      ORDER BY v.targa ASC
     `;
 
     const [rows] = await connection.execute(query);

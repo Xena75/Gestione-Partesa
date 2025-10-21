@@ -597,6 +597,10 @@ export async function PUT(request: NextRequest) {
       if (status === 'approved') {
         query += ', approved_by = ?, approved_at = CURRENT_TIMESTAMP';
         params.push(approved_by || null);
+      } else if (status === 'rejected') {
+        // Quando un preventivo viene rifiutato, imposta automaticamente invoice_status a 'not_applicable'
+        query += ', invoice_status = ?';
+        params.push('not_applicable');
       }
     }
 

@@ -80,6 +80,13 @@ function LoginForm() {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !isLoading) {
+      e.preventDefault();
+      handleSubmit(e as any);
+    }
+  };
+
   return (
     <div className="min-vh-100 d-flex align-items-center justify-content-center bg-light py-5">
       <div className="container">
@@ -118,6 +125,7 @@ function LoginForm() {
                       required
                       value={formData.username}
                       onChange={handleInputChange}
+                      onKeyDown={handleKeyDown}
                       placeholder="Inserisci il nome utente"
                       disabled={isLoading}
                     />
@@ -135,6 +143,7 @@ function LoginForm() {
                         required
                         value={formData.password}
                         onChange={handleInputChange}
+                        onKeyDown={handleKeyDown}
                         placeholder="Inserisci la password"
                         disabled={isLoading}
                       />

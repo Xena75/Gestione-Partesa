@@ -594,7 +594,8 @@ function VehicleQuotesContent() {
         },
         body: JSON.stringify({
           id: quoteId,
-          status: 'rejected'
+          status: 'rejected',
+          invoice_status: 'not_applicable'
         })
       });
       
@@ -644,7 +645,8 @@ function VehicleQuotesContent() {
     const statusClasses = {
       not_invoiced: 'bg-warning text-dark',
       invoiced: 'bg-success',
-      partial: 'bg-warning'
+      partial: 'bg-warning',
+      not_applicable: 'bg-secondary'
     };
     return statusClasses[invoiceStatus as keyof typeof statusClasses] || 'bg-secondary';
   };
@@ -653,7 +655,8 @@ function VehicleQuotesContent() {
     const statusTexts = {
       not_invoiced: 'Da Fatturare',
       invoiced: 'Fatturato',
-      partial: 'Parziale'
+      partial: 'Parziale',
+      not_applicable: 'Non Applicabile'
     };
     return statusTexts[invoiceStatus as keyof typeof statusTexts] || 'N/A';
   };
@@ -885,6 +888,7 @@ function VehicleQuotesContent() {
                     <option value="not_invoiced">Da Fatturare</option>
                     <option value="invoiced">Fatturato</option>
                     <option value="partial">Parziale</option>
+                    <option value="not_applicable">Non Applicabile</option>
                   </select>
                 </div>
                 <div className="col-lg-1 col-md-2 col-sm-12 mb-3">
@@ -1050,7 +1054,7 @@ function VehicleQuotesContent() {
                           </td>
                           {/* 11. Stato Fatturazione */}
                           <td>
-                            {quote.status === 'approved' ? (
+                            {quote.status === 'approved' || quote.invoice_status === 'not_applicable' ? (
                               <span className={`badge ${getInvoiceStatusBadge(quote.invoice_status)}`}>
                                 {getInvoiceStatusText(quote.invoice_status)}
                               </span>

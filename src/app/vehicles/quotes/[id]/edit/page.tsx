@@ -872,10 +872,10 @@ export default function EditQuotePage() {
                       value={formData.invoice_status}
                       onChange={handleInputChange}
                     >
-                      <option value="pending">Da Fatturare</option>
+                      <option value="not_invoiced">Da Fatturare</option>
                       <option value="invoiced">Fatturato</option>
-                      <option value="paid">Pagato</option>
-                      <option value="cancelled">Annullato</option>
+                      <option value="partial">Parziale</option>
+                      <option value="not_applicable">Non Applicabile</option>
                     </select>
                   </div>
 
