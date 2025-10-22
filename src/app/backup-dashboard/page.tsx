@@ -124,6 +124,10 @@ interface DashboardSummary {
 export default function BackupDashboard() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  
+  // Rileva se l'app è in esecuzione su Vercel
+  const isVercel = typeof window !== 'undefined' && window.location.hostname.includes('vercel.app');
+  
   const [dashboardData, setDashboardData] = useState<{
     summary: DashboardSummary | null;
     recentJobs: BackupJob[];
@@ -665,8 +669,9 @@ export default function BackupDashboard() {
                   <div className="col-md-4">
                     <button
                       onClick={() => startManualBackup('full')}
-                      disabled={isExecuting || selectedDatabases.length === 0}
+                      disabled={isVercel || isExecuting || selectedDatabases.length === 0}
                       className="btn btn-primary w-100 d-flex align-items-center justify-content-center"
+                      title={isVercel ? "Backup manuali non disponibili su Vercel" : ""}
                     >
                       <Download className="me-2" size={16} />
                       {isExecuting ? 'Esecuzione...' : 'Backup Completo'}
@@ -675,8 +680,9 @@ export default function BackupDashboard() {
                   <div className="col-md-4">
                     <button
                       onClick={() => startManualBackup('incremental')}
-                      disabled={isExecuting || selectedDatabases.length === 0}
+                      disabled={isVercel || isExecuting || selectedDatabases.length === 0}
                       className="btn btn-success w-100 d-flex align-items-center justify-content-center"
+                      title={isVercel ? "Backup manuali non disponibili su Vercel" : ""}
                     >
                       <Upload className="me-2" size={16} />
                       {isExecuting ? 'Esecuzione...' : 'Backup Incrementale'}
@@ -685,8 +691,9 @@ export default function BackupDashboard() {
                   <div className="col-md-4">
                     <button
                       onClick={() => startManualBackup('differential')}
-                      disabled={isExecuting || selectedDatabases.length === 0}
+                      disabled={isVercel || isExecuting || selectedDatabases.length === 0}
                       className="btn btn-warning w-100 d-flex align-items-center justify-content-center"
+                      title={isVercel ? "Backup manuali non disponibili su Vercel" : ""}
                     >
                       <BarChart3 className="me-2" size={16} />
                       {isExecuting ? 'Esecuzione...' : 'Backup Differenziale'}
@@ -694,7 +701,28 @@ export default function BackupDashboard() {
                   </div>
                 </div>
                 
-                {selectedDatabases.length === 0 && (
+                {/* Messaggio ambiente Vercel */}
+                {isVercel && (
+                  <div className="alert alert-info mt-3 mb-0" role="alert">
+                    <div className="d-flex align-items-start">
+                      <AlertTriangle size={20} className="me-2 flex-shrink-0 mt-1" />
+                      <div>
+                        <strong>Backup manuali non disponibili su Vercel</strong>
+                        <p className="mb-2 mt-1 small">
+                          Gli script di backup richiedono un ambiente Windows e non possono essere eseguiti da web.
+                        </p>
+                        <p className="mb-0 small">
+                          <strong>Per eseguire backup manuali:</strong><br />
+                          • Usa l'app in locale: <code>npm run dev</code> → <code>http://localhost:3001/backup-dashboard</code><br />
+                          • Oppure esegui gli script direttamente: <code>backup-system\scripts\backup-full.bat</code><br />
+                          • O tramite Task Scheduler di Windows
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {selectedDatabases.length === 0 && !isVercel && (
                   <div className="alert alert-warning mt-3 mb-0" role="alert">
                     <small>Seleziona almeno un database per procedere</small>
                   </div>
