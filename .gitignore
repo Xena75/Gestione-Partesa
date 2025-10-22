@@ -65,3 +65,6 @@ import x test/
 *.temp
 .cache/
 temp/
+
+# Archivio file obsoleti
+archive/
