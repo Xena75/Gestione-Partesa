@@ -844,14 +844,15 @@ export default function DocumentsManagement() {
                           <td className="text-center">
                             <div className="btn-group btn-group-sm">
                               <a
-                                href={`/api/vehicles/documents/download/${doc.id}`}
+                                href={doc.file_path}
+                                download={doc.file_name}
                                 className="btn btn-outline-primary"
                                 title="Scarica"
                               >
                                 <Download size={14} />
                               </a>
                               <a
-                                href={`/api/vehicles/documents/view/${doc.id}`}
+                                href={doc.file_path}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="btn btn-outline-info"
