@@ -2,17 +2,17 @@
 import mysql from 'mysql2/promise';
 
 // Configurazione connessione database backup_management
-const backupDbConfig = {
-  host: process.env.MYSQL_HOST || 'localhost',
-  port: parseInt(process.env.MYSQL_PORT || '3306'),
-  user: process.env.MYSQL_USER || 'root',
-  password: process.env.MYSQL_PASSWORD || '',
+export const backupDbConfig = {
+  host: process.env.DB_GESTIONE_HOST || 'localhost',
+  port: parseInt(process.env.DB_GESTIONE_PORT || '3306'),
+  user: process.env.DB_GESTIONE_USER || 'root',
+  password: process.env.DB_GESTIONE_PASS || '',
   database: 'backup_management',
   charset: 'utf8mb4',
   timezone: '+00:00',
-  acquireTimeout: 60000,
-  timeout: 60000,
-  reconnect: true
+  connectTimeout: 60000,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 10000
 };
 
 // Pool di connessioni per il database backup

@@ -2,16 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyUserAccess, verifyAdminAccess } from '@/lib/auth';
 import mysql from 'mysql2/promise';
 import { v4 as uuidv4 } from 'uuid';
-
-// Configurazione database backup_management
-const backupDbConfig = {
-  host: process.env.MYSQL_HOST || 'localhost',
-  port: parseInt(process.env.MYSQL_PORT || '3306'),
-  user: process.env.MYSQL_USER || 'root',
-  password: process.env.MYSQL_PASSWORD || '',
-  database: 'backup_management',
-  charset: 'utf8mb4'
-};
+import { backupDbConfig } from '@/lib/db-backup';
 
 
 

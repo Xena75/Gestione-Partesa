@@ -5,16 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
-
-// Configurazione database backup_management
-const backupDbConfig = {
-  host: process.env.MYSQL_HOST || 'localhost',
-  port: parseInt(process.env.MYSQL_PORT || '3306'),
-  user: process.env.MYSQL_USER || 'root',
-  password: process.env.MYSQL_PASSWORD || '',
-  database: 'backup_management',
-  charset: 'utf8mb4'
-};
+import { backupDbConfig } from '@/lib/db-backup';
 
 interface BackupRequest {
   backup_type: 'full' | 'incremental' | 'differential';

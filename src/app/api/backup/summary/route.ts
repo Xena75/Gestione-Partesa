@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyUserAccess } from '@/lib/auth';
 import mysql from 'mysql2/promise';
+import { backupDbConfig } from '@/lib/db-backup';
 
 // Funzione per verificare accesso admin
 const verifyAdminAccess = async (request: NextRequest) => {
@@ -12,16 +13,6 @@ const verifyAdminAccess = async (request: NextRequest) => {
   // Per ora tutti gli utenti autenticati sono considerati admin
   // In futuro si può implementare un controllo più specifico
   return { success: true, user: userCheck.user };
-};
-
-// Configurazione database backup_management
-const backupDbConfig = {
-  host: process.env.MYSQL_HOST || 'localhost',
-  port: parseInt(process.env.MYSQL_PORT || '3306'),
-  user: process.env.MYSQL_USER || 'root',
-  password: process.env.MYSQL_PASSWORD || '',
-  database: 'backup_management',
-  charset: 'utf8mb4'
 };
 
 
