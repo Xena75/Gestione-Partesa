@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.31.1
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.32.0
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -54,6 +54,18 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Revisioni automatiche**: Sistema di controllo revisioni con statistiche accurate per tachigrafi ⭐ **AGGIORNATO v2.30.10**
 - **Filtri scadenze corretti**: Identificazione precisa di tutte le scadenze passate e in scadenza ⭐ **AGGIORNATO v2.30.10**
 - **Database pulito**: Eliminazione automatica duplicati per performance ottimali ⭐ **AGGIORNATO v2.30.10**
+
+### 👥 **Gestione Dipendenti** ⭐ **NUOVO v2.32.0**
+- **Database esteso**: Tabella employees con 29 campi completi (dati personali, contrattuali, contatti)
+- **Import automatico**: Sistema di import da Excel con aggiornamento/inserimento intelligente
+- **Dati personali**: Nome, cognome, CF, patente, cittadinanza, permesso soggiorno, titolo studio
+- **Dati contrattuali**: Qualifica, tipo contratto, CCNL, livello, orario lavoro, date assunzione/dimissioni
+- **Dati contatti**: Email personale/aziendale, cellulare, indirizzo completo (via, CAP, città)
+- **Centro di costo**: Gestione CDC (Lainate, Pioltello) per organizzazione dipendenti
+- **Conversione automatica**: Date Excel (formato seriale) convertite automaticamente in SQL
+- **Match intelligente**: UPDATE dipendenti esistenti tramite codice fiscale, INSERT nuovi
+- **Migration completa**: Script SQL per aggiunta colonne (`migrations/add_employees_extended_fields.sql`)
+- **Script import**: Node.js script per import massivo da Excel (`scripts/import-employees-from-excel.js`)
 
 ### 🛡️ **Sicurezza e Amministrazione**
 - **Sistema log avanzato**: Registrazione completa di tutte le operazioni

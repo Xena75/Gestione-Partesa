@@ -1,6 +1,183 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.31.1
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.32.0
 
-## 🚀 **VERSIONE 2.31.1** - Risoluzione Filtri Data Viaggi POD ⭐ **NUOVO**
+## 🚀 **VERSIONE 2.32.0** - Sistema Gestione Dipendenti con Import da Excel ⭐ **NUOVO**
+
+### 👥 **GESTIONE DIPENDENTI COMPLETA**
+- **Database esteso**: Tabella `employees` espansa da 10 a 29 colonne per gestione completa dipendenti
+- **13 nuove colonne**: Aggiunta campi per dati personali, contrattuali e di contatto
+- **Struttura completa**: Nome, cognome, CF, email personale/aziendale, cellulare, indirizzo completo
+- **Dati contrattuali**: Qualifica, tipo contratto, CCNL, livello, orario lavoro, date assunzione/dimissioni
+- **Dati personali estesi**: Patente, cittadinanza, permesso soggiorno, titolo studio, luogo/data nascita
+- **Centro di costo**: Campo CDC per organizzazione dipendenti (Lainate, Pioltello)
+
+### 📥 **SISTEMA IMPORT DA EXCEL**
+- **Import automatico**: Script Node.js per import massivo dipendenti da file Excel
+- **Conversione date**: Conversione automatica date Excel (formato seriale) in formato SQL
+- **Match intelligente**: UPDATE dipendenti esistenti tramite codice fiscale, INSERT per nuovi
+- **Gestione errori**: Sistema robusto con logging dettagliato e gestione eccezioni
+- **Report completo**: Riepilogo operazioni con conteggio aggiornati/inseriti/errori
+- **Validazione dati**: Controllo campi obbligatori e formati corretti
+
+### 🔧 **IMPLEMENTAZIONE TECNICA**
+
+#### **Migration Database**
+- **File**: `migrations/add_employees_extended_fields.sql`
+- **Operazione**: `ALTER TABLE employees ADD COLUMN IF NOT EXISTS ...`
+- **Colonne aggiunte**: 13 nuove colonne con tipi e vincoli appropriati
+- **Compatibilità**: Utilizzo `IF NOT EXISTS` per evitare errori su colonne esistenti
+
+#### **Script Import**
+- **File**: `scripts/import-employees-from-excel.js`
+- **Librerie**: `xlsx` per lettura Excel, `mysql2/promise` per database
+- **Logica**: Lettura Excel → Conversione dati → Match CF → UPDATE/INSERT → Report
+- **Funzione conversione**: `excelDateToSQL()` per conversione date seriali Excel
+
+#### **File Excel**
+- **Posizione**: `import/dipendenti.xlsx`
+- **Righe**: 30 dipendenti
+- **Colonne**: 26 campi con dati completi (nome, cognome, CF, email, cellulare, patente, qualifica, CDC, date, ecc.)
+
+### 📊 **STRUTTURA TABELLA EMPLOYEES AGGIORNATA**
+
+**Campi Base (esistenti):**
+- `id` (VARCHAR 191) - Chiave primaria
+- `nominativo` (VARCHAR 191) - Nome completo
+- `nome`, `cognome` (VARCHAR 191) - Nome e cognome separati
+- `cod_fiscale` (VARCHAR 16) - Codice fiscale
+- `active` (TINYINT 1) - Dipendente attivo/inattivo
+- `createdAt`, `updatedAt` (DATETIME 3) - Timestamp sistema
+
+**Campi Contatti (aggiornati):**
+- `email` (VARCHAR 191 UNIQUE) - Email personale
+- `email_aziendale` (VARCHAR 255) - **NUOVO** - Email aziendale
+- `cellulare` (VARCHAR 20) - Numero cellulare
+- `indirizzo` (VARCHAR 255) - **NUOVO** - Via e numero civico
+- `cap` (VARCHAR 10) - **NUOVO** - Codice postale
+- `citta` (VARCHAR 100) - **NUOVO** - Città residenza
+
+**Campi Dati Personali (nuovi/aggiornati):**
+- `patente` (VARCHAR 100) - Tipo patente (es: C + CQC)
+- `foto_url` (VARCHAR 500) - **NUOVO** - URL/path foto
+- `cittadinanza` (VARCHAR 100) - **NUOVO** - Nazionalità
+- `permesso_soggiorno` (VARCHAR 100) - **NUOVO** - Permesso di soggiorno
+- `titolo_studio` (VARCHAR 100) - **NUOVO** - Titolo di studio
+- `luogo_nascita` (VARCHAR 150) - **NUOVO** - Città nascita
+- `data_nascita` (DATE) - **NUOVO** - Data di nascita
+
+**Campi Contrattuali (nuovi/aggiornati):**
+- `cdc` (VARCHAR 191) - Centro di costo (Lainate, Pioltello)
+- `qualifica` (VARCHAR 191) - Qualifica (AUTISTA, IMPIEGATO)
+- `tipo_contratto` (VARCHAR 50) - **NUOVO** - Indeterminato/Determinato
+- `ccnl` (VARCHAR 100) - **NUOVO** - CCNL applicato
+- `livello` (VARCHAR 10) - Livello contrattuale
+- `orario_lavoro` (VARCHAR 50) - **NUOVO** - Ore settimanali
+- `data_assunzione` (DATE) - Data assunzione
+- `data_dimissioni` (DATE) - Data dimissioni (NULL se attivo)
+
+### 🎯 **CONVERSIONE DATE EXCEL**
+
+**Problema**: Excel salva le date come numeri seriali (es: `24893` per `25/02/1968`)
+
+**Soluzione**: Funzione `excelDateToSQL()`
+```javascript
+function excelDateToSQL(excelDate) {
+  // Excel usa 1899-12-30 come base
+  const millisecondsPerDay = 24 * 60 * 60 * 1000;
+  const excelEpoch = new Date(1899, 11, 30);
+  const date = new Date(excelEpoch.getTime() + excelDate * millisecondsPerDay);
+  
+  // Formato SQL: YYYY-MM-DD
+  return `${year}-${month}-${day}`;
+}
+```
+
+**Esempi conversione:**
+- `24893` (Excel) → `1968-02-25` (SQL)
+- `45659` (Excel) → `2025-01-01` (SQL)
+- `44416` (Excel) → `2021-08-08` (SQL)
+
+### 📋 **MAPPING EXCEL → DATABASE**
+
+| Colonna Excel | Campo Database | Tipo | Note |
+|---------------|----------------|------|------|
+| `nome` | `nome` | VARCHAR(191) | ✅ UPDATE |
+| `cognome` | `cognome` | VARCHAR(191) | ✅ UPDATE |
+| `cod_fiscale` | `cod_fiscale` | VARCHAR(16) | 🔑 Chiave match |
+| `e-mail` | `email` | VARCHAR(191) | ✅ UPDATE |
+| `e-mail aziendale` | `email_aziendale` | VARCHAR(255) | ➕ NUOVO |
+| `cellulare` | `cellulare` | VARCHAR(20) | ✅ UPDATE |
+| `tipo_patente` | `patente` | VARCHAR(100) | ✅ UPDATE |
+| `foto` | `foto_url` | VARCHAR(500) | ➕ NUOVO |
+| `cittadinanza` | `cittadinanza` | VARCHAR(100) | ➕ NUOVO |
+| `permesso_di_soggiorno` | `permesso_soggiorno` | VARCHAR(100) | ➕ NUOVO |
+| `titolo_di_studio` | `titolo_studio` | VARCHAR(100) | ➕ NUOVO |
+| `nato_a` | `luogo_nascita` | VARCHAR(150) | ➕ NUOVO |
+| `nato_il` | `data_nascita` | DATE | 📅 Conversione |
+| `cdc` | `cdc` | VARCHAR(191) | ✅ UPDATE |
+| `tipo_contratto` | `tipo_contratto` | VARCHAR(50) | ➕ NUOVO |
+| `ccnl_applicato` | `ccnl` | VARCHAR(100) | ➕ NUOVO |
+| `livello` | `livello` | VARCHAR(10) | ✅ UPDATE |
+| `qualifica` | `qualifica` | VARCHAR(191) | ✅ UPDATE |
+| `orario_lavoro` | `orario_lavoro` | VARCHAR(50) | ➕ NUOVO |
+| `data_assunzione` | `data_assunzione` | DATE | 📅 Conversione |
+| `data_dimissioni` | `data_dimissioni` | DATE | 📅 Conversione |
+| `indirizzo` | `indirizzo` | VARCHAR(255) | ➕ NUOVO |
+| `cap` | `cap` | VARCHAR(10) | ➕ NUOVO |
+| `località` | `citta` | VARCHAR(100) | ➕ NUOVO |
+
+### 🚀 **RISULTATI IMPORT**
+
+**Esecuzione import 30 dipendenti:**
+- ✅ **23 AGGIORNATI**: Dipendenti esistenti con codice fiscale
+- ✅ **6 INSERITI**: Nuovi dipendenti (alcuni senza CF)
+- ⚠️ **1 ERRORE**: Alberto Racano (chiave duplicata - già esistente)
+- 📊 **Totale dipendenti in DB**: 30
+
+**Esempi dati importati:**
+```
+Nominativo             | Patente  | Qualifica  | CDC       | Data Assunzione | Città
+-----------------------|----------|------------|-----------|-----------------|------------------
+Alberto Racano         | C + CQC  | AUTISTA    | Pioltello | 2025-06-16      | NULL
+Alessandro Tolone      | B        | AUTISTA    | Lainate   | 2025-01-02      | Como (Co)
+Andrea Bersegnani      | NULL     | IMPIEGATO  | Pioltello | 2021-08-08      | Pieve Emanuele
+Andrea Sozzi           | C + CQC  | AUTISTA    | Lainate   | 2025-01-02      | Mozzate (Co)
+```
+
+### 📝 **FILE CREATI/MODIFICATI**
+
+**File creati:**
+- `migrations/add_employees_extended_fields.sql` - Migration SQL per aggiunta colonne
+- `scripts/import-employees-from-excel.js` - Script import dipendenti da Excel
+- `execute-employees-migration.bat` - Script batch per esecuzione migration Windows
+- `ISTRUZIONI-IMPORT-DIPENDENTI.md` - Guida completa import dipendenti
+- `import/dipendenti.xlsx` - File Excel con 30 dipendenti
+
+**File aggiornati:**
+- `docs/database-reference.md` - Documentazione struttura tabella employees
+- `README.md` - Aggiunta sezione "Gestione Dipendenti" (v2.32.0)
+- `docs/FUNZIONALITA_AGGIORNATE.md` - Documentazione completa implementazione
+
+### ✅ **BENEFICI OPERATIVI**
+
+- **Dati completi**: Tutte le informazioni dipendenti in un unico database
+- **Import rapido**: Import massivo 30+ dipendenti in pochi secondi
+- **Aggiornamenti smart**: UPDATE automatico dipendenti esistenti senza duplicati
+- **Tracciabilità**: Storico completo assunzioni, dimissioni, modifiche contrattuali
+- **Organizzazione**: Gestione CDC per separazione logica dipendenti per sede
+- **Conformità**: Gestione permessi soggiorno e dati fiscali per compliance
+- **Scalabilità**: Sistema pronto per import futuri con nuovi dipendenti
+
+### 🔐 **SICUREZZA E PRIVACY**
+
+- **Dati sensibili**: Gestione corretta CF, indirizzi, permessi soggiorno
+- **Validazione**: Controllo campi obbligatori e formati corretti
+- **Logging**: Tracciamento operazioni import con dettagli errori
+- **Transazioni**: Import in transazione per garantire integrità dati
+- **Backup**: Backup database richiesto prima dell'esecuzione migration
+
+---
+
+## 🚀 **VERSIONE 2.31.1** - Risoluzione Filtri Data Viaggi POD ⭐ **PRECEDENTE**
 
 ### 🔧 **CORREZIONE FILTRI DATA VIAGGI POD**
 - **Problema risolto**: Filtri data non funzionanti nella pagina `/viaggi-pod`

@@ -1352,18 +1352,76 @@ CREATE TABLE vehicle_schedules (
 #### Tabella: `employees`
 ```sql
 CREATE TABLE employees (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nome VARCHAR(100) NOT NULL,
-    cognome VARCHAR(100) NOT NULL,
-    codice_fiscale VARCHAR(16) UNIQUE,
-    telefono VARCHAR(20),
-    email VARCHAR(255),
-    ruolo VARCHAR(50),
-    attivo BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    id VARCHAR(191) PRIMARY KEY,
+    nominativo VARCHAR(191) NOT NULL,
+    cdc VARCHAR(191),
+    cognome VARCHAR(191),
+    nome VARCHAR(191),
+    cod_fiscale VARCHAR(16),
+    email VARCHAR(191) UNIQUE,
+    email_aziendale VARCHAR(255),
+    cellulare VARCHAR(20),
+    indirizzo VARCHAR(255),
+    cap VARCHAR(10),
+    citta VARCHAR(100),
+    qualifica VARCHAR(191),
+    tipo_contratto VARCHAR(50),
+    ccnl VARCHAR(100),
+    orario_lavoro VARCHAR(50),
+    data_assunzione DATE,
+    data_dimissioni DATE,
+    active TINYINT(1) DEFAULT 1,
+    updatedAt DATETIME(3) NOT NULL,
+    createdAt DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3),
+    patente VARCHAR(100),
+    foto_url VARCHAR(500),
+    cittadinanza VARCHAR(100),
+    permesso_soggiorno VARCHAR(100),
+    titolo_studio VARCHAR(100),
+    luogo_nascita VARCHAR(150),
+    data_nascita DATE,
+    livello VARCHAR(10)
 );
 ```
+
+**Campi Principali:**
+- `id`: Identificativo univoco dipendente (VARCHAR)
+- `nominativo`: Nome completo (nome + cognome)
+- `nome`, `cognome`: Nome e cognome separati
+- `cod_fiscale`: Codice fiscale
+- `cdc`: Centro di costo (es: Lainate, Pioltello)
+
+**Contatti:**
+- `email`: Email personale (UNIQUE)
+- `email_aziendale`: Email aziendale
+- `cellulare`: Numero di telefono cellulare
+- `indirizzo`, `cap`, `citta`: Indirizzo residenza
+
+**Dati Personali:**
+- `patente`: Tipo patente (es: C + CQC)
+- `foto_url`: URL/path foto dipendente
+- `cittadinanza`: Nazionalità
+- `permesso_soggiorno`: Per dipendenti stranieri
+- `titolo_studio`: Titolo di studio
+- `luogo_nascita`, `data_nascita`: Luogo e data di nascita
+
+**Dati Contrattuali:**
+- `qualifica`: Qualifica (es: AUTISTA, IMPIEGATO)
+- `tipo_contratto`: Tipo contratto (Indeterminato/Determinato)
+- `ccnl`: CCNL applicato
+- `livello`: Livello contrattuale
+- `orario_lavoro`: Ore settimanali
+- `data_assunzione`: Data assunzione
+- `data_dimissioni`: Data dimissioni (NULL se attivo)
+
+**Sistema:**
+- `active`: Dipendente attivo (1) o non attivo (0)
+- `createdAt`, `updatedAt`: Timestamp creazione/modifica
+
+**Note:**
+- Aggiornata il 2025-10-23 con import da Excel (30 dipendenti)
+- 13 nuove colonne aggiunte (migration: `add_employees_extended_fields.sql`)
+- Import tramite script: `scripts/import-employees-from-excel.js`
 
 #### Tabella: `travels`
 ```sql
