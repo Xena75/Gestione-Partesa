@@ -726,6 +726,18 @@ export default function ModernDashboard() {
                       Categorie
                     </Link>
                   </div>
+                  <div className="col-6">
+                    <Link href="/gestione/autisti" className="btn btn-outline-success btn-action btn-sm w-100">
+                      <Users size={16} className="me-1" />
+                      Autisti
+                    </Link>
+                  </div>
+                  <div className="col-6">
+                    <Link href="/gestione/autisti/dashboard" className="btn btn-outline-info btn-action btn-sm w-100">
+                      <Activity size={16} className="me-1" />
+                      Dashboard Autisti
+                    </Link>
+                  </div>
                 </div>
                 {toggleStates.anagrafiche && <hr />}
                  <div className={`stats-container ${toggleStates.anagrafiche ? 'stats-expanded' : 'stats-collapsed'}`}>

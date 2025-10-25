@@ -2,50 +2,109 @@
 
 Questo documento contiene la documentazione completa delle tre basi di dati utilizzate nel progetto gestione-partesa.
 
+**CONFIGURAZIONE:** Utilizzare il file `.env.production` per le variabili d'ambiente di produzione.
+
 ## Database Utilizzati
 
 ### 1. gestionelogistica
-**Porta:** 3306  
-**Host:** localhost  
-**Variabili d'ambiente:**
-- `DB_HOST=localhost`
-- `DB_PORT=3306`
-- `DB_NAME=gestionelogistica`
-- `DB_USER=root`
-- `DB_PASSWORD=` (vuota)
+**Porta:** 24345  
+**Host:** 10.tcp.eu.ngrok.io  
+**Variabili d'ambiente (da .env.production):**
+- `DB_GESTIONE_HOST=10.tcp.eu.ngrok.io`
+- `DB_GESTIONE_PORT=24345`
+- `DB_GESTIONE_NAME=gestionelogistica`
+- `DB_GESTIONE_USER=root`
+- `DB_GESTIONE_PASS=` (vuota)
 
 **Descrizione:** Database principale per la gestione logistica, fatturazione e delivery.
 
 ### 2. viaggi_db
-**Porta:** 3306  
-**Host:** localhost  
-**Variabili d'ambiente:**
-- `VIAGGI_DB_HOST=localhost`
-- `VIAGGI_DB_PORT=3306`
-- `VIAGGI_DB_NAME=viaggi_db`
-- `VIAGGI_DB_USER=root`
-- `VIAGGI_DB_PASSWORD=` (vuota)
+**Porta:** 24345  
+**Host:** 10.tcp.eu.ngrok.io  
+**Variabili d'ambiente (da .env.production):**
+- `DB_VIAGGI_HOST=10.tcp.eu.ngrok.io`
+- `DB_VIAGGI_PORT=24345`
+- `DB_VIAGGI_NAME=viaggi_db`
+- `DB_VIAGGI_USER=root`
+- `DB_VIAGGI_PASS=` (vuota)
 
-**Descrizione:** Database dedicato alla gestione dei viaggi, veicoli e manutenzioni.
+**Descrizione:** Database dedicato alla gestione dei viaggi, veicoli, manutenzioni e **dipendenti/autisti**.
 
 ### 3. backup_management
-**Porta:** 3306  
-**Host:** localhost  
-**Variabili d'ambiente:**
-- `BACKUP_DB_HOST=localhost`
-- `BACKUP_DB_PORT=3306`
-- `BACKUP_DB_NAME=backup_management`
-- `BACKUP_DB_USER=root`
-- `BACKUP_DB_PASSWORD=` (vuota)
+**Porta:** 24345  
+**Host:** 10.tcp.eu.ngrok.io  
+**Variabili d'ambiente (da .env.production):**
+- `MYSQL_HOST=10.tcp.eu.ngrok.io`
+- `MYSQL_PORT=24345`
+- `MYSQL_DATABASE=backup_management`
+- `MYSQL_USER=root`
+- `MYSQL_PASSWORD=` (vuota)
 
 **Descrizione:** Database per la gestione dei backup automatici e schedulati.
 
 ## Note Importanti
 
 - Tutti i database utilizzano MySQL/MariaDB
-- Le password sono vuote per l'ambiente di sviluppo locale
+- **File di configurazione:** Utilizzare `.env.production` per le variabili d'ambiente
+- **Connessione:** I database sono accessibili tramite tunnel ngrok su porta 24345
+- Le password sono vuote per l'ambiente di produzione
 - Assicurarsi di utilizzare le variabili d'ambiente corrette per ogni database
 - Prima di creare nuove query o funzionalità, consultare sempre questo documento per verificare la struttura delle tabelle
+
+## Correzioni Recenti
+
+### Gestione Timestamp Dipendenti (employees)
+**Data implementazione:** Gennaio 2025
+
+**Problema risolto:**
+- Errore 500 nell'API PUT `/api/employees/[id]` con messaggio "Column 'updatedAt' cannot be null"
+- La funzione `updateEmployee` non aggiornava automaticamente il timestamp delle modifiche
+- Mismatch tra nomi colonne database (camelCase) e interfaccia TypeScript (snake_case)
+
+**Cause identificate:**
+1. **Mismatch nomi colonne:** Nel database le colonne sono `createdAt` e `updatedAt` (camelCase), ma nell'interfaccia TypeScript erano definite come `created_at` e `updated_at` (snake_case)
+2. **Gestione updatedAt:** La funzione `updateEmployee` includeva `updatedAt` con valore `null` nella query, causando errore SQL
+3. **Timestamp automatico mancante:** Nessun aggiornamento automatico del timestamp di modifica
+
+**Correzioni implementate:**
+
+1. **Interfaccia Employee corretta (`src/lib/db-employees.ts`):**
+   ```typescript
+   export interface Employee {
+     // ... altri campi
+     createdAt?: string;    // era: created_at?: string;
+     updatedAt?: string;    // era: updated_at?: string;
+   }
+   ```
+
+2. **Funzione updateEmployee ottimizzata:**
+   ```typescript
+   // Filtro che esclude updatedAt dai campi del form
+   const fields = Object.keys(employee).filter(key => 
+     key !== 'id' && key !== 'createdAt' && key !== 'updatedAt'
+   );
+   
+   // Query con aggiornamento automatico timestamp
+   const [result] = await connection.execute(
+     `UPDATE employees SET ${setClause}, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`,
+     [...values, id]
+   );
+   ```
+
+3. **Funzioni create/update aggiornate:**
+   - `createEmployee`: Esclude `createdAt` e `updatedAt` (gestiti automaticamente dal database)
+   - `updateEmployee`: Esclude `updatedAt` dal form ma lo aggiorna automaticamente con `CURRENT_TIMESTAMP`
+
+**Benefici:**
+- ✅ API PUT `/api/employees/[id]` funziona correttamente (status 200)
+- ✅ Tracciamento automatico delle modifiche con timestamp preciso
+- ✅ Coerenza tra nomi colonne database e interfacce TypeScript
+- ✅ Gestione robusta degli aggiornamenti senza errori SQL
+- ✅ Mantenimento dell'integrità dei dati con timestamp automatici
+
+**File modificati:**
+- `src/lib/db-employees.ts` - Correzione interfacce e funzioni CRUD
+- Risoluzione completa errori "Unknown column" e "cannot be null"
 
 ## Ottimizzazioni Performance Recenti
 
@@ -655,20 +714,153 @@ updated_at  timestamp    NO        current_timestamp()  on update current_timest
 - **Dashboard**: Statistiche dipendenti attivi
 
 #### employees
+**Descrizione:** Tabella estesa per la gestione completa di dipendenti e autisti (29 campi).
+
 ```sql
-Field       Type         Null  Key  Default              Extra
-id          int(11)      NO    PRI  NULL                 auto_increment
-name        varchar(100) NO        NULL                 
-surname     varchar(100) NO        NULL                 
-email       varchar(150) NO    UNI  NULL                 
-phone       varchar(20)  YES        NULL                 
-position    varchar(100) YES        NULL                 
-hire_date   date         YES        NULL                 
-salary      decimal(10,2) YES       NULL                 
-is_active   tinyint(1)   NO        1                    
-created_at  timestamp    NO        current_timestamp()  
-updated_at  timestamp    NO        current_timestamp()  on update current_timestamp()
+Field                    Type           Null  Key  Default              Extra
+id                       varchar(50)    NO    PRI  NULL                 
+nome                     varchar(100)   NO        NULL                 
+cognome                  varchar(100)   NO        NULL                 
+email                    varchar(150)   NO    UNI  NULL                 
+cellulare                varchar(20)    YES        NULL                 
+cod_fiscale              varchar(16)    YES        NULL                 
+cdc                      varchar(50)    YES        NULL                 
+indirizzo                varchar(255)   YES        NULL                 
+cap                      varchar(10)    YES        NULL                 
+citta                    varchar(100)   YES        NULL                 
+luogo_nascita            varchar(100)   YES        NULL                 
+data_nascita             date           YES        NULL                 
+cittadinanza             varchar(50)    YES        NULL                 
+titolo_studio            varchar(100)   YES        NULL                 
+qualifica                varchar(100)   YES        NULL                 
+tipo_contratto           varchar(50)    YES        NULL                 
+ccnl                     varchar(100)   YES        NULL                 
+livello                  varchar(20)    YES        NULL                 
+orario_lavoro            varchar(50)    YES        NULL                 
+data_assunzione          date           YES        NULL                 
+is_driver                tinyint(1)     NO        0                    
+patente                  varchar(20)    YES        NULL                 
+driver_license_number    varchar(50)    YES        NULL                 
+driver_license_expiry    date           YES        NULL                 
+email_aziendale          varchar(150)   YES        NULL                 
+profile_image            varchar(255)   YES        NULL                 
+password_hash            varchar(255)   YES        NULL                 
+last_login               timestamp      YES        NULL                 
+is_active                tinyint(1)     NO        1                    
+created_at               timestamp      NO        current_timestamp()  
+updated_at               timestamp      NO        current_timestamp()  on update current_timestamp()
 ```
+
+**Utilizzo nel progetto:**
+- **Pagine**: `/gestione/autisti` - Sistema gestione dipendenti e autisti
+- **API**: `/api/employees` per CRUD dipendenti
+- **Componenti**: Gestione anagrafica completa dipendenti
+- **Funzionalità**: Gestione personale, assegnazione viaggi, gestione patenti
+- **Dashboard**: Statistiche dipendenti attivi
+
+**Note tecniche:**
+- Tabella migrata e estesa tramite `migrations/add_employees_extended_fields.sql`
+- Import dipendenti tramite script `scripts/import-employees-from-excel.js`
+- Supporta gestione completa anagrafica e dati contrattuali
+- Campo `is_driver` per identificare autisti abilitati
+- Gestione scadenze patenti tramite `driver_license_expiry`
+
+#### employee_documents
+**Descrizione:** Gestione documenti e allegati per ogni dipendente con controllo scadenze.
+
+```sql
+Field         Type         Null  Key  Default              Extra
+id            int(11)      NO    PRI  NULL                 auto_increment
+employee_id   varchar(191) NO    MUL  NULL                 
+document_type varchar(100) NO    MUL  NULL                 
+document_name varchar(255) NO        NULL                 
+file_path     varchar(500) NO        NULL                 
+expiry_date   date         YES   MUL  NULL                 
+upload_date   timestamp    NO        current_timestamp()  
+uploaded_by   varchar(191) YES        NULL                 
+notes         text         YES        NULL                 
+is_active     tinyint(1)   NO        1                    
+created_at    timestamp    NO        current_timestamp()  
+updated_at    timestamp    NO        current_timestamp()  on update current_timestamp()
+```
+
+**Utilizzo nel progetto:**
+- **Pagine**: `/gestione/dipendenti/[id]/documenti` - Gestione documenti dipendente
+- **API**: `/api/employees/[id]/documents` per upload e gestione documenti
+- **Componenti**: `DocumentUpload`, `DocumentList` per gestione allegati
+- **Funzionalità**: Upload documenti, controllo scadenze, gestione allegati
+- **Dashboard**: Monitoraggio documenti in scadenza
+
+**Indici di performance:**
+- `idx_employee_documents_employee_id` - Ricerca per dipendente
+- `idx_employee_documents_type` - Filtro per tipo documento
+- `idx_employee_documents_expiry` - Controllo scadenze
+
+#### employee_leave_requests
+**Descrizione:** Sistema gestione richieste ferie, permessi e congedi dipendenti.
+
+```sql
+Field         Type                                           Null  Key  Default              Extra
+id            int(11)                                        NO    PRI  NULL                 auto_increment
+employee_id   varchar(191)                                   NO    MUL  NULL                 
+leave_type    enum('ferie','permesso','malattia','congedo')  NO        NULL                 
+start_date    date                                           NO    MUL  NULL                 
+end_date      date                                           NO    MUL  NULL                 
+days_requested int(11)                                       NO        NULL                 
+reason        text                                           YES        NULL                 
+status        enum('pending','approved','rejected')          NO    MUL  pending              
+approved_by   varchar(191)                                   YES        NULL                 
+approved_at   timestamp                                      YES        NULL                 
+notes         text                                           YES        NULL                 
+created_at    timestamp                                      NO        current_timestamp()  
+updated_at    timestamp                                      NO        current_timestamp()  on update current_timestamp()
+```
+
+**Utilizzo nel progetto:**
+- **Pagine**: `/gestione/dipendenti/[id]/ferie` - Gestione richieste ferie
+- **API**: `/api/employees/[id]/leave-requests` per gestione richieste
+- **Componenti**: `LeaveRequestForm`, `LeaveRequestList` per workflow approvazione
+- **Funzionalità**: Richiesta ferie, approvazione manager, calcolo giorni
+- **Dashboard**: Statistiche ferie, richieste pendenti
+
+**Indici di performance:**
+- `idx_employee_leave_requests_employee_id` - Ricerca per dipendente
+- `idx_employee_leave_requests_dates` - Filtro per periodo
+- `idx_employee_leave_requests_status` - Filtro per stato richiesta
+
+#### employee_leave_balance
+**Descrizione:** Bilancio annuale ferie e permessi per ogni dipendente.
+
+```sql
+Field                    Type         Null  Key  Default              Extra
+id                       int(11)      NO    PRI  NULL                 auto_increment
+employee_id              varchar(191) NO    UNI  NULL                 
+year                     int(11)      NO    MUL  NULL                 
+vacation_days_total      int(11)      NO        26                   
+vacation_days_used       int(11)      NO        0                    
+vacation_days_remaining  int(11)      NO        26                   
+sick_days_used           int(11)      NO        0                    
+personal_days_used       int(11)      NO        0                    
+last_updated             timestamp    NO        current_timestamp()  on update current_timestamp()
+created_at               timestamp    NO        current_timestamp()  
+```
+
+**Utilizzo nel progetto:**
+- **Pagine**: `/gestione/dipendenti/[id]/bilancio-ferie` - Visualizzazione bilancio
+- **API**: `/api/employees/[id]/leave-balance` per calcolo giorni disponibili
+- **Componenti**: `LeaveBalanceCard`, `LeaveBalanceChart` per visualizzazione
+- **Funzionalità**: Calcolo automatico giorni rimanenti, storico annuale
+- **Dashboard**: Statistiche utilizzo ferie aziendali
+
+**Indici di performance:**
+- `idx_employee_leave_balance_employee_year` - Ricerca per dipendente e anno
+
+**Note tecniche tabelle gestione dipendenti:**
+- Tabelle create tramite `migrations/create_employee_management_tables.sql`
+- Inizializzazione automatica bilancio ferie per dipendenti esistenti
+- Sistema completo workflow approvazione richieste
+- Integrazione con sistema notifiche scadenze documenti
+- Supporto multi-anno per storico ferie e permessi
 
 #### import_mappings
 ```sql

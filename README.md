@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.32.0
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.32.1
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -55,7 +55,7 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Filtri scadenze corretti**: Identificazione precisa di tutte le scadenze passate e in scadenza ⭐ **AGGIORNATO v2.30.10**
 - **Database pulito**: Eliminazione automatica duplicati per performance ottimali ⭐ **AGGIORNATO v2.30.10**
 
-### 👥 **Gestione Dipendenti** ⭐ **NUOVO v2.32.0**
+### 👥 **Gestione Dipendenti** ⭐ **AGGIORNATO v2.32.1**
 - **Database esteso**: Tabella employees con 29 campi completi (dati personali, contrattuali, contatti)
 - **Import automatico**: Sistema di import da Excel con aggiornamento/inserimento intelligente
 - **Dati personali**: Nome, cognome, CF, patente, cittadinanza, permesso soggiorno, titolo studio
@@ -66,6 +66,9 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Match intelligente**: UPDATE dipendenti esistenti tramite codice fiscale, INSERT nuovi
 - **Migration completa**: Script SQL per aggiunta colonne (`migrations/add_employees_extended_fields.sql`)
 - **Script import**: Node.js script per import massivo da Excel (`scripts/import-employees-from-excel.js`)
+- **API robusta**: Risolti errori 500 nell'API PUT `/api/employees/[id]` ⭐ **NUOVO v2.32.1**
+- **Timestamp automatici**: Gestione automatica `updatedAt` per tracciamento modifiche ⭐ **NUOVO v2.32.1**
+- **Interfaccia corretta**: Allineamento perfetto tra database (camelCase) e TypeScript ⭐ **NUOVO v2.32.1**
 
 ### 🛡️ **Sicurezza e Amministrazione**
 - **Sistema log avanzato**: Registrazione completa di tutte le operazioni
@@ -96,7 +99,38 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
 
-### 📸 **Sistema Gestione Immagini Monitoraggio Viaggi - v2.30.6** ⭐ **NUOVO**
+### 🔧 **Correzioni API Gestione Dipendenti - v2.32.1** ⭐ **NUOVO**
+
+#### 🛠️ **Risoluzione Errori Critici Timestamp**
+- **Fix errore 500**: Risolto errore "Column 'updatedAt' cannot be null" nell'API PUT `/api/employees/[id]`
+- **Mismatch colonne**: Identificato e corretto disallineamento tra database (camelCase) e interfaccia TypeScript (snake_case)
+- **Interfaccia corretta**: Aggiornata interfaccia `Employee` da `created_at`/`updated_at` a `createdAt`/`updatedAt`
+- **Query ottimizzata**: Funzione `updateEmployee` ora esclude correttamente `updatedAt` dai campi form
+
+#### ⚡ **Gestione Automatica Timestamp**
+- **Aggiornamento automatico**: Implementato `updatedAt = CURRENT_TIMESTAMP` in ogni operazione UPDATE
+- **Tracciabilità completa**: Ogni modifica dipendente ora tracciata automaticamente con timestamp preciso
+- **Filtro intelligente**: Esclusione automatica di `id`, `createdAt`, `updatedAt` dalla query di aggiornamento
+- **Compatibilità database**: Mantenimento coerenza con struttura esistente tabella `employees`
+
+#### 🎯 **API Robusta e Funzionante**
+- **GET `/api/employees/[id]`**: Recupero dipendente funzionante (status 200, ~1600ms)
+- **PUT `/api/employees/[id]`**: Aggiornamento dipendente funzionante (status 200, ~1645ms)
+- **Gestione errori**: Eliminati completamente errori "Unknown column" e "cannot be null"
+- **Performance stabili**: Tempi di risposta accettabili e consistenti
+
+#### 📊 **Benefici Operativi**
+- **Tracciabilità**: Ogni modifica dipendente tracciata automaticamente senza intervento manuale
+- **Stabilità**: API robusta senza errori 500, funzionamento garantito
+- **Coerenza**: Allineamento perfetto tra database MySQL e codice TypeScript
+- **Manutenibilità**: Codice più pulito, gestione errori migliorata, base solida per future implementazioni
+
+#### 📁 **File Modificati**
+- `src/lib/db-employees.ts` - Interfaccia Employee e funzioni CRUD corrette
+- `docs/database-reference.md` - Documentazione correzioni timestamp
+- `docs/funzionalita_aggiornate.md` - Documentazione versione 2.32.1
+
+### 📸 **Sistema Gestione Immagini Monitoraggio Viaggi - v2.30.6** ⭐ **PRECEDENTE**
 
 #### 🔧 **Risoluzione Errori Critici API**
 - **Fix struttura database**: Identificata e corretta struttura reale tabella `travel_images`

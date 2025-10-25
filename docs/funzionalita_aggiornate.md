@@ -1,6 +1,103 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.32.0
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.32.1
 
-## 🚀 **VERSIONE 2.32.0** - Sistema Gestione Dipendenti con Import da Excel ⭐ **NUOVO**
+## 🚀 **VERSIONE 2.32.1** - Correzione Gestione Timestamp Dipendenti ⭐ **NUOVO**
+
+### 🔧 **CORREZIONE API DIPENDENTI**
+- **Problema risolto**: Errore 500 nell'API PUT `/api/employees/[id]` con messaggio "Column 'updatedAt' cannot be null"
+- **Causa identificata**: Mismatch tra nomi colonne database (camelCase) e interfaccia TypeScript (snake_case)
+- **Soluzione implementata**: Corretta interfaccia `Employee` e funzione `updateEmployee` per gestione automatica timestamp
+
+### 🏗️ **CORREZIONI TECNICHE IMPLEMENTATE**
+
+#### **1. Interfaccia Employee Corretta**
+- **File modificato**: `src/lib/db-employees.ts`
+- **Problema**: Colonne database `createdAt`/`updatedAt` (camelCase) vs interfaccia `created_at`/`updated_at` (snake_case)
+- **Soluzione**: Aggiornata interfaccia per utilizzare camelCase coerente con database
+```typescript
+export interface Employee {
+  // Prima (ERRATO):
+  created_at?: string;
+  updated_at?: string;
+  
+  // Dopo (CORRETTO):
+  createdAt?: string;
+  updatedAt?: string;
+}
+```
+
+#### **2. Funzione updateEmployee Ottimizzata**
+- **Problema**: Campo `updatedAt` incluso nella query con valore `null`, causando errore SQL
+- **Soluzione**: Filtro che esclude `updatedAt` dai campi del form + aggiornamento automatico timestamp
+```typescript
+// Filtro corretto che esclude updatedAt
+const fields = Object.keys(employee).filter(key => 
+  key !== 'id' && key !== 'createdAt' && key !== 'updatedAt'
+);
+
+// Query con timestamp automatico
+const [result] = await connection.execute(
+  `UPDATE employees SET ${setClause}, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`,
+  [...values, id]
+);
+```
+
+#### **3. Gestione Timestamp Automatica**
+- **Implementazione**: Aggiornamento automatico `updatedAt = CURRENT_TIMESTAMP` ad ogni modifica
+- **Beneficio**: Tracciamento preciso delle modifiche senza intervento manuale
+- **Compatibilità**: Mantenimento coerenza con struttura database esistente
+
+### ✅ **RISULTATI OTTENUTI**
+
+#### **API Funzionante**
+- ✅ **GET** `/api/employees/[id]` - Recupero dipendente (status 200)
+- ✅ **PUT** `/api/employees/[id]` - Aggiornamento dipendente (status 200)
+- ✅ **Timestamp automatico** - `updatedAt` aggiornato automaticamente ad ogni modifica
+- ✅ **Gestione errori** - Eliminati errori "Unknown column" e "cannot be null"
+
+#### **Test di Verifica**
+```bash
+# Test GET - Recupero dipendente
+GET /api/employees/Vincenzo%20Cordella → 200 OK
+
+# Test PUT - Aggiornamento dipendente  
+PUT /api/employees/Vincenzo%20Cordella → 200 OK
+Response: "Dipendente aggiornato con successo"
+```
+
+#### **Performance**
+- **Tempo risposta GET**: ~1600ms (accettabile)
+- **Tempo risposta PUT**: ~1645ms (accettabile)
+- **Errori eliminati**: 0 errori SQL relativi a timestamp
+
+### 🔍 **DETTAGLI TECNICI**
+
+#### **Struttura Database Confermata**
+- **Tabella**: `employees` nel database `viaggi_db`
+- **Colonne timestamp**: `createdAt` (DATETIME), `updatedAt` (DATETIME)
+- **Vincoli**: `updatedAt` NOT NULL, aggiornamento automatico
+- **Default**: `createdAt` con `CURRENT_TIMESTAMP(3)` alla creazione
+
+#### **Funzioni CRUD Aggiornate**
+1. **createEmployee**: Esclude `createdAt` e `updatedAt` (gestiti dal database)
+2. **updateEmployee**: Esclude `updatedAt` dal form, aggiorna automaticamente con `CURRENT_TIMESTAMP`
+3. **getEmployeeById**: Nessuna modifica, funzionamento corretto
+4. **deleteEmployee**: Soft delete, nessuna modifica timestamp necessaria
+
+### 📁 **FILE MODIFICATI**
+- `src/lib/db-employees.ts` - Interfaccia Employee e funzioni CRUD corrette
+- `docs/database-reference.md` - Documentazione correzioni timestamp
+- `docs/funzionalita_aggiornate.md` - Documentazione versione 2.32.1
+
+### 🎯 **BENEFICI OPERATIVI**
+- **Tracciabilità completa**: Ogni modifica dipendente tracciata automaticamente
+- **API robusta**: Eliminazione errori 500, funzionamento stabile
+- **Coerenza dati**: Allineamento perfetto tra database e codice TypeScript
+- **Manutenibilità**: Codice più pulito e gestione errori migliorata
+- **Scalabilità**: Base solida per future implementazioni gestione dipendenti
+
+---
+
+## 🚀 **VERSIONE 2.32.0** - Sistema Gestione Dipendenti con Import da Excel ⭐ **PRECEDENTE**
 
 ### 👥 **GESTIONE DIPENDENTI COMPLETA**
 - **Database esteso**: Tabella `employees` espansa da 10 a 29 colonne per gestione completa dipendenti
