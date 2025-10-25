@@ -31,6 +31,7 @@ export interface Employee {
   is_driver: boolean;
   driver_license_number?: string;
   driver_license_expiry?: string;
+  foto_url?: string;
   password_hash?: string;
   last_login?: string;
   active: boolean;

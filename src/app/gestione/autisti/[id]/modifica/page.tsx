@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import ProfileImageUpload from '@/components/ProfileImageUpload';
 
 interface Employee {
   id: number;
@@ -31,6 +32,7 @@ interface Employee {
   driver_license_number?: string;
   driver_license_expiry?: string;
   profile_image?: string;
+  foto_url?: string;
 }
 
 // Funzioni di utilità per gestione date
@@ -385,7 +387,7 @@ export default function ModificaDipendente() {
 
       {/* Form di modifica */}
       <div className="row">
-        <div className="col-12">
+        <div className="col-lg-8">
           <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
             
             {/* Sezione Informazioni Personali */}
@@ -777,6 +779,22 @@ export default function ModificaDipendente() {
             </div>
 
           </form>
+        </div>
+
+        {/* Colonna laterale - Foto Profilo */}
+        <div className="col-lg-4">
+          {employee && (
+            <ProfileImageUpload
+              employeeId={employee.id.toString()}
+              currentImageUrl={formData.foto_url}
+              onImageUploaded={(imageUrl) => {
+                setFormData(prev => ({ ...prev, foto_url: imageUrl }));
+              }}
+              onImageRemoved={() => {
+                setFormData(prev => ({ ...prev, foto_url: undefined }));
+              }}
+            />
+          )}
         </div>
       </div>
     </div>
