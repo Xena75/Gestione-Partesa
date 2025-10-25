@@ -360,16 +360,13 @@ export default function AutistiPage() {
                               >
                                 <i className="fas fa-file-alt"></i>
                               </Link>
-                              <button 
+                              <Link 
+                                href={`/gestione/autisti/${employee.id}/modifica`}
                                 className="btn btn-sm btn-outline-warning"
                                 title="Modifica"
-                                onClick={() => {
-                                  // TODO: Implementare modifica
-                                  alert('Funzione di modifica in sviluppo');
-                                }}
                               >
                                 <i className="fas fa-edit"></i>
-                              </button>
+                              </Link>
                             </div>
                           </td>
                         </tr>

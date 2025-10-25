@@ -1783,6 +1783,118 @@ VALUES ('nuovo_user', 'hash_password', 'email@example.com', 'user');
 
 ### Database: viaggi_db
 
+#### Tabella: `employee_documents`
+**Data implementazione:** Gennaio 2025
+
+Gestisce i documenti degli autisti/dipendenti con funzionalità complete di upload, preview e gestione scadenze.
+
+**Struttura:**
+```sql
+CREATE TABLE employee_documents (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    employee_id VARCHAR(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+    document_type VARCHAR(100) NOT NULL,
+    document_name VARCHAR(255) NOT NULL,
+    file_name VARCHAR(255) NOT NULL,
+    file_path VARCHAR(500) NOT NULL,
+    file_size INT NOT NULL DEFAULT 0,
+    file_type VARCHAR(100) NOT NULL DEFAULT '',
+    issue_date DATE NULL,
+    expiry_date DATE NULL,
+    status ENUM('valido', 'scaduto', 'in_scadenza', 'da_rinnovare') NOT NULL DEFAULT 'valido',
+    uploaded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    uploaded_by VARCHAR(191) NULL,
+    notes TEXT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    INDEX idx_employee_documents_employee_id (employee_id),
+    INDEX idx_employee_documents_document_type (document_type),
+    INDEX idx_employee_documents_expiry_date (expiry_date),
+    INDEX idx_employee_documents_status (status),
+    INDEX idx_employee_documents_issue_date (issue_date),
+    
+    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
+);
+```
+
+**Campi:**
+- `id` (INT, PRIMARY KEY): Identificativo univoco documento
+- `employee_id` (VARCHAR(191)): ID dipendente (FK verso employees.id)
+- `document_type` (VARCHAR(100)): Tipo documento (patente, cqc, adr, contratto_lavoro, etc.)
+- `document_name` (VARCHAR(255)): Nome descrittivo del documento
+- `file_name` (VARCHAR(255)): Nome originale del file
+- `file_path` (VARCHAR(500)): Percorso file su Vercel Blob Storage
+- `file_size` (INT): Dimensione file in bytes
+- `file_type` (VARCHAR(100)): Tipo MIME del file
+- `issue_date` (DATE): Data di emissione del documento
+- `expiry_date` (DATE): Data di scadenza del documento
+- `status` (ENUM): Stato documento (valido, scaduto, in_scadenza, da_rinnovare)
+- `uploaded_at` (TIMESTAMP): Data/ora upload
+- `uploaded_by` (VARCHAR(191)): Utente che ha caricato il documento
+- `notes` (TEXT): Note aggiuntive
+- `created_at` (TIMESTAMP): Data creazione record
+- `updated_at` (TIMESTAMP): Data ultimo aggiornamento
+
+**Funzionalità implementate:**
+- ✅ **Upload documenti**: Supporto file PDF, immagini (JPG, PNG, WEBP)
+- ✅ **Storage Vercel Blob**: Upload sicuro su cloud storage
+- ✅ **Preview documenti**: Anteprima PDF e immagini nel browser
+- ✅ **Gestione scadenze**: Aggiornamento automatico stato documenti
+- ✅ **Validazione file**: Controllo tipo, dimensione (max 10MB)
+- ✅ **API complete**: CRUD completo con endpoint dedicati
+- ✅ **Interfaccia utente**: Pagina gestione documenti per autista
+- ✅ **Filtri e ricerca**: API per documenti in scadenza con filtri
+
+**API Endpoints:**
+- `GET /api/employees/[id]/documents` - Lista documenti dipendente
+- `POST /api/employees/[id]/documents` - Upload nuovo documento
+- `DELETE /api/employees/[id]/documents` - Elimina documento
+- `GET /api/employees/documents/expiring` - Documenti in scadenza
+- `POST /api/employees/documents/expiring` - Aggiorna stato documenti
+
+**Tipi documento supportati:**
+- `patente` - Patente di guida
+- `cqc` - Carta di Qualificazione del Conducente
+- `adr` - Certificato ADR
+- `contratto_lavoro` - Contratto di lavoro
+- `certificato_medico` - Certificato medico
+- `corso_formazione` - Certificato corso formazione
+- `altro` - Altri documenti
+
+**Stati documento:**
+- `valido` - Documento valido e non in scadenza
+- `in_scadenza` - Documento in scadenza entro 30 giorni
+- `scaduto` - Documento scaduto
+- `da_rinnovare` - Documento da rinnovare manualmente
+
+**Query comuni:**
+```sql
+-- Documenti in scadenza entro 30 giorni
+SELECT ed.*, e.nome, e.cognome 
+FROM employee_documents ed 
+JOIN employees e ON ed.employee_id = e.id 
+WHERE ed.expiry_date IS NOT NULL 
+AND ed.expiry_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+ORDER BY ed.expiry_date ASC;
+
+-- Aggiornamento automatico stato documenti
+UPDATE employee_documents 
+SET status = CASE 
+  WHEN expiry_date IS NULL THEN 'valido'
+  WHEN expiry_date < CURDATE() THEN 'scaduto'
+  WHEN expiry_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 'in_scadenza'
+  ELSE 'valido'
+END,
+updated_at = CURRENT_TIMESTAMP
+WHERE expiry_date IS NOT NULL;
+
+-- Documenti per dipendente specifico
+SELECT * FROM employee_documents 
+WHERE employee_id = ? 
+ORDER BY document_type, expiry_date DESC;
+```
+
 #### Tabella: `intervention_types`
 Gestisce i tipi di intervento disponibili per i preventivi di manutenzione.
 
@@ -1898,6 +2010,18 @@ SELECT * FROM backup_schedules WHERE enabled = TRUE;
 - **src/app/api/vehicles/route.ts** - API gestione veicoli
 - **src/app/api/debug/vehicles-structure/route.ts** - Debug struttura tabella veicoli
 - **src/lib/data-viaggi.ts** - Query e gestione dati veicoli
+
+#### Tabella: `employees`
+- **src/lib/db-employees.ts** - CRUD operazioni dipendenti/autisti
+- **src/app/api/employees/route.ts** - API gestione dipendenti
+- **src/app/api/employees/[id]/route.ts** - API singolo dipendente
+
+#### Tabella: `employee_documents`
+- **src/lib/db-employees.ts** - CRUD operazioni documenti dipendenti
+- **src/app/api/employees/[id]/documents/route.ts** - API gestione documenti per dipendente
+- **src/app/api/employees/documents/expiring/route.ts** - API documenti in scadenza
+- **src/app/gestione/autisti/[id]/documenti/page.tsx** - Pagina gestione documenti autista
+- **src/components/DocumentPreview.tsx** - Componente preview documenti
 
 #### Tabella: `vehicle_schedules`
 - **src/lib/data-viaggi.ts** - Gestione scadenze veicoli

@@ -55,7 +55,7 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Filtri scadenze corretti**: Identificazione precisa di tutte le scadenze passate e in scadenza ⭐ **AGGIORNATO v2.30.10**
 - **Database pulito**: Eliminazione automatica duplicati per performance ottimali ⭐ **AGGIORNATO v2.30.10**
 
-### 👥 **Gestione Dipendenti** ⭐ **AGGIORNATO v2.32.1**
+### 👥 **Gestione Dipendenti** ⭐ **AGGIORNATO v2.32.2**
 - **Database esteso**: Tabella employees con 29 campi completi (dati personali, contrattuali, contatti)
 - **Import automatico**: Sistema di import da Excel con aggiornamento/inserimento intelligente
 - **Dati personali**: Nome, cognome, CF, patente, cittadinanza, permesso soggiorno, titolo studio
@@ -69,6 +69,29 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **API robusta**: Risolti errori 500 nell'API PUT `/api/employees/[id]` ⭐ **NUOVO v2.32.1**
 - **Timestamp automatici**: Gestione automatica `updatedAt` per tracciamento modifiche ⭐ **NUOVO v2.32.1**
 - **Interfaccia corretta**: Allineamento perfetto tra database (camelCase) e TypeScript ⭐ **NUOVO v2.32.1**
+
+### 📄 **Sistema Gestione Documenti Dipendenti** ⭐ **NUOVO v2.32.2**
+- **Upload documenti**: Sistema completo per caricamento documenti autisti (patente, CQC, ADR, contratti)
+- **Storage Vercel Blob**: Upload sicuro su cloud storage con gestione multi-ambiente
+- **Preview documenti**: Anteprima PDF e immagini direttamente nel browser
+- **Gestione scadenze**: Monitoraggio automatico scadenze con stati (valido, scaduto, in_scadenza, da_rinnovare)
+- **Validazione file**: Controllo tipo, dimensione (max 10MB) e formato supportato
+- **API complete**: Endpoint RESTful per CRUD documenti e ricerca documenti in scadenza
+- **Interfaccia intuitiva**: Pagina dedicata `/gestione/autisti/[id]/documenti` con drag&drop
+- **Tipi documento**: Supporto patente, CQC, ADR, contratto lavoro, certificato medico, corsi formazione
+- **Database ottimizzato**: Tabella `employee_documents` con indici per performance e foreign key
+- **Aggiornamento automatico**: Sistema automatico di aggiornamento stato documenti basato su scadenze
+
+### 📊 **Dashboard Autisti Completa** ⭐ **NUOVO v2.32.3**
+- **Statistiche complete**: Dashboard operativa con conteggio autisti, documenti scaduti e in scadenza
+- **Widget documenti**: Visualizzazione documenti validi, scaduti, in scadenza con grafici interattivi
+- **Grafici Chart.js**: Grafico a torta per distribuzione documenti e grafico a barre per tipologie
+- **Alert documenti critici**: Sezione dedicata con alert rosso per documenti scaduti priorità critica
+- **Tabella documenti scaduti**: Lista dettagliata con nome dipendente, tipo documento, giorni scadenza e azioni
+- **Pulsanti azione rapida**: Rinnovo documenti e invio notifiche direttamente dalla dashboard
+- **API dedicate**: Endpoint `/api/employees/documents/stats` e `/api/employees/documents/expired`
+- **Correzione bug conteggio**: Risolto problema conteggio autisti che mostrava sempre 0
+- **Interfaccia responsive**: Design Bootstrap ottimizzato per tutti i dispositivi
 
 ### 🛡️ **Sicurezza e Amministrazione**
 - **Sistema log avanzato**: Registrazione completa di tutte le operazioni
@@ -99,7 +122,51 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
 
-### 🔧 **Correzioni API Gestione Dipendenti - v2.32.1** ⭐ **NUOVO**
+### 📄 **Sistema Completo Gestione Documenti Dipendenti - v2.32.2** ⭐ **NUOVO**
+
+#### 🎯 **Funzionalità Complete di Upload e Gestione Documenti**
+- **Upload documenti**: Sistema completo per caricamento documenti autisti con drag&drop
+- **Tipi supportati**: Patente, CQC, ADR, Contratto lavoro, Certificato medico, Corsi formazione, Altri
+- **Storage cloud**: Integrazione Vercel Blob Storage per archiviazione sicura
+- **Preview integrata**: Anteprima PDF e immagini direttamente nel browser senza download
+- **Validazione robusta**: Controllo tipo file, dimensione (max 10MB) e formato supportato
+
+#### 📊 **Gestione Scadenze Automatica**
+- **Stati documento**: Sistema a 4 stati (valido, in_scadenza, scaduto, da_rinnovare)
+- **Aggiornamento automatico**: Calcolo automatico stato basato su data scadenza
+- **Monitoraggio scadenze**: API dedicata per documenti in scadenza con filtri personalizzabili
+- **Alert system**: Identificazione documenti in scadenza entro 30 giorni
+- **Statistiche**: Conteggio documenti per stato con raggruppamento
+
+#### 🛠️ **Implementazione Tecnica Robusta**
+- **Database ottimizzato**: Tabella `employee_documents` con 15 campi e 5 indici per performance
+- **API RESTful complete**: 5 endpoint per CRUD completo e gestione scadenze
+- **Collation fix**: Risolto conflitto collation tra tabelle `employees` e `employee_documents`
+- **Migration SQL**: Script completo per aggiunta colonne e aggiornamento struttura
+- **Foreign key**: Relazione con cascata per integrità referenziale
+
+#### 📁 **Interfaccia Utente Avanzata**
+- **Pagina dedicata**: `/gestione/autisti/[id]/documenti` con interfaccia Bootstrap
+- **Form completo**: Campi per tipo, nome, date emissione/scadenza, file upload
+- **Tabella documenti**: Visualizzazione completa con azioni (preview, download, elimina)
+- **Componente preview**: `DocumentPreview.tsx` per visualizzazione documenti
+- **Gestione errori**: Feedback utente per operazioni e validazioni
+
+#### 🔧 **API Endpoints Implementate**
+- `GET /api/employees/[id]/documents` - Lista documenti dipendente
+- `POST /api/employees/[id]/documents` - Upload nuovo documento
+- `DELETE /api/employees/[id]/documents` - Elimina documento specifico
+- `GET /api/employees/documents/expiring` - Documenti in scadenza con filtri
+- `POST /api/employees/documents/expiring` - Aggiorna stato tutti documenti
+
+#### ✅ **Benefici Operativi**
+- **Digitalizzazione completa**: Eliminazione documenti cartacei con archiviazione cloud
+- **Controllo scadenze**: Monitoraggio automatico per compliance normativa
+- **Accesso rapido**: Preview immediata documenti senza download
+- **Sicurezza dati**: Storage cloud con backup automatico
+- **Tracciabilità**: Log completo upload, modifiche ed eliminazioni
+
+### 🔧 **Correzioni API Gestione Dipendenti - v2.32.1** ⭐ **PRECEDENTE**
 
 #### 🛠️ **Risoluzione Errori Critici Timestamp**
 - **Fix errore 500**: Risolto errore "Column 'updatedAt' cannot be null" nell'API PUT `/api/employees/[id]`

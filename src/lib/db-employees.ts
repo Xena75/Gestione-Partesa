@@ -42,15 +42,16 @@ export interface Employee {
 export interface EmployeeDocument {
   id: number;
   employee_id: string;
-  document_type: 'patente' | 'carta_identita' | 'codice_fiscale' | 'contratto' | 'certificato_medico' | 'altro';
+  document_type: string;
   document_name: string;
   file_path: string;
-  file_size?: number;
+  file_name: string;
+  file_size: number;
+  file_type: string;
   expiry_date?: string;
-  upload_date: string;
-  uploaded_by: string;
+  status: 'valido' | 'scaduto' | 'in_scadenza' | 'da_rinnovare';
   notes?: string;
-  is_active: boolean;
+  uploaded_by?: string;
   created_at: string;
   updated_at: string;
 }
@@ -211,7 +212,7 @@ export async function getEmployeeDocuments(employeeId: string): Promise<Employee
   const connection = await getConnection();
   try {
     const [rows] = await connection.execute(
-      'SELECT * FROM employee_documents WHERE employee_id = ? AND is_active = true ORDER BY upload_date DESC',
+      'SELECT * FROM employee_documents WHERE employee_id = ? ORDER BY created_at DESC',
       [employeeId]
     );
     return rows as EmployeeDocument[];
@@ -225,13 +226,13 @@ export async function createEmployeeDocument(document: Omit<EmployeeDocument, 'i
   try {
     const [result] = await connection.execute(
       `INSERT INTO employee_documents (
-        employee_id, document_type, document_name, file_path, file_size,
-        expiry_date, upload_date, uploaded_by, notes, is_active
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        employee_id, document_type, document_name, file_path, file_name, 
+        file_size, file_type, expiry_date, status, notes, uploaded_by
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         document.employee_id, document.document_type, document.document_name,
-        document.file_path, document.file_size, document.expiry_date,
-        document.upload_date, document.uploaded_by, document.notes, document.is_active
+        document.file_path, document.file_name, document.file_size, document.file_type,
+        document.expiry_date || null, document.status, document.notes || null, document.uploaded_by || null
       ]
     );
     
@@ -241,20 +242,234 @@ export async function createEmployeeDocument(document: Omit<EmployeeDocument, 'i
   }
 }
 
-export async function getExpiringDocuments(days: number = 30): Promise<EmployeeDocument[]> {
+export async function updateEmployeeDocument(id: number, document: Partial<EmployeeDocument>): Promise<boolean> {
+  const connection = await getConnection();
+  try {
+    const fields = Object.keys(document).filter(key => key !== 'id' && key !== 'created_at' && key !== 'updated_at');
+    const values = fields.map(field => document[field as keyof EmployeeDocument]);
+    
+    if (fields.length === 0) return false;
+    
+    const setClause = fields.map(field => `${field} = ?`).join(', ');
+    
+    const [result] = await connection.execute(
+      `UPDATE employee_documents SET ${setClause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+      [...values, id]
+    );
+    
+    return (result as any).affectedRows > 0;
+  } finally {
+    await connection.end();
+  }
+}
+
+export async function deleteEmployeeDocument(id: number): Promise<boolean> {
+  const connection = await getConnection();
+  try {
+    const [result] = await connection.execute(
+      'DELETE FROM employee_documents WHERE id = ?',
+      [id]
+    );
+    
+    return (result as any).affectedRows > 0;
+  } finally {
+    await connection.end();
+  }
+}
+
+export async function getEmployeeDocumentById(id: number): Promise<EmployeeDocument | null> {
+  const connection = await getConnection();
+  try {
+    const [rows] = await connection.execute(
+      'SELECT * FROM employee_documents WHERE id = ?',
+      [id]
+    );
+    const documents = rows as EmployeeDocument[];
+    return documents.length > 0 ? documents[0] : null;
+  } finally {
+    await connection.end();
+  }
+}
+
+export interface DocumentStats {
+  total: number;
+  valid: number;
+  expiring: number;
+  expired: number;
+  no_expiry: number;
+  by_type: Record<string, number>;
+}
+
+export interface ExpiredDocument extends EmployeeDocument {
+  nome: string;
+  cognome: string;
+  days_overdue: number;
+  priority_level: 'critico' | 'alto' | 'medio';
+}
+
+export async function getExpiringDocuments(days: number = 30): Promise<(EmployeeDocument & { nome: string; cognome: string })[]> {
   const connection = await getConnection();
   try {
     const [rows] = await connection.execute(
       `SELECT ed.*, e.nome, e.cognome 
        FROM employee_documents ed 
-       JOIN employees e ON ed.employee_id COLLATE utf8mb4_general_ci = e.id COLLATE utf8mb4_general_ci
-       WHERE ed.expiry_date IS NOT NULL 
+       JOIN employees e ON ed.employee_id = e.id
+       WHERE e.active = 1 
+       AND ed.expiry_date IS NOT NULL 
        AND ed.expiry_date <= DATE_ADD(CURDATE(), INTERVAL ? DAY)
-       AND ed.is_active = true 
+       AND ed.expiry_date >= CURDATE()
        ORDER BY ed.expiry_date ASC`,
       [days]
     );
     return rows as (EmployeeDocument & { nome: string; cognome: string })[];
+  } finally {
+    await connection.end();
+  }
+}
+
+export async function getDocumentStats(): Promise<DocumentStats> {
+  const connection = await getConnection();
+  try {
+    // Aggiorna prima gli stati dei documenti
+    await updateDocumentStatus();
+    
+    // Statistiche generali
+    const [statsRows] = await connection.execute(`
+      SELECT 
+        COUNT(*) as total,
+        COUNT(CASE WHEN status = 'valido' THEN 1 END) as valid,
+        COUNT(CASE WHEN status = 'in_scadenza' THEN 1 END) as expiring,
+        COUNT(CASE WHEN status = 'scaduto' THEN 1 END) as expired,
+        COUNT(CASE WHEN expiry_date IS NULL THEN 1 END) as no_expiry
+      FROM employee_documents ed
+      JOIN employees e ON ed.employee_id = e.id
+      WHERE e.active = 1
+    `);
+    
+    // Statistiche per tipo documento
+    const [typeRows] = await connection.execute(`
+      SELECT 
+        document_type,
+        COUNT(*) as count
+      FROM employee_documents ed
+      JOIN employees e ON ed.employee_id = e.id
+      WHERE e.active = 1
+      GROUP BY document_type
+      ORDER BY count DESC
+    `);
+    
+    const stats = (statsRows as any[])[0];
+    const byType: Record<string, number> = {};
+    
+    (typeRows as any[]).forEach(row => {
+      byType[row.document_type] = row.count;
+    });
+    
+    return {
+      total: stats.total || 0,
+      valid: stats.valid || 0,
+      expiring: stats.expiring || 0,
+      expired: stats.expired || 0,
+      no_expiry: stats.no_expiry || 0,
+      by_type: byType
+    };
+  } finally {
+    await connection.end();
+  }
+}
+
+export async function getExpiredDocuments(sortBy: string = 'days_overdue', limit: number = 50): Promise<{
+  documents: ExpiredDocument[];
+  total_expired: number;
+  critical_count: number;
+}> {
+  const connection = await getConnection();
+  try {
+    // Aggiorna prima gli stati dei documenti
+    await updateDocumentStatus();
+    
+    // Validazione campo ordinamento
+    const validSortFields = ['days_overdue', 'employee_name', 'document_type'];
+    const sortField = validSortFields.includes(sortBy) ? sortBy : 'days_overdue';
+    
+    let orderClause = 'ORDER BY days_overdue DESC';
+    if (sortField === 'employee_name') {
+      orderClause = 'ORDER BY e.cognome, e.nome';
+    } else if (sortField === 'document_type') {
+      orderClause = 'ORDER BY ed.document_type, days_overdue DESC';
+    }
+    
+    const [documentsRows] = await connection.execute(`
+      SELECT 
+        ed.*,
+        e.nome,
+        e.cognome,
+        DATEDIFF(CURDATE(), ed.expiry_date) as days_overdue,
+        CASE 
+          WHEN DATEDIFF(CURDATE(), ed.expiry_date) > 90 THEN 'critico'
+          WHEN DATEDIFF(CURDATE(), ed.expiry_date) > 30 THEN 'alto'
+          ELSE 'medio'
+        END as priority_level
+      FROM employee_documents ed
+      JOIN employees e ON ed.employee_id = e.id
+      WHERE e.active = 1 
+        AND ed.status = 'scaduto'
+        AND ed.expiry_date IS NOT NULL
+        AND ed.expiry_date < CURDATE()
+      ${orderClause}
+      LIMIT ?
+    `, [limit]);
+    
+    // Conteggio totale documenti scaduti
+    const [totalRows] = await connection.execute(`
+      SELECT COUNT(*) as total_expired
+      FROM employee_documents ed
+      JOIN employees e ON ed.employee_id = e.id
+      WHERE e.active = 1 
+        AND ed.status = 'scaduto'
+        AND ed.expiry_date IS NOT NULL
+        AND ed.expiry_date < CURDATE()
+    `);
+    
+    // Conteggio documenti critici (scaduti da più di 30 giorni)
+    const [criticalRows] = await connection.execute(`
+      SELECT COUNT(*) as critical_count
+      FROM employee_documents ed
+      JOIN employees e ON ed.employee_id = e.id
+      WHERE e.active = 1 
+        AND ed.status = 'scaduto'
+        AND ed.expiry_date IS NOT NULL
+        AND DATEDIFF(CURDATE(), ed.expiry_date) > 30
+    `);
+    
+    const totalExpired = (totalRows as any[])[0]?.total_expired || 0;
+    const criticalCount = (criticalRows as any[])[0]?.critical_count || 0;
+    
+    return {
+      documents: documentsRows as ExpiredDocument[],
+      total_expired: totalExpired,
+      critical_count: criticalCount
+    };
+  } finally {
+    await connection.end();
+  }
+}
+
+export async function updateDocumentStatus(): Promise<void> {
+  const connection = await getConnection();
+  try {
+    // Aggiorna automaticamente lo status dei documenti in base alla data di scadenza
+    await connection.execute(`
+      UPDATE employee_documents 
+      SET status = CASE 
+        WHEN expiry_date IS NULL THEN 'valido'
+        WHEN expiry_date < CURDATE() THEN 'scaduto'
+        WHEN expiry_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 'in_scadenza'
+        ELSE 'valido'
+      END,
+      updated_at = CURRENT_TIMESTAMP
+      WHERE employee_id IN (SELECT id FROM employees WHERE active = 1)
+    `);
   } finally {
     await connection.end();
   }

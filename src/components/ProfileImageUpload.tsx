@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 
 interface ProfileImageUploadProps {
@@ -18,6 +18,12 @@ export default function ProfileImageUpload({
 }: ProfileImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [displayImageUrl, setDisplayImageUrl] = useState<string | undefined>(currentImageUrl);
+
+  // Sincronizza l'immagine visualizzata con la prop currentImageUrl
+  useEffect(() => {
+    setDisplayImageUrl(currentImageUrl);
+  }, [currentImageUrl]);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
@@ -42,6 +48,8 @@ export default function ProfileImageUpload({
       }
 
       setUploadProgress(100);
+      // Aggiorna immediatamente l'immagine visualizzata
+      setDisplayImageUrl(result.foto_url);
       onImageUploaded(result.foto_url);
       
     } catch (error) {
@@ -75,6 +83,8 @@ export default function ProfileImageUpload({
         throw new Error(result.error || 'Errore nella rimozione');
       }
 
+      // Aggiorna immediatamente l'immagine visualizzata
+      setDisplayImageUrl(undefined);
       onImageRemoved();
       
     } catch (error) {
@@ -103,10 +113,10 @@ export default function ProfileImageUpload({
       </div>
       <div className="card-body">
         {/* Foto attuale */}
-        {currentImageUrl && (
+        {displayImageUrl && (
           <div className="text-center mb-3">
             <img 
-              src={currentImageUrl} 
+              src={displayImageUrl} 
               alt="Foto profilo" 
               className="img-thumbnail rounded-circle"
               style={{ width: '120px', height: '120px', objectFit: 'cover' }}
@@ -163,7 +173,7 @@ export default function ProfileImageUpload({
               <p className="mb-1">
                 {isDragActive 
                   ? 'Rilascia qui la foto...' 
-                  : currentImageUrl 
+                  : displayImageUrl 
                     ? 'Trascina una nuova foto qui o clicca per sostituire'
                     : 'Trascina una foto qui o clicca per selezionare'
                 }

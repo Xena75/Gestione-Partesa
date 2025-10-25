@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import DateInput from '@/components/DateInput';
+import DocumentPreview from '@/components/DocumentPreview';
 
 interface Employee {
   id: number;
@@ -14,13 +15,36 @@ interface Employee {
 
 interface Document {
   id: number;
+  employee_id: string;
   document_type: string;
+  document_name: string;
+  file_path: string;
   file_name: string;
   file_size: number;
+  file_type: string;
+  issue_date?: string;
   expiry_date?: string;
   status: string;
   notes?: string;
+  uploaded_by?: string;
   uploaded_at: string;
+  updated_at: string;
+}
+
+interface EmployeeDocument {
+  id: number;
+  employee_id: number;
+  document_type: string;
+  document_name: string;
+  file_path: string;
+  file_name: string;
+  file_size: number;
+  file_type: string;
+  expiry_date: string | null;
+  status: 'valido' | 'scaduto' | 'in_scadenza' | 'da_rinnovare';
+  notes: string | null;
+  uploaded_by: number | null;
+  created_at: string;
   updated_at: string;
 }
 
@@ -28,8 +52,11 @@ const DOCUMENT_TYPES = [
   { value: 'patente', label: 'Patente di Guida' },
   { value: 'carta_identita', label: 'Carta d\'Identità' },
   { value: 'codice_fiscale', label: 'Codice Fiscale' },
-  { value: 'attestato_professionale', label: 'Attestato Professionale' },
+  { value: 'cqc', label: 'CQC (Carta Qualificazione Conducente)' },
+  { value: 'adr', label: 'ADR (Trasporto Merci Pericolose)' },
   { value: 'certificato_medico', label: 'Certificato Medico' },
+  { value: 'attestato_professionale', label: 'Attestato Professionale' },
+  { value: 'contratto_lavoro', label: 'Contratto di Lavoro' },
   { value: 'altro', label: 'Altro' }
 ];
 
@@ -39,17 +66,19 @@ export default function DocumentiAutista() {
   const employeeId = params.id as string;
 
   const [employee, setEmployee] = useState<Employee | null>(null);
-  const [documents, setDocuments] = useState<Document[]>([]);
+  const [documents, setDocuments] = useState<EmployeeDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
   const [showUploadForm, setShowUploadForm] = useState(false);
-
-  // Form state
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  
+  // Stati per upload
   const [documentType, setDocumentType] = useState('');
+  const [documentName, setDocumentName] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [expiryDate, setExpiryDate] = useState('');
   const [notes, setNotes] = useState('');
+  const [previewDocument, setPreviewDocument] = useState<EmployeeDocument | null>(null);
 
   useEffect(() => {
     if (employeeId) {
@@ -119,54 +148,57 @@ export default function DocumentiAutista() {
     }
   };
 
-  const handleUpload = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const handleUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
     
     if (!selectedFile || !documentType) {
-      alert('Seleziona un file e il tipo di documento');
+      alert('Seleziona un file e specifica il tipo di documento');
       return;
     }
 
-    try {
-      setUploading(true);
+    setUploading(true);
 
-      // TODO: Implementare upload con Vercel Blob
-      // Per ora simulo l'upload
+    try {
       const formData = new FormData();
       formData.append('file', selectedFile);
       formData.append('document_type', documentType);
-      formData.append('expiry_date', expiryDate);
-      formData.append('notes', notes);
+      if (documentName) {
+        formData.append('document_name', documentName);
+      }
+      if (expiryDate) {
+        formData.append('expiry_date', expiryDate);
+      }
+      if (notes) {
+        formData.append('notes', notes);
+      }
 
       const response = await fetch(`/api/employees/${employeeId}/documents`, {
         method: 'POST',
-        body: formData
+        body: formData,
       });
 
       if (!response.ok) {
-        throw new Error('Errore durante l\'upload del documento');
+        throw new Error('Errore durante il caricamento del documento');
       }
 
       const result = await response.json();
       if (result.success) {
+        await loadData();
         // Reset form
         setSelectedFile(null);
         setDocumentType('');
+        setDocumentName('');
         setExpiryDate('');
         setNotes('');
         setShowUploadForm(false);
-        
-        // Ricarica documenti
-        await loadData();
-        
         alert('Documento caricato con successo!');
       } else {
-        throw new Error(result.message || 'Errore durante l\'upload');
+        throw new Error(result.message || 'Errore durante il caricamento');
       }
 
     } catch (err) {
       console.error('Errore upload:', err);
-      alert(err instanceof Error ? err.message : 'Errore durante l\'upload');
+      alert(err instanceof Error ? err.message : 'Errore durante il caricamento');
     } finally {
       setUploading(false);
     }
@@ -178,7 +210,7 @@ export default function DocumentiAutista() {
     }
 
     try {
-      const response = await fetch(`/api/employees/${employeeId}/documents/${documentId}`, {
+      const response = await fetch(`/api/employees/${employeeId}/documents?document_id=${documentId}`, {
         method: 'DELETE'
       });
 
@@ -207,9 +239,42 @@ export default function DocumentiAutista() {
       case 'scaduto':
         return <span className="badge bg-danger">Scaduto</span>;
       case 'in_scadenza':
-        return <span className="badge bg-warning">In scadenza</span>;
+        return <span className="badge bg-warning">In Scadenza</span>;
+      case 'da_rinnovare':
+        return <span className="badge bg-info">Da Rinnovare</span>;
       default:
         return <span className="badge bg-secondary">Sconosciuto</span>;
+    }
+  };
+
+  const handleDownloadDocument = async (fileUrl: string, fileName: string) => {
+    try {
+      // Fetch del file
+      const response = await fetch(fileUrl);
+      if (!response.ok) {
+        throw new Error('Errore nel download del file');
+      }
+
+      // Converti in blob
+      const blob = await response.blob();
+      
+      // Crea un URL temporaneo per il blob
+      const url = window.URL.createObjectURL(blob);
+      
+      // Crea un link temporaneo e clicca per scaricare
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      
+      // Pulisci
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+    } catch (error) {
+      console.error('Errore download:', error);
+      alert('Errore durante il download del file');
     }
   };
 
@@ -344,6 +409,22 @@ export default function DocumentiAutista() {
                       </select>
                     </div>
                     <div className="col-md-6 mb-3">
+                      <label htmlFor="documentName" className="form-label">
+                        Nome Documento
+                      </label>
+                      <input
+                        type="text"
+                        id="documentName"
+                        className="form-control"
+                        value={documentName}
+                        onChange={(e) => setDocumentName(e.target.value)}
+                        placeholder="Es: Patente di Guida - Mario Rossi"
+                      />
+                      <div className="form-text text-light">
+                        Se non specificato, verrà generato automaticamente
+                      </div>
+                    </div>
+                    <div className="col-md-6 mb-3">
                       <DateInput
                         id="expiryDate"
                         name="expiryDate"
@@ -448,9 +529,9 @@ export default function DocumentiAutista() {
                   <table className="table table-hover table-dark">
                     <thead>
                       <tr>
-                        <th className="text-light">Tipo Documento</th>
-                        <th className="text-light">Nome File</th>
-                        <th className="text-light">Dimensione</th>
+                        <th className="text-light">Nome Documento</th>
+                        <th className="text-light">Tipo</th>
+                        <th className="text-light">File</th>
                         <th className="text-light">Scadenza</th>
                         <th className="text-light">Stato</th>
                         <th className="text-light">Caricato il</th>
@@ -462,6 +543,9 @@ export default function DocumentiAutista() {
                       {documents.map((doc) => (
                         <tr key={doc.id}>
                           <td>
+                            <strong className="text-light">{doc.document_name}</strong>
+                          </td>
+                          <td>
                             <span className="badge bg-secondary">
                               {DOCUMENT_TYPES.find(t => t.value === doc.document_type)?.label || doc.document_type}
                             </span>
@@ -469,12 +553,11 @@ export default function DocumentiAutista() {
                           <td>
                             <div>
                               <strong className="text-light">{doc.file_name}</strong>
+                              <br />
+                              <small className="text-secondary">
+                                {formatFileSize(doc.file_size)} • {doc.file_type}
+                              </small>
                             </div>
-                          </td>
-                          <td>
-                            <small className="text-light">
-                              {formatFileSize(doc.file_size)}
-                            </small>
                           </td>
                           <td>
                             {doc.expiry_date ? (
@@ -492,10 +575,10 @@ export default function DocumentiAutista() {
                           <td>{getDocumentStatusBadge(doc.status)}</td>
                           <td>
                             <div>
-                              <span className="text-light">{new Date(doc.uploaded_at).toLocaleDateString('it-IT')}</span>
+                              <span className="text-light">{new Date(doc.created_at).toLocaleDateString('it-IT')}</span>
                               <br />
                               <small className="text-light">
-                                {new Date(doc.uploaded_at).toLocaleTimeString('it-IT', { 
+                                {new Date(doc.created_at).toLocaleTimeString('it-IT', { 
                                   hour: '2-digit', 
                                   minute: '2-digit' 
                                 })}
@@ -520,20 +603,14 @@ export default function DocumentiAutista() {
                               <button 
                                 className="btn btn-sm btn-outline-primary"
                                 title="Visualizza"
-                                onClick={() => {
-                                  // TODO: Implementare visualizzazione documento
-                                  alert('Funzione visualizzazione in sviluppo');
-                                }}
+                                onClick={() => setPreviewDocument(doc)}
                               >
                                 <i className="fas fa-eye"></i>
                               </button>
-                              <button 
+                              <button
                                 className="btn btn-sm btn-outline-info"
                                 title="Download"
-                                onClick={() => {
-                                  // TODO: Implementare download documento
-                                  alert('Funzione download in sviluppo');
-                                }}
+                                onClick={() => handleDownloadDocument(doc.file_path, doc.file_name)}
                               >
                                 <i className="fas fa-download"></i>
                               </button>
@@ -571,14 +648,24 @@ export default function DocumentiAutista() {
               <small className="text-light">
                 <i className="fas fa-info-circle me-1"></i>
                 Totale documenti: {documents.length} | 
-                Validi: {documents.filter(d => d.status === 'valido').length} | 
-                In scadenza: {documents.filter(d => d.status === 'in_scadenza').length} | 
-                Scaduti: {documents.filter(d => d.status === 'scaduto').length}
+                Attivi: {documents.filter(d => d.status === 'active').length} | 
+                Scaduti: {documents.filter(d => d.status === 'expired').length} | 
+                Archiviati: {documents.filter(d => d.status === 'archived').length}
               </small>
             </div>
           )}
         </div>
       </div>
+
+      {/* Preview Modal */}
+      {previewDocument && (
+        <DocumentPreview
+          fileUrl={previewDocument.file_path}
+          fileName={previewDocument.file_name}
+          fileType={previewDocument.file_type}
+          onClose={() => setPreviewDocument(null)}
+        />
+      )}
     </div>
   );
 }

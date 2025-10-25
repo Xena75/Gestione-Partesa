@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import ProfileImageUpload from '@/components/ProfileImageUpload';
+import DateInput from '@/components/DateInput';
+import { formatDateItalian as formatDateToItalian, convertItalianToISO as formatDateToDatabase, isValidItalianDate } from '@/lib/date-utils';
 
 interface Employee {
   id: number;
@@ -35,95 +37,7 @@ interface Employee {
   foto_url?: string;
 }
 
-// Funzioni di utilità per gestione date
-const formatDateToItalian = (dateString: string | null | undefined): string => {
-  if (!dateString || dateString.trim() === '') return '';
-  
-  try {
-    let date: Date;
-    const cleanDate = dateString.trim();
-    
-    // Gestisce formato ISO completo (yyyy-mm-ddTHH:mm:ss.sssZ)
-    if (cleanDate.includes('T')) {
-      date = new Date(cleanDate);
-    }
-    // Gestisce formato ISO semplice (yyyy-mm-dd)
-    else if (/^\d{4}-\d{2}-\d{2}$/.test(cleanDate)) {
-      const [year, month, day] = cleanDate.split('-').map(Number);
-      date = new Date(year, month - 1, day);
-    }
-    // Se è già in formato italiano, restituiscilo così com'è
-    else if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(cleanDate)) {
-      return cleanDate;
-    }
-    // Altri formati - prova parsing standard
-    else {
-      date = new Date(cleanDate);
-    }
-    
-    // Verifica che la data sia valida
-    if (isNaN(date.getTime())) return '';
-    
-    // Formatta in formato italiano gg/mm/aaaa
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    
-    return `${day}/${month}/${year}`;
-  } catch {
-    return '';
-  }
-};
 
-const formatDateToDatabase = (italianDate: string): string => {
-  if (!italianDate || italianDate.trim() === '') return '';
-  
-  const parts = italianDate.split('/');
-  if (parts.length !== 3) return '';
-  
-  const day = parts[0].padStart(2, '0');
-  const month = parts[1].padStart(2, '0');
-  const year = parts[2];
-  
-  if (day.length !== 2 || month.length !== 2 || year.length !== 4) return '';
-  if (parseInt(day) < 1 || parseInt(day) > 31) return '';
-  if (parseInt(month) < 1 || parseInt(month) > 12) return '';
-  
-  return `${year}-${month}-${day}`;
-};
-
-const formatDateInput = (value: string): string => {
-  // Rimuove tutto tranne i numeri
-  const numbersOnly = value.replace(/\D/g, '');
-  
-  // Limita a 8 cifre (ddmmyyyy)
-  const limited = numbersOnly.slice(0, 8);
-  
-  // Aggiunge le barre oblique automaticamente
-  if (limited.length >= 3 && limited.length <= 4) {
-    return `${limited.slice(0, 2)}/${limited.slice(2)}`;
-  } else if (limited.length >= 5) {
-    return `${limited.slice(0, 2)}/${limited.slice(2, 4)}/${limited.slice(4)}`;
-  }
-  
-  return limited;
-};
-
-const isValidItalianDate = (dateString: string): boolean => {
-  if (!dateString || !/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dateString)) return false;
-  
-  const [day, month, year] = dateString.split('/').map(Number);
-  
-  if (day < 1 || day > 31 || month < 1 || month > 12 || year < 1900 || year > 2100) {
-    return false;
-  }
-  
-  // Verifica che la data sia valida
-  const date = new Date(year, month - 1, day);
-  return date.getFullYear() === year && 
-         date.getMonth() === month - 1 && 
-         date.getDate() === day;
-};
 
 export default function ModificaDipendente() {
   const router = useRouter();
@@ -176,21 +90,10 @@ export default function ModificaDipendente() {
 
   // Gestisce i cambiamenti nei campi del form
   const handleInputChange = (field: keyof Employee, value: string) => {
-    // Campi data che richiedono formattazione automatica
-    const dateFields = ['data_nascita', 'data_assunzione', 'driver_license_expiry'];
-    
-    if (dateFields.includes(field)) {
-      const formattedValue = formatDateInput(value);
-      setFormData(prev => ({
-        ...prev,
-        [field]: formattedValue
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [field]: value
-      }));
-    }
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
     
     // Rimuove l'errore di validazione per questo campo
     if (validationErrors[field]) {
@@ -450,25 +353,19 @@ export default function ModificaDipendente() {
                       placeholder="Inserisci il luogo di nascita"
                     />
                   </div>
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label text-light">Data di Nascita</label>
-                    <input
-                      type="text"
-                      className={`form-control bg-dark text-light border-secondary ${validationErrors.data_nascita ? 'is-invalid' : ''}`}
-                      value={formData.data_nascita || ''}
-                      onChange={(e) => handleInputChange('data_nascita', e.target.value)}
-                      placeholder="DD/MM/YYYY"
-                      pattern="[0-9/]*"
-                      inputMode="numeric"
-                      maxLength={10}
-                      title="Digita solo numeri, le barre verranno aggiunte automaticamente"
+                  <div className="col-md-6">
+                    <DateInput
+                      id="data_nascita"
+                      name="data_nascita"
+                      label="Data di Nascita"
+                      value={formData.data_nascita ? formatDateToDatabase(formData.data_nascita) : ''}
+                      onChange={(isoValue) => {
+                        const italianDate = isoValue ? formatDateToItalian(isoValue) : '';
+                        setFormData(prev => ({ ...prev, data_nascita: italianDate }));
+                      }}
+                      className="bg-dark text-light border-secondary"
+                      error={validationErrors.data_nascita}
                     />
-                    {validationErrors.data_nascita && (
-                      <div className="invalid-feedback">{validationErrors.data_nascita}</div>
-                    )}
-                    <small className="form-text text-muted">
-                      Digita solo i numeri (es: 15031990 diventerà 15/03/1990)
-                    </small>
                   </div>
                   <div className="col-md-6 mb-3">
                     <label className="form-label text-light">Cittadinanza</label>
@@ -660,25 +557,19 @@ export default function ModificaDipendente() {
                       placeholder="es. 40 ore/settimana"
                     />
                   </div>
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label text-light">Data Assunzione</label>
-                    <input
-                      type="text"
-                      className={`form-control bg-dark text-light border-secondary ${validationErrors.data_assunzione ? 'is-invalid' : ''}`}
-                      value={formData.data_assunzione || ''}
-                      onChange={(e) => handleInputChange('data_assunzione', e.target.value)}
-                      placeholder="DD/MM/YYYY"
-                      pattern="[0-9/]*"
-                      inputMode="numeric"
-                      maxLength={10}
-                      title="Digita solo numeri, le barre verranno aggiunte automaticamente"
+                  <div className="col-md-6">
+                    <DateInput
+                      id="data_assunzione"
+                      name="data_assunzione"
+                      label="Data Assunzione"
+                      value={formData.data_assunzione ? formatDateToDatabase(formData.data_assunzione) : ''}
+                      onChange={(isoValue) => {
+                        const italianDate = isoValue ? formatDateToItalian(isoValue) : '';
+                        setFormData(prev => ({ ...prev, data_assunzione: italianDate }));
+                      }}
+                      className="bg-dark text-light border-secondary"
+                      error={validationErrors.data_assunzione}
                     />
-                    {validationErrors.data_assunzione && (
-                      <div className="invalid-feedback">{validationErrors.data_assunzione}</div>
-                    )}
-                    <small className="form-text text-muted">
-                      Digita solo i numeri (es: 15032020 diventerà 15/03/2020)
-                    </small>
                   </div>
                 </div>
               </div>
@@ -721,25 +612,19 @@ export default function ModificaDipendente() {
                         placeholder="Inserisci il numero patente"
                       />
                     </div>
-                    <div className="col-md-4 mb-3">
-                      <label className="form-label text-light">Scadenza Patente</label>
-                      <input
-                        type="text"
-                        className={`form-control bg-dark text-light border-secondary ${validationErrors.driver_license_expiry ? 'is-invalid' : ''}`}
-                        value={formData.driver_license_expiry || ''}
-                        onChange={(e) => handleInputChange('driver_license_expiry', e.target.value)}
-                        placeholder="DD/MM/YYYY"
-                        pattern="[0-9/]*"
-                        inputMode="numeric"
-                        maxLength={10}
-                        title="Digita solo numeri, le barre verranno aggiunte automaticamente"
+                    <div className="col-md-4">
+                      <DateInput
+                        id="driver_license_expiry"
+                        name="driver_license_expiry"
+                        label="Scadenza Patente"
+                        value={formData.driver_license_expiry ? formatDateToDatabase(formData.driver_license_expiry) : ''}
+                        onChange={(isoValue) => {
+                          const italianDate = isoValue ? formatDateToItalian(isoValue) : '';
+                          setFormData(prev => ({ ...prev, driver_license_expiry: italianDate }));
+                        }}
+                        className="bg-dark text-light border-secondary"
+                        error={validationErrors.driver_license_expiry}
                       />
-                      {validationErrors.driver_license_expiry && (
-                        <div className="invalid-feedback">{validationErrors.driver_license_expiry}</div>
-                      )}
-                      <small className="form-text text-muted">
-                        Digita solo i numeri (es: 15032025 diventerà 15/03/2025)
-                      </small>
                     </div>
                   </div>
                 </div>

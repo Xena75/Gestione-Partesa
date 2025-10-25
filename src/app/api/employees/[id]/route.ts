@@ -7,9 +7,10 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    const resolvedParams = await params;
     // Decodifica l'URL per gestire spazi e caratteri speciali
-    const decodedId = decodeURIComponent(params.id);
-    console.log('API employee GET chiamata per ID originale:', params.id);
+    const decodedId = decodeURIComponent(resolvedParams.id);
+    console.log('API employee GET chiamata per ID originale:', resolvedParams.id);
     console.log('API employee GET ID decodificato:', decodedId);
     
     const employee = await getEmployeeById(decodedId);
@@ -47,9 +48,10 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    const resolvedParams = await params;
     // Decodifica l'URL per gestire spazi e caratteri speciali
-    const decodedId = decodeURIComponent(params.id);
-    console.log('API employee PUT chiamata per ID originale:', params.id);
+    const decodedId = decodeURIComponent(resolvedParams.id);
+    console.log('API employee PUT chiamata per ID originale:', resolvedParams.id);
     console.log('API employee PUT ID decodificato:', decodedId);
     
     const body = await request.json();
@@ -90,9 +92,10 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    const resolvedParams = await params;
     // Decodifica l'URL per gestire spazi e caratteri speciali
-    const decodedId = decodeURIComponent(params.id);
-    console.log('API employee DELETE chiamata per ID originale:', params.id);
+    const decodedId = decodeURIComponent(resolvedParams.id);
+    console.log('API employee DELETE chiamata per ID originale:', resolvedParams.id);
     console.log('API employee DELETE ID decodificato:', decodedId);
     
     const success = await deleteEmployee(decodedId);

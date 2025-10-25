@@ -1,6 +1,183 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.32.1
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.32.3
 
-## 🚀 **VERSIONE 2.32.1** - Correzione Gestione Timestamp Dipendenti ⭐ **NUOVO**
+## 🚀 **VERSIONE 2.32.3** - Dashboard Autisti Completa ⭐ **NUOVO**
+
+### 📊 **DASHBOARD AUTISTI OPERATIVA**
+- **Statistiche complete**: Dashboard con conteggio autisti attivi, documenti scaduti e in scadenza
+- **Widget documenti**: Visualizzazione documenti validi, scaduti, in scadenza con grafici interattivi
+- **Grafici Chart.js**: Grafico a torta per distribuzione documenti e grafico a barre per tipologie
+- **Alert critici**: Sezione dedicata con alert rosso per documenti scaduti priorità critica
+- **Tabella documenti scaduti**: Lista dettagliata con nome dipendente, tipo documento, giorni scadenza
+- **Azioni rapide**: Pulsanti per rinnovo documenti e invio notifiche direttamente dalla dashboard
+
+### 🏗️ **IMPLEMENTAZIONE TECNICA DASHBOARD**
+
+#### **1. API Dedicate Implementate**
+```typescript
+// API specifiche per dashboard autisti
+GET /api/employees/documents/stats     // Statistiche complete documenti
+GET /api/employees/documents/expired   // Documenti scaduti con priorità
+```
+
+#### **2. Correzioni Bug Critici**
+- **Conteggio autisti**: Risolto bug che mostrava sempre 0 autisti
+- **Filtro is_driver**: Corretto confronto da `=== true` a `=== 1` (tipo numerico dal database)
+- **API filtri**: Corretta logica per restituire tutti i dati quando non specificati filtri
+- **Interfaccia allineata**: Corretti campi `priority_level` e nomi dipendenti tra API e frontend
+
+#### **3. Grafici Interattivi**
+- **Chart.js integrato**: Configurazione corretta per dati API
+- **Grafico a torta**: Distribuzione documenti (validi, scaduti, in scadenza)
+- **Grafico a barre**: Tipologie documenti con conteggi totali
+- **Responsive design**: Layout Bootstrap ottimizzato per tutti i dispositivi
+
+### 📈 **BENEFICI OPERATIVI DASHBOARD**
+
+#### **✅ Monitoraggio Centralizzato**
+- Dashboard unica per controllo stato documenti autisti
+- Identificazione immediata documenti scaduti e in scadenza
+- Statistiche real-time per decisioni operative rapide
+
+#### **✅ Azioni Immediate**
+- Pulsanti per rinnovo documenti direttamente dalla dashboard
+- Link diretti per gestione documenti specifici
+- Alert visivi per priorità critiche con codici colore
+
+## 🚀 **VERSIONE 2.32.2** - Sistema Completo Gestione Documenti Dipendenti ⭐ **PRECEDENTE**
+
+### 📄 **SISTEMA GESTIONE DOCUMENTI DIPENDENTI**
+- **Implementazione completa**: Sistema end-to-end per gestione documenti autisti e dipendenti
+- **Upload cloud**: Integrazione Vercel Blob Storage per archiviazione sicura documenti
+- **Preview integrata**: Anteprima PDF e immagini direttamente nel browser senza download
+- **Gestione scadenze**: Monitoraggio automatico con 4 stati (valido, in_scadenza, scaduto, da_rinnovare)
+- **API RESTful**: 5 endpoint completi per CRUD documenti e gestione scadenze
+- **Interfaccia avanzata**: Pagina dedicata con drag&drop e tabella documenti interattiva
+
+### 🏗️ **IMPLEMENTAZIONE TECNICA COMPLETA**
+
+#### **1. Database e Migration**
+- **Tabella creata**: `employee_documents` con 15 campi ottimizzati
+- **Migration SQL**: `migrations/add_employee_documents_fields.sql` eseguita con successo
+- **Indici performance**: 5 indici per ottimizzazione query (employee_id, document_type, expiry_date, status, created_at)
+- **Foreign key**: Relazione con cascata verso tabella `employees` per integrità referenziale
+- **Collation fix**: Risolto conflitto collation tra `employee_documents.employee_id` e `employees.id`
+
+#### **2. API Endpoints Implementate**
+```typescript
+// API complete per gestione documenti
+GET    /api/employees/[id]/documents        // Lista documenti dipendente
+POST   /api/employees/[id]/documents        // Upload nuovo documento
+DELETE /api/employees/[id]/documents        // Elimina documento specifico
+GET    /api/employees/documents/expiring    // Documenti in scadenza con filtri
+POST   /api/employees/documents/expiring    // Aggiorna stato tutti documenti
+```
+
+#### **3. Funzioni Database Implementate**
+- **createEmployeeDocument**: Inserimento nuovo documento con validazione
+- **getEmployeeDocuments**: Recupero documenti dipendente con join employee
+- **deleteEmployeeDocument**: Eliminazione sicura documento e file storage
+- **getExpiringDocuments**: Query ottimizzata documenti in scadenza con filtri
+- **updateDocumentStatus**: Aggiornamento automatico stati basato su date scadenza
+
+#### **4. Interfaccia Utente Avanzata**
+- **Pagina dedicata**: `/gestione/autisti/[id]/documenti` con design Bootstrap
+- **Form completo**: Campi tipo, nome, date emissione/scadenza, upload file
+- **Tabella documenti**: Visualizzazione con azioni (preview, download, elimina)
+- **Componente preview**: `DocumentPreview.tsx` per anteprima documenti
+- **Drag&drop**: Upload intuitivo con validazione real-time
+
+### 📊 **TIPI DOCUMENTO E STATI**
+
+#### **Tipi Documento Supportati**
+- **patente**: Patente di guida
+- **cqc**: Carta Qualificazione Conducente
+- **adr**: Trasporto merci pericolose
+- **contratto_lavoro**: Contratto di lavoro
+- **certificato_medico**: Certificato medico
+- **corsi_formazione**: Corsi di formazione
+- **altro**: Altri documenti
+
+#### **Stati Documento Automatici**
+- **valido**: Scadenza > 30 giorni (badge verde)
+- **in_scadenza**: Scadenza entro 30 giorni (badge giallo)
+- **scaduto**: Documento scaduto (badge rosso)
+- **da_rinnovare**: Richiede rinnovo (badge arancione)
+
+### 🔧 **VALIDAZIONI E SICUREZZA**
+
+#### **Validazione File**
+- **Formati supportati**: PDF, JPG, JPEG, PNG, DOC, DOCX
+- **Dimensione massima**: 10MB per file
+- **Controllo MIME**: Validazione server-side tipo file
+- **Sanitizzazione**: Nome file pulito da caratteri speciali
+
+#### **Storage Sicuro**
+- **Vercel Blob**: Archiviazione cloud con backup automatico
+- **URL temporanei**: Link di accesso con scadenza per sicurezza
+- **Gestione multi-ambiente**: Configurazione locale/produzione
+
+### ✅ **RISULTATI E TEST COMPLETATI**
+
+#### **Database Testing**
+- ✅ **Migration eseguita**: Tabella `employee_documents` creata con successo
+- ✅ **Collation fix**: Risolto conflitto `utf8mb4_general_ci` vs `utf8mb4_unicode_ci`
+- ✅ **Query performance**: Indici ottimizzati per query veloci
+- ✅ **Foreign key**: Integrità referenziale verificata
+
+#### **API Testing**
+- ✅ **GET documenti**: Lista documenti dipendente (status 200)
+- ✅ **POST upload**: Upload documento con validazione (status 201)
+- ✅ **DELETE documento**: Eliminazione sicura (status 200)
+- ✅ **GET scadenze**: Documenti in scadenza con filtri (status 200)
+- ✅ **POST aggiorna stati**: Aggiornamento automatico stati (status 200)
+
+#### **Interfaccia Testing**
+- ✅ **Pagina documenti**: Caricamento corretto `/gestione/autisti/[id]/documenti`
+- ✅ **Form upload**: Validazione e feedback utente
+- ✅ **Preview documenti**: Anteprima PDF e immagini funzionante
+- ✅ **Gestione errori**: Messaggi informativi per utente
+
+### 📁 **FILE CREATI/MODIFICATI**
+
+#### **Database**
+- `migrations/add_employee_documents_fields.sql` - Migration completa tabella
+
+#### **API Routes**
+- `src/app/api/employees/[id]/documents/route.ts` - CRUD documenti dipendente
+- `src/app/api/employees/documents/expiring/route.ts` - Gestione scadenze
+
+#### **Database Functions**
+- `src/lib/db-employees.ts` - 5 nuove funzioni per gestione documenti
+
+#### **Pages**
+- `src/app/gestione/autisti/[id]/documenti/page.tsx` - Pagina gestione documenti
+
+#### **Components**
+- `src/components/DocumentPreview.tsx` - Componente preview documenti
+
+#### **Types**
+- `src/types/employee.ts` - Tipi TypeScript per documenti
+
+### 🎯 **BENEFICI OPERATIVI**
+
+#### **Digitalizzazione Completa**
+- **Eliminazione carta**: Tutti documenti digitalizzati su cloud
+- **Accesso rapido**: Preview immediata senza download
+- **Organizzazione**: Documenti categorizzati per tipo e dipendente
+
+#### **Compliance e Controllo**
+- **Monitoraggio scadenze**: Alert automatici documenti in scadenza
+- **Tracciabilità**: Log completo upload, modifiche, eliminazioni
+- **Sicurezza**: Storage cloud con backup automatico
+
+#### **Efficienza Operativa**
+- **Upload intuitivo**: Drag&drop con validazione real-time
+- **Gestione centralizzata**: Tutti documenti in un'unica interfaccia
+- **Performance**: Query ottimizzate con indici database
+
+---
+
+## 🚀 **VERSIONE 2.32.1** - Correzione Gestione Timestamp Dipendenti ⭐ **PRECEDENTE**
 
 ### 🔧 **CORREZIONE API DIPENDENTI**
 - **Problema risolto**: Errore 500 nell'API PUT `/api/employees/[id]` con messaggio "Column 'updatedAt' cannot be null"
