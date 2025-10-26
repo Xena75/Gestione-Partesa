@@ -1671,6 +1671,14 @@ gestisce correttamente questo aspetto fornendo un valore `new Date()` esplicito.
 - `active`: Dipendente attivo (1) o non attivo (0)
 - `createdAt`, `updatedAt`: Timestamp creazione/modifica
 
+**Trigger Automatici:**
+- **Sincronizzazione is_driver con qualifica** (Gennaio 2025):
+  - `employees_qualifica_sync_insert`: Trigger su INSERT che imposta automaticamente `is_driver = 1` se `qualifica = "AUTISTA"`, altrimenti `is_driver = 0`
+  - `employees_qualifica_sync_update`: Trigger su UPDATE che sincronizza `is_driver` quando `qualifica` cambia
+  - **Logica:** Se `UPPER(TRIM(qualifica)) = 'AUTISTA'` → `is_driver = 1`, altrimenti `is_driver = 0`
+  - **Benefici:** Garantisce coerenza automatica dei dati indipendentemente da come vengono inseriti/aggiornati (API, import, modifiche dirette)
+  - **Migration:** `migrations/create_employees_qualifica_trigger.sql`
+
 **Note:**
 - Aggiornata il 2025-10-23 con import da Excel (30 dipendenti)
 - 13 nuove colonne aggiunte (migration: `add_employees_extended_fields.sql`)
@@ -2083,6 +2091,18 @@ SELECT * FROM backup_schedules WHERE enabled = TRUE;
 - **src/app/api/employees/documents/expiring/route.ts** - API documenti in scadenza
 - **src/app/gestione/autisti/[id]/documenti/page.tsx** - Pagina gestione documenti autista
 - **src/components/DocumentPreview.tsx** - Componente preview documenti
+
+#### Tabella: `employee_leave_requests`
+- **src/lib/db-employees.ts** - CRUD operazioni richieste ferie
+- **src/app/api/employees/leave/route.ts** - API gestione richieste ferie
+- **src/app/api/employees/leave/approve/route.ts** - API approvazione richieste
+- **src/app/gestione/employees/ferie/page.tsx** - Pagina gestione ferie
+
+#### Tabella: `employee_leave_balance`
+- **src/lib/db-employees.ts** - CRUD operazioni bilanci ferie
+- **src/app/api/employees/leave/balance/route.ts** - API gestione bilanci singoli
+- **src/app/api/employees/leave/balances/route.ts** - API tutti i bilanci
+- **src/app/gestione/employees/ferie/page.tsx** - Pagina gestione ferie
 
 #### Tabella: `vehicle_schedules`
 - **src/lib/data-viaggi.ts** - Gestione scadenze veicoli

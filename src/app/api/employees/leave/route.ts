@@ -75,10 +75,10 @@ export async function POST(request: NextRequest) {
     const startDate = new Date(body.start_date);
     const endDate = new Date(body.end_date);
     
-    if (startDate >= endDate) {
+    if (startDate > endDate) {
       return NextResponse.json({
         success: false,
-        error: 'La data di fine deve essere successiva alla data di inizio'
+        error: 'La data di inizio non può essere successiva alla data di fine'
       }, { status: 400 });
     }
     

@@ -975,7 +975,7 @@ export default function AutistaDettaglio() {
                           Richieste Ferie Recenti
                         </h5>
                         <Link 
-                          href="/gestione/autisti/ferie"
+                          href="/gestione/employees/ferie"
                           className="btn btn-sm btn-outline-primary"
                         >
                           <i className="fas fa-eye me-1"></i>

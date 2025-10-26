@@ -10,6 +10,7 @@ interface Employee {
   nominativo: string;
   email: string;
   cellulare: string;
+  qualifica?: string;
   is_driver: number;
   active: number;
   driver_license_number?: string;
@@ -125,10 +126,26 @@ export default function AutistiPage() {
       return sortDirection === 'asc' ? comparison : -comparison;
     });
 
-  const getEmployeeTypeBadge = (isDriver: number) => {
-    return isDriver === 1 
-      ? <span className="badge bg-primary">Autista</span>
-      : <span className="badge bg-secondary">Dipendente</span>;
+  const getEmployeeTypeBadge = (qualifica?: string) => {
+    if (!qualifica) {
+      return <span className="badge bg-secondary">N/A</span>;
+    }
+    
+    // Normalizza la qualifica per il confronto
+    const qualificaNormalized = qualifica.toUpperCase();
+    
+    switch (qualificaNormalized) {
+      case 'AUTISTA':
+        return <span className="badge bg-primary">Autista</span>;
+      case 'IMPIEGATO':
+        return <span className="badge bg-info">Impiegato</span>;
+      case 'FACCHINO':
+        return <span className="badge bg-warning">Facchino</span>;
+      case 'PREPOSTO':
+        return <span className="badge bg-success">Preposto</span>;
+      default:
+        return <span className="badge bg-secondary">{qualifica}</span>;
+    }
   };
 
   const getLicenseStatusBadge = (expiryDate?: string) => {
@@ -392,7 +409,7 @@ export default function AutistiPage() {
                             </span>
                           </td>
                           <td>
-                            {getEmployeeTypeBadge(employee.is_driver)}
+                            {getEmployeeTypeBadge(employee.qualifica)}
                           </td>
                           <td>
                             {employee.driver_license_number ? (

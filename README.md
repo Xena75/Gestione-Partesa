@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.32.2
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.33.1
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -83,7 +83,27 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Database ottimizzato**: Tabella `employee_documents` con indici per performance e foreign key
 - **Aggiornamento automatico**: Sistema automatico di aggiornamento stato documenti basato su scadenze
 
-### 📊 **Dashboard Autisti Completa** ⭐ **NUOVO v2.32.3**
+### 🔧 **Ottimizzazioni UI e Correzioni** ⭐ **NUOVO v2.33.1**
+- **Correzione link ferie**: Risolto errore 404 nel link "Vedi Tutte" dalla pagina autista (da `/gestione/autisti/ferie` a `/gestione/employees/ferie`)
+- **Ottimizzazione calendario veicoli**: Unificazione filtri e legenda colori in una singola card per migliore utilizzo spazio
+- **Aggiornamento terminologia dashboard**: Cambio da "Autisti" a "Personale" per terminologia più appropriata
+- **Riorganizzazione card anagrafiche**: Nuovo ordine elementi con "Dashboard Personale" in evidenza e "Società Trasporti" rinominata
+- **Layout responsive migliorato**: Ottimizzazione visualizzazione su tutti i dispositivi con elementi meglio organizzati
+- **Correzione eventi ferie calendario**: Risolto problema "undefined" negli eventi ferie sostituendo `employee_name` con concatenazione `cognome + nome`
+
+### 📅 **Calendario Integrato Ferie e Veicoli** ⭐ **PRECEDENTE v2.33.0**
+- **Visualizzazione unificata**: Calendario che mostra sia scadenze veicoli che eventi ferie dipendenti
+- **Filtri avanzati**: Controlli per mostrare/nascondere eventi veicoli e eventi ferie separatamente
+- **Codici colore distinti**: Colori specifici per differenziare eventi veicoli (blu, verde, arancione) da eventi ferie (azzurro, rosa, marrone)
+- **Tooltip informativi**: Dettagli completi al passaggio del mouse su ogni evento (nome dipendente, tipo ferie, date, giorni richiesti)
+- **Modal dettagli**: Popup con informazioni complete per ogni tipo di evento con azioni specifiche
+- **API calendario ferie**: Endpoint dedicato `/api/employees/leave/calendar` per eventi ferie approvate
+- **Integrazione React Big Calendar**: Estensione calendario esistente con supporto eventi multipli
+- **Gestione eventi dinamica**: Click, tooltip e modal adattati al tipo di evento
+- **Performance ottimizzate**: Caricamento combinato eventi con filtri client-side
+- **Pianificazione migliorata**: Visibilità completa su disponibilità veicoli e dipendenti per evitare conflitti
+
+### 📊 **Dashboard Autisti Completa** ⭐ **PRECEDENTE v2.32.3**
 - **Statistiche complete**: Dashboard operativa con conteggio autisti, documenti scaduti e in scadenza
 - **Widget documenti**: Visualizzazione documenti validi, scaduti, in scadenza con grafici interattivi
 - **Grafici Chart.js**: Grafico a torta per distribuzione documenti e grafico a barre per tipologie
@@ -123,7 +143,41 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
 
-### 📄 **Sistema Completo Gestione Documenti Dipendenti - v2.32.2** ⭐ **NUOVO**
+### 📅 **Calendario Integrato Ferie e Veicoli - v2.33.0** ⭐ **NUOVO**
+
+#### 🎯 **Visualizzazione Unificata Eventi Aziendali**
+- **Calendario integrato**: Estensione del calendario scadenze veicoli per includere eventi ferie dipendenti
+- **Vista centralizzata**: Tutti gli eventi aziendali (scadenze veicoli + ferie dipendenti) in un'unica interfaccia
+- **Filtri granulari**: Controlli separati per mostrare/nascondere eventi veicoli ed eventi ferie
+- **Codici colore distinti**: Sistema di colori per differenziare tipologie eventi
+- **Tooltip informativi**: Dettagli completi al passaggio del mouse su ogni evento
+
+#### 🎨 **Sistema Codici Colore Avanzato**
+- **Eventi Veicoli**: Revisione (blu), Assicurazione (verde), Bollo (arancione), Altro (grigio)
+- **Eventi Ferie**: Ferie (azzurro), Malattia (rosa), Permesso (marrone)
+- **Modalità scura**: Colori ottimizzati per entrambe le modalità chiaro/scuro
+- **Legenda dinamica**: Sezioni separate per eventi veicoli ed eventi ferie
+
+#### 🛠️ **Implementazione Tecnica Robusta**
+- **API dedicata**: Nuovo endpoint `/api/employees/leave/calendar` per eventi ferie approvate
+- **Estensione calendario**: Modifica `src/app/vehicles/schedules/calendar/page.tsx` per supporto eventi multipli
+- **Interfacce TypeScript**: `LeaveEvent` per eventi ferie e estensione `CalendarEvent`
+- **Gestione stati**: `leaveEvents`, `showVehicleEvents`, `showLeaveEvents` per controllo visualizzazione
+- **Performance ottimizzate**: Caricamento combinato eventi con aggiornamento automatico
+
+#### 📊 **Funzionalità Avanzate**
+- **Modal dettagli dinamico**: Contenuto adattato al tipo di evento (ferie vs veicoli)
+- **Tooltip personalizzati**: Informazioni specifiche per ogni tipologia evento
+- **Integrazione React Big Calendar**: Supporto nativo per eventi multipli con gestione click e hover
+- **Filtri real-time**: Aggiornamento immediato visualizzazione senza ricaricamento pagina
+
+#### ✅ **Benefici Operativi**
+- **Pianificazione centralizzata**: Vista completa disponibilità veicoli e dipendenti
+- **Prevenzione conflitti**: Identificazione rapida sovrapposizioni e problemi di pianificazione
+- **Decisioni informate**: Tutte le informazioni necessarie in un'unica interfaccia
+- **Efficienza operativa**: Riduzione errori di pianificazione e miglioramento coordinamento
+
+### 📄 **Sistema Completo Gestione Documenti Dipendenti - v2.32.2** ⭐ **PRECEDENTE**
 
 #### 🎯 **Funzionalità Complete di Upload e Gestione Documenti**
 - **Upload documenti**: Sistema completo per caricamento documenti autisti con drag&drop

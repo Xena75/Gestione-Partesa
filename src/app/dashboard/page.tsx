@@ -714,6 +714,24 @@ export default function ModernDashboard() {
                </div>
               <div className={`card-body card-body-soft ${!toggleStates.anagrafiche ? 'card-body-collapsed' : ''}`}>
                 <div className="row g-2 mb-3">
+                  <div className="col-12">
+                    <Link href="/gestione/autisti/dashboard" className="btn btn-outline-info btn-action btn-sm w-100">
+                      <Activity size={16} className="me-1" />
+                      Dashboard Personale
+                    </Link>
+                  </div>
+                  <div className="col-6">
+                    <Link href="/gestione/autisti" className="btn btn-outline-success btn-action btn-sm w-100">
+                      <Users size={16} className="me-1" />
+                      Personale
+                    </Link>
+                  </div>
+                  <div className="col-6">
+                    <Link href="/gestione/companies" className="btn btn-outline-primary btn-action btn-sm w-100">
+                      <Building2 size={16} className="me-1" />
+                      Società Trasporti
+                    </Link>
+                  </div>
                   <div className="col-6">
                     <Link href="/vehicles/suppliers" className="btn btn-outline-primary btn-action btn-sm w-100">
                       <Users size={16} className="me-1" />
@@ -724,24 +742,6 @@ export default function ModernDashboard() {
                     <Link href="/vehicles/categories" className="btn btn-outline-primary btn-action btn-sm w-100">
                       <Tag size={16} className="me-1" />
                       Categorie
-                    </Link>
-                  </div>
-                  <div className="col-6">
-                    <Link href="/gestione/autisti" className="btn btn-outline-success btn-action btn-sm w-100">
-                      <Users size={16} className="me-1" />
-                      Autisti
-                    </Link>
-                  </div>
-                  <div className="col-6">
-                    <Link href="/gestione/autisti/dashboard" className="btn btn-outline-info btn-action btn-sm w-100">
-                      <Activity size={16} className="me-1" />
-                      Dashboard Autisti
-                    </Link>
-                  </div>
-                  <div className="col-6">
-                    <Link href="/gestione/companies" className="btn btn-outline-primary btn-action btn-sm w-100">
-                      <Building2 size={16} className="me-1" />
-                      Società
                     </Link>
                   </div>
                 </div>

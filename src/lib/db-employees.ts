@@ -28,6 +28,7 @@ export interface Employee {
   ore_settimanali?: number;
   ferie_annuali?: number;
   permessi_annuali?: number;
+  qualifica?: string;
   is_driver: boolean;
   driver_license_number?: string;
   driver_license_expiry?: string;

@@ -1,6 +1,108 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.32.3
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.33.0
 
-## 🚀 **VERSIONE 2.32.3** - Dashboard Autisti Completa ⭐ **NUOVO**
+## 🚀 **VERSIONE 2.33.0** - Calendario Integrato Ferie Dipendenti ⭐ **NUOVO**
+
+### 📅 **CALENDARIO INTEGRATO FERIE E VEICOLI**
+- **Visualizzazione unificata**: Calendario che mostra sia scadenze veicoli che eventi ferie dipendenti
+- **Filtri avanzati**: Controlli per mostrare/nascondere eventi veicoli e eventi ferie separatamente
+- **Codici colore distinti**: Colori specifici per differenziare eventi veicoli da eventi ferie
+- **Tooltip informativi**: Dettagli completi al passaggio del mouse su ogni evento
+- **Modal dettagli**: Popup con informazioni complete per ogni tipo di evento
+- **API dedicata**: Endpoint specifico per recuperare eventi ferie in formato calendario
+
+### 🏗️ **IMPLEMENTAZIONE TECNICA CALENDARIO INTEGRATO**
+
+#### **1. API Calendario Ferie**
+```typescript
+// Nuovo endpoint per eventi ferie
+GET /api/employees/leave/calendar    // Eventi ferie approvate per calendario
+```
+
+#### **2. Estensione Calendario Esistente**
+- **File modificato**: `src/app/vehicles/schedules/calendar/page.tsx`
+- **Interfacce aggiornate**: `CalendarEvent` estesa per supportare eventi ferie
+- **Nuovi stati**: `leaveEvents`, `showVehicleEvents`, `showLeaveEvents`
+- **Funzioni integrate**: `fetchLeaveEvents()`, `updateCombinedEvents()`
+
+#### **3. Tipologie Eventi Ferie**
+- **Ferie**: Eventi di ferie regolari (colore azzurro)
+- **Malattia**: Eventi di malattia (colore rosa)
+- **Permesso**: Eventi di permesso (colore marrone)
+
+#### **4. Filtri e Controlli UI**
+- **Checkbox Eventi Veicoli**: Mostra/nasconde scadenze veicoli
+- **Checkbox Eventi Ferie**: Mostra/nasconde eventi ferie dipendenti
+- **Legenda colori**: Sezioni separate per eventi veicoli e eventi ferie
+- **Titolo aggiornato**: "Calendario Integrato" invece di "Calendario Scadenze Veicoli"
+
+### 🎨 **CODICI COLORE E STILI**
+
+#### **Eventi Veicoli (Esistenti)**
+- **Revisione**: Blu (#007bff)
+- **Assicurazione**: Verde (#28a745)
+- **Bollo**: Arancione (#fd7e14)
+- **Altro**: Grigio (#6c757d)
+
+#### **Eventi Ferie (Nuovi)**
+- **Ferie**: Azzurro (#17a2b8)
+- **Malattia**: Rosa (#e83e8c)
+- **Permesso**: Marrone (#795548)
+
+#### **Supporto Modalità Scura**
+- **Stili CSS**: Colori ottimizzati per tema scuro
+- **Contrasto**: Leggibilità garantita in entrambe le modalità
+
+### 🔧 **FUNZIONALITÀ AVANZATE**
+
+#### **Tooltip Informativi**
+- **Eventi Ferie**: Nome dipendente, tipo ferie, date inizio/fine, giorni richiesti
+- **Eventi Veicoli**: Targa veicolo, tipo scadenza, data scadenza, stato
+
+#### **Modal Dettagli Evento**
+- **Gestione dinamica**: Contenuto adattato al tipo di evento
+- **Eventi Ferie**: Informazioni complete dipendente e richiesta ferie
+- **Eventi Veicoli**: Dettagli veicolo e scadenza con azioni disponibili
+
+#### **Integrazione React Big Calendar**
+- **Componente esteso**: `DragAndDropCalendar` con supporto eventi multipli
+- **Gestione eventi**: Click, tooltip, modal per entrambi i tipi di evento
+- **Performance**: Caricamento ottimizzato eventi combinati
+
+### ✅ **RISULTATI E BENEFICI**
+
+#### **Visualizzazione Centralizzata**
+- **Vista unificata**: Tutti gli eventi aziendali in un unico calendario
+- **Pianificazione migliorata**: Visibilità completa su disponibilità veicoli e dipendenti
+- **Conflitti evidenti**: Identificazione rapida sovrapposizioni e problemi
+
+#### **Controllo Granulare**
+- **Filtri flessibili**: Possibilità di visualizzare solo eventi specifici
+- **Personalizzazione**: Ogni utente può configurare la vista preferita
+- **Informazioni dettagliate**: Tooltip e modal per accesso rapido ai dettagli
+
+#### **Efficienza Operativa**
+- **Decisioni informate**: Tutte le informazioni necessarie in un'unica vista
+- **Riduzione errori**: Visibilità completa previene conflitti di pianificazione
+- **Accesso rapido**: Link diretti a gestione dettagliata da ogni evento
+
+### 📁 **FILE CREATI/MODIFICATI**
+
+#### **API Routes**
+- `src/app/api/employees/leave/calendar/route.ts` - Nuovo endpoint eventi ferie
+
+#### **Pages**
+- `src/app/vehicles/schedules/calendar/page.tsx` - Calendario integrato esteso
+
+#### **Database Functions**
+- `src/lib/db-employees.ts` - Funzione `getApprovedLeaveForCalendar()`
+
+#### **Types**
+- Interfaccia `LeaveEvent` per tipizzazione eventi ferie
+- Estensione `CalendarEvent` per supporto eventi multipli
+
+---
+
+## 🚀 **VERSIONE 2.32.3** - Dashboard Autisti Completa ⭐ **PRECEDENTE**
 
 ### 📊 **DASHBOARD AUTISTI OPERATIVA**
 - **Statistiche complete**: Dashboard con conteggio autisti attivi, documenti scaduti e in scadenza

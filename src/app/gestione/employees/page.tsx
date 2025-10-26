@@ -10,6 +10,7 @@ interface Employee {
   cognome: string;
   email: string;
   cellulare: string;
+  qualifica?: string;
   is_driver: number;
   active: number;
   company_id: number;
@@ -91,10 +92,26 @@ export default function EmployeesPage() {
     ? employees.filter(emp => emp.is_driver === 1)
     : employees;
 
-  const getEmployeeTypeBadge = (isDriver: number) => {
-    return isDriver === 1 
-      ? <span className="badge bg-primary">Autista</span>
-      : <span className="badge bg-secondary">Dipendente</span>;
+  const getEmployeeTypeBadge = (qualifica?: string) => {
+    if (!qualifica) {
+      return <span className="badge bg-secondary">N/A</span>;
+    }
+    
+    // Normalizza la qualifica per il confronto
+    const qualificaNormalized = qualifica.toUpperCase();
+    
+    switch (qualificaNormalized) {
+      case 'AUTISTA':
+        return <span className="badge bg-primary">Autista</span>;
+      case 'IMPIEGATO':
+        return <span className="badge bg-info">Impiegato</span>;
+      case 'FACCHINO':
+        return <span className="badge bg-warning">Facchino</span>;
+      case 'PREPOSTO':
+        return <span className="badge bg-success">Preposto</span>;
+      default:
+        return <span className="badge bg-secondary">{qualifica}</span>;
+    }
   };
 
   if (loading) {
@@ -283,7 +300,7 @@ export default function EmployeesPage() {
                             )}
                           </td>
                           <td>
-                            {getEmployeeTypeBadge(employee.is_driver)}
+                            {getEmployeeTypeBadge(employee.qualifica)}
                           </td>
                         </tr>
                       ))}

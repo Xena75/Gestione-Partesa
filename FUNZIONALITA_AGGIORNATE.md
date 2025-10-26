@@ -1,6 +1,64 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-## 🔧 Fix Critico company_name vs company_id - v2.32.2 ⭐ **NUOVO**
+## 🔧 Ottimizzazioni UI e Correzioni - v2.33.1 ⭐ **NUOVO**
+
+### 🎯 Miglioramenti Interfaccia Utente
+**Data implementazione**: Gennaio 2025  
+**Stato**: ✅ Completato e testato
+
+### 🛠️ Correzioni Implementate
+
+#### 🔗 Fix Link Ferie Autista
+- **Problema**: Errore 404 cliccando "Vedi Tutte" dalla pagina autista
+- **File**: `src/app/gestione/autisti/[id]/page.tsx`
+- **Correzione**: Href da `/gestione/autisti/ferie` a `/gestione/employees/ferie`
+- **Risultato**: Link funzionante per visualizzazione ferie complete
+
+#### 📅 Ottimizzazione Calendario Veicoli
+- **File**: `src/app/vehicles/schedules/calendar/page.tsx`
+- **Modifica**: Unificazione filtri e legenda in singola card "🎛️ Filtri e Legenda"
+- **Layout**: Filtri a sinistra, legenda eventi veicoli a destra, legenda ferie sotto
+- **Benefici**: Risparmio spazio verticale, migliore organizzazione visiva
+
+#### 🏷️ Aggiornamento Terminologia Dashboard
+- **File**: `src/app/dashboard/page.tsx`
+- **Modifiche**:
+  - "Autisti" → "Personale" (riga 732)
+  - "Dashboard Autisti" → "Dashboard Personale" (riga 738)
+  - "Società" → "Società Trasporti" (riga 732)
+- **Risultato**: Terminologia più appropriata e specifica
+
+#### 📊 Riorganizzazione Card Anagrafiche
+- **File**: `src/app/dashboard/page.tsx`
+- **Nuovo ordine**:
+  1. Dashboard Personale (col-12) - in evidenza
+  2. Personale (col-6)
+  3. Società Trasporti (col-6)
+  4. Fornitori (col-6)
+  5. Categorie (col-6)
+- **Layout**: Dashboard Personale su tutta la larghezza, altri elementi 2x2
+
+#### 🔧 Fix Eventi Ferie Calendario
+- **File**: `src/app/api/employees/leave/calendar/route.ts`
+- **Problema**: Eventi ferie mostravano "undefined" invece del nome autista
+- **Causa**: Codice cercava `employee_name` ma query SQL recuperava `nome` e `cognome` separati
+- **Correzione**: Sostituito `leave.employee_name` con `${leave.cognome} ${leave.nome}`
+- **Righe modificate**: 47 e 56
+
+### 📈 Benefici Operativi
+- ✅ **Navigazione corretta**: Tutti i link funzionanti
+- ✅ **Visualizzazione ottimizzata**: Calendario più compatto e organizzato
+- ✅ **Terminologia coerente**: Linguaggio appropriato per gestione personale
+- ✅ **Layout migliorato**: Dashboard più intuitiva e funzionale
+- ✅ **Dati corretti**: Eventi calendario con nomi dipendenti visibili
+
+### 🎯 Impatto Tecnico
+- **Performance**: Nessun impatto negativo, miglioramenti visualizzazione
+- **Usabilità**: Interfaccia più intuitiva e professionale
+- **Manutenibilità**: Codice più pulito e terminologia coerente
+- **Responsive**: Layout ottimizzato per tutti i dispositivi
+
+## 🔧 Fix Critico company_name vs company_id - v2.32.2 ⭐ **PRECEDENTE**
 
 ### 🎯 Risoluzione Errore Critico
 **Data implementazione**: Gennaio 2025  

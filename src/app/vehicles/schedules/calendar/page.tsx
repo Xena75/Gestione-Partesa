@@ -107,6 +107,39 @@ const forceEventColorsCSS = `
     border: 2px solid #3174ad !important;
   }
   
+  /* 🏖️ AZZURRO: Eventi ferie */
+  .rbc-event.force-cyan-event,
+  .rbc-event.force-cyan-event .rbc-event-content,
+  .rbc-event.force-cyan-event:hover,
+  .rbc-event.force-cyan-event:focus {
+    background-color: #17a2b8 !important;
+    border-color: #17a2b8 !important;
+    color: white !important;
+    border: 2px solid #17a2b8 !important;
+  }
+  
+  /* 🤒 ROSA: Eventi malattia */
+  .rbc-event.force-pink-event,
+  .rbc-event.force-pink-event .rbc-event-content,
+  .rbc-event.force-pink-event:hover,
+  .rbc-event.force-pink-event:focus {
+    background-color: #e83e8c !important;
+    border-color: #e83e8c !important;
+    color: white !important;
+    border: 2px solid #e83e8c !important;
+  }
+  
+  /* 📝 MARRONE: Eventi permesso */
+  .rbc-event.force-brown-event,
+  .rbc-event.force-brown-event .rbc-event-content,
+  .rbc-event.force-brown-event:hover,
+  .rbc-event.force-brown-event:focus {
+    background-color: #795548 !important;
+    border-color: #795548 !important;
+    color: white !important;
+    border: 2px solid #795548 !important;
+  }
+  
   /* Forza i colori anche in modalità scura */
   .dark .rbc-event.force-red-event,
   .dark .rbc-event.force-red-event .rbc-event-content {
@@ -157,6 +190,27 @@ const forceEventColorsCSS = `
     color: white !important;
   }
   
+  .dark .rbc-event.force-cyan-event,
+  .dark .rbc-event.force-cyan-event .rbc-event-content {
+    background-color: #17a2b8 !important;
+    border-color: #17a2b8 !important;
+    color: white !important;
+  }
+  
+  .dark .rbc-event.force-pink-event,
+  .dark .rbc-event.force-pink-event .rbc-event-content {
+    background-color: #e83e8c !important;
+    border-color: #e83e8c !important;
+    color: white !important;
+  }
+  
+  .dark .rbc-event.force-brown-event,
+  .dark .rbc-event.force-brown-event .rbc-event-content {
+    background-color: #795548 !important;
+    border-color: #795548 !important;
+    color: white !important;
+  }
+  
   /* Override generale per tutti gli eventi */
   .rbc-event {
     border-radius: 4px !important;
@@ -197,15 +251,29 @@ interface VehicleSchedule {
 }
 
 interface CalendarEvent {
-  id: number;
+  id: number | string;
   title: string;
   start: Date;
   end: Date;
-  resource: VehicleSchedule;
+  resource: VehicleSchedule | LeaveEvent;
+}
+
+interface LeaveEvent {
+  type: 'leave';
+  leave_id: number;
+  employee_id: number;
+  employee_name: string;
+  leave_type: string;
+  days_requested: number;
+  reason?: string;
+  approved_by?: string;
+  approved_at?: string;
+  notes?: string;
 }
 
 function VehicleSchedulesCalendarContent() {
   const [schedules, setSchedules] = useState<VehicleSchedule[]>([]);
+  const [leaveEvents, setLeaveEvents] = useState<CalendarEvent[]>([]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -219,6 +287,10 @@ function VehicleSchedulesCalendarContent() {
   const [dragFeedback, setDragFeedback] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStartTime, setDragStartTime] = useState<number | null>(null);
+  
+  // Nuovi stati per i filtri
+  const [showVehicleEvents, setShowVehicleEvents] = useState(true);
+  const [showLeaveEvents, setShowLeaveEvents] = useState(true);
 
   // Inizializzazione del calendario
   useEffect(() => {
@@ -239,6 +311,7 @@ function VehicleSchedulesCalendarContent() {
 
   useEffect(() => {
     fetchSchedules();
+    fetchLeaveEvents();
   }, []);
 
   // Reset isDragging quando il componente viene smontato
@@ -257,11 +330,33 @@ function VehicleSchedulesCalendarContent() {
       }
       const data = await response.json();
       setSchedules(data.schedules || []);
-      convertToCalendarEvents(data.schedules || []);
+      updateCombinedEvents(data.schedules || [], leaveEvents);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Errore sconosciuto');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchLeaveEvents = async () => {
+    try {
+      const response = await fetch('/api/employees/leave/calendar');
+      if (!response.ok) {
+        throw new Error('Errore nel caricamento delle ferie');
+      }
+      const data = await response.json();
+      const leaveCalendarEvents = data.data.map((event: any) => ({
+        id: event.id,
+        title: event.title,
+        start: new Date(event.start),
+        end: new Date(event.end),
+        resource: event.resource
+      }));
+      setLeaveEvents(leaveCalendarEvents);
+      updateCombinedEvents(schedules, leaveCalendarEvents);
+    } catch (err) {
+      console.error('Errore nel caricamento delle ferie:', err);
+      // Non bloccare l'app se le ferie non si caricano
     }
   };
 
@@ -291,14 +386,49 @@ function VehicleSchedulesCalendarContent() {
         }
       };
     });
-    setEvents(calendarEvents);
+    return calendarEvents;
   };
+
+  const updateCombinedEvents = (vehicleSchedules: VehicleSchedule[], leaveEvents: CalendarEvent[]) => {
+    const vehicleEvents = convertToCalendarEvents(vehicleSchedules);
+    
+    let combinedEvents: CalendarEvent[] = [];
+    
+    if (showVehicleEvents) {
+      combinedEvents = [...combinedEvents, ...vehicleEvents];
+    }
+    
+    if (showLeaveEvents) {
+      combinedEvents = [...combinedEvents, ...leaveEvents];
+    }
+    
+    setEvents(combinedEvents);
+  };
+
+  // Aggiorna gli eventi quando cambiano i filtri
+  useEffect(() => {
+    updateCombinedEvents(schedules, leaveEvents);
+  }, [showVehicleEvents, showLeaveEvents, schedules, leaveEvents]);
 
   const handleSelectEvent = useCallback((event: CalendarEvent) => {
     // Apri sempre il modal al click, il drag è gestito separatamente
     setSelectedEvent(event);
     setShowModal(true);
   }, []);
+
+  // Funzione per generare tooltip informativi
+  const getEventTooltip = (event: CalendarEvent) => {
+    if (event.resource.type === 'leave') {
+      const leaveEvent = event.resource as LeaveEvent;
+      const startDate = moment(event.start).format('DD/MM/YYYY');
+      const endDate = moment(event.end).subtract(1, 'day').format('DD/MM/YYYY');
+      return `${leaveEvent.employee_name} - ${leaveEvent.leave_type}\nDal ${startDate} al ${endDate}\nGiorni: ${leaveEvent.days_requested}`;
+    } else {
+      const vehicleEvent = event.resource as VehicleSchedule;
+      const dueDate = moment(vehicleEvent.data_scadenza).format('DD/MM/YYYY');
+      return `${vehicleEvent.vehicle?.targa} - ${vehicleEvent.schedule_type}\nScadenza: ${dueDate}\nStato: ${vehicleEvent.status}`;
+    }
+  };
 
   const handleSelectSlot = useCallback(({ start }: { start: Date }) => {
     // Naviga alla pagina di creazione nuova scadenza con data preselezionata
@@ -391,10 +521,65 @@ function VehicleSchedulesCalendarContent() {
     }
   }, [schedules]);
 
-  const eventStyleGetter = (event: any) => {
-    const schedule = event.resource;
+  const eventStyleGetter = (event: CalendarEvent) => {
+    const resource = event.resource;
+    
+    // Gestisci eventi ferie
+    if (resource.type === 'leave') {
+      const leaveResource = resource as LeaveEvent;
+      
+      switch (leaveResource.leave_type) {
+        case 'ferie':
+          return {
+            style: {
+              backgroundColor: '#17a2b8 !important',
+              borderColor: '#17a2b8 !important',
+              color: 'white !important',
+              border: '2px solid #17a2b8 !important'
+            },
+            className: 'force-cyan-event'
+          };
+        case 'malattia':
+          return {
+            style: {
+              backgroundColor: '#e83e8c !important',
+              borderColor: '#e83e8c !important',
+              color: 'white !important',
+              border: '2px solid #e83e8c !important'
+            },
+            className: 'force-pink-event'
+          };
+        case 'permesso':
+          return {
+            style: {
+              backgroundColor: '#795548 !important',
+              borderColor: '#795548 !important',
+              color: 'white !important',
+              border: '2px solid #795548 !important'
+            },
+            className: 'force-brown-event'
+          };
+        default:
+          return {
+            style: {
+              backgroundColor: '#17a2b8 !important',
+              borderColor: '#17a2b8 !important',
+              color: 'white !important',
+              border: '2px solid #17a2b8 !important'
+            },
+            className: 'force-cyan-event'
+          };
+      }
+    }
+    
+    // Gestisci eventi veicoli (logica esistente)
+    const schedule = resource as VehicleSchedule;
+    
+    // Calcola i giorni di differenza dalla data di scadenza
+    const eventDate = schedule.booking_date && schedule.booking_date.trim() !== '' 
+      ? new Date(schedule.booking_date) 
+      : new Date(schedule.data_scadenza);
     const today = new Date();
-    const eventDate = new Date(schedule.data_scadenza);
     const daysDiff = Math.ceil((eventDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
     // 🟢 VERDE: Eventi completati (priorità massima)
@@ -532,7 +717,7 @@ function VehicleSchedulesCalendarContent() {
       <div className="row">
         <div className="col-12">
           <div className="d-flex justify-content-between align-items-center mb-4">
-            <h1 className="h3 mb-0">📅 Calendario Scadenze Veicoli</h1>
+            <h1 className="h3 mb-0">📅 Calendario Integrato</h1>
             <div className="btn-group">
               <Link href="/vehicles/schedules/new" className="btn btn-outline-primary">
                 <i className="fas fa-plus me-1"></i>
@@ -549,6 +734,117 @@ function VehicleSchedulesCalendarContent() {
             </div>
           </div>
 
+          {/* Filtri e Legenda Unificati */}
+          <div className="card mb-4">
+            <div className="card-body">
+              <h6 className="card-title mb-3">🎛️ Filtri e Legenda</h6>
+              
+              {/* Prima riga: Filtri a sinistra, Legenda Eventi Veicoli a destra */}
+              <div className="row mb-3">
+                {/* Colonna Filtri */}
+                <div className="col-lg-3 col-md-4 mb-3 mb-lg-0">
+                  <h6 className="text-muted mb-2">Filtri Visualizzazione</h6>
+                  <div className="d-flex flex-column gap-2">
+                    <div className="form-check">
+                      <input 
+                        className="form-check-input" 
+                        type="checkbox" 
+                        id="showVehicleEvents"
+                        checked={showVehicleEvents}
+                        onChange={(e) => setShowVehicleEvents(e.target.checked)}
+                      />
+                      <label className="form-check-label" htmlFor="showVehicleEvents">
+                        🚗 Eventi Veicoli
+                      </label>
+                    </div>
+                    <div className="form-check">
+                      <input 
+                        className="form-check-input" 
+                        type="checkbox" 
+                        id="showLeaveEvents"
+                        checked={showLeaveEvents}
+                        onChange={(e) => setShowLeaveEvents(e.target.checked)}
+                      />
+                      <label className="form-check-label" htmlFor="showLeaveEvents">
+                        🏖️ Eventi Ferie Dipendenti
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Colonna Legenda Eventi Veicoli */}
+                <div className="col-lg-9 col-md-8">
+                  <h6 className="text-muted mb-2">🚗 Legenda Eventi Veicoli</h6>
+                  <div className="row g-2">
+                    <div className="col-xl-3 col-lg-4 col-md-6 col-sm-6">
+                      <div className="d-flex align-items-center justify-content-center p-2 border rounded">
+                        <span className="badge bg-danger me-2">🔴</span>
+                        <small className="fw-medium">Scadute</small>
+                      </div>
+                    </div>
+                    <div className="col-xl-3 col-lg-4 col-md-6 col-sm-6">
+                      <div className="d-flex align-items-center justify-content-center p-2 border rounded">
+                        <span className="badge me-2" style={{backgroundColor: '#fd7e14', color: 'white'}}>🟠</span>
+                        <small className="fw-medium">Priorità alta</small>
+                      </div>
+                    </div>
+                    <div className="col-xl-3 col-lg-4 col-md-6 col-sm-6">
+                      <div className="d-flex align-items-center justify-content-center p-2 border rounded">
+                        <span className="badge bg-warning me-2">🟡</span>
+                        <small className="fw-medium">7 giorni</small>
+                      </div>
+                    </div>
+                    <div className="col-xl-3 col-lg-4 col-md-6 col-sm-6">
+                      <div className="d-flex align-items-center justify-content-center p-2 border rounded">
+                        <span className="badge me-2" style={{backgroundColor: '#6f42c1', color: 'white'}}>🟣</span>
+                        <small className="fw-medium">30 giorni</small>
+                      </div>
+                    </div>
+                    <div className="col-xl-3 col-lg-4 col-md-6 col-sm-6">
+                      <div className="d-flex align-items-center justify-content-center p-2 border rounded">
+                        <span className="badge bg-success me-2">🟢</span>
+                        <small className="fw-medium">Completate</small>
+                      </div>
+                    </div>
+                    <div className="col-xl-3 col-lg-4 col-md-6 col-sm-6">
+                      <div className="d-flex align-items-center justify-content-center p-2 border rounded">
+                        <span className="badge bg-secondary me-2">⚫</span>
+                        <small className="fw-medium">Annullate</small>
+                      </div>
+                    </div>
+                    <div className="col-xl-3 col-lg-4 col-md-6 col-sm-6">
+                      <div className="d-flex align-items-center justify-content-center p-2 border rounded">
+                        <span className="badge me-2" style={{backgroundColor: '#3174ad', color: 'white'}}>🔵</span>
+                        <small className="fw-medium">Standard</small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Seconda riga: Legenda Eventi Ferie */}
+              <div className="row">
+                <div className="col-12">
+                  <h6 className="text-muted mb-2">🏖️ Legenda Eventi Ferie Dipendenti</h6>
+                  <div className="d-flex flex-wrap justify-content-center gap-3">
+                    <div className="d-flex align-items-center p-2 border rounded">
+                      <span className="badge me-2" style={{backgroundColor: '#17a2b8', color: 'white'}}>🏖️</span>
+                      <span className="fw-medium">Ferie</span>
+                    </div>
+                    <div className="d-flex align-items-center p-2 border rounded">
+                      <span className="badge me-2" style={{backgroundColor: '#e83e8c', color: 'white'}}>🤒</span>
+                      <span className="fw-medium">Malattia</span>
+                    </div>
+                    <div className="d-flex align-items-center p-2 border rounded">
+                      <span className="badge me-2" style={{backgroundColor: '#795548', color: 'white'}}>📝</span>
+                      <span className="fw-medium">Permesso</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {error && (
             <div className="alert alert-danger" role="alert">
               {error}
@@ -562,69 +858,11 @@ function VehicleSchedulesCalendarContent() {
             </div>
           )}
 
-          {/* Legenda */}
-          <div className="card mb-4">
-            <div className="card-body">
-              <h6 className="card-title mb-3">Legenda Colori</h6>
-              <div className="d-flex flex-wrap justify-content-between align-items-center gap-2" style={{minHeight: '60px'}}>
-                <div className="d-flex align-items-center flex-grow-1 justify-content-center px-2 py-1">
-                  <span className="badge bg-danger me-2 fs-6" style={{fontSize: '1.1rem !important'}}>🔴</span>
-                  <span className="fw-medium">Scadute</span>
-                </div>
-                <div className="d-flex align-items-center flex-grow-1 justify-content-center px-2 py-1">
-                  <span className="badge me-2 fs-6" style={{backgroundColor: '#fd7e14', color: 'white', fontSize: '1.1rem !important'}}>🟠</span>
-                  <span className="fw-medium">Priorità alta</span>
-                </div>
-                <div className="d-flex align-items-center flex-grow-1 justify-content-center px-2 py-1">
-                  <span className="badge bg-warning me-2 fs-6" style={{fontSize: '1.1rem !important'}}>🟡</span>
-                  <span className="fw-medium">In scadenza (7 giorni)</span>
-                </div>
-                <div className="d-flex align-items-center flex-grow-1 justify-content-center px-2 py-1">
-                  <span className="badge me-2 fs-6" style={{backgroundColor: '#6f42c1', color: 'white', fontSize: '1.1rem !important'}}>🟣</span>
-                  <span className="fw-medium">Prossime (30 giorni)</span>
-                </div>
-                <div className="d-flex align-items-center flex-grow-1 justify-content-center px-2 py-1">
-                  <span className="badge bg-success me-2 fs-6" style={{fontSize: '1.1rem !important'}}>🟢</span>
-                  <span className="fw-medium">Completate</span>
-                </div>
-                <div className="d-flex align-items-center flex-grow-1 justify-content-center px-2 py-1">
-                  <span className="badge bg-secondary me-2 fs-6" style={{fontSize: '1.1rem !important'}}>⚫</span>
-                  <span className="fw-medium">Annullate</span>
-                </div>
-                <div className="d-flex align-items-center flex-grow-1 justify-content-center px-2 py-1">
-                  <span className="badge me-2 fs-6" style={{backgroundColor: '#3174ad', color: 'white', fontSize: '1.1rem !important'}}>🔵</span>
-                  <span className="fw-medium">Eventi standard</span>
-                </div>
-              </div>
-              
-              {/* Layout responsivo per dispositivi mobili */}
-              <style jsx>{`
-                @media (max-width: 768px) {
-                  .d-flex.flex-wrap {
-                    flex-direction: column;
-                    gap: 0.5rem;
-                  }
-                  .d-flex.align-items-center.flex-grow-1 {
-                    justify-content: flex-start !important;
-                    min-height: 40px;
-                  }
-                }
-                @media (max-width: 576px) {
-                  .d-flex.flex-wrap {
-                    display: grid !important;
-                    grid-template-columns: 1fr 1fr;
-                    gap: 0.75rem;
-                  }
-                }
-              `}</style>
-            </div>
-          </div>
-
           {/* Calendario */}
           <div className="card" style={{ height: 'calc(100vh - 280px)', minHeight: '500px' }}>
             <div className="card-body" style={{ height: '100%', padding: '1rem' }}>
               {calendarReady && currentLocalizer && DragAndDropCalendar ? (
-                  <DragAndDropCalendar
+                <DragAndDropCalendar
                   localizer={currentLocalizer}
                   events={events}
                   startAccessor="start"
@@ -643,6 +881,7 @@ function VehicleSchedulesCalendarContent() {
                   onEventDrop={handleEventDrop}
                   onDragStart={handleDragStart}
                   onDragEnd={handleDragEnd}
+                  titleAccessor={(event: CalendarEvent) => getEventTooltip(event)}
                   messages={{
                     next: 'Successivo',
                     previous: 'Precedente',
@@ -667,7 +906,7 @@ function VehicleSchedulesCalendarContent() {
                     agendaTimeRangeFormat: ({ start, end }) => 
                       `${moment(start).format('HH:mm')} - ${moment(end).format('HH:mm')}`
                   }}
-                  />
+                />
               ) : (
                 <div className="d-flex justify-content-center align-items-center h-100">
                   <div className="text-center">
@@ -690,7 +929,11 @@ function VehicleSchedulesCalendarContent() {
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">
-                  🚗 Dettagli Scadenza - {selectedEvent.resource.vehicle?.targa}
+                  {selectedEvent.resource.type === 'leave' ? (
+                    <>🏖️ Dettagli Ferie - {(selectedEvent.resource as LeaveEvent).employee_name}</>
+                  ) : (
+                    <>🚗 Dettagli Scadenza - {(selectedEvent.resource as VehicleSchedule).vehicle?.targa}</>
+                  )}
                 </h5>
                 <button 
                   type="button" 
@@ -699,47 +942,91 @@ function VehicleSchedulesCalendarContent() {
                 ></button>
               </div>
               <div className="modal-body">
-                <div className="row">
-                  <div className="col-md-6">
-                    <h6>Informazioni Veicolo</h6>
-                    <p><strong>Targa:</strong> {selectedEvent.resource.vehicle?.targa}</p>
-                    <p><strong>Marca:</strong> {selectedEvent.resource.vehicle?.marca}</p>
-                    <p><strong>Modello:</strong> {selectedEvent.resource.vehicle?.modello}</p>
-                  </div>
-                  <div className="col-md-6">
-                    <h6>Dettagli Scadenza</h6>
-                    <p><strong>Tipo:</strong> {selectedEvent.resource.schedule_type}</p>
-                    <p><strong>Descrizione:</strong> {selectedEvent.resource.description}</p>
-                    <p><strong>Data Scadenza:</strong> {moment(selectedEvent.resource.data_scadenza).format('DD/MM/YYYY')}</p>
-                    {selectedEvent.resource.booking_date && (
-                      <p><strong>Data Prenotazione:</strong> {moment(selectedEvent.resource.booking_date).format('DD/MM/YYYY')}</p>
+                {selectedEvent.resource.type === 'leave' ? (
+                  // Modal per eventi ferie
+                  <>
+                    <div className="row">
+                      <div className="col-md-6">
+                        <h6>Informazioni Dipendente</h6>
+                        <p><strong>Nome:</strong> {(selectedEvent.resource as LeaveEvent).employee_name}</p>
+                        <p><strong>ID Dipendente:</strong> {(selectedEvent.resource as LeaveEvent).employee_id}</p>
+                      </div>
+                      <div className="col-md-6">
+                        <h6>Dettagli Ferie</h6>
+                        <p><strong>Tipo:</strong> {(selectedEvent.resource as LeaveEvent).leave_type}</p>
+                        <p><strong>Giorni Richiesti:</strong> {(selectedEvent.resource as LeaveEvent).days_requested}</p>
+                        <p><strong>Data Inizio:</strong> {moment(selectedEvent.start).format('DD/MM/YYYY')}</p>
+                        <p><strong>Data Fine:</strong> {moment(selectedEvent.end).subtract(1, 'day').format('DD/MM/YYYY')}</p>
+                      </div>
+                    </div>
+                    {(selectedEvent.resource as LeaveEvent).reason && (
+                      <div className="mt-3">
+                        <h6>Motivo</h6>
+                        <p className="text-muted">{(selectedEvent.resource as LeaveEvent).reason}</p>
+                      </div>
                     )}
-                  </div>
-                </div>
-                <div className="row mt-3">
-                  <div className="col-md-6">
-                    <p>
-                      <strong>Stato:</strong> 
-                      <span className={`badge ${getStatusBadge(selectedEvent.resource.status)} ms-2`}>
-                        {selectedEvent.resource.status}
-                      </span>
-                    </p>
-                    <p>
-                      <strong>Priorità:</strong> 
-                      <span className={`badge ${getPriorityBadge(selectedEvent.resource.priority)} ms-2`}>
-                        {selectedEvent.resource.priority}
-                      </span>
-                    </p>
-                  </div>
-                  <div className="col-md-6">
-                    <p><strong>Costo Stimato:</strong> {formatCurrency(selectedEvent.resource.cost_estimate)}</p>
-                  </div>
-                </div>
-                {selectedEvent.resource.notes && (
-                  <div className="mt-3">
-                    <h6>Note</h6>
-                    <p className="text-muted">{selectedEvent.resource.notes}</p>
-                  </div>
+                    {(selectedEvent.resource as LeaveEvent).approved_by && (
+                      <div className="mt-3">
+                        <h6>Approvazione</h6>
+                        <p><strong>Approvato da:</strong> {(selectedEvent.resource as LeaveEvent).approved_by}</p>
+                        {(selectedEvent.resource as LeaveEvent).approved_at && (
+                          <p><strong>Data Approvazione:</strong> {moment((selectedEvent.resource as LeaveEvent).approved_at).format('DD/MM/YYYY HH:mm')}</p>
+                        )}
+                      </div>
+                    )}
+                    {(selectedEvent.resource as LeaveEvent).notes && (
+                      <div className="mt-3">
+                        <h6>Note</h6>
+                        <p className="text-muted">{(selectedEvent.resource as LeaveEvent).notes}</p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  // Modal per eventi veicoli (esistente)
+                  <>
+                    <div className="row">
+                      <div className="col-md-6">
+                        <h6>Informazioni Veicolo</h6>
+                        <p><strong>Targa:</strong> {(selectedEvent.resource as VehicleSchedule).vehicle?.targa}</p>
+                        <p><strong>Marca:</strong> {(selectedEvent.resource as VehicleSchedule).vehicle?.marca}</p>
+                        <p><strong>Modello:</strong> {(selectedEvent.resource as VehicleSchedule).vehicle?.modello}</p>
+                      </div>
+                      <div className="col-md-6">
+                        <h6>Dettagli Scadenza</h6>
+                        <p><strong>Tipo:</strong> {(selectedEvent.resource as VehicleSchedule).schedule_type}</p>
+                        <p><strong>Descrizione:</strong> {(selectedEvent.resource as VehicleSchedule).description}</p>
+                        <p><strong>Data Scadenza:</strong> {moment((selectedEvent.resource as VehicleSchedule).data_scadenza).format('DD/MM/YYYY')}</p>
+                        {(selectedEvent.resource as VehicleSchedule).booking_date && (
+                          <p><strong>Data Prenotazione:</strong> {moment((selectedEvent.resource as VehicleSchedule).booking_date).format('DD/MM/YYYY')}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="row mt-3">
+                      <div className="col-md-6">
+                        <p>
+                          <strong>Stato:</strong> 
+                          <span className={`badge ${getStatusBadge((selectedEvent.resource as VehicleSchedule).status)} ms-2`}>
+                            {(selectedEvent.resource as VehicleSchedule).status}
+                          </span>
+                        </p>
+                        <p>
+                          <strong>Priorità:</strong> 
+                          <span className={`badge ${getPriorityBadge((selectedEvent.resource as VehicleSchedule).priority)} ms-2`}>
+                            {(selectedEvent.resource as VehicleSchedule).priority}
+                          </span>
+                        </p>
+                      </div>
+                      <div className="col-md-6">
+                        <p><strong>Costo Stimato:</strong> {formatCurrency((selectedEvent.resource as VehicleSchedule).cost_estimate)}</p>
+                      </div>
+                    </div>
+                    {(selectedEvent.resource as VehicleSchedule).notes && (
+                      <div className="mt-3">
+                        <h6>Note</h6>
+                        <p className="text-muted">{(selectedEvent.resource as VehicleSchedule).notes}</p>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
               <div className="modal-footer">
@@ -750,18 +1037,30 @@ function VehicleSchedulesCalendarContent() {
                 >
                   Chiudi
                 </button>
-                <Link 
-                  href={`/vehicles/schedules/${selectedEvent.resource.id}`}
-                  className="btn btn-primary"
-                >
-                  Visualizza Dettagli
-                </Link>
-                <Link 
-                      href={`/vehicles/schedules/${selectedEvent.resource.id}/edit`}
+                {selectedEvent.resource.type !== 'leave' && (
+                  <>
+                    <Link 
+                      href={`/vehicles/schedules/${(selectedEvent.resource as VehicleSchedule).id}`}
+                      className="btn btn-primary"
+                    >
+                      Visualizza Dettagli
+                    </Link>
+                    <Link 
+                      href={`/vehicles/schedules/${(selectedEvent.resource as VehicleSchedule).id}/edit`}
                       className="btn btn-danger"
                     >
                       Modifica
                     </Link>
+                  </>
+                )}
+                {selectedEvent.resource.type === 'leave' && (
+                  <Link 
+                    href="/gestione/employees/ferie"
+                    className="btn btn-primary"
+                  >
+                    Gestione Ferie
+                  </Link>
+                )}
               </div>
             </div>
           </div>
