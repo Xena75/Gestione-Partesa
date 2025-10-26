@@ -8,7 +8,7 @@ import {
   FileText, Clock, Home, BarChart3, DollarSign, Upload, 
   Settings, Database, Shield, Bell, Search, Plus,
   TrendingUp, TrendingDown, Activity, Zap, RefreshCw, Tag, HelpCircle, Car, Eye, Construction,
-  ChevronDown, ChevronUp
+  ChevronDown, ChevronUp, Building2
 } from 'lucide-react';
 import PodMancantiModal from '@/components/PodMancantiModal';
 import TravelsNotInTabModal from '@/components/TravelsNotInTabModal';
@@ -736,6 +736,12 @@ export default function ModernDashboard() {
                     <Link href="/gestione/autisti/dashboard" className="btn btn-outline-info btn-action btn-sm w-100">
                       <Activity size={16} className="me-1" />
                       Dashboard Autisti
+                    </Link>
+                  </div>
+                  <div className="col-6">
+                    <Link href="/gestione/companies" className="btn btn-outline-primary btn-action btn-sm w-100">
+                      <Building2 size={16} className="me-1" />
+                      Società
                     </Link>
                   </div>
                 </div>

@@ -35,8 +35,23 @@ export interface Employee {
   password_hash?: string;
   last_login?: string;
   active: boolean;
+  company_id: number;
+  company_name?: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface Company {
+  id: number;
+  name: string;
+  code: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  vat_number?: string;
+  fiscal_code?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface EmployeeDocument {
@@ -102,7 +117,10 @@ export async function getAllEmployees(): Promise<Employee[]> {
   const connection = await getConnection();
   try {
     const [rows] = await connection.execute(
-      'SELECT * FROM employees ORDER BY cognome, nome'
+      `SELECT e.*, c.name as company_name 
+       FROM employees e 
+       LEFT JOIN companies c ON e.company_id = c.id 
+       ORDER BY e.cognome, e.nome`
     );
     return rows as Employee[];
   } finally {
@@ -114,7 +132,10 @@ export async function getEmployeeById(id: string): Promise<Employee | null> {
   const connection = await getConnection();
   try {
     const [rows] = await connection.execute(
-      'SELECT * FROM employees WHERE id = ?',
+      `SELECT e.*, c.name as company_name 
+       FROM employees e 
+       LEFT JOIN companies c ON e.company_id = c.id 
+       WHERE e.id = ?`,
       [id]
     );
     const employees = rows as Employee[];
@@ -161,19 +182,56 @@ export async function createEmployee(employee: Omit<Employee, 'id' | 'createdAt'
 export async function updateEmployee(id: string, employee: Partial<Employee>): Promise<boolean> {
   const connection = await getConnection();
   try {
+    console.log('updateEmployee chiamata con ID:', id);
+    console.log('updateEmployee dati ricevuti:', employee);
+    
     const fields = Object.keys(employee).filter(key => key !== 'id' && key !== 'createdAt' && key !== 'updatedAt');
     const values = fields.map(field => employee[field as keyof Employee]);
     
-    if (fields.length === 0) return false;
+    console.log('Campi da aggiornare:', fields);
+    console.log('Valori da aggiornare:', values);
+    
+    if (fields.length === 0) {
+      console.log('Nessun campo da aggiornare');
+      return false;
+    }
+    
+    // Validazione company_id se presente
+    if (employee.company_id !== undefined && employee.company_id !== null) {
+      const [companyCheck] = await connection.execute(
+        'SELECT id FROM companies WHERE id = ?',
+        [employee.company_id]
+      );
+      if ((companyCheck as any[]).length === 0) {
+        console.error('company_id non valido:', employee.company_id);
+        throw new Error(`La società con ID ${employee.company_id} non esiste`);
+      }
+    }
     
     const setClause = fields.map(field => `${field} = ?`).join(', ');
     
-    const [result] = await connection.execute(
-      `UPDATE employees SET ${setClause}, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`,
-      [...values, id]
-    );
+    // Aggiungi updatedAt con valore esplicito
+    const now = new Date();
+    const query = `UPDATE employees SET ${setClause}, updatedAt = ? WHERE id = ?`;
+    const params = [...values, now, id];
+    
+    console.log('Query SQL:', query);
+    console.log('Parametri query:', params);
+    
+    const [result] = await connection.execute(query, params);
+    
+    console.log('Risultato query:', result);
     
     return (result as any).affectedRows > 0;
+  } catch (error) {
+    console.error('Errore in updateEmployee:', error);
+    // Gestione specifica per errori di foreign key
+    if (error instanceof Error) {
+      if (error.message.includes('foreign key constraint') || error.message.includes('fk_employees_company')) {
+        throw new Error('La società selezionata non è valida');
+      }
+    }
+    throw error;
   } finally {
     await connection.end();
   }
@@ -307,11 +365,15 @@ export interface ExpiredDocument extends EmployeeDocument {
   priority_level: 'critico' | 'alto' | 'medio';
 }
 
-export async function getExpiringDocuments(days: number = 30): Promise<(EmployeeDocument & { nome: string; cognome: string })[]> {
+export async function getExpiringDocuments(days: number = 30): Promise<(EmployeeDocument & { nome: string; cognome: string; employee_name: string; days_until_expiry: number })[]> {
   const connection = await getConnection();
   try {
     const [rows] = await connection.execute(
-      `SELECT ed.*, e.nome, e.cognome 
+      `SELECT ed.*, 
+              e.nome, 
+              e.cognome,
+              CONCAT(e.nome, ' ', e.cognome) as employee_name,
+              DATEDIFF(ed.expiry_date, CURDATE()) as days_until_expiry
        FROM employee_documents ed 
        JOIN employees e ON ed.employee_id = e.id
        WHERE e.active = 1 
@@ -321,7 +383,7 @@ export async function getExpiringDocuments(days: number = 30): Promise<(Employee
        ORDER BY ed.expiry_date ASC`,
       [days]
     );
-    return rows as (EmployeeDocument & { nome: string; cognome: string })[];
+    return rows as (EmployeeDocument & { nome: string; cognome: string; employee_name: string; days_until_expiry: number })[];
   } finally {
     await connection.end();
   }
@@ -519,6 +581,18 @@ export async function updateLeaveRequestStatus(
 ): Promise<boolean> {
   const connection = await getConnection();
   try {
+    // Prima ottieni i dettagli della richiesta
+    const [requestRows] = await connection.execute(
+      'SELECT * FROM employee_leave_requests WHERE id = ?',
+      [id]
+    );
+    
+    const request = (requestRows as LeaveRequest[])[0];
+    if (!request) {
+      return false;
+    }
+    
+    // Aggiorna lo stato della richiesta
     const [result] = await connection.execute(
       `UPDATE employee_leave_requests 
        SET status = ?, approved_by = ?, approved_at = CURRENT_TIMESTAMP, notes = ?
@@ -526,10 +600,76 @@ export async function updateLeaveRequestStatus(
       [status, approvedBy, notes || null, id]
     );
     
+    // Se la richiesta è stata approvata, aggiorna il bilancio ferie
+    if (status === 'approved' && (result as any).affectedRows > 0) {
+      await updateLeaveBalanceAfterApproval(request, connection);
+    }
+    
     return (result as any).affectedRows > 0;
   } finally {
     await connection.end();
   }
+}
+
+// Funzione per aggiornare il bilancio ferie dopo l'approvazione
+async function updateLeaveBalanceAfterApproval(request: LeaveRequest, connection: any): Promise<void> {
+  const year = new Date(request.start_date).getFullYear();
+  
+  // Ottieni il bilancio attuale
+  const [balanceRows] = await connection.execute(
+    'SELECT * FROM employee_leave_balance WHERE employee_id = ? AND year = ?',
+    [request.employee_id, year]
+  );
+  
+  let currentBalance = (balanceRows as LeaveBalance[])[0];
+  
+  // Se non esiste un bilancio per quest'anno, creane uno nuovo
+  if (!currentBalance) {
+    await connection.execute(
+      `INSERT INTO employee_leave_balance (
+        employee_id, year, vacation_days_total, vacation_days_used,
+        vacation_days_remaining, sick_days_used, personal_days_used
+      ) VALUES (?, ?, 26, 0, 26, 0, 0)`,
+      [request.employee_id, year]
+    );
+    
+    // Riottieni il bilancio appena creato
+    const [newBalanceRows] = await connection.execute(
+      'SELECT * FROM employee_leave_balance WHERE employee_id = ? AND year = ?',
+      [request.employee_id, year]
+    );
+    currentBalance = (newBalanceRows as LeaveBalance[])[0];
+  }
+  
+  // Calcola i nuovi valori in base al tipo di richiesta
+  let newVacationUsed = currentBalance.vacation_days_used;
+  let newSickUsed = currentBalance.sick_days_used;
+  let newPersonalUsed = currentBalance.personal_days_used;
+  
+  switch (request.leave_type) {
+    case 'ferie':
+      newVacationUsed += request.days_requested;
+      break;
+    case 'malattia':
+      newSickUsed += request.days_requested;
+      break;
+    case 'permesso':
+    case 'congedo':
+      newPersonalUsed += request.days_requested;
+      break;
+  }
+  
+  const newVacationRemaining = currentBalance.vacation_days_total - newVacationUsed;
+  
+  // Aggiorna il bilancio
+  await connection.execute(
+    `UPDATE employee_leave_balance 
+     SET vacation_days_used = ?, vacation_days_remaining = ?, 
+         sick_days_used = ?, personal_days_used = ?,
+         last_updated = CURRENT_TIMESTAMP
+     WHERE employee_id = ? AND year = ?`,
+    [newVacationUsed, newVacationRemaining, newSickUsed, newPersonalUsed, request.employee_id, year]
+  );
 }
 
 export async function getEmployeeLeaveBalance(employeeId: string, year?: number): Promise<LeaveBalance | null> {
@@ -575,6 +715,24 @@ export async function createOrUpdateLeaveBalance(balance: Omit<LeaveBalance, 'id
   }
 }
 
+export async function getAllLeaveBalances(year?: number): Promise<(LeaveBalance & { nome: string; cognome: string })[]> {
+  const connection = await getConnection();
+  try {
+    const currentYear = year || new Date().getFullYear();
+    const [rows] = await connection.execute(
+      `SELECT elb.*, e.nome, e.cognome 
+       FROM employee_leave_balance elb 
+       JOIN employees e ON elb.employee_id COLLATE utf8mb4_general_ci = e.id COLLATE utf8mb4_general_ci
+       WHERE elb.year = ? AND e.active = true
+       ORDER BY e.cognome, e.nome`,
+      [currentYear]
+    );
+    return rows as (LeaveBalance & { nome: string; cognome: string })[];
+  } finally {
+    await connection.end();
+  }
+}
+
 export async function getPendingLeaveRequests(): Promise<LeaveRequest[]> {
   const connection = await getConnection();
   try {
@@ -586,6 +744,145 @@ export async function getPendingLeaveRequests(): Promise<LeaveRequest[]> {
        ORDER BY lr.created_at ASC`
     );
     return rows as (LeaveRequest & { nome: string; cognome: string })[];
+  } finally {
+    await connection.end();
+  }
+}
+
+export async function getAllLeaveRequests(): Promise<LeaveRequest[]> {
+  const connection = await getConnection();
+  try {
+    const [rows] = await connection.execute(
+      `SELECT lr.*, e.nome, e.cognome 
+       FROM employee_leave_requests lr 
+       JOIN employees e ON lr.employee_id COLLATE utf8mb4_general_ci = e.id COLLATE utf8mb4_general_ci
+       ORDER BY lr.created_at DESC`
+    );
+    return rows as (LeaveRequest & { nome: string; cognome: string })[];
+  } finally {
+    await connection.end();
+  }
+}
+
+// ==========================================
+// FUNZIONI CRUD PER SOCIETÀ
+// ==========================================
+
+export async function getAllCompanies(): Promise<Company[]> {
+  const connection = await getConnection();
+  try {
+    const [rows] = await connection.execute(
+      'SELECT * FROM companies ORDER BY name ASC'
+    );
+    return rows as Company[];
+  } finally {
+    await connection.end();
+  }
+}
+
+export async function getCompanyById(id: number): Promise<Company | null> {
+  const connection = await getConnection();
+  try {
+    const [rows] = await connection.execute(
+      'SELECT * FROM companies WHERE id = ?',
+      [id]
+    );
+    const companies = rows as Company[];
+    return companies.length > 0 ? companies[0] : null;
+  } finally {
+    await connection.end();
+  }
+}
+
+export async function createCompany(company: Omit<Company, 'id' | 'created_at' | 'updated_at'>): Promise<number> {
+  const connection = await getConnection();
+  try {
+    const [result] = await connection.execute(
+      `INSERT INTO companies (name, code, address, phone, email, vat_number, fiscal_code) 
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        company.name,
+        company.code,
+        company.address || null,
+        company.phone || null,
+        company.email || null,
+        company.vat_number || null,
+        company.fiscal_code || null
+      ]
+    );
+    return (result as any).insertId;
+  } finally {
+    await connection.end();
+  }
+}
+
+export async function updateCompany(id: number, company: Partial<Company>): Promise<boolean> {
+  const connection = await getConnection();
+  try {
+    const [result] = await connection.execute(
+      `UPDATE companies 
+       SET name = COALESCE(?, name),
+           code = COALESCE(?, code),
+           address = COALESCE(?, address),
+           phone = COALESCE(?, phone),
+           email = COALESCE(?, email),
+           vat_number = COALESCE(?, vat_number),
+           fiscal_code = COALESCE(?, fiscal_code),
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+      [
+        company.name || null,
+        company.code || null,
+        company.address || null,
+        company.phone || null,
+        company.email || null,
+        company.vat_number || null,
+        company.fiscal_code || null,
+        id
+      ]
+    );
+    return (result as any).affectedRows > 0;
+  } finally {
+    await connection.end();
+  }
+}
+
+export async function deleteCompany(id: number): Promise<boolean> {
+  const connection = await getConnection();
+  try {
+    // Verifica se ci sono dipendenti associati
+    const [employeeCheck] = await connection.execute(
+      'SELECT COUNT(*) as count FROM employees WHERE company_id = ?',
+      [id]
+    );
+    
+    const employeeCount = (employeeCheck as any)[0].count;
+    if (employeeCount > 0) {
+      throw new Error(`Impossibile eliminare la società: ci sono ${employeeCount} dipendenti associati`);
+    }
+
+    const [result] = await connection.execute(
+      'DELETE FROM companies WHERE id = ?',
+      [id]
+    );
+    return (result as any).affectedRows > 0;
+  } finally {
+    await connection.end();
+  }
+}
+
+export async function getEmployeesByCompany(companyId: number): Promise<Employee[]> {
+  const connection = await getConnection();
+  try {
+    const [rows] = await connection.execute(
+      `SELECT e.*, c.name as company_name 
+       FROM employees e 
+       LEFT JOIN companies c ON e.company_id = c.id 
+       WHERE e.company_id = ? AND e.active = 1
+       ORDER BY e.cognome, e.nome`,
+      [companyId]
+    );
+    return rows as Employee[];
   } finally {
     await connection.end();
   }

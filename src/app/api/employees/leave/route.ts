@@ -4,6 +4,7 @@ import {
   getEmployeeLeaveRequests, 
   createLeaveRequest, 
   getPendingLeaveRequests,
+  getAllLeaveRequests,
   LeaveRequest 
 } from '@/lib/db-employees';
 
@@ -24,10 +25,8 @@ export async function GET(request: NextRequest) {
       // Richieste in attesa di approvazione
       leaveRequests = await getPendingLeaveRequests();
     } else {
-      return NextResponse.json({
-        success: false,
-        error: 'Specificare employee_id o status=pending'
-      }, { status: 400 });
+      // Tutte le richieste ferie
+      leaveRequests = await getAllLeaveRequests();
     }
     
     console.log('Richieste ferie recuperate:', leaveRequests.length);

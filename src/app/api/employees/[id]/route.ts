@@ -43,10 +43,7 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const resolvedParams = await params;
     // Decodifica l'URL per gestire spazi e caratteri speciali
@@ -55,13 +52,16 @@ export async function PUT(
     console.log('API employee PUT ID decodificato:', decodedId);
     
     const body = await request.json();
+    console.log('Dati ricevuti dal client:', body);
     
     // Rimuovi campi che non devono essere aggiornati
-    const { id, created_at, updated_at, ...updateData } = body;
+    const { id, created_at, updated_at, company_name, ...updateData } = body;
+    console.log('Dati da aggiornare (dopo filtro):', updateData);
     
     const success = await updateEmployee(decodedId, updateData);
     
     if (!success) {
+      console.log('Aggiornamento fallito - dipendente non trovato o nessuna modifica');
       return NextResponse.json({
         success: false,
         error: 'Dipendente non trovato o nessuna modifica effettuata'

@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 
 interface Employee {
   id: number;
@@ -11,6 +12,14 @@ interface Employee {
   cellulare: string;
   is_driver: number;
   active: number;
+  company_id: number;
+  company_name: string;
+}
+
+interface Company {
+  id: number;
+  name: string;
+  code: string;
 }
 
 interface ApiResponse {
@@ -21,20 +30,43 @@ interface ApiResponse {
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showDriversOnly, setShowDriversOnly] = useState(false);
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
+
+  useEffect(() => {
+    fetchCompanies();
+    fetchEmployees();
+  }, []);
 
   useEffect(() => {
     fetchEmployees();
-  }, []);
+  }, [selectedCompanyId]);
+
+  const fetchCompanies = async () => {
+    try {
+      const response = await fetch('/api/companies');
+      if (response.ok) {
+        const companiesData = await response.json();
+        setCompanies(companiesData);
+      }
+    } catch (err) {
+      console.error('Errore nel caricamento società:', err);
+    }
+  };
 
   const fetchEmployees = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('/api/employees');
+      const url = selectedCompanyId 
+        ? `/api/employees?company_id=${selectedCompanyId}`
+        : '/api/employees';
+      
+      const response = await fetch(url);
       
       if (!response.ok) {
         throw new Error(`Errore HTTP: ${response.status}`);
@@ -106,7 +138,19 @@ export default function EmployeesPage() {
     <div className="container-fluid">
       <div className="row">
         <div className="col-12">
-          <h1 className="h3 mb-4">Gestione Dipendenti</h1>
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <h1 className="h3 mb-0">Gestione Dipendenti</h1>
+            <div className="d-flex gap-2">
+              <Link href="/gestione/companies" className="btn btn-outline-primary">
+                <i className="fas fa-building me-2"></i>
+                Gestione Società
+              </Link>
+              <Link href="/gestione/employees/ferie" className="btn btn-primary">
+                <i className="fas fa-calendar-alt me-2"></i>
+                Gestione Ferie
+              </Link>
+            </div>
+          </div>
 
           {/* Card con filtri e statistiche */}
           <div className="card mb-4">
@@ -124,25 +168,44 @@ export default function EmployeesPage() {
                   </p>
                 </div>
                 <div className="col-md-6 text-md-end">
-                  <div className="form-check form-switch d-inline-block">
-                    <input
-                      className="form-check-input"
-                      type="checkbox"
-                      id="driversFilter"
-                      checked={showDriversOnly}
-                      onChange={(e) => setShowDriversOnly(e.target.checked)}
-                    />
-                    <label className="form-check-label" htmlFor="driversFilter">
-                      Mostra solo autisti
-                    </label>
+                  <div className="d-flex align-items-center justify-content-md-end gap-3">
+                    <div>
+                      <label htmlFor="companyFilter" className="form-label mb-0 me-2">Società:</label>
+                      <select
+                        id="companyFilter"
+                        className="form-select form-select-sm d-inline-block"
+                        style={{ width: 'auto' }}
+                        value={selectedCompanyId}
+                        onChange={(e) => setSelectedCompanyId(e.target.value)}
+                      >
+                        <option value="">Tutte le società</option>
+                        {companies.map(company => (
+                          <option key={company.id} value={company.id}>
+                            {company.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="form-check form-switch">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="driversFilter"
+                        checked={showDriversOnly}
+                        onChange={(e) => setShowDriversOnly(e.target.checked)}
+                      />
+                      <label className="form-check-label" htmlFor="driversFilter">
+                        Solo autisti
+                      </label>
+                    </div>
+                    <button 
+                      className="btn btn-outline-primary btn-sm"
+                      onClick={fetchEmployees}
+                      title="Aggiorna dati"
+                    >
+                      <i className="fas fa-sync-alt"></i>
+                    </button>
                   </div>
-                  <button 
-                    className="btn btn-outline-primary btn-sm ms-3"
-                    onClick={fetchEmployees}
-                    title="Aggiorna dati"
-                  >
-                    <i className="fas fa-sync-alt"></i>
-                  </button>
                 </div>
               </div>
             </div>
@@ -178,6 +241,7 @@ export default function EmployeesPage() {
                         <th scope="col">#</th>
                         <th scope="col">Nome</th>
                         <th scope="col">Cognome</th>
+                        <th scope="col">Società</th>
                         <th scope="col">Email</th>
                         <th scope="col">Cellulare</th>
                         <th scope="col">Tipo</th>
@@ -192,6 +256,11 @@ export default function EmployeesPage() {
                           </td>
                           <td>
                             <strong>{employee.cognome}</strong>
+                          </td>
+                          <td>
+                            <span className="badge bg-info">
+                              {employee.company_name || 'N/A'}
+                            </span>
                           </td>
                           <td>
                             {employee.email ? (

@@ -17,6 +17,14 @@ interface Employee {
   cdc?: string;
   cod_fiscale?: string;
   indirizzo?: string;
+  company_id: number;
+  company_name: string;
+}
+
+interface Company {
+  id: number;
+  name: string;
+  code: string;
 }
 
 interface ApiResponse {
@@ -27,23 +35,35 @@ interface ApiResponse {
 
 export default function AutistiPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showDriversOnly, setShowDriversOnly] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCompany, setSelectedCompany] = useState<string>('');
   const [sortField, setSortField] = useState<keyof Employee>('cognome');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   useEffect(() => {
     fetchEmployees();
+    fetchCompanies();
   }, []);
+
+  useEffect(() => {
+    fetchEmployees();
+  }, [selectedCompany]);
 
   const fetchEmployees = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('/api/employees');
+      let url = '/api/employees';
+      if (selectedCompany) {
+        url += `?company_id=${selectedCompany}`;
+      }
+      
+      const response = await fetch(url);
       
       if (!response.ok) {
         throw new Error(`Errore HTTP: ${response.status}`);
@@ -61,6 +81,21 @@ export default function AutistiPage() {
       setError(err instanceof Error ? err.message : 'Errore sconosciuto');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCompanies = async () => {
+    try {
+      const response = await fetch('/api/companies');
+      
+      if (!response.ok) {
+        throw new Error(`Errore HTTP: ${response.status}`);
+      }
+      
+      const companies: Company[] = await response.json();
+      setCompanies(companies);
+    } catch (err) {
+      console.error('Errore nel caricamento delle società:', err);
     }
   };
 
@@ -182,7 +217,7 @@ export default function AutistiPage() {
                 </div>
                 <div className="col-md-8">
                   <div className="row">
-                    <div className="col-md-6">
+                    <div className="col-md-4">
                       <div className="input-group">
                         <span className="input-group-text">
                           <i className="fas fa-search"></i>
@@ -196,7 +231,21 @@ export default function AutistiPage() {
                         />
                       </div>
                     </div>
-                    <div className="col-md-6 d-flex align-items-center">
+                    <div className="col-md-4">
+                      <select
+                        className="form-select"
+                        value={selectedCompany}
+                        onChange={(e) => setSelectedCompany(e.target.value)}
+                      >
+                        <option value="">Tutte le società</option>
+                        {companies.map(company => (
+                          <option key={company.id} value={company.id}>
+                            {company.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="col-md-4 d-flex align-items-center">
                       <div className="form-check form-switch me-3">
                         <input
                           className="form-check-input"
@@ -283,6 +332,17 @@ export default function AutistiPage() {
                             <i className={`fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'} ms-1`}></i>
                           )}
                         </th>
+                        <th 
+                          scope="col"
+                          className="sortable-header text-light"
+                          onClick={() => handleSort('company_name')}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          Società
+                          {sortField === 'company_name' && (
+                            <i className={`fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'} ms-1`}></i>
+                          )}
+                        </th>
                         <th scope="col" className="text-light">Tipo</th>
                         <th scope="col" className="text-light">Patente</th>
                         <th scope="col" className="text-light">Stato Patente</th>
@@ -325,6 +385,11 @@ export default function AutistiPage() {
                                 </div>
                               )}
                             </div>
+                          </td>
+                          <td>
+                            <span className="badge bg-secondary">
+                              {employee.company_name || 'N/A'}
+                            </span>
                           </td>
                           <td>
                             {getEmployeeTypeBadge(employee.is_driver)}

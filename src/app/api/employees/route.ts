@@ -6,7 +6,29 @@ export async function GET(request: NextRequest) {
   try {
     console.log('API employees GET chiamata');
     
-    const employees = await getAllEmployees();
+    // Estrai parametri di query
+    const { searchParams } = new URL(request.url);
+    const companyId = searchParams.get('company_id');
+    
+    let employees;
+    
+    if (companyId) {
+      // Filtra per società specifica
+      const companyIdNum = parseInt(companyId);
+      if (isNaN(companyIdNum)) {
+        return NextResponse.json({
+          success: false,
+          error: 'ID società non valido'
+        }, { status: 400 });
+      }
+      
+      // Importa la funzione per filtrare per società
+      const { getEmployeesByCompany } = await import('@/lib/db-employees');
+      employees = await getEmployeesByCompany(companyIdNum);
+    } else {
+      // Recupera tutti i dipendenti
+      employees = await getAllEmployees();
+    }
     
     console.log('Dipendenti recuperati con successo:', employees.length);
     
@@ -63,7 +85,8 @@ export async function POST(request: NextRequest) {
       driver_license_number: body.driver_license_number || null,
       driver_license_expiry: body.driver_license_expiry || null,
       password_hash: body.password_hash || null,
-      active: body.active !== undefined ? body.active : true
+      active: body.active !== undefined ? body.active : true,
+      company_id: body.company_id || 1 // Default alla prima società se non specificato
     };
     
     const employeeId = await createEmployee(employeeData);

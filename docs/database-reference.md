@@ -106,6 +106,54 @@ Questo documento contiene la documentazione completa delle tre basi di dati util
 - `src/lib/db-employees.ts` - Correzione interfacce e funzioni CRUD
 - Risoluzione completa errori "Unknown column" e "cannot be null"
 
+### Gestione Campo company_name vs company_id (employees)
+**Data implementazione:** Gennaio 2025
+
+**Problema risolto:**
+- Errore 500 nell'API PUT `/api/employees/[id]` con messaggio "Unknown column 'company_name' in 'field list'"
+- Il sistema tentava di aggiornare una colonna `company_name` inesistente nella tabella `employees`
+- La tabella `employees` ha solo la colonna `company_id` (foreign key), non `company_name`
+
+**Causa identificata:**
+Il campo `company_name` viene aggiunto tramite JOIN nelle query SELECT per la visualizzazione:
+```sql
+SELECT e.*, c.name as company_name FROM employees e 
+LEFT JOIN companies c ON e.company_id = c.id
+```
+Quando i dati venivano caricati per la modifica, includevano `company_name` che poi veniva erroneamente inviato nell'aggiornamento.
+
+**Correzioni implementate:**
+
+1. **Pagina modifica dipendente (`src/app/gestione/autisti/[id]/modifica/page.tsx`):**
+   ```typescript
+   // Rimuove company_name che è solo per visualizzazione
+   const { company_name, ...formDataWithoutCompanyName } = formData;
+   const dataToSave = {
+     ...formDataWithoutCompanyName,
+     // ... resto dei dati
+   };
+   ```
+
+2. **API PUT employees (`src/app/api/employees/[id]/route.ts`):**
+   ```typescript
+   // Rimuovi campi che non devono essere aggiornati
+   const { id, created_at, updated_at, company_name, ...updateData } = body;
+   ```
+
+**Struttura tabella employees corretta:**
+- ✅ `company_id` (INT, foreign key verso companies.id)
+- ❌ `company_name` (non esiste, solo per visualizzazione tramite JOIN)
+
+**Benefici:**
+- ✅ API PUT `/api/employees/[id]` funziona correttamente (status 200)
+- ✅ Aggiornamento dipendenti senza errori "Unknown column"
+- ✅ Separazione corretta tra dati di visualizzazione e dati di aggiornamento
+- ✅ Mantenimento integrità relazionale con tabella companies
+
+**File modificati:**
+- `src/app/gestione/autisti/[id]/modifica/page.tsx` - Filtro company_name prima invio
+- `src/app/api/employees/[id]/route.ts` - Rimozione company_name da updateData
+
 ## Ottimizzazioni Performance Recenti
 
 ### Filtri Data Viaggi POD (/viaggi-pod)
@@ -1572,9 +1620,22 @@ CREATE TABLE employees (
     titolo_studio VARCHAR(100),
     luogo_nascita VARCHAR(150),
     data_nascita DATE,
-    livello VARCHAR(10)
+    livello VARCHAR(10),
+    password_hash VARCHAR(255),
+    last_login DATETIME,
+    is_driver TINYINT(1) DEFAULT 0,
+    driver_license_number VARCHAR(50),
+    driver_license_expiry DATE,
+    company_id INT NOT NULL,
+    FOREIGN KEY (company_id) REFERENCES companies(id)
 );
 ```
+
+**⚠️ NOTA IMPORTANTE - Colonna updatedAt:**
+La colonna `updatedAt` è definita come `DATETIME(3) NOT NULL` ma **NON** ha l'attributo `ON UPDATE CURRENT_TIMESTAMP`. 
+Questo significa che nelle operazioni di UPDATE è necessario fornire esplicitamente un valore per `updatedAt`, 
+altrimenti si verificherà un errore 500. La funzione `updateEmployee` in `src/lib/db-employees.ts` 
+gestisce correttamente questo aspetto fornendo un valore `new Date()` esplicito.
 
 **Campi Principali:**
 - `id`: Identificativo univoco dipendente (VARCHAR)

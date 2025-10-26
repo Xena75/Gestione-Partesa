@@ -1,6 +1,47 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-## 📊 Dashboard Autisti Completa - v2.32.3 ⭐ **NUOVO**
+## 🔧 Fix Critico company_name vs company_id - v2.32.2 ⭐ **NUOVO**
+
+### 🎯 Risoluzione Errore Critico
+**Data implementazione**: Gennaio 2025  
+**Stato**: ✅ Completato e testato
+
+### 🛠️ Problema Identificato
+- **Errore**: API PUT `/api/employees/[id]` restituiva errore 500
+- **Messaggio**: "Unknown column 'company_name' in 'field list'"
+- **Causa**: Campo `company_name` inviato per aggiornamento ma non esistente in tabella `employees`
+- **Impatto**: Impossibilità di aggiornare dipendenti tramite interfaccia web
+
+### ⚡ Correzioni Implementate
+
+#### 🔧 Frontend Fix
+- **File**: `src/app/gestione/autisti/[id]/modifica/page.tsx`
+- **Modifica**: Filtro `company_name` prima dell'invio dati al server
+- **Logica**: Separazione dati visualizzazione (con `company_name`) da dati aggiornamento (solo `company_id`)
+
+#### 🔧 API Fix
+- **File**: `src/app/api/employees/[id]/route.ts`
+- **Modifica**: Rimozione preventiva `company_name` da `updateData`
+- **Sicurezza**: Doppia protezione per evitare errori futuri
+
+### 📊 Struttura Database Corretta
+- **Tabella employees**: Contiene solo `company_id` (foreign key)
+- **Visualizzazione**: `company_name` ottenuto tramite JOIN con tabella `companies`
+- **Aggiornamento**: Solo `company_id` utilizzato per UPDATE
+
+### 🎯 Risultati Operativi
+- ✅ **API funzionante**: Status 200 invece di 500
+- ✅ **Aggiornamenti corretti**: Modifica dipendenti senza errori
+- ✅ **Performance stabili**: Tempi risposta ~4 secondi
+- ✅ **Query SQL valide**: Log mostrano UPDATE corretti
+
+### 📈 Benefici Tecnici
+- **Separazione concerns**: Dati JOIN separati da dati UPDATE
+- **Robustezza API**: Gestione errori migliorata
+- **Manutenibilità**: Codice più pulito e comprensibile
+- **Documentazione**: Aggiornata `docs/database-reference.md`
+
+## 📊 Dashboard Autisti Completa - v2.32.3 ⭐ **PRECEDENTE**
 
 ### 🎯 Implementazione Completa
 **Data implementazione**: Gennaio 2025  

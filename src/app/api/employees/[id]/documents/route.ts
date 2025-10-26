@@ -5,7 +5,9 @@ import {
   createEmployeeDocument, 
   deleteEmployeeDocument,
   getEmployeeById,
-  updateDocumentStatus
+  updateDocumentStatus,
+  updateEmployeeDocument,
+  getEmployeeDocumentById
 } from '@/lib/db-employees';
 
 // GET - Recupera tutti i documenti di un dipendente
@@ -235,6 +237,126 @@ export async function DELETE(
 
   } catch (error) {
     console.error('Errore nell\'eliminazione documento:', error);
+    return NextResponse.json(
+      { error: 'Errore interno del server' },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT - Aggiorna un documento esistente
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const resolvedParams = await params;
+    const employeeId = decodeURIComponent(resolvedParams.id);
+    const { searchParams } = new URL(request.url);
+    const documentId = searchParams.get('document_id');
+
+    if (!documentId) {
+      return NextResponse.json(
+        { error: 'ID documento richiesto' },
+        { status: 400 }
+      );
+    }
+
+    // Verifica che il dipendente esista
+    const employee = await getEmployeeById(employeeId);
+    if (!employee) {
+      return NextResponse.json(
+        { error: 'Dipendente non trovato' },
+        { status: 404 }
+      );
+    }
+
+    // Verifica che il documento esista
+    const existingDocument = await getEmployeeDocumentById(parseInt(documentId));
+    if (!existingDocument) {
+      return NextResponse.json(
+        { error: 'Documento non trovato' },
+        { status: 404 }
+      );
+    }
+
+    const formData = await request.formData();
+    const file = formData.get('file') as File | null;
+    const documentType = formData.get('document_type') as string;
+    const documentName = formData.get('document_name') as string;
+    const expiryDate = formData.get('expiry_date') as string;
+    const notes = formData.get('notes') as string;
+
+    // Prepara i dati per l'aggiornamento
+    const updateData: any = {};
+
+    if (documentType) updateData.document_type = documentType;
+    if (documentName) updateData.document_name = documentName;
+    if (expiryDate) updateData.expiry_date = expiryDate;
+    if (notes !== undefined) updateData.notes = notes || null;
+
+    // Se è stato fornito un nuovo file, caricalo
+    if (file) {
+      // Validazione dimensione file (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        return NextResponse.json(
+          { error: 'File troppo grande. Dimensione massima: 10MB' },
+          { status: 400 }
+        );
+      }
+
+      // Validazione tipo file
+      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+      if (!allowedTypes.includes(file.type)) {
+        return NextResponse.json(
+          { error: 'Tipo di file non supportato. Usa PDF, JPG o PNG' },
+          { status: 400 }
+        );
+      }
+
+      try {
+        // Carica il nuovo file su Vercel Blob
+        const timestamp = Date.now();
+        const fileName = `${timestamp}_${file.name}`;
+        const blob = await put(fileName, file, {
+          access: 'public',
+        });
+
+        // Aggiorna i dati del file
+        updateData.file_path = blob.url;
+        updateData.file_name = file.name;
+        updateData.file_size = file.size;
+        updateData.file_type = file.type;
+
+      } catch (uploadError) {
+        console.error('Errore upload file:', uploadError);
+        return NextResponse.json(
+          { error: 'Errore durante il caricamento del file' },
+          { status: 500 }
+        );
+      }
+    }
+
+    // Aggiorna il documento nel database
+    const success = await updateEmployeeDocument(parseInt(documentId), updateData);
+    
+    if (!success) {
+      return NextResponse.json(
+        { error: 'Errore durante l\'aggiornamento del documento' },
+        { status: 500 }
+      );
+    }
+
+    // Aggiorna lo status dei documenti
+    await updateDocumentStatus();
+
+    return NextResponse.json({
+      success: true,
+      message: 'Documento aggiornato con successo'
+    });
+
+  } catch (error) {
+    console.error('Errore nell\'aggiornamento documento:', error);
     return NextResponse.json(
       { error: 'Errore interno del server' },
       { status: 500 }

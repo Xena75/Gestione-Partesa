@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.32.1
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.32.2
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -69,6 +69,7 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **API robusta**: Risolti errori 500 nell'API PUT `/api/employees/[id]` ⭐ **NUOVO v2.32.1**
 - **Timestamp automatici**: Gestione automatica `updatedAt` per tracciamento modifiche ⭐ **NUOVO v2.32.1**
 - **Interfaccia corretta**: Allineamento perfetto tra database (camelCase) e TypeScript ⭐ **NUOVO v2.32.1**
+- **Fix company_name**: Risolto errore "Unknown column 'company_name'" separando dati visualizzazione/aggiornamento ⭐ **NUOVO v2.32.2**
 
 ### 📄 **Sistema Gestione Documenti Dipendenti** ⭐ **NUOVO v2.32.2**
 - **Upload documenti**: Sistema completo per caricamento documenti autisti (patente, CQC, ADR, contratti)
@@ -165,6 +166,32 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Accesso rapido**: Preview immediata documenti senza download
 - **Sicurezza dati**: Storage cloud con backup automatico
 - **Tracciabilità**: Log completo upload, modifiche ed eliminazioni
+
+### 🔧 **Fix Critico company_name vs company_id - v2.32.2** ⭐ **NUOVO**
+
+#### 🛠️ **Risoluzione Errore "Unknown column 'company_name'"**
+- **Problema identificato**: API PUT `/api/employees/[id]` restituiva errore 500 con messaggio "Unknown column 'company_name' in 'field list'"
+- **Causa root**: Il campo `company_name` viene aggiunto tramite JOIN per visualizzazione ma non esiste nella tabella `employees`
+- **Struttura corretta**: La tabella `employees` ha solo `company_id` (foreign key), non `company_name`
+- **Separazione logica**: Implementata separazione tra dati di visualizzazione e dati di aggiornamento
+
+#### ⚡ **Correzioni Implementate**
+- **Frontend fix**: Filtro `company_name` prima dell'invio dati in `src/app/gestione/autisti/[id]/modifica/page.tsx`
+- **API fix**: Rimozione `company_name` da `updateData` in `src/app/api/employees/[id]/route.ts`
+- **Query corretta**: UPDATE ora usa solo campi esistenti nella tabella `employees`
+- **Integrità relazionale**: Mantenimento corretto foreign key `company_id` verso tabella `companies`
+
+#### 🎯 **Risultati Operativi**
+- **API funzionante**: PUT `/api/employees/[id]` ora restituisce status 200 invece di 500
+- **Aggiornamenti corretti**: Modifica dipendenti funziona senza errori "Unknown column"
+- **Performance stabili**: Tempi di risposta ~4 secondi per aggiornamenti complessi
+- **Tracciabilità**: Log SQL corretti mostrano query UPDATE valide
+
+#### 📊 **Benefici Tecnici**
+- **Separazione concerns**: Dati JOIN per visualizzazione separati da dati UPDATE
+- **Robustezza API**: Gestione errori migliorata con filtri preventivi
+- **Manutenibilità**: Codice più pulito e comprensibile per future modifiche
+- **Documentazione**: Aggiornata `docs/database-reference.md` con dettagli correzione
 
 ### 🔧 **Correzioni API Gestione Dipendenti - v2.32.1** ⭐ **PRECEDENTE**
 

@@ -19,6 +19,8 @@ interface ExpiringDocument {
   id: number;
   employee_id: number;
   employee_name: string;
+  nome: string;
+  cognome: string;
   document_type: string;
   expiry_date: string;
   days_until_expiry: number;
@@ -85,6 +87,7 @@ export default function Dashboard() {
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [processingLeave, setProcessingLeave] = useState<number | null>(null);
 
   useEffect(() => {
     loadDashboardData();
@@ -190,6 +193,44 @@ export default function Dashboard() {
       setError(err instanceof Error ? err.message : 'Errore sconosciuto');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Funzione per gestire approvazione/rifiuto richieste ferie
+  const handleLeaveAction = async (leaveId: number, action: 'approve' | 'reject') => {
+    try {
+      setProcessingLeave(leaveId);
+      
+      const response = await fetch('/api/employees/leave/approve', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: leaveId,
+          status: action === 'approve' ? 'approved' : 'rejected',
+          approved_by: 'Manager Dashboard', // TODO: Utilizzare l'utente corrente
+          notes: action === 'approve' ? 'Approvata dalla dashboard' : 'Rifiutata dalla dashboard'
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Errore nell\'aggiornamento della richiesta');
+      }
+
+      // Ricarica i dati per aggiornare la lista
+      await loadDashboardData();
+      
+      // Mostra messaggio di successo (opzionale)
+      console.log(`Richiesta ferie ${action === 'approve' ? 'approvata' : 'rifiutata'} con successo`);
+      
+    } catch (error) {
+      console.error('Errore nell\'aggiornamento della richiesta ferie:', error);
+      setError(error instanceof Error ? error.message : 'Errore sconosciuto');
+    } finally {
+      setProcessingLeave(null);
     }
   };
 
@@ -312,69 +353,19 @@ export default function Dashboard() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="container-fluid">
-        <div className="alert alert-danger" role="alert">
-          <i className="fas fa-exclamation-triangle me-2"></i>
-          {error}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="container-fluid">
-      <div className="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 className="h3 mb-0 text-light">Dashboard Autisti</h1>
-        <div className="d-flex gap-2">
+      {/* Messaggio di errore */}
+      {error && (
+        <div className="alert alert-danger alert-dismissible fade show" role="alert">
+          <i className="fas fa-exclamation-triangle me-2"></i>
+          {error}
           <button 
-            onClick={loadDashboardData}
-            className="btn btn-sm btn-primary shadow-sm"
-            disabled={loading}
-          >
-            <i className="fas fa-sync-alt fa-sm text-white-50 me-1"></i>
-            Aggiorna
-          </button>
-          <Link href="/gestione/autisti/dashboard/report" className="btn btn-sm btn-success shadow-sm">
-            <i className="fas fa-download fa-sm text-white-50 me-1"></i>
-            Genera Report
-          </Link>
-        </div>
-      </div>
-
-      {/* Alert per documenti scaduti critici */}
-      {expiredDocs.filter(doc => doc.priority_level === 'critico').length > 0 && (
-        <div className="alert alert-danger alert-dismissible fade show mb-4" role="alert">
-          <div className="d-flex align-items-center">
-            <i className="fas fa-exclamation-circle fa-2x me-3"></i>
-            <div className="flex-grow-1">
-              <h5 className="alert-heading mb-1">
-                🚨 ATTENZIONE: Documenti Scaduti Critici!
-              </h5>
-              <p className="mb-2">
-                Ci sono <strong>{expiredDocs.filter(doc => doc.priority_level === 'critico').length}</strong> documenti 
-                scaduti da più di 90 giorni che richiedono attenzione immediata.
-              </p>
-              <div className="d-flex gap-2">
-                <Link href="/gestione/autisti/dashboard/scaduti" className="btn btn-sm btn-outline-danger">
-                  <i className="fas fa-eye me-1"></i>
-                  Visualizza Tutti
-                </Link>
-                <button 
-                  className="btn btn-sm btn-danger"
-                  onClick={() => {
-                    // TODO: Implementare notifica automatica
-                    alert('Invio notifiche automatiche ai responsabili...');
-                  }}
-                >
-                  <i className="fas fa-bell me-1"></i>
-                  Invia Notifiche
-                </button>
-              </div>
-            </div>
-          </div>
-          <button type="button" className="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            type="button" 
+            className="btn-close" 
+            onClick={() => setError(null)}
+            aria-label="Close"
+          ></button>
         </div>
       )}
 
@@ -545,11 +536,11 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Grafici e documenti scaduti */}
+        {/* Grafici affiancati */}
         <div className="row mb-4">
           {/* Grafico a ciambella stati documenti */}
-          <div className="col-lg-4">
-            <div className="card shadow mb-4">
+          <div className="col-lg-6 col-md-12 mb-4">
+            <div className="card shadow h-100">
               <div className="card-header py-3">
                 <h6 className="m-0 font-weight-bold text-primary">
                   <i className="fas fa-chart-pie me-2"></i>
@@ -557,22 +548,44 @@ export default function Dashboard() {
                 </h6>
               </div>
               <div className="card-body">
-                <div style={{ height: '300px' }}>
+                <div style={{ height: '350px' }}>
                   <Doughnut data={doughnutData} options={doughnutOptions} />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Documenti scaduti con priorità alta */}
-          <div className="col-lg-8">
-            <div className="card shadow mb-4">
+          {/* Grafico a barre per documenti per tipo */}
+          <div className="col-lg-6 col-md-12 mb-4">
+            <div className="card shadow h-100">
+              <div className="card-header py-3">
+                <h6 className="m-0 font-weight-bold text-primary">
+                  <i className="fas fa-chart-bar me-2"></i>
+                  Distribuzione Documenti per Tipo
+                </h6>
+              </div>
+              <div className="card-body">
+                <div style={{ height: '350px' }}>
+                  <Bar data={barData} options={barOptions} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+
+        {/* Sezioni documenti affiancate */}
+        <div className="row mb-4">
+          {/* Widget documenti scaduti - priorità alta */}
+          <div className="col-md-6">
+            <div className="card shadow mb-4 h-100">
               <div className="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 className="m-0 font-weight-bold text-danger">
-                  <i className="fas fa-exclamation-circle me-2"></i>
+                <h6 className="m-0 font-weight-bold text-primary">
+                  <i className="fas fa-exclamation-triangle me-2"></i>
                   Documenti Scaduti - Priorità Alta
                 </h6>
-                <Link href="/gestione/autisti/dashboard/scaduti" className="btn btn-sm btn-outline-danger">
+                <Link href="/gestione/autisti/documenti" className="btn btn-sm btn-outline-primary">
                   <i className="fas fa-eye me-1"></i>
                   Vedi Tutti
                 </Link>
@@ -598,67 +611,33 @@ export default function Dashboard() {
                       </thead>
                       <tbody>
                         {expiredDocs.slice(0, 5).map((doc) => (
-                          <tr key={doc.id} className={`${
-                            doc.priority_level === 'critico' ? 'table-danger' : 
-                            doc.priority_level === 'alto' ? 'table-warning' : ''
-                          }`}>
+                          <tr key={doc.id}>
                             <td>
-                              <div className="d-flex align-items-center">
-                                <i className="fas fa-exclamation-triangle text-danger me-2"></i>
-                                <div>
-                                  <strong className="text-light">{doc.nome} {doc.cognome}</strong>
-                                  <br />
-                                  <small className="text-muted">ID: {doc.employee_id}</small>
-                                </div>
-                              </div>
+                              <strong className="text-light">{doc.nome} {doc.cognome}</strong>
                             </td>
                             <td>
                               <span className="badge bg-secondary">
                                 {doc.document_type}
                               </span>
-                              <br />
-                              <small className="text-muted">
-                                Scaduto il: {new Date(doc.expiry_date).toLocaleDateString('it-IT')}
-                              </small>
                             </td>
                             <td>
-                              <span className="text-danger fw-bold">
-                                <i className="fas fa-clock me-1"></i>
-                                {doc.days_overdue} giorni
-                              </span>
+                              <span className="text-danger">{doc.days_overdue} giorni</span>
                             </td>
                             <td>
                               <span className={`badge ${
-                                doc.priority_level === 'critico' ? 'bg-danger' : 
-                                doc.priority_level === 'alto' ? 'bg-warning text-dark' : 'bg-info'
+                                doc.priority_level === 'critico' ? 'bg-danger' :
+                                doc.priority_level === 'alto' ? 'bg-warning' : 'bg-info'
                               }`}>
-                                <i className={`fas ${
-                                  doc.priority_level === 'critico' ? 'fa-exclamation-circle' :
-                                  doc.priority_level === 'alto' ? 'fa-exclamation-triangle' : 'fa-info-circle'
-                                } me-1`}></i>
-                                {doc.priority_level.toUpperCase()}
+                                {doc.priority_level}
                               </span>
                             </td>
                             <td>
-                              <div className="btn-group" role="group">
-                                <Link 
-                                  href={`/gestione/autisti/${doc.employee_id}/documenti`}
-                                  className="btn btn-sm btn-outline-primary"
-                                  title="Gestisci documenti"
-                                >
-                                  <i className="fas fa-edit"></i>
-                                </Link>
-                                <button 
-                                  className="btn btn-sm btn-outline-success"
-                                  title="Rinnova documento"
-                                  onClick={() => {
-                                    // TODO: Implementare azione rapida per rinnovo
-                                    alert(`Rinnovo rapido per ${doc.document_type} di ${doc.nome} ${doc.cognome}`);
-                                  }}
-                                >
-                                  <i className="fas fa-sync-alt"></i>
-                                </button>
-                              </div>
+                              <Link 
+                                href={`/gestione/autisti/${doc.employee_id}/documenti`}
+                                className="btn btn-sm btn-outline-primary"
+                              >
+                                <i className="fas fa-edit"></i>
+                              </Link>
                             </td>
                           </tr>
                         ))}
@@ -669,31 +648,10 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Grafico a barre per documenti per tipo */}
-        <div className="row mb-4">
-          <div className="col-12">
-            <div className="card shadow mb-4">
-              <div className="card-header py-3">
-                <h6 className="m-0 font-weight-bold text-primary">
-                  <i className="fas fa-chart-bar me-2"></i>
-                  Distribuzione Documenti per Tipo
-                </h6>
-              </div>
-              <div className="card-body">
-                <div style={{ height: '400px' }}>
-                  <Bar data={barData} options={barOptions} />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Widget documenti in scadenza con filtri */}
-        <div className="row mb-4">
-          <div className="col-lg-8">
-            <div className="card shadow mb-4">
+          {/* Widget documenti in scadenza con filtri */}
+          <div className="col-md-6">
+            <div className="card shadow mb-4 h-100">
               <div className="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                 <h6 className="m-0 font-weight-bold text-primary">
                   <i className="fas fa-file-alt me-2"></i>
@@ -771,8 +729,10 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Widget ferie pendenti */}
+        {/* Widget ferie pendenti */}
+        <div className="row mb-4">
           <div className="col-lg-4">
             <div className="card shadow mb-4">
               <div className="card-header py-3 d-flex flex-row align-items-center justify-content-between">
@@ -810,11 +770,29 @@ export default function Dashboard() {
                             </small>
                           </div>
                           <div>
-                            <button className="btn btn-sm btn-success me-1" title="Approva">
-                              <i className="fas fa-check"></i>
+                            <button 
+                              className="btn btn-sm btn-success me-1" 
+                              title="Approva"
+                              onClick={() => handleLeaveAction(leave.id, 'approve')}
+                              disabled={processingLeave === leave.id}
+                            >
+                              {processingLeave === leave.id ? (
+                                <i className="fas fa-spinner fa-spin"></i>
+                              ) : (
+                                <i className="fas fa-check"></i>
+                              )}
                             </button>
-                            <button className="btn btn-sm btn-danger" title="Rifiuta">
-                              <i className="fas fa-times"></i>
+                            <button 
+                              className="btn btn-sm btn-danger" 
+                              title="Rifiuta"
+                              onClick={() => handleLeaveAction(leave.id, 'reject')}
+                              disabled={processingLeave === leave.id}
+                            >
+                              {processingLeave === leave.id ? (
+                                <i className="fas fa-spinner fa-spin"></i>
+                              ) : (
+                                <i className="fas fa-times"></i>
+                              )}
                             </button>
                           </div>
                         </div>

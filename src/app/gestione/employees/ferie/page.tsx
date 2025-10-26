@@ -24,7 +24,7 @@ interface LeaveRequest {
   days_requested: number;
   reason?: string;
   status: string;
-  requested_at: string;
+  created_at: string;
   approved_at?: string;
   approved_by?: number;
   notes?: string;
@@ -34,6 +34,8 @@ interface LeaveBalance {
   id: number;
   employee_id: number;
   employee_name: string;
+  nome: string;
+  cognome: string;
   year: number;
   vacation_days_total: number;
   vacation_days_used: number;
@@ -55,6 +57,47 @@ const STATUS_TYPES = [
   { value: 'approved', label: 'Approvata', color: 'success' },
   { value: 'rejected', label: 'Rifiutata', color: 'danger' }
 ];
+
+// Funzione helper per formattare le date in modo sicuro
+const formatDateSafe = (dateString: string | null | undefined): string => {
+  if (!dateString || dateString === '') return '-';
+  
+  // Prova diversi formati di data
+  let date: Date;
+  
+  // Se è un numero (timestamp)
+  if (typeof dateString === 'number' || !isNaN(Number(dateString))) {
+    date = new Date(Number(dateString));
+  } else {
+    // Se è una stringa
+    date = new Date(dateString);
+  }
+  
+  if (isNaN(date.getTime())) return 'Data non valida';
+  return date.toLocaleDateString('it-IT');
+};
+
+// Funzione helper per formattare data e ora in modo sicuro
+const formatDateTimeSafe = (dateString: string | null | undefined): { date: string; time: string } => {
+  if (!dateString || dateString === '') return { date: '-', time: '-' };
+  
+  // Prova diversi formati di data
+  let date: Date;
+  
+  // Se è un numero (timestamp)
+  if (typeof dateString === 'number' || !isNaN(Number(dateString))) {
+    date = new Date(Number(dateString));
+  } else {
+    // Se è una stringa
+    date = new Date(dateString);
+  }
+  
+  if (isNaN(date.getTime())) return { date: 'Data non valida', time: '-' };
+  return {
+    date: date.toLocaleDateString('it-IT'),
+    time: date.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+  };
+};
 
 export default function GestioneFerie() {
   const [activeTab, setActiveTab] = useState<'richieste' | 'bilanci'>('richieste');
@@ -98,8 +141,8 @@ export default function GestioneFerie() {
         }
       }
 
-      // Carica richieste ferie in attesa
-      const requestsResponse = await fetch('/api/employees/leave?status=pending');
+      // Carica tutte le richieste ferie
+      const requestsResponse = await fetch('/api/employees/leave');
       if (requestsResponse.ok) {
         const requestsData = await requestsResponse.json();
         if (requestsData.success && requestsData.data) {
@@ -107,9 +150,14 @@ export default function GestioneFerie() {
         }
       }
 
-      // TODO: Implementare caricamento bilanci ferie per dipendenti specifici
-      // I bilanci ferie richiedono un employee_id specifico
-      setLeaveBalances([]);
+      // Carica tutti i bilanci ferie
+      const balancesResponse = await fetch('/api/employees/leave/balances');
+      if (balancesResponse.ok) {
+        const balancesData = await balancesResponse.json();
+        if (balancesData.success && balancesData.data) {
+          setLeaveBalances(Array.isArray(balancesData.data) ? balancesData.data : []);
+        }
+      }
 
     } catch (err) {
       console.error('Errore nel caricamento dati:', err);
@@ -320,7 +368,7 @@ export default function GestioneFerie() {
               <nav aria-label="breadcrumb">
                 <ol className="breadcrumb">
                   <li className="breadcrumb-item">
-                    <Link href="/gestione/autisti">Gestione Autisti</Link>
+                    <Link href="/gestione/employees">Gestione Dipendenti</Link>
                   </li>
                   <li className="breadcrumb-item active" aria-current="page">
                     Gestione Ferie
@@ -329,7 +377,7 @@ export default function GestioneFerie() {
               </nav>
               <h1 className="h3 mb-0">
                 <i className="fas fa-calendar-alt me-2"></i>
-                Gestione Ferie
+                Gestione Ferie Dipendenti
               </h1>
             </div>
             <div>
@@ -340,7 +388,7 @@ export default function GestioneFerie() {
                 <i className="fas fa-plus me-1"></i>
                 Nuova Richiesta
               </button>
-              <Link href="/gestione/autisti" className="btn btn-outline-secondary">
+              <Link href="/gestione/employees" className="btn btn-outline-secondary">
                 <i className="fas fa-arrow-left me-1"></i>
                 Torna alla Gestione
               </Link>
@@ -614,8 +662,7 @@ export default function GestioneFerie() {
                             <td>
                               <div>
                                 <strong className="text-light">
-                                  {new Date(request.start_date).toLocaleDateString('it-IT')} - 
-                                  {new Date(request.end_date).toLocaleDateString('it-IT')}
+                                  {formatDateSafe(request.start_date)} - {formatDateSafe(request.end_date)}
                                 </strong>
                               </div>
                             </td>
@@ -627,13 +674,10 @@ export default function GestioneFerie() {
                             <td>{getStatusBadge(request.status)}</td>
                             <td>
                               <div>
-                                <span className="text-light">{new Date(request.requested_at).toLocaleDateString('it-IT')}</span>
+                                <span className="text-light">{formatDateTimeSafe(request.created_at).date}</span>
                                 <br />
                                 <small className="text-light">
-                                  {new Date(request.requested_at).toLocaleTimeString('it-IT', { 
-                                    hour: '2-digit', 
-                                    minute: '2-digit' 
-                                  })}
+                                  {formatDateTimeSafe(request.created_at).time}
                                 </small>
                               </div>
                             </td>
@@ -674,7 +718,7 @@ export default function GestioneFerie() {
                                   {request.approved_at && (
                                     <small>
                                       {request.status === 'approved' ? 'Approvata' : 'Rifiutata'} il{' '}
-                                      {new Date(request.approved_at).toLocaleDateString('it-IT')}
+                                      {formatDateSafe(request.approved_at)}
                                     </small>
                                   )}
                                 </span>
@@ -722,7 +766,7 @@ export default function GestioneFerie() {
                         {filteredBalances.map((balance) => (
                           <tr key={balance.id}>
                             <td>
-                              <strong className="text-light">{balance.employee_name}</strong>
+                              <strong className="text-light">{balance.cognome}, {balance.nome}</strong>
                             </td>
                             <td>
                               <span className="badge bg-secondary">{balance.year}</span>
@@ -754,13 +798,10 @@ export default function GestioneFerie() {
                             </td>
                             <td>
                               <div>
-                                <span className="text-light">{new Date(balance.last_updated).toLocaleDateString('it-IT')}</span>
+                                <span className="text-light">{formatDateTimeSafe(balance.last_updated).date}</span>
                                 <br />
                                 <small className="text-light">
-                                  {new Date(balance.last_updated).toLocaleTimeString('it-IT', { 
-                                    hour: '2-digit', 
-                                    minute: '2-digit' 
-                                  })}
+                                  {formatDateTimeSafe(balance.last_updated).time}
                                 </small>
                               </div>
                             </td>

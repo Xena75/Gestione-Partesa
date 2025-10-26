@@ -80,6 +80,15 @@ export default function DocumentiAutista() {
   const [notes, setNotes] = useState('');
   const [previewDocument, setPreviewDocument] = useState<EmployeeDocument | null>(null);
 
+  // Stati per modifica
+  const [editingDocument, setEditingDocument] = useState<EmployeeDocument | null>(null);
+  const [editDocumentType, setEditDocumentType] = useState('');
+  const [editDocumentName, setEditDocumentName] = useState('');
+  const [editSelectedFile, setEditSelectedFile] = useState<File | null>(null);
+  const [editExpiryDate, setEditExpiryDate] = useState('');
+  const [editNotes, setEditNotes] = useState('');
+  const [updating, setUpdating] = useState(false);
+
   useEffect(() => {
     if (employeeId) {
       loadData();
@@ -201,6 +210,98 @@ export default function DocumentiAutista() {
       alert(err instanceof Error ? err.message : 'Errore durante il caricamento');
     } finally {
       setUploading(false);
+    }
+  };
+
+  // Funzioni per gestire la modifica
+  const handleEditDocument = (document: EmployeeDocument) => {
+    setEditingDocument(document);
+    setEditDocumentType(document.document_type);
+    setEditDocumentName(document.document_name);
+    setEditExpiryDate(document.expiry_date ? document.expiry_date.split('T')[0] : '');
+    setEditNotes(document.notes || '');
+    setEditSelectedFile(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingDocument(null);
+    setEditDocumentType('');
+    setEditDocumentName('');
+    setEditExpiryDate('');
+    setEditNotes('');
+    setEditSelectedFile(null);
+  };
+
+  const handleEditFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Verifica dimensione file (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        alert('Il file è troppo grande. Dimensione massima: 10MB');
+        return;
+      }
+      
+      // Verifica tipo file
+      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+      if (!allowedTypes.includes(file.type)) {
+        alert('Tipo di file non supportato. Usa PDF, JPG o PNG');
+        return;
+      }
+      
+      setEditSelectedFile(file);
+    }
+  };
+
+  const handleUpdateDocument = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!editingDocument || !editDocumentType) {
+      alert('Specifica il tipo di documento');
+      return;
+    }
+
+    setUpdating(true);
+
+    try {
+      const formData = new FormData();
+      
+      if (editSelectedFile) {
+        formData.append('file', editSelectedFile);
+      }
+      formData.append('document_type', editDocumentType);
+      if (editDocumentName) {
+        formData.append('document_name', editDocumentName);
+      }
+      if (editExpiryDate) {
+        formData.append('expiry_date', editExpiryDate);
+      }
+      if (editNotes) {
+        formData.append('notes', editNotes);
+      }
+
+      const response = await fetch(`/api/employees/${employeeId}/documents?document_id=${editingDocument.id}`, {
+        method: 'PUT',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Errore durante l\'aggiornamento del documento');
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        await loadData();
+        handleCancelEdit();
+        alert('Documento aggiornato con successo!');
+      } else {
+        throw new Error(result.message || 'Errore durante l\'aggiornamento');
+      }
+
+    } catch (err) {
+      console.error('Errore aggiornamento:', err);
+      alert(err instanceof Error ? err.message : 'Errore durante l\'aggiornamento');
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -502,6 +603,127 @@ export default function DocumentiAutista() {
             </div>
           )}
 
+          {/* Form Modifica Documento */}
+          {editingDocument && (
+            <div className="card mb-4">
+              <div className="card-header bg-warning text-dark">
+                <h5 className="mb-0">
+                  <i className="fas fa-edit me-2"></i>
+                  Modifica Documento: {editingDocument.document_name}
+                </h5>
+              </div>
+              <div className="card-body">
+                <form onSubmit={handleUpdateDocument}>
+                  <div className="row">
+                    <div className="col-md-6 mb-3">
+                      <label htmlFor="editDocumentType" className="form-label">
+                        Tipo Documento *
+                      </label>
+                      <select
+                        id="editDocumentType"
+                        className="form-select"
+                        value={editDocumentType}
+                        onChange={(e) => setEditDocumentType(e.target.value)}
+                        required
+                      >
+                        <option value="">Seleziona tipo documento</option>
+                        {DOCUMENT_TYPES.map((type) => (
+                          <option key={type.value} value={type.value}>
+                            {type.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="col-md-6 mb-3">
+                      <label htmlFor="editDocumentName" className="form-label">
+                        Nome Documento *
+                      </label>
+                      <input
+                        type="text"
+                        id="editDocumentName"
+                        className="form-control"
+                        value={editDocumentName}
+                        onChange={(e) => setEditDocumentName(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="row">
+                    <div className="col-md-6 mb-3">
+                      <label htmlFor="editFile" className="form-label">
+                        Sostituisci File (opzionale)
+                      </label>
+                      <input
+                        type="file"
+                        id="editFile"
+                        className="form-control"
+                        onChange={handleEditFileSelect}
+                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                      />
+                      <div className="form-text">
+                        File attuale: {editingDocument.file_name}
+                        <br />
+                        Lascia vuoto per mantenere il file esistente
+                      </div>
+                    </div>
+                    <div className="col-md-6 mb-3">
+                      <label htmlFor="editExpiryDate" className="form-label">
+                        Data di Scadenza
+                      </label>
+                      <DateInput
+                        id="editExpiryDate"
+                        value={editExpiryDate}
+                        onChange={setEditExpiryDate}
+                        className="form-control"
+                      />
+                    </div>
+                  </div>
+                  <div className="mb-3">
+                    <label htmlFor="editNotes" className="form-label">
+                      Note
+                    </label>
+                    <textarea
+                      id="editNotes"
+                      className="form-control"
+                      rows={3}
+                      value={editNotes}
+                      onChange={(e) => setEditNotes(e.target.value)}
+                      placeholder="Note aggiuntive sul documento..."
+                    />
+                  </div>
+                  <div className="d-flex gap-2">
+                    <button
+                      type="submit"
+                      className="btn btn-warning"
+                      disabled={updating}
+                    >
+                      {updating ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                          Aggiornamento...
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-save me-1"></i>
+                          Salva Modifiche
+                        </>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={handleCancelEdit}
+                      disabled={updating}
+                    >
+                      <i className="fas fa-times me-1"></i>
+                      Annulla
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
           {/* Lista Documenti */}
           <div className="card">
             <div className="card-header">
@@ -617,10 +839,7 @@ export default function DocumentiAutista() {
                               <button 
                                 className="btn btn-sm btn-outline-warning"
                                 title="Modifica"
-                                onClick={() => {
-                                  // TODO: Implementare modifica documento
-                                  alert('Funzione modifica in sviluppo');
-                                }}
+                                onClick={() => handleEditDocument(doc)}
                               >
                                 <i className="fas fa-edit"></i>
                               </button>

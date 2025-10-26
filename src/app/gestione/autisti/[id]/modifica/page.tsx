@@ -35,6 +35,14 @@ interface Employee {
   driver_license_expiry?: string;
   profile_image?: string;
   foto_url?: string;
+  company_id?: number;
+  company_name?: string;
+}
+
+interface Company {
+  id: number;
+  name: string;
+  code: string;
 }
 
 
@@ -50,6 +58,7 @@ export default function ModificaDipendente() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [companies, setCompanies] = useState<Company[]>([]);
 
   // Carica i dati del dipendente
   useEffect(() => {
@@ -88,11 +97,36 @@ export default function ModificaDipendente() {
     }
   }, [employeeId]);
 
+  // Carica le società
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        const response = await fetch('/api/companies');
+        if (!response.ok) {
+          throw new Error('Errore nel caricamento delle società');
+        }
+        const data = await response.json();
+        setCompanies(data);
+      } catch (err) {
+        console.error('Errore nel caricamento delle società:', err);
+      }
+    };
+
+    fetchCompanies();
+  }, []);
+
   // Gestisce i cambiamenti nei campi del form
   const handleInputChange = (field: keyof Employee, value: string) => {
+    let processedValue: any = value;
+    
+    // Converte company_id in numero
+    if (field === 'company_id') {
+      processedValue = value ? parseInt(value, 10) : undefined;
+    }
+    
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: processedValue
     }));
     
     // Rimuove l'errore di validazione per questo campo
@@ -131,16 +165,16 @@ export default function ModificaDipendente() {
       errors.cod_fiscale = 'Il codice fiscale deve essere di 16 caratteri';
     }
 
-    // Validazione date
-    if (formData.data_nascita && !isValidItalianDate(formData.data_nascita)) {
+    // Validazione date - gestisce correttamente i valori vuoti e "-"
+    if (formData.data_nascita && formData.data_nascita !== '-' && !isValidItalianDate(formData.data_nascita)) {
       errors.data_nascita = 'Formato data non valido (DD/MM/YYYY)';
     }
 
-    if (formData.data_assunzione && !isValidItalianDate(formData.data_assunzione)) {
+    if (formData.data_assunzione && formData.data_assunzione !== '-' && !isValidItalianDate(formData.data_assunzione)) {
       errors.data_assunzione = 'Formato data non valido (DD/MM/YYYY)';
     }
 
-    if (formData.driver_license_expiry && !isValidItalianDate(formData.driver_license_expiry)) {
+    if (formData.driver_license_expiry && formData.driver_license_expiry !== '-' && !isValidItalianDate(formData.driver_license_expiry)) {
       errors.driver_license_expiry = 'Formato data non valido (DD/MM/YYYY)';
     }
 
@@ -159,12 +193,19 @@ export default function ModificaDipendente() {
 
     try {
       // Converte le date dal formato italiano al formato database prima del salvataggio
+      // Gestisce correttamente i valori "-" convertendoli in null
+      // Rimuove company_name che è solo per visualizzazione
+      const { company_name, ...formDataWithoutCompanyName } = formData;
       const dataToSave = {
-        ...formData,
-        data_nascita: formData.data_nascita ? formatDateToDatabase(formData.data_nascita) : null,
-        data_assunzione: formData.data_assunzione ? formatDateToDatabase(formData.data_assunzione) : null,
-        driver_license_expiry: formData.driver_license_expiry ? formatDateToDatabase(formData.driver_license_expiry) : null
+        ...formDataWithoutCompanyName,
+        data_nascita: (formData.data_nascita && formData.data_nascita !== '-') ? formatDateToDatabase(formData.data_nascita) : null,
+        data_assunzione: (formData.data_assunzione && formData.data_assunzione !== '-') ? formatDateToDatabase(formData.data_assunzione) : null,
+        driver_license_expiry: (formData.driver_license_expiry && formData.driver_license_expiry !== '-') ? formatDateToDatabase(formData.driver_license_expiry) : null
       };
+
+      // Log dei dati che vengono inviati per debug
+      console.log('Dati inviati al server:', dataToSave);
+      console.log('Employee ID:', employeeId);
 
       const response = await fetch(`/api/employees/${employeeId}`, {
         method: 'PUT',
@@ -174,13 +215,39 @@ export default function ModificaDipendente() {
         body: JSON.stringify(dataToSave),
       });
 
+      // Leggi la risposta come testo prima per poterla riutilizzare
+      const responseText = await response.text();
+      console.log('Risposta raw del server:', responseText);
+
       if (!response.ok) {
-        throw new Error('Errore nel salvataggio dei dati');
+        let errorData;
+        try {
+          errorData = JSON.parse(responseText);
+        } catch (jsonError) {
+          console.error('Errore nel parsing JSON della risposta di errore:', jsonError);
+          throw new Error(`Errore del server (${response.status}): ${responseText || 'Risposta vuota'}`);
+        }
+        console.error('Errore risposta server:', errorData);
+        // Mostra il messaggio di errore dettagliato se disponibile
+        const errorMessage = errorData.details || errorData.error || 'Errore nel salvataggio dei dati';
+        throw new Error(errorMessage);
+      }
+
+      // Verifica che la risposta di successo sia JSON valido
+      let successData;
+      try {
+        successData = JSON.parse(responseText);
+        console.log('Risposta di successo:', successData);
+      } catch (jsonError) {
+        console.error('Errore nel parsing JSON della risposta di successo:', jsonError);
+        console.log('Risposta come testo:', responseText);
+        // Se arriviamo qui, l'operazione è comunque riuscita (status 200)
       }
 
       // Redirect alla pagina di dettaglio
       router.push(`/gestione/autisti/${employeeId}`);
     } catch (err) {
+      console.error('Errore completo:', err);
       setError(err instanceof Error ? err.message : 'Errore sconosciuto');
     } finally {
       setSaving(false);
@@ -546,6 +613,21 @@ export default function ModificaDipendente() {
                       onChange={(e) => handleInputChange('livello', e.target.value)}
                       placeholder="Inserisci il livello"
                     />
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label text-light">Società</label>
+                    <select
+                      className="form-select bg-dark text-light border-secondary"
+                      value={formData.company_id || ''}
+                      onChange={(e) => handleInputChange('company_id', e.target.value)}
+                    >
+                      <option value="">Seleziona società</option>
+                      {companies.map((company) => (
+                        <option key={company.id} value={company.id}>
+                          {company.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div className="col-md-6 mb-3">
                     <label className="form-label text-light">Orario di Lavoro</label>
