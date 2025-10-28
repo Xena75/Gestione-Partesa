@@ -44,9 +44,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const checkAuth = async () => {
     try {
+      // Aggiungi timeout per evitare richieste che si bloccano
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 secondi timeout
+      
       const response = await fetch('/api/auth/verify', {
-        credentials: 'include'
+        credentials: 'include',
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
       
       if (response.ok) {
         const data = await response.json();
@@ -61,6 +68,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch (error) {
       console.error('Errore verifica autenticazione:', error);
       setUser(null);
+      
+      // Se l'errore è di rete o timeout, non riprovare automaticamente
+      if (error instanceof Error && (error.name === 'AbortError' || error.message.includes('fetch'))) {
+        console.log('Richiesta di verifica autenticazione interrotta o fallita');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -131,25 +143,39 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   useEffect(() => {
+    let isMounted = true;
+    
     const handleAuth = async () => {
-      await checkAuth();
+      if (isMounted) {
+        await checkAuth();
+      }
     };
 
     handleAuth();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  // Effetto per gestire i reindirizzamenti dopo il cambio dello stato utente
+  // Effetto semplificato per gestire i reindirizzamenti - SOLO dopo login riuscito
   useEffect(() => {
-    if (!isLoading) {
-      if (pathname === '/login' && user) {
-        // Se l'utente è autenticato e siamo nella pagina di login, reindirizza alla dashboard
-        router.push('/');
-      } else if (pathname !== '/login' && !user) {
-        // Se l'utente non è autenticato e non siamo nella pagina di login, reindirizza al login
-        router.push('/login');
+    // Non fare reindirizzamenti automatici se stiamo caricando
+    if (isLoading) return;
+    
+    // SOLO reindirizzamento dopo login riuscito nelle pagine di login
+    if (user && (pathname === '/login' || pathname === '/autisti/login')) {
+      if (user.role === 'driver' || user.role === 'employee') {
+        // Autisti vanno alla dashboard autisti
+        router.push('/autisti/dashboard');
+      } else if (user.role === 'admin') {
+        // Admin vanno alla dashboard normale
+        router.push('/dashboard');
       }
-      // Non fare altri redirect automatici - l'utente può navigare liberamente
     }
+    
+    // Non fare altri reindirizzamenti automatici per evitare loop
+    // La protezione delle route è gestita dal middleware
   }, [user, isLoading, pathname, router]);
 
   const value: AuthContextType = {

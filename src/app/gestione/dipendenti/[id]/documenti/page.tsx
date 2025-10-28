@@ -417,7 +417,7 @@ export default function DocumentiAutista() {
                 }
               </p>
               <div className="d-flex gap-2">
-                <Link href="/gestione/autisti" className="btn btn-primary">
+                <Link href="/gestione/dipendenti" className="btn btn-primary">
                   <i className="fas fa-users me-1"></i>
                   Vai alla lista autisti
                 </Link>
@@ -446,10 +446,10 @@ export default function DocumentiAutista() {
               <nav aria-label="breadcrumb">
                 <ol className="breadcrumb">
                   <li className="breadcrumb-item">
-                    <Link href="/gestione/autisti">Gestione Autisti</Link>
+                    <Link href="/gestione/dipendenti">Gestione Dipendenti</Link>
                   </li>
                   <li className="breadcrumb-item">
-                    <Link href={`/gestione/autisti/${employee.id}`}>
+                    <Link href={`/gestione/dipendenti/${employee.id}`}>
                       {employee.cognome}, {employee.nome}
                     </Link>
                   </li>
@@ -471,7 +471,7 @@ export default function DocumentiAutista() {
                 <i className="fas fa-plus me-1"></i>
                 Carica Documento
               </button>
-              <Link href={`/gestione/autisti/${employee.id}`} className="btn btn-outline-secondary">
+              <Link href={`/gestione/dipendenti/${employee.id}`} className="btn btn-outline-secondary">
                 <i className="fas fa-arrow-left me-1"></i>
                 Torna al Profilo
               </Link>

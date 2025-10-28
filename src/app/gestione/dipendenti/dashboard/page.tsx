@@ -585,7 +585,7 @@ export default function Dashboard() {
                   <i className="fas fa-exclamation-triangle me-2"></i>
                   Documenti Scaduti - Priorità Alta
                 </h6>
-                <Link href="/gestione/autisti/documenti" className="btn btn-sm btn-outline-primary">
+                <Link href="/gestione/dipendenti/documenti" className="btn btn-sm btn-outline-primary">
                   <i className="fas fa-eye me-1"></i>
                   Vedi Tutti
                 </Link>
@@ -633,7 +633,7 @@ export default function Dashboard() {
                             </td>
                             <td>
                               <Link 
-                                href={`/gestione/autisti/${doc.employee_id}/documenti`}
+                                href={`/gestione/dipendenti/${doc.employee_id}/documenti`}
                                 className="btn btn-sm btn-outline-primary"
                               >
                                 <i className="fas fa-edit"></i>
@@ -668,7 +668,7 @@ export default function Dashboard() {
                     <option value={15}>Prossimi 15 giorni</option>
                     <option value={30}>Prossimi 30 giorni</option>
                   </select>
-                  <Link href="/gestione/autisti/documenti" className="btn btn-sm btn-outline-primary">
+                  <Link href="/gestione/dipendenti/documenti" className="btn btn-sm btn-outline-primary">
                     <i className="fas fa-eye me-1"></i>
                     Vedi Tutti
                   </Link>
@@ -714,7 +714,7 @@ export default function Dashboard() {
                             </td>
                             <td>
                               <Link 
-                                href={`/gestione/autisti/${doc.employee_id}/documenti`}
+                                href={`/gestione/dipendenti/${doc.employee_id}/documenti`}
                                 className="btn btn-sm btn-outline-primary"
                               >
                                 <i className="fas fa-edit"></i>
@@ -740,7 +740,7 @@ export default function Dashboard() {
                   <i className="fas fa-calendar-alt me-2"></i>
                   Richieste Ferie Pendenti
                 </h6>
-                <Link href="/gestione/autisti/ferie" className="btn btn-sm btn-outline-primary">
+                <Link href="/gestione/dipendenti/ferie" className="btn btn-sm btn-outline-primary">
                   <i className="fas fa-eye me-1"></i>
                   Gestisci
                 </Link>
@@ -825,25 +825,25 @@ export default function Dashboard() {
               <div className="card-body">
                 <div className="row">
                   <div className="col-md-3 mb-3">
-                    <Link href="/gestione/autisti/nuovo" className="btn btn-outline-primary w-100">
+                    <Link href="/gestione/dipendenti/nuovo" className="btn btn-outline-primary w-100">
                       <i className="fas fa-user-plus fa-2x mb-2 d-block"></i>
                       Aggiungi Autista
                     </Link>
                   </div>
                   <div className="col-md-3 mb-3">
-                    <Link href="/gestione/autisti/documenti" className="btn btn-outline-info w-100">
+                    <Link href="/gestione/dipendenti/documenti" className="btn btn-outline-info w-100">
                       <i className="fas fa-file-upload fa-2x mb-2 d-block"></i>
                       Carica Documenti
                     </Link>
                   </div>
                   <div className="col-md-3 mb-3">
-                    <Link href="/gestione/autisti/ferie" className="btn btn-outline-success w-100">
+                    <Link href="/gestione/dipendenti/ferie" className="btn btn-outline-success w-100">
                       <i className="fas fa-calendar-check fa-2x mb-2 d-block"></i>
                       Gestisci Ferie
                     </Link>
                   </div>
                   <div className="col-md-3 mb-3">
-                    <Link href="/gestione/autisti/report" className="btn btn-outline-warning w-100">
+                    <Link href="/gestione/dipendenti/report" className="btn btn-outline-warning w-100">
                       <i className="fas fa-chart-bar fa-2x mb-2 d-block"></i>
                       Report e Statistiche
                     </Link>

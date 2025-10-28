@@ -202,7 +202,7 @@ export default function NuovoAutista() {
       const result = await response.json();
       if (result.success) {
         alert('Dipendente creato con successo!');
-        router.push(`/gestione/autisti/${result.data.id}`);
+        router.push(`/gestione/dipendenti/${result.data.id}`);
       } else {
         throw new Error(result.message || 'Errore durante la creazione');
       }
@@ -225,7 +225,7 @@ export default function NuovoAutista() {
               <nav aria-label="breadcrumb">
                 <ol className="breadcrumb">
                   <li className="breadcrumb-item">
-                    <Link href="/gestione/autisti">Gestione Autisti</Link>
+                    <Link href="/gestione/dipendenti">Gestione Dipendenti</Link>
                   </li>
                   <li className="breadcrumb-item active" aria-current="page">
                     Nuovo Dipendente
@@ -238,7 +238,7 @@ export default function NuovoAutista() {
               </h1>
             </div>
             <div>
-              <Link href="/gestione/autisti" className="btn btn-outline-secondary">
+              <Link href="/gestione/dipendenti" className="btn btn-outline-secondary">
                 <i className="fas fa-arrow-left me-1"></i>
                 Torna alla Lista
               </Link>
@@ -616,7 +616,7 @@ export default function NuovoAutista() {
                 <div className="card">
                   <div className="card-body">
                     <div className="d-flex justify-content-end">
-                      <Link href="/gestione/autisti" className="btn btn-outline-secondary me-2">
+                      <Link href="/gestione/dipendenti" className="btn btn-outline-secondary me-2">
                         <i className="fas fa-times me-1"></i>
                         Annulla
                       </Link>

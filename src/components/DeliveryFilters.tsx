@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { DeliveryFilters as DeliveryFiltersType } from '@/lib/data-gestione';
+import DateInput from './DateInput';
 
 interface FilterOptions {
   depositi: string[];
@@ -282,12 +283,11 @@ export default function DeliveryFilters() {
 
             <div className="col-md-2">
               <label className="form-label">Data Da</label>
-              <input
-                type="date"
-                className="form-control"
-                placeholder="gg/mm/aaaa"
+              <DateInput
                 value={filters.dataDa}
-                onChange={(e) => handleInputChange('dataDa', e.target.value)}
+                onChange={(isoValue) => handleInputChange('dataDa', isoValue)}
+                placeholder="gg/mm/aaaa"
+                className="form-control"
               />
             </div>
 
@@ -309,12 +309,11 @@ export default function DeliveryFilters() {
 
             <div className="col-md-2">
               <label className="form-label">Data A</label>
-              <input
-                type="date"
-                className="form-control"
-                placeholder="gg/mm/aaaa"
+              <DateInput
                 value={filters.dataA}
-                onChange={(e) => handleInputChange('dataA', e.target.value)}
+                onChange={(isoValue) => handleInputChange('dataA', isoValue)}
+                placeholder="gg/mm/aaaa"
+                className="form-control"
               />
             </div>
 

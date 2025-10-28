@@ -19,9 +19,13 @@ export async function GET(
     const resolvedParams = await params;
     const employeeId = decodeURIComponent(resolvedParams.id);
     
+    console.log('API GET documents - Employee ID ricevuto:', employeeId);
+    
     // Verifica che il dipendente esista
     const employee = await getEmployeeById(employeeId);
+    console.log('API GET documents - Employee trovato:', employee ? 'SI' : 'NO');
     if (!employee) {
+      console.log('API GET documents - Dipendente non trovato per ID:', employeeId);
       return NextResponse.json(
         { error: 'Dipendente non trovato' },
         { status: 404 }
@@ -56,9 +60,13 @@ export async function POST(
     const resolvedParams = await params;
     const employeeId = decodeURIComponent(resolvedParams.id);
     
+    console.log('API POST documents - Employee ID ricevuto:', employeeId);
+    
     // Verifica che il dipendente esista
     const employee = await getEmployeeById(employeeId);
+    console.log('API POST documents - Employee trovato:', employee ? 'SI' : 'NO');
     if (!employee) {
+      console.log('API POST documents - Dipendente non trovato per ID:', employeeId);
       return NextResponse.json(
         { error: 'Dipendente non trovato' },
         { status: 404 }

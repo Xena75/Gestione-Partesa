@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.33.1
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.33.2
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -82,6 +82,18 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Tipi documento**: Supporto patente, CQC, ADR, contratto lavoro, certificato medico, corsi formazione
 - **Database ottimizzato**: Tabella `employee_documents` con indici per performance e foreign key
 - **Aggiornamento automatico**: Sistema automatico di aggiornamento stato documenti basato su scadenze
+
+### 🗓️ **Correzioni Filtri e Formattazione Date** ⭐ **NUOVO v2.33.2**
+- **Filtri vista raggruppata**: Risolto problema filtri mese non funzionanti nella vista raggruppata gestione consegne
+- **Parametro mese API**: Aggiunto estrazione parametro 'mese' nell'API /api/gestione/route.ts
+- **Parametro mese frontend**: Aggiunto 'mese' all'array filterParams in DeliveryTable.tsx per passaggio corretto all'API
+- **Formato date tabella**: Migliorata formattazione date con opzioni specifiche per formato gg/mm/aaaa
+- **Campi filtro data**: Sostituiti input type="date" con componente DateInput personalizzato nei filtri
+- **Validazione date**: Auto-completamento e validazione robusta nei campi data filtri
+- **Coerenza formato**: Uniformato formato date in tutta l'applicazione per conformità italiana
+- **UX migliorata**: Eliminati problemi di visualizzazione date con formato browser nativo
+- **Filtri completi**: Tutti i filtri incluso mese funzionano correttamente in vista raggruppata
+- **Coerenza filtri**: Parametri URL passati correttamente dall'interfaccia all'API
 
 ### 🔧 **Ottimizzazioni UI e Correzioni** ⭐ **NUOVO v2.33.1**
 - **Correzione link ferie**: Risolto errore 404 nel link "Vedi Tutte" dalla pagina autista (da `/gestione/autisti/ferie` a `/gestione/employees/ferie`)

@@ -44,6 +44,9 @@ export async function GET(request: NextRequest) {
     
     const dataA = searchParams.get('dataA');
     if (dataA) filters.dataA = dataA;
+    
+    const mese = searchParams.get('mese');
+    if (mese) filters.mese = mese;
 
     // Estrai i parametri di ordinamento
     const sortBy = searchParams.get('sortBy');

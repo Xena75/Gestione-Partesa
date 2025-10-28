@@ -60,7 +60,7 @@ export default function DeliveryTable({ viewType }: DeliveryTableProps) {
         params.set('sortOrder', sortOrder);
         
         // Aggiungi tutti i parametri dei filtri
-        const filterParams = ['viaggio', 'ordine', 'bu', 'divisione', 'deposito', 'vettore', 'tipologia', 'codCliente', 'cliente', 'dataDa', 'dataA'];
+        const filterParams = ['viaggio', 'ordine', 'bu', 'divisione', 'deposito', 'vettore', 'tipologia', 'codCliente', 'cliente', 'dataDa', 'dataA', 'mese'];
         filterParams.forEach(param => {
           const value = searchParams?.get(param);
           if (value) params.set(param, value);
@@ -158,7 +158,11 @@ export default function DeliveryTable({ viewType }: DeliveryTableProps) {
   // IMPORTANTE: Mostra esattamente la data presente nel database senza conversioni timezone
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('it-IT');
+    return date.toLocaleDateString('it-IT', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
   };
 
   // Funzione per formattare le valute

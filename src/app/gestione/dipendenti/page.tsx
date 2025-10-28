@@ -211,11 +211,11 @@ export default function AutistiPage() {
               Gestione Autisti
             </h1>
             <div>
-              <Link href="/gestione/autisti/dashboard" className="btn btn-outline-info me-2">
+              <Link href="/gestione/dipendenti/dashboard" className="btn btn-outline-info me-2">
                 <i className="fas fa-tachometer-alt me-1"></i>
                 Dashboard
               </Link>
-              <Link href="/gestione/autisti/nuovo" className="btn btn-primary">
+              <Link href="/gestione/dipendenti/nuovo" className="btn btn-primary">
                 <i className="fas fa-plus me-1"></i>
                 Nuovo Autista
               </Link>
@@ -429,21 +429,21 @@ export default function AutistiPage() {
                           <td>
                             <div className="btn-group" role="group">
                               <Link 
-                                href={`/gestione/autisti/${employee.id}`}
+                                href={`/gestione/dipendenti/${employee.id}`}
                                 className="btn btn-sm btn-outline-primary"
                                 title="Visualizza dettagli"
                               >
                                 <i className="fas fa-eye"></i>
                               </Link>
                               <Link 
-                                href={`/gestione/autisti/${employee.id}/documenti`}
+                                href={`/gestione/dipendenti/${employee.id}/documenti`}
                                 className="btn btn-sm btn-outline-info"
                                 title="Gestisci documenti"
                               >
                                 <i className="fas fa-file-alt"></i>
                               </Link>
                               <Link 
-                                href={`/gestione/autisti/${employee.id}/modifica`}
+                                href={`/gestione/dipendenti/${employee.id}/modifica`}
                                 className="btn btn-sm btn-outline-warning"
                                 title="Modifica"
                               >

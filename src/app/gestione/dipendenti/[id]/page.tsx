@@ -10,6 +10,7 @@ interface Employee {
   cognome: string;
   nominativo: string;
   email: string;
+  login_email?: string;
   email_aziendale?: string;
   cellulare: string;
   indirizzo?: string;
@@ -103,8 +104,16 @@ export default function AutistaDettaglio() {
     reason: ''
   });
   const [submittingLeaveRequest, setSubmittingLeaveRequest] = useState(false);
-  
 
+  // Stati per gestione credenziali
+  const [hasPassword, setHasPassword] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    password: '',
+    confirmPassword: ''
+  });
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
 
   useEffect(() => {
     if (employeeId) {
@@ -121,7 +130,6 @@ export default function AutistaDettaglio() {
       const employeeResponse = await fetch(`/api/employees/${employeeId}`);
       if (!employeeResponse.ok) {
         if (employeeResponse.status === 404) {
-          // Non loggare come errore, è un caso previsto
           setError('Dipendente non trovato');
           return;
         } else {
@@ -164,8 +172,16 @@ export default function AutistaDettaglio() {
         }
       }
 
+      // Carica stato credenziali per tutti i dipendenti
+      if (employeeData.data) {
+        const passwordResponse = await fetch(`/api/employees/${employeeId}/password`);
+        if (passwordResponse.ok) {
+          const passwordData = await passwordResponse.json();
+          setHasPassword(passwordData.has_password || false);
+        }
+      }
+
     } catch (err) {
-      // Logga solo errori imprevisti
       console.error('Errore imprevisto nel caricamento dati dipendente:', err);
       setError(err instanceof Error ? err.message : 'Errore sconosciuto');
     } finally {
@@ -211,138 +227,58 @@ export default function AutistaDettaglio() {
     }
   };
 
-  // Funzioni helper per i badge delle richieste ferie
-  const getLeaveTypeBadge = (leaveType: string) => {
-    switch (leaveType) {
-      case 'ferie':
-        return <span className="badge bg-primary">Ferie</span>;
-      case 'malattia':
-        return <span className="badge bg-danger">Malattia</span>;
-      case 'permesso':
-        return <span className="badge bg-info">Permesso</span>;
-      case 'congedo':
-        return <span className="badge bg-warning">Congedo</span>;
-      default:
-        return <span className="badge bg-secondary">{leaveType}</span>;
-    }
-  };
-
-  const getLeaveStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return <span className="badge bg-warning">In Attesa</span>;
-      case 'approved':
-        return <span className="badge bg-success">Approvata</span>;
-      case 'rejected':
-        return <span className="badge bg-danger">Rifiutata</span>;
-      case 'cancelled':
-        return <span className="badge bg-secondary">Annullata</span>;
-      default:
-        return <span className="badge bg-secondary">{status}</span>;
-    }
-  };
-
-  // Funzione per calcolare i giorni lavorativi
-  const calculateWorkingDays = (startDate: string, endDate: string): number => {
-    if (!startDate || !endDate) return 0;
-    
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    let workingDays = 0;
-    
-    for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
-      const dayOfWeek = date.getDay();
-      // Esclude sabato (6) e domenica (0)
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-        workingDays++;
-      }
-    }
-    
-    return workingDays;
-  };
-
-  // Funzione per gestire l'invio della richiesta ferie
-  const handleLeaveRequestSubmit = async (e: React.FormEvent) => {
+  // Funzioni per gestione credenziali
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!employee) return;
-    
-    // Validazioni
-    if (!leaveRequestForm.start_date || !leaveRequestForm.end_date) {
-      alert('Seleziona le date di inizio e fine');
+    if (passwordForm.password !== passwordForm.confirmPassword) {
+      setPasswordMessage({type: 'error', text: 'Le password non coincidono'});
       return;
     }
     
-    const startDate = new Date(leaveRequestForm.start_date);
-    const endDate = new Date(leaveRequestForm.end_date);
-    
-    if (startDate > endDate) {
-      alert('La data di inizio non può essere successiva alla data di fine');
+    if (passwordForm.password.length < 6) {
+      setPasswordMessage({type: 'error', text: 'La password deve essere di almeno 6 caratteri'});
       return;
-    }
-    
-    const workingDays = calculateWorkingDays(leaveRequestForm.start_date, leaveRequestForm.end_date);
-    
-    if (workingDays === 0) {
-      alert('Il periodo selezionato non include giorni lavorativi');
-      return;
-    }
-    
-    // Verifica giorni disponibili per le ferie
-    if (leaveRequestForm.leave_type === 'ferie' && leaveBalance) {
-      if (workingDays > leaveBalance.vacation_days_remaining) {
-        alert(`Non hai abbastanza giorni di ferie disponibili. Rimanenti: ${leaveBalance.vacation_days_remaining}, Richiesti: ${workingDays}`);
-        return;
-      }
     }
     
     try {
-      setSubmittingLeaveRequest(true);
+      setPasswordLoading(true);
+      setPasswordMessage(null);
       
-      const requestData = {
-        employee_id: employee.id,
-        leave_type: leaveRequestForm.leave_type,
-        start_date: leaveRequestForm.start_date,
-        end_date: leaveRequestForm.end_date,
-        days_requested: workingDays,
-        reason: leaveRequestForm.reason || null
-      };
-      
-      const response = await fetch('/api/employees/leave', {
-        method: 'POST',
+      const response = await fetch(`/api/employees/${employeeId}/password`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestData),
+        body: JSON.stringify({
+          password: passwordForm.password
+        }),
       });
       
       const result = await response.json();
       
       if (result.success) {
-        alert('Richiesta ferie inviata con successo!');
-        setShowLeaveRequestModal(false);
-        setLeaveRequestForm({
-          leave_type: 'ferie',
-          start_date: '',
-          end_date: '',
-          reason: ''
-        });
-        // Ricarica i dati per aggiornare il bilancio
-        loadEmployeeData();
+        setPasswordMessage({type: 'success', text: 'Password impostata con successo!'});
+        setHasPassword(true);
+        setShowPasswordForm(false);
+        setPasswordForm({password: '', confirmPassword: ''});
       } else {
-        alert(`Errore nell'invio della richiesta: ${result.error}`);
+        setPasswordMessage({type: 'error', text: result.error || 'Errore nell\'impostazione della password'});
       }
       
     } catch (error) {
-      console.error('Errore nell\'invio della richiesta ferie:', error);
-      alert('Errore nell\'invio della richiesta ferie');
+      console.error('Errore nell\'impostazione password:', error);
+      setPasswordMessage({type: 'error', text: 'Errore nell\'impostazione della password'});
     } finally {
-      setSubmittingLeaveRequest(false);
+      setPasswordLoading(false);
     }
   };
 
-
-
+  const resetPasswordForm = () => {
+    setShowPasswordForm(false);
+    setPasswordForm({password: '', confirmPassword: ''});
+    setPasswordMessage(null);
+  };
 
   if (loading) {
     return (
@@ -351,7 +287,7 @@ export default function AutistaDettaglio() {
           <div className="spinner-border text-primary" role="status">
             <span className="visually-hidden">Caricamento...</span>
           </div>
-          <p className="mt-3 text-light">Caricamento dettagli autista...</p>
+          <p className="mt-3 text-light">Caricamento dettagli dipendente...</p>
         </div>
       </div>
     );
@@ -387,7 +323,7 @@ export default function AutistaDettaglio() {
               <nav aria-label="breadcrumb">
                 <ol className="breadcrumb">
                   <li className="breadcrumb-item">
-                    <Link href="/gestione/autisti">Gestione Autisti</Link>
+                    <Link href="/gestione/dipendenti">Gestione Dipendenti</Link>
                   </li>
                   <li className="breadcrumb-item active" aria-current="page">
                     {employee.nome} {employee.cognome}
@@ -404,13 +340,13 @@ export default function AutistaDettaglio() {
             </div>
             <div>
               <Link 
-                href={`/gestione/autisti/${employeeId}/modifica`}
+                href={`/gestione/dipendenti/${employeeId}/modifica`}
                 className="btn btn-outline-warning me-2"
               >
                 <i className="fas fa-edit me-1"></i>
                 Modifica
               </Link>
-              <Link href="/gestione/autisti" className="btn btn-outline-secondary">
+              <Link href="/gestione/dipendenti" className="btn btn-outline-secondary">
                 <i className="fas fa-arrow-left me-1"></i>
                 Torna alla lista
               </Link>
@@ -502,33 +438,7 @@ export default function AutistaDettaglio() {
                             </p>
                           </div>
                           <div className="col-md-6 mb-3">
-                            <label className="form-label text-light">Titolo di Studio</label>
-                            <p className="text-light">
-                              {employee.titolo_studio || <span className="text-secondary">Non disponibile</span>}
-                            </p>
-                          </div>
-                          <div className="col-md-6 mb-3">
-                            <label className="form-label text-light">Permesso di Soggiorno</label>
-                            <p className="text-light">
-                              {employee.permesso_soggiorno || <span className="text-secondary">Non disponibile</span>}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Contatti */}
-                    <div className="card mt-4">
-                      <div className="card-header">
-                        <h5 className="mb-0">
-                          <i className="fas fa-address-book me-2"></i>
-                          Contatti
-                        </h5>
-                      </div>
-                      <div className="card-body">
-                        <div className="row">
-                          <div className="col-md-6 mb-3">
-                            <label className="form-label text-light">Email Personale</label>
+                            <label className="form-label text-light">Email</label>
                             <p className="text-light">
                               {employee.email ? (
                                 <a href={`mailto:${employee.email}`} className="text-info text-decoration-none">
@@ -587,12 +497,12 @@ export default function AutistaDettaglio() {
                       </div>
                     </div>
 
-                    {/* Dati Contrattuali */}
+                    {/* Informazioni Lavorative */}
                     <div className="card mt-4">
                       <div className="card-header">
                         <h5 className="mb-0">
                           <i className="fas fa-briefcase me-2"></i>
-                          Dati Contrattuali
+                          Informazioni Lavorative
                         </h5>
                       </div>
                       <div className="card-body">
@@ -622,7 +532,7 @@ export default function AutistaDettaglio() {
                             </p>
                           </div>
                           <div className="col-md-6 mb-3">
-                            <label className="form-label text-light">Società</label>
+                            <label className="form-label text-light">Azienda</label>
                             <p className="text-light">
                               {employee.company_name ? (
                                 <span className="badge bg-primary">{employee.company_name}</span>
@@ -731,16 +641,16 @@ export default function AutistaDettaglio() {
                     )}
 
                     {/* Card Stato */}
-                    <div className="card">
+                    <div className="card mb-4">
                       <div className="card-header">
                         <h5 className="mb-0">
-                          <i className="fas fa-info me-2"></i>
+                          <i className="fas fa-info-circle me-2"></i>
                           Stato
                         </h5>
                       </div>
                       <div className="card-body">
                         <div className="mb-3">
-                          <label className="form-label text-light">Tipo Dipendente</label>
+                          <label className="form-label text-light">Tipo</label>
                           <div>
                             {employee.is_driver === 1 ? (
                               <span className="badge bg-primary">Autista</span>
@@ -773,27 +683,146 @@ export default function AutistaDettaglio() {
                       <div className="card-body">
                         <div className="d-grid gap-2">
                           <Link 
-                            href={`/gestione/autisti/${employee.id}/documenti`}
+                            href={`/gestione/dipendenti/${employee.id}/documenti`}
                             className="btn btn-outline-info"
                           >
                             <i className="fas fa-file-alt me-1"></i>
                             Gestisci Documenti
                           </Link>
-                          <button 
-                            className="btn btn-outline-success"
-                            onClick={() => setShowLeaveRequestModal(true)}
-                          >
-                            <i className="fas fa-calendar-plus me-1"></i>
-                            Richiedi Ferie
-                          </button>
                           <Link 
-                            href={`/gestione/autisti/${employeeId}/modifica`}
+                            href={`/gestione/dipendenti/${employeeId}/modifica`}
                             className="btn btn-outline-warning"
                           >
                             <i className="fas fa-edit me-1"></i>
                             Modifica Dati
                           </Link>
                         </div>
+                      </div>
+                    </div>
+
+                    {/* Credenziali di Accesso - Per tutti i dipendenti */}
+                    <div className="card mt-4">
+                      <div className="card-header">
+                        <h5 className="mb-0">
+                          <i className="fas fa-key me-2"></i>
+                          Credenziali di Accesso
+                        </h5>
+                      </div>
+                      <div className="card-body">
+                        <div className="row">
+                          <div className="col-md-6 mb-3">
+                            <label className="form-label text-light">Email Personale</label>
+                            <p className="text-light">
+                              {employee.email ? (
+                                <span>{employee.email}</span>
+                              ) : (
+                                <span className="text-secondary">Non disponibile</span>
+                              )}
+                            </p>
+                          </div>
+                          <div className="col-md-6 mb-3">
+                            <label className="form-label text-light">Email di Accesso</label>
+                            <p className="text-light">
+                              {employee.login_email ? (
+                                <span>{employee.login_email}</span>
+                              ) : (
+                                <span className="text-warning">
+                                  <i className="fas fa-exclamation-triangle me-1"></i>
+                                  Non configurata
+                                </span>
+                              )}
+                            </p>
+                            {!employee.login_email && (
+                              <small className="text-secondary">
+                                L'email di accesso è necessaria per il login al sistema
+                              </small>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="mb-3">
+                          <label className="form-label text-light">Stato Password</label>
+                          <div>
+                            {hasPassword ? (
+                              <span className="badge bg-success">Configurata</span>
+                            ) : (
+                              <span className="badge bg-warning">Non configurata</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {passwordMessage && (
+                          <div className={`alert alert-${passwordMessage.type === 'success' ? 'success' : 'danger'} alert-sm`}>
+                            {passwordMessage.text}
+                          </div>
+                        )}
+
+                        {!showPasswordForm ? (
+                          <div className="d-grid">
+                            <button 
+                              className="btn btn-outline-primary btn-sm"
+                              onClick={() => setShowPasswordForm(true)}
+                            >
+                              <i className="fas fa-key me-1"></i>
+                              {hasPassword ? 'Cambia Password' : 'Imposta Password'}
+                            </button>
+                          </div>
+                        ) : (
+                          <form onSubmit={handlePasswordSubmit}>
+                            <div className="mb-3">
+                              <label className="form-label text-light">Nuova Password</label>
+                              <input
+                                type="password"
+                                className="form-control form-control-sm bg-dark text-light border-secondary"
+                                value={passwordForm.password}
+                                onChange={(e) => setPasswordForm(prev => ({...prev, password: e.target.value}))}
+                                placeholder="Inserisci la password"
+                                required
+                                minLength={6}
+                              />
+                            </div>
+                            <div className="mb-3">
+                              <label className="form-label text-light">Conferma Password</label>
+                              <input
+                                type="password"
+                                className="form-control form-control-sm bg-dark text-light border-secondary"
+                                value={passwordForm.confirmPassword}
+                                onChange={(e) => setPasswordForm(prev => ({...prev, confirmPassword: e.target.value}))}
+                                placeholder="Conferma la password"
+                                required
+                                minLength={6}
+                              />
+                            </div>
+                            <div className="d-grid gap-2">
+                              <button 
+                                type="submit" 
+                                className="btn btn-primary btn-sm"
+                                disabled={passwordLoading}
+                              >
+                                {passwordLoading ? (
+                                  <>
+                                    <span className="spinner-border spinner-border-sm me-1"></span>
+                                    Salvando...
+                                  </>
+                                ) : (
+                                  <>
+                                    <i className="fas fa-save me-1"></i>
+                                    Salva Password
+                                  </>
+                                )}
+                              </button>
+                              <button 
+                                type="button" 
+                                className="btn btn-outline-secondary btn-sm"
+                                onClick={resetPasswordForm}
+                                disabled={passwordLoading}
+                              >
+                                <i className="fas fa-times me-1"></i>
+                                Annulla
+                              </button>
+                            </div>
+                          </form>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -811,11 +840,11 @@ export default function AutistaDettaglio() {
                       Documenti ({documents.length})
                     </h5>
                     <Link 
-                      href={`/gestione/autisti/${employee.id}/documenti`}
-                      className="btn btn-primary"
+                      href={`/gestione/dipendenti/${employee.id}/documenti`}
+                      className="btn btn-primary btn-sm"
                     >
                       <i className="fas fa-plus me-1"></i>
-                      Carica Documento
+                      Gestisci Documenti
                     </Link>
                   </div>
                   <div className="card-body">
@@ -825,7 +854,7 @@ export default function AutistaDettaglio() {
                         <h5 className="text-light">Nessun documento caricato</h5>
                         <p className="text-light">Carica i documenti necessari per questo dipendente</p>
                         <Link 
-                          href={`/gestione/autisti/${employee.id}/documenti`}
+                          href={`/gestione/dipendenti/${employee.id}/documenti`}
                           className="btn btn-primary"
                         >
                           <i className="fas fa-plus me-1"></i>
@@ -834,59 +863,43 @@ export default function AutistaDettaglio() {
                       </div>
                     ) : (
                       <div className="table-responsive">
-                        <table className="table table-hover table-dark">
+                        <table className="table table-dark table-striped">
                           <thead>
                             <tr>
-                              <th className="text-light">Tipo Documento</th>
-                              <th className="text-light">Nome File</th>
-                              <th className="text-light">Scadenza</th>
-                              <th className="text-light">Stato</th>
-                              <th className="text-light">Caricato il</th>
-                              <th className="text-light">Azioni</th>
+                              <th>Tipo Documento</th>
+                              <th>Nome File</th>
+                              <th>Data Scadenza</th>
+                              <th>Stato</th>
+                              <th>Caricato il</th>
                             </tr>
                           </thead>
                           <tbody>
                             {documents.map((doc) => (
                               <tr key={doc.id}>
                                 <td>
-                                  <span className="badge bg-secondary">
+                                  <span className="badge bg-info">
                                     {doc.document_type}
                                   </span>
                                 </td>
-                                <td className="text-light">{doc.file_name}</td>
-                                <td className="text-light">
-                                  {doc.expiry_date ? 
-                                    new Date(doc.expiry_date).toLocaleDateString('it-IT') : 
-                                    <span className="text-secondary">-</span>
-                                  }
-                                </td>
-                                <td>{getDocumentStatusBadge(doc.status)}</td>
-                                <td className="text-light">
-                                  {new Date(doc.uploaded_at).toLocaleDateString('it-IT')}
+                                <td>
+                                  <div>
+                                    <strong className="text-light">{doc.file_name}</strong>
+                                  </div>
                                 </td>
                                 <td>
-                                  <div className="btn-group" role="group">
-                                    <button 
-                                      className="btn btn-sm btn-outline-primary"
-                                      title="Visualizza"
-                                      onClick={() => {
-                                        // TODO: Implementare visualizzazione documento
-                                        alert('Funzione visualizzazione in sviluppo');
-                                      }}
-                                    >
-                                      <i className="fas fa-eye"></i>
-                                    </button>
-                                    <button 
-                                      className="btn btn-sm btn-outline-danger"
-                                      title="Elimina"
-                                      onClick={() => {
-                                        // TODO: Implementare eliminazione documento
-                                        alert('Funzione eliminazione in sviluppo');
-                                      }}
-                                    >
-                                      <i className="fas fa-trash"></i>
-                                    </button>
-                                  </div>
+                                  {doc.expiry_date ? (
+                                    <div>
+                                      <span className="text-light">{formatDate(doc.expiry_date)}</span>
+                                    </div>
+                                  ) : (
+                                    <span className="text-secondary">-</span>
+                                  )}
+                                </td>
+                                <td>{getDocumentStatusBadge(doc.status)}</td>
+                                <td>
+                                  <small className="text-light">
+                                    {formatDate(doc.uploaded_at)}
+                                  </small>
                                 </td>
                               </tr>
                             ))}
@@ -903,148 +916,136 @@ export default function AutistaDettaglio() {
             {activeTab === 'leave' && (
               <div className="tab-pane fade show active">
                 <div className="row">
-                  <div className="col-lg-6">
-                    <div className="card">
+                  <div className="col-md-6">
+                    {/* Bilancio Ferie */}
+                    <div className="card mb-4">
                       <div className="card-header">
                         <h5 className="mb-0">
-                          <i className="fas fa-chart-pie me-2"></i>
+                          <i className="fas fa-calendar-check me-2"></i>
                           Bilancio Ferie {new Date().getFullYear()}
                         </h5>
                       </div>
                       <div className="card-body">
                         {leaveBalance ? (
-                          <div>
-                            <div className="row text-center mb-4">
-                              <div className="col-4">
-                                <div className="border-end">
-                                  <h4 className="text-primary">{leaveBalance.vacation_days_total}</h4>
-                                  <small className="text-light">Totali</small>
-                                </div>
-                              </div>
-                              <div className="col-4">
-                                <div className="border-end">
-                                  <h4 className="text-warning">{leaveBalance.vacation_days_used}</h4>
-                                  <small className="text-light">Utilizzate</small>
-                                </div>
-                              </div>
-                              <div className="col-4">
-                                <h4 className="text-success">{leaveBalance.vacation_days_remaining}</h4>
-                                <small className="text-light">Rimanenti</small>
+                          <div className="row text-center">
+                            <div className="col-4">
+                              <div className="border-end">
+                                <h4 className="text-primary mb-1">{leaveBalance.vacation_days_total}</h4>
+                                <small className="text-light">Totali</small>
                               </div>
                             </div>
-                            
-                            <div className="progress mb-3" style={{ height: '20px' }}>
-                              <div 
-                                className="progress-bar bg-warning" 
-                                role="progressbar" 
-                                style={{ 
-                                  width: `${(leaveBalance.vacation_days_used / leaveBalance.vacation_days_total) * 100}%` 
-                                }}
-                              >
-                                {Math.round((leaveBalance.vacation_days_used / leaveBalance.vacation_days_total) * 100)}%
+                            <div className="col-4">
+                              <div className="border-end">
+                                <h4 className="text-warning mb-1">{leaveBalance.vacation_days_used}</h4>
+                                <small className="text-light">Utilizzate</small>
                               </div>
                             </div>
-
-                            <div className="row">
-                              <div className="col-6">
-                                <small className="text-light">Giorni malattia utilizzati:</small>
-                                <div className="fw-bold text-light">{leaveBalance.sick_days_used}</div>
-                              </div>
-                              <div className="col-6">
-                                <small className="text-light">Permessi personali utilizzati:</small>
-                                <div className="fw-bold text-light">{leaveBalance.personal_days_used}</div>
-                              </div>
+                            <div className="col-4">
+                              <h4 className="text-success mb-1">{leaveBalance.vacation_days_remaining}</h4>
+                              <small className="text-light">Rimanenti</small>
                             </div>
                           </div>
                         ) : (
-                          <div className="text-center py-4">
-                            <i className="fas fa-calendar-times fa-3x text-secondary mb-3"></i>
-                            <h5 className="text-light">Nessun bilancio ferie</h5>
-                            <p className="text-light">Il bilancio ferie per l'anno corrente non è stato ancora configurato</p>
-                          </div>
+                          <p className="text-light text-center">Nessun bilancio ferie disponibile</p>
                         )}
                       </div>
                     </div>
                   </div>
-
-                  <div className="col-lg-6">
-                    <div className="card">
-                      <div className="card-header d-flex justify-content-between align-items-center">
+                  
+                  <div className="col-md-6">
+                    {/* Statistiche Permessi */}
+                    <div className="card mb-4">
+                      <div className="card-header">
                         <h5 className="mb-0">
-                          <i className="fas fa-calendar-alt me-2"></i>
-                          Richieste Ferie Recenti
+                          <i className="fas fa-chart-bar me-2"></i>
+                          Altri Permessi {new Date().getFullYear()}
                         </h5>
-                        <Link 
-                          href="/gestione/employees/ferie"
-                          className="btn btn-sm btn-outline-primary"
-                        >
-                          <i className="fas fa-eye me-1"></i>
-                          Vedi Tutte
-                        </Link>
                       </div>
                       <div className="card-body">
-                        {leaveRequests && leaveRequests.length > 0 ? (
-                          <>
-                            <div className="table-responsive">
-                              <table className="table table-dark table-hover">
-                                <thead>
-                                  <tr>
-                                    <th>Tipo</th>
-                                    <th>Periodo</th>
-                                    <th>Giorni</th>
-                                    <th>Status</th>
-                                    <th>Richiesta</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {leaveRequests.slice(0, 5).map((request) => (
-                                    <tr key={request.id}>
-                                      <td>{getLeaveTypeBadge(request.leave_type)}</td>
-                                      <td>
-                                        <small>
-                                          {formatDate(request.start_date)} - {formatDate(request.end_date)}
-                                        </small>
-                                      </td>
-                                      <td>
-                                        <span className="badge bg-info">{request.days_requested}</span>
-                                      </td>
-                                      <td>{getLeaveStatusBadge(request.status)}</td>
-                                      <td>
-                                        <small className="text-muted">
-                                          {formatDate(request.created_at)}
-                                        </small>
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
+                        {leaveBalance ? (
+                          <div className="row text-center">
+                            <div className="col-6">
+                              <div className="border-end">
+                                <h4 className="text-danger mb-1">{leaveBalance.sick_days_used}</h4>
+                                <small className="text-light">Giorni Malattia</small>
+                              </div>
                             </div>
-                            <div className="text-center mt-3">
-                              <button 
-                                className="btn btn-primary"
-                                onClick={() => setShowLeaveRequestModal(true)}
-                              >
-                                <i className="fas fa-plus me-1"></i>
-                                Nuova Richiesta
-                              </button>
+                            <div className="col-6">
+                              <h4 className="text-info mb-1">{leaveBalance.personal_days_used}</h4>
+                              <small className="text-light">Permessi Personali</small>
                             </div>
-                          </>
-                        ) : (
-                          <div className="text-center py-4">
-                            <i className="fas fa-calendar-check fa-3x text-secondary mb-3"></i>
-                            <h5 className="text-light">Nessuna richiesta recente</h5>
-                            <p className="text-light">Le richieste di ferie appariranno qui</p>
-                            <button 
-                              className="btn btn-primary"
-                              onClick={() => setShowLeaveRequestModal(true)}
-                            >
-                              <i className="fas fa-plus me-1"></i>
-                              Nuova Richiesta
-                            </button>
                           </div>
+                        ) : (
+                          <p className="text-light text-center">Nessuna statistica disponibile</p>
                         )}
                       </div>
                     </div>
+                  </div>
+                </div>
+
+                {/* Storico Richieste */}
+                <div className="card">
+                  <div className="card-header">
+                    <h5 className="mb-0">
+                      <i className="fas fa-history me-2"></i>
+                      Storico Richieste
+                    </h5>
+                  </div>
+                  <div className="card-body">
+                    {leaveRequests.length === 0 ? (
+                      <div className="text-center py-4">
+                        <i className="fas fa-calendar-times fa-3x text-secondary mb-3"></i>
+                        <h5 className="text-light">Nessuna richiesta presente</h5>
+                        <p className="text-light">Non ci sono richieste di ferie o permessi per questo dipendente</p>
+                      </div>
+                    ) : (
+                      <div className="table-responsive">
+                        <table className="table table-dark table-striped">
+                          <thead>
+                            <tr>
+                              <th>Tipo</th>
+                              <th>Periodo</th>
+                              <th>Giorni</th>
+                              <th>Stato</th>
+                              <th>Richiesta il</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {leaveRequests.map((request) => (
+                              <tr key={request.id}>
+                                <td>
+                                  {request.leave_type === 'ferie' && <span className="badge bg-primary">Ferie</span>}
+                                  {request.leave_type === 'malattia' && <span className="badge bg-danger">Malattia</span>}
+                                  {request.leave_type === 'permesso' && <span className="badge bg-info">Permesso</span>}
+                                  {request.leave_type === 'congedo' && <span className="badge bg-warning">Congedo</span>}
+                                </td>
+                                <td>
+                                  <div>
+                                    <strong className="text-light">
+                                      {formatDate(request.start_date)} - {formatDate(request.end_date)}
+                                    </strong>
+                                  </div>
+                                </td>
+                                <td>
+                                  <span className="text-light">{request.days_requested}</span>
+                                </td>
+                                <td>
+                                  {request.status === 'pending' && <span className="badge bg-warning">In Attesa</span>}
+                                  {request.status === 'approved' && <span className="badge bg-success">Approvata</span>}
+                                  {request.status === 'rejected' && <span className="badge bg-danger">Rifiutata</span>}
+                                  {request.status === 'cancelled' && <span className="badge bg-secondary">Annullata</span>}
+                                </td>
+                                <td>
+                                  <small className="text-light">
+                                    {formatDate(request.created_at)}
+                                  </small>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1052,172 +1053,6 @@ export default function AutistaDettaglio() {
           </div>
         </div>
       </div>
-
-      {/* Modal Richiesta Ferie */}
-      {showLeaveRequestModal && (
-        <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-lg">
-            <div className="modal-content bg-dark">
-              <div className="modal-header">
-                <h5 className="modal-title text-light">
-                  <i className="fas fa-calendar-plus me-2"></i>
-                  Nuova Richiesta Ferie - {employee?.nome} {employee?.cognome}
-                </h5>
-                <button 
-                  type="button" 
-                  className="btn-close btn-close-white" 
-                  onClick={() => setShowLeaveRequestModal(false)}
-                ></button>
-              </div>
-              <form onSubmit={handleLeaveRequestSubmit}>
-                <div className="modal-body">
-                  {/* Informazioni bilancio */}
-                  {leaveBalance && (
-                    <div className="alert alert-info mb-4">
-                      <div className="row text-center">
-                        <div className="col-4">
-                          <strong>Ferie Totali</strong><br />
-                          <span className="h5">{leaveBalance.vacation_days_total}</span>
-                        </div>
-                        <div className="col-4">
-                          <strong>Ferie Utilizzate</strong><br />
-                          <span className="h5">{leaveBalance.vacation_days_used}</span>
-                        </div>
-                        <div className="col-4">
-                          <strong>Ferie Rimanenti</strong><br />
-                          <span className="h5 text-success">{leaveBalance.vacation_days_remaining}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="row">
-                    <div className="col-md-6 mb-3">
-                      <label htmlFor="leave_type" className="form-label text-light">
-                        Tipo Richiesta *
-                      </label>
-                      <select
-                        id="leave_type"
-                        className="form-select"
-                        value={leaveRequestForm.leave_type}
-                        onChange={(e) => setLeaveRequestForm(prev => ({ ...prev, leave_type: e.target.value }))}
-                        required
-                      >
-                        <option value="ferie">Ferie</option>
-                        <option value="permesso">Permesso</option>
-                        <option value="malattia">Malattia</option>
-                        <option value="congedo">Congedo</option>
-                      </select>
-                    </div>
-                    <div className="col-md-6 mb-3">
-                      {leaveRequestForm.start_date && leaveRequestForm.end_date && (
-                        <div>
-                          <label className="form-label text-light">Giorni Richiesti</label>
-                          <div className="form-control bg-secondary text-light">
-                            {calculateWorkingDays(leaveRequestForm.start_date, leaveRequestForm.end_date)} giorni lavorativi
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="row">
-                    <div className="col-md-6 mb-3">
-                      <label htmlFor="start_date" className="form-label text-light">
-                        Data Inizio *
-                      </label>
-                      <input
-                        type="date"
-                        id="start_date"
-                        className="form-control"
-                        value={leaveRequestForm.start_date}
-                        onChange={(e) => setLeaveRequestForm(prev => ({ ...prev, start_date: e.target.value }))}
-                        min={new Date().toISOString().split('T')[0]}
-                        lang="it-IT"
-                        data-date-format="dd/mm/yyyy"
-                        required
-                      />
-                    </div>
-                    <div className="col-md-6 mb-3">
-                      <label htmlFor="end_date" className="form-label text-light">
-                        Data Fine *
-                      </label>
-                      <input
-                        type="date"
-                        id="end_date"
-                        className="form-control"
-                        value={leaveRequestForm.end_date}
-                        onChange={(e) => setLeaveRequestForm(prev => ({ ...prev, end_date: e.target.value }))}
-                        min={leaveRequestForm.start_date || new Date().toISOString().split('T')[0]}
-                        lang="it-IT"
-                        data-date-format="dd/mm/yyyy"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mb-3">
-                    <label htmlFor="reason" className="form-label text-light">
-                      Motivo (opzionale)
-                    </label>
-                    <textarea
-                      id="reason"
-                      className="form-control"
-                      rows={3}
-                      value={leaveRequestForm.reason}
-                      onChange={(e) => setLeaveRequestForm(prev => ({ ...prev, reason: e.target.value }))}
-                      placeholder="Inserisci il motivo della richiesta..."
-                    />
-                  </div>
-
-                  {/* Validazioni in tempo reale */}
-                  {leaveRequestForm.start_date && leaveRequestForm.end_date && (
-                    <div className="alert alert-warning">
-                      <div className="d-flex align-items-center">
-                        <i className="fas fa-info-circle me-2"></i>
-                        <div>
-                          <strong>Riepilogo Richiesta:</strong><br />
-                          Periodo: {formatDateItalian(leaveRequestForm.start_date)} - {formatDateItalian(leaveRequestForm.end_date)}<br />
-                          Giorni lavorativi: {calculateWorkingDays(leaveRequestForm.start_date, leaveRequestForm.end_date)}<br />
-                          Tipo: {leaveRequestForm.leave_type.charAt(0).toUpperCase() + leaveRequestForm.leave_type.slice(1)}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <div className="modal-footer">
-                  <button 
-                    type="button" 
-                    className="btn btn-outline-secondary"
-                    onClick={() => setShowLeaveRequestModal(false)}
-                    disabled={submittingLeaveRequest}
-                  >
-                    Annulla
-                  </button>
-                  <button 
-                    type="submit" 
-                    className="btn btn-primary"
-                    disabled={submittingLeaveRequest || !leaveRequestForm.start_date || !leaveRequestForm.end_date}
-                  >
-                    {submittingLeaveRequest ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                        Invio in corso...
-                      </>
-                    ) : (
-                      <>
-                        <i className="fas fa-paper-plane me-1"></i>
-                        Invia Richiesta
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
-
     </div>
   );
 }

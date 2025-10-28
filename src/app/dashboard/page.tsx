@@ -715,13 +715,13 @@ export default function ModernDashboard() {
               <div className={`card-body card-body-soft ${!toggleStates.anagrafiche ? 'card-body-collapsed' : ''}`}>
                 <div className="row g-2 mb-3">
                   <div className="col-12">
-                    <Link href="/gestione/autisti/dashboard" className="btn btn-outline-info btn-action btn-sm w-100">
+                    <Link href="/gestione/dipendenti/dashboard" className="btn btn-outline-info btn-action btn-sm w-100">
                       <Activity size={16} className="me-1" />
                       Dashboard Personale
                     </Link>
                   </div>
                   <div className="col-6">
-                    <Link href="/gestione/autisti" className="btn btn-outline-success btn-action btn-sm w-100">
+                    <Link href="/gestione/dipendenti" className="btn btn-outline-success btn-action btn-sm w-100">
                       <Users size={16} className="me-1" />
                       Personale
                     </Link>

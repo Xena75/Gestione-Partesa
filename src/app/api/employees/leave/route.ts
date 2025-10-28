@@ -1,44 +1,69 @@
-// src/app/api/employees/leave/route.ts
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyUserAccess } from '@/lib/auth';
 import { 
   getEmployeeLeaveRequests, 
   createLeaveRequest, 
-  getPendingLeaveRequests,
-  getAllLeaveRequests,
   LeaveRequest 
 } from '@/lib/db-employees';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('API leave requests GET chiamata');
-    
+    // Verifica accesso utente
+    const userCheck = await verifyUserAccess(request);
+    if (!userCheck.success) {
+      return NextResponse.json(
+        { success: false, error: 'Accesso negato' },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
-    const employeeId = searchParams.get('employee_id');
+    const userId = searchParams.get('user_id');
+    const limit = searchParams.get('limit');
     const status = searchParams.get('status');
     
-    let leaveRequests: any[];
-    
-    if (employeeId) {
-      // Richieste per un dipendente specifico
-      leaveRequests = await getEmployeeLeaveRequests(employeeId);
-    } else if (status === 'pending') {
-      // Richieste in attesa di approvazione
-      leaveRequests = await getPendingLeaveRequests();
-    } else {
-      // Tutte le richieste ferie
-      leaveRequests = await getAllLeaveRequests();
+    // Se l'utente è employee, può vedere solo le proprie richieste
+    let targetUserId = userId;
+    if (userCheck.user?.role === 'employee') {
+      targetUserId = userCheck.user.id;
     }
     
-    console.log('Richieste ferie recuperate:', leaveRequests.length);
+    if (!targetUserId) {
+      return NextResponse.json({
+        success: false,
+        error: 'ID utente non fornito'
+      }, { status: 400 });
+    }
+    
+    console.log('Recupero richieste ferie per dipendente ID:', targetUserId);
+    
+    // Recupera le richieste ferie del dipendente
+    const leaveRequests = await getEmployeeLeaveRequests(targetUserId, status || undefined);
+    
+    // Applica limite se specificato
+    let filteredRequests = leaveRequests;
+    if (limit) {
+      const limitNum = parseInt(limit);
+      filteredRequests = leaveRequests.slice(0, limitNum);
+    }
+    
+    // Ordina per data di richiesta (più recenti prima)
+    filteredRequests.sort((a, b) => {
+      const dateA = new Date(a.created_at || a.start_date);
+      const dateB = new Date(b.created_at || b.start_date);
+      return dateB.getTime() - dateA.getTime();
+    });
+    
+    console.log(`Recuperate ${filteredRequests.length} richieste ferie per dipendente ${targetUserId}`);
     
     return NextResponse.json({
       success: true,
-      data: leaveRequests,
+      data: filteredRequests,
       message: 'Richieste ferie recuperate con successo'
     });
     
   } catch (error) {
-    console.error('Errore API leave requests GET:', error);
+    console.error('Errore API employees/leave GET:', error);
     
     return NextResponse.json({
       success: false,
@@ -50,72 +75,51 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('API leave requests POST chiamata');
-    
+    // Verifica accesso utente
+    const userCheck = await verifyUserAccess(request);
+    if (!userCheck.success) {
+      return NextResponse.json(
+        { success: false, error: 'Accesso negato' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
+    const { user_id, start_date, end_date, leave_type, reason, notes } = body;
     
-    // Validazione dati base
-    if (!body.employee_id || !body.leave_type || !body.start_date || !body.end_date || !body.days_requested) {
+    // Se l'utente è employee, può creare richieste solo per se stesso
+    let targetUserId = user_id;
+    if (userCheck.user?.role === 'employee') {
+      targetUserId = userCheck.user.id;
+    }
+    
+    if (!targetUserId || !start_date || !end_date || !leave_type) {
       return NextResponse.json({
         success: false,
-        error: 'employee_id, leave_type, start_date, end_date e days_requested sono obbligatori'
+        error: 'Dati mancanti: user_id, start_date, end_date e leave_type sono obbligatori'
       }, { status: 400 });
     }
     
-    // Validazione tipo ferie
-    const validTypes = ['ferie', 'permesso', 'malattia', 'congedo'];
-    if (!validTypes.includes(body.leave_type)) {
-      return NextResponse.json({
-        success: false,
-        error: 'Tipo ferie non valido'
-      }, { status: 400 });
-    }
-    
-    // Validazione date
-    const startDate = new Date(body.start_date);
-    const endDate = new Date(body.end_date);
-    
-    if (startDate > endDate) {
-      return NextResponse.json({
-        success: false,
-        error: 'La data di inizio non può essere successiva alla data di fine'
-      }, { status: 400 });
-    }
-    
-    // Validazione giorni richiesti
-    if (body.days_requested <= 0) {
-      return NextResponse.json({
-        success: false,
-        error: 'I giorni richiesti devono essere maggiori di zero'
-      }, { status: 400 });
-    }
-    
-    // Prepara i dati della richiesta
-    const leaveRequestData: Omit<LeaveRequest, 'id' | 'created_at' | 'updated_at'> = {
-      employee_id: body.employee_id,
-      leave_type: body.leave_type,
-      start_date: body.start_date,
-      end_date: body.end_date,
-      days_requested: body.days_requested,
-      reason: body.reason || null,
-      status: 'pending',
-      approved_by: null,
-      approved_at: null,
-      notes: body.notes || null
+    const leaveData: Partial<LeaveRequest> = {
+      employee_id: targetUserId,
+      start_date: new Date(start_date),
+      end_date: new Date(end_date),
+      leave_type,
+      reason,
+      notes,
+      status: 'pending'
     };
     
-    const requestId = await createLeaveRequest(leaveRequestData);
-    
-    console.log('Richiesta ferie creata con successo:', requestId);
+    const newLeaveRequest = await createLeaveRequest(leaveData);
     
     return NextResponse.json({
       success: true,
-      data: { id: requestId },
+      data: newLeaveRequest,
       message: 'Richiesta ferie creata con successo'
-    }, { status: 201 });
+    });
     
   } catch (error) {
-    console.error('Errore API leave requests POST:', error);
+    console.error('Errore API employees/leave POST:', error);
     
     return NextResponse.json({
       success: false,

@@ -10,7 +10,7 @@ export interface User {
   id: string;
   username: string;
   email?: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'employee';
 }
 
 export interface AuthResult {
@@ -62,12 +62,13 @@ export function verifyToken(token: string): User | null {
 // Autentica utente
 export async function authenticateUser(username: string, password: string): Promise<AuthResult> {
   try {
-    const [rows] = await pool.execute(
+    // Cerca nella tabella users (admin/user/employee)
+    const [userRows] = await pool.execute(
       'SELECT id, username, password_hash, email, role FROM users WHERE username = ?',
       [username]
     );
 
-    const users = rows as any[];
+    const users = userRows as any[];
     if (users.length === 0) {
       return { success: false, message: 'Credenziali non valide' };
     }
@@ -88,10 +89,10 @@ export async function authenticateUser(username: string, password: string): Prom
 
     const token = generateToken(userObj);
 
-    // Salva sessione nel database
+    // Salva sessione nel database per tutti i tipi di utenti
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 ore
     await pool.execute(
-      'INSERT INTO user_sessions (user_id, token, expires_at) VALUES (?, ?, ?)',
+      'INSERT INTO user_sessions (user_id, token, expires_at) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE expires_at = VALUES(expires_at)',
       [user.id, token, expiresAt]
     );
 
@@ -112,11 +113,10 @@ export async function verifySession(token: string): Promise<User | null> {
     // Prima verifica JWT
     const user = verifyToken(token);
     if (!user) {
-      console.log('Token JWT non valido o scaduto');
       return null;
     }
 
-    // Verifica sessione nel database con logging dettagliato
+    // Verifica sessione nel database per tutti i tipi di utenti
     const [rows] = await pool.execute(
       'SELECT user_id, expires_at FROM user_sessions WHERE token = ?',
       [token]
@@ -125,8 +125,6 @@ export async function verifySession(token: string): Promise<User | null> {
     const sessions = rows as any[];
     
     if (sessions.length === 0) {
-      console.log('Sessione non trovata nel database per token:', token.substring(0, 20) + '...');
-      
       // Se il JWT è valido ma la sessione non esiste, ricreiamo la sessione
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 ore
       try {
@@ -134,7 +132,6 @@ export async function verifySession(token: string): Promise<User | null> {
           'INSERT INTO user_sessions (user_id, token, expires_at) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE expires_at = VALUES(expires_at)',
           [user.id, token, expiresAt]
         );
-        console.log('Sessione ricreata per utente:', user.username);
         return user;
       } catch (insertError) {
         console.error('Errore ricreazione sessione:', insertError);
@@ -147,7 +144,6 @@ export async function verifySession(token: string): Promise<User | null> {
     const expiresAt = new Date(session.expires_at);
     
     if (expiresAt <= now) {
-      console.log('Sessione scaduta per utente:', user.username);
       // Rimuovi sessione scaduta
       await pool.execute('DELETE FROM user_sessions WHERE token = ?', [token]);
       return null;

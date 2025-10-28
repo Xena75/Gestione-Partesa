@@ -12,6 +12,7 @@ interface Employee {
   nome: string;
   cognome: string;
   email: string;
+  login_email?: string;
   cellulare?: string;
   cod_fiscale?: string;
   cdc?: string;
@@ -60,6 +61,16 @@ export default function ModificaDipendente() {
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [companies, setCompanies] = useState<Company[]>([]);
 
+  // Stati per gestione credenziali
+  const [hasPassword, setHasPassword] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    password: '',
+    confirmPassword: ''
+  });
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
+
   // Carica i dati del dipendente
   useEffect(() => {
     const fetchEmployee = async () => {
@@ -82,6 +93,13 @@ export default function ModificaDipendente() {
           };
           
           setFormData(formattedData);
+
+          // Carica stato credenziali
+          const passwordResponse = await fetch(`/api/employees/${employeeId}/password`);
+          if (passwordResponse.ok) {
+            const passwordData = await passwordResponse.json();
+            setHasPassword(passwordData.has_password || false);
+          }
         } else {
           throw new Error(data.error || 'Errore nel caricamento dei dati');
         }
@@ -161,6 +179,10 @@ export default function ModificaDipendente() {
       errors.email_aziendale = 'Formato email aziendale non valido';
     }
 
+    if (formData.login_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.login_email)) {
+      errors.login_email = 'Formato email di accesso non valido';
+    }
+
     if (formData.cod_fiscale && formData.cod_fiscale.length !== 16) {
       errors.cod_fiscale = 'Il codice fiscale deve essere di 16 caratteri';
     }
@@ -180,6 +202,59 @@ export default function ModificaDipendente() {
 
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
+  };
+
+  // Funzioni per gestione credenziali
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (passwordForm.password !== passwordForm.confirmPassword) {
+      setPasswordMessage({type: 'error', text: 'Le password non coincidono'});
+      return;
+    }
+    
+    if (passwordForm.password.length < 6) {
+      setPasswordMessage({type: 'error', text: 'La password deve essere di almeno 6 caratteri'});
+      return;
+    }
+    
+    try {
+      setPasswordLoading(true);
+      setPasswordMessage(null);
+      
+      const response = await fetch(`/api/employees/${employeeId}/password`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          password: passwordForm.password
+        }),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setPasswordMessage({type: 'success', text: 'Password impostata con successo!'});
+        setHasPassword(true);
+        setShowPasswordForm(false);
+        setPasswordForm({password: '', confirmPassword: ''});
+      } else {
+        setPasswordMessage({type: 'error', text: result.error || 'Errore nell\'impostazione della password'});
+      }
+      
+    } catch (error) {
+      console.error('Errore nell\'impostazione password:', error);
+      setPasswordMessage({type: 'error', text: 'Errore nell\'impostazione della password'});
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
+  const resetPasswordForm = () => {
+    setShowPasswordForm(false);
+    setPasswordForm({password: '', confirmPassword: ''});
+    setPasswordMessage(null);
   };
 
   // Salva le modifiche
@@ -245,7 +320,7 @@ export default function ModificaDipendente() {
       }
 
       // Redirect alla pagina di dettaglio
-      router.push(`/gestione/autisti/${employeeId}`);
+      router.push(`/gestione/dipendenti/${employeeId}`);
     } catch (err) {
       console.error('Errore completo:', err);
       setError(err instanceof Error ? err.message : 'Errore sconosciuto');
@@ -276,7 +351,7 @@ export default function ModificaDipendente() {
           <i className="fas fa-exclamation-triangle me-2"></i>
           {error}
         </div>
-        <Link href="/gestione/autisti" className="btn btn-secondary">
+        <Link href="/gestione/dipendenti" className="btn btn-secondary">
           <i className="fas fa-arrow-left me-2"></i>
           Torna alla lista
         </Link>
@@ -292,12 +367,12 @@ export default function ModificaDipendente() {
           <nav aria-label="breadcrumb">
             <ol className="breadcrumb">
               <li className="breadcrumb-item">
-                <Link href="/gestione/autisti" className="text-decoration-none">
-                  Gestione Autisti
+                <Link href="/gestione/dipendenti" className="text-decoration-none">
+                  Gestione Dipendenti
                 </Link>
               </li>
               <li className="breadcrumb-item">
-                <Link href={`/gestione/autisti/${employeeId}`} className="text-decoration-none">
+                <Link href={`/gestione/dipendenti/${employeeId}`} className="text-decoration-none">
                   {employee?.nome} {employee?.cognome}
                 </Link>
               </li>
@@ -314,7 +389,7 @@ export default function ModificaDipendente() {
             </h1>
             <div>
               <Link 
-                href={`/gestione/autisti/${employeeId}`}
+                href={`/gestione/dipendenti/${employeeId}`}
                 className="btn btn-secondary me-2"
               >
                 <i className="fas fa-times me-1"></i>
@@ -713,12 +788,142 @@ export default function ModificaDipendente() {
               </div>
             )}
 
+            {/* Sezione Credenziali di Accesso */}
+            <div className="card bg-secondary mb-4">
+              <div className="card-header">
+                <h5 className="card-title mb-0 text-light">
+                  <i className="fas fa-key me-2"></i>
+                  Credenziali di Accesso
+                </h5>
+              </div>
+              <div className="card-body">
+                <div className="row">
+                  <div className="col-md-6">
+                    <div className="mb-3">
+                      <label className="form-label text-light">Email di Accesso</label>
+                      <input
+                        type="email"
+                        className={`form-control bg-dark text-light border-secondary ${validationErrors.login_email ? 'is-invalid' : ''}`}
+                        value={formData.login_email || ''}
+                        onChange={(e) => handleInputChange('login_email', e.target.value)}
+                        placeholder="Email dedicata per l'accesso al sistema"
+                      />
+                      {validationErrors.login_email && (
+                        <div className="invalid-feedback">
+                          {validationErrors.login_email}
+                        </div>
+                      )}
+                      <small className="text-muted">
+                        {formData.login_email 
+                          ? "Email utilizzata per l'accesso al sistema" 
+                          : "Se non impostata, verrà utilizzata l'email personale per l'accesso"
+                        }
+                      </small>
+                    </div>
+                  </div>
+                  <div className="col-md-6">
+                    <div className="mb-3">
+                      <label className="form-label text-light">Stato Password</label>
+                      <div className="d-flex align-items-center gap-2">
+                        <span className={`badge ${hasPassword ? 'bg-success' : 'bg-warning'}`}>
+                          {hasPassword ? 'Password impostata' : 'Password non impostata'}
+                        </span>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-primary"
+                          onClick={() => setShowPasswordForm(!showPasswordForm)}
+                        >
+                          {hasPassword ? 'Cambia Password' : 'Imposta Password'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Form per impostare/cambiare password */}
+                {showPasswordForm && (
+                  <div className="row mt-3">
+                    <div className="col-12">
+                      <div className="border border-secondary rounded p-3">
+                        <h6 className="text-light mb-3">
+                          {hasPassword ? 'Cambia Password' : 'Imposta Nuova Password'}
+                        </h6>
+                        <form onSubmit={handlePasswordSubmit}>
+                          <div className="row">
+                            <div className="col-md-6 mb-3">
+                              <label className="form-label text-light">Nuova Password</label>
+                              <input
+                                type="password"
+                                className="form-control bg-dark text-light border-secondary"
+                                value={passwordForm.password}
+                                onChange={(e) => setPasswordForm(prev => ({...prev, password: e.target.value}))}
+                                placeholder="Inserisci la nuova password"
+                                required
+                                minLength={6}
+                              />
+                              <small className="text-muted">Minimo 6 caratteri</small>
+                            </div>
+                            <div className="col-md-6 mb-3">
+                              <label className="form-label text-light">Conferma Password</label>
+                              <input
+                                type="password"
+                                className="form-control bg-dark text-light border-secondary"
+                                value={passwordForm.confirmPassword}
+                                onChange={(e) => setPasswordForm(prev => ({...prev, confirmPassword: e.target.value}))}
+                                placeholder="Conferma la password"
+                                required
+                              />
+                            </div>
+                          </div>
+                          
+                          {passwordMessage && (
+                            <div className={`alert ${passwordMessage.type === 'success' ? 'alert-success' : 'alert-danger'} mb-3`}>
+                              {passwordMessage.text}
+                            </div>
+                          )}
+                          
+                          <div className="d-flex gap-2">
+                            <button
+                              type="submit"
+                              className="btn btn-primary"
+                              disabled={passwordLoading}
+                            >
+                              {passwordLoading ? (
+                                <>
+                                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                  Salvando...
+                                </>
+                              ) : (
+                                <>
+                                  <i className="fas fa-save me-1"></i>
+                                  {hasPassword ? 'Cambia Password' : 'Imposta Password'}
+                                </>
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-secondary"
+                              onClick={resetPasswordForm}
+                              disabled={passwordLoading}
+                            >
+                              <i className="fas fa-times me-1"></i>
+                              Annulla
+                            </button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Pulsanti di azione finali */}
             <div className="row">
               <div className="col-12">
                 <div className="d-flex justify-content-end gap-2">
                   <Link 
-                    href={`/gestione/autisti/${employeeId}`}
+                    href={`/gestione/dipendenti/${employeeId}`}
                     className="btn btn-secondary"
                   >
                     <i className="fas fa-times me-1"></i>

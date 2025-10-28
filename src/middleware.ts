@@ -60,13 +60,31 @@ const protectedRoutes = [
   '/viaggi',
   '/monitoraggio',
   '/fatturazione',
-  '/backup-dashboard'
+  '/backup-dashboard',
+  '/autisti/dashboard'
 ];
 
 
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  
+  // Escludi le route API di autenticazione dal middleware per evitare loop
+  const authApiRoutes = ['/api/auth/login', '/api/auth/verify', '/api/auth/logout', '/api/auth/clear-all-sessions', '/api/auth/force-logout'];
+  if (authApiRoutes.some(route => pathname.startsWith(route))) {
+    return NextResponse.next();
+  }
+  
+  // Meccanismo anti-loop: controlla se c'è un header che indica un loop
+  const loopCounter = parseInt(request.headers.get('x-redirect-count') || '0');
+  if (loopCounter > 3) {
+    console.error('Loop di reindirizzamento rilevato, interrompo:', pathname);
+    // Reindirizza a una pagina di errore specifica per i loop
+    const errorUrl = new URL('/error', request.url);
+    errorUrl.searchParams.set('code', 'redirect_loop');
+    errorUrl.searchParams.set('path', pathname);
+    return NextResponse.redirect(errorUrl);
+  }
   
   // Verifica se la route richiede protezione backup (admin only)
   const isBackupRoute = pathname.startsWith('/backup-dashboard') || pathname.startsWith('/api/backup');
@@ -97,7 +115,9 @@ export async function middleware(request: NextRequest) {
         } else {
           const loginUrl = new URL('/login', request.url);
           loginUrl.searchParams.set('redirect', pathname);
-          return NextResponse.redirect(loginUrl);
+          const response = NextResponse.redirect(loginUrl);
+          response.headers.set('x-redirect-count', (loopCounter + 1).toString());
+          return response;
         }
       }
 
@@ -119,56 +139,18 @@ export async function middleware(request: NextRequest) {
           const loginUrl = new URL('/login', request.url);
           loginUrl.searchParams.set('redirect', pathname);
           loginUrl.searchParams.set('error', 'token_invalid');
-          return NextResponse.redirect(loginUrl);
+          const response = NextResponse.redirect(loginUrl);
+          response.headers.set('x-redirect-count', (loopCounter + 1).toString());
+          return response;
         }
       }
 
-      // Se il token JWT è valido e contiene il ruolo admin, permetti l'accesso diretto
-      if (decoded.role === 'admin') {
-        return NextResponse.next();
-      }
-
-      // Se il ruolo non è presente nel token o non è admin, fai una verifica API
-      try {
-        const verifyResponse = await fetch(new URL('/api/auth/verify', request.url), {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            'Cookie': request.headers.get('cookie') || ''
-          }
-        });
-        
-        if (!verifyResponse.ok) {
-          if (pathname.startsWith('/api/')) {
-            return NextResponse.json(
-              { message: 'Accesso negato' },
-              { status: 403 }
-            );
-          } else {
-            return NextResponse.redirect(new URL('/unauthorized', request.url));
-          }
-        }
-        
-        const userData = await verifyResponse.json();
-        
-        // Verifica che l'utente sia admin
-        if (!userData.user || userData.user.role !== 'admin') {
-          if (pathname.startsWith('/api/')) {
-            return NextResponse.json(
-              { message: 'Accesso riservato agli amministratori' },
-              { status: 403 }
-            );
-          } else {
-            return NextResponse.redirect(new URL('/dashboard', request.url));
-          }
-        }
-        
-      } catch (error) {
-        console.error('Error verifying admin access:', error);
+      // Verifica che l'utente sia admin basandosi solo sul token JWT
+      if (decoded.role !== 'admin') {
         if (pathname.startsWith('/api/')) {
           return NextResponse.json(
-            { message: 'Errore di verifica' },
-            { status: 500 }
+            { message: 'Accesso riservato agli amministratori' },
+            { status: 403 }
           );
         } else {
           return NextResponse.redirect(new URL('/dashboard', request.url));
@@ -212,7 +194,9 @@ export async function middleware(request: NextRequest) {
   if (!token) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(loginUrl);
+    const response = NextResponse.redirect(loginUrl);
+    response.headers.set('x-redirect-count', (loopCounter + 1).toString());
+    return response;
   }
   
   // Se c'è un token, lascia che il client verifichi la validità
@@ -228,13 +212,13 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - api (API routes)
+     * - api/auth (authentication API routes - handled separately)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * But include specific API routes that need protection
      */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    '/((?!api/auth|_next/static|_next/image|favicon.ico).*)',
     '/api/backup/:path*'
   ]
 }

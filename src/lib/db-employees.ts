@@ -15,6 +15,7 @@ export interface Employee {
   nome: string;
   cognome: string;
   email: string;
+  login_email?: string;
   cellulare?: string;
   data_nascita?: string;
   codice_fiscale?: string;
@@ -102,7 +103,7 @@ export interface LeaveBalance {
 }
 
 // Database connection
-async function getConnection() {
+export async function getConnection() {
   try {
     const connection = await mysql.createConnection(dbConfig);
     return connection;
@@ -132,6 +133,7 @@ export async function getAllEmployees(): Promise<Employee[]> {
 export async function getEmployeeById(id: string): Promise<Employee | null> {
   const connection = await getConnection();
   try {
+    console.log('getEmployeeById - Cercando employee con ID:', id);
     const [rows] = await connection.execute(
       `SELECT e.*, c.name as company_name 
        FROM employees e 
@@ -140,9 +142,33 @@ export async function getEmployeeById(id: string): Promise<Employee | null> {
       [id]
     );
     const employees = rows as Employee[];
+    console.log('getEmployeeById - Risultati trovati:', employees.length);
+    if (employees.length > 0) {
+      console.log('getEmployeeById - Employee trovato:', employees[0].nome, employees[0].cognome);
+    }
     return employees.length > 0 ? employees[0] : null;
   } catch (error) {
     console.error('Errore nella query getEmployeeById:', error);
+    throw error;
+  } finally {
+    await connection.end();
+  }
+}
+
+export async function getEmployeeByLoginEmail(loginEmail: string): Promise<Employee | null> {
+  const connection = await getConnection();
+  try {
+    const [rows] = await connection.execute(
+      `SELECT e.*, c.name as company_name 
+       FROM employees e 
+       LEFT JOIN companies c ON e.company_id = c.id 
+       WHERE e.login_email = ? AND e.active = 1`,
+      [loginEmail]
+    );
+    const employees = rows as Employee[];
+    return employees.length > 0 ? employees[0] : null;
+  } catch (error) {
+    console.error('Errore nella query getEmployeeByLoginEmail:', error);
     throw error;
   } finally {
     await connection.end();
@@ -157,15 +183,15 @@ export async function createEmployee(employee: Omit<Employee, 'id' | 'createdAt'
     
     const [result] = await connection.execute(
       `INSERT INTO employees (
-        id, nome, cognome, email, cellulare, data_nascita, codice_fiscale,
+        id, nome, cognome, email, login_email, cellulare, data_nascita, codice_fiscale,
         indirizzo, citta, cap, provincia, data_assunzione, contratto,
         stipendio, ore_settimanali, ferie_annuali, permessi_annuali,
         is_driver, driver_license_number, driver_license_expiry,
         password_hash, active
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         employeeId, employee.nome, employee.cognome, employee.email,
-        employee.cellulare, employee.data_nascita, employee.codice_fiscale,
+        employee.login_email, employee.cellulare, employee.data_nascita, employee.codice_fiscale,
         employee.indirizzo, employee.citta, employee.cap, employee.provincia,
         employee.data_assunzione, employee.contratto, employee.stipendio,
         employee.ore_settimanali, employee.ferie_annuali, employee.permessi_annuali,

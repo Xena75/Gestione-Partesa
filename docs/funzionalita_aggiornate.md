@@ -1,6 +1,77 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.33.0
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.33.2
 
-## 🚀 **VERSIONE 2.33.0** - Calendario Integrato Ferie Dipendenti ⭐ **NUOVO**
+## 🚀 **VERSIONE 2.33.2** - Correzioni Filtri e Formattazione Date ⭐ **NUOVO**
+
+### 🗓️ **CORREZIONI FILTRI E FORMATTAZIONE DATE**
+- **Filtri vista raggruppata**: Risolto problema filtri mese non funzionanti nella vista raggruppata gestione consegne
+- **Parametro mese API**: Aggiunto estrazione parametro 'mese' nell'API /api/gestione/route.ts
+- **Parametro mese frontend**: Aggiunto 'mese' all'array filterParams in DeliveryTable.tsx
+- **Formato date tabella**: Migliorata formattazione date con opzioni specifiche per formato gg/mm/aaaa
+- **Campi filtro data**: Sostituiti input type="date" con componente DateInput personalizzato
+- **Validazione date**: Auto-completamento e validazione robusta nei campi data filtri
+- **Coerenza formato**: Uniformato formato date in tutta l'applicazione per conformità italiana
+- **UX migliorata**: Eliminati problemi di visualizzazione date con formato browser nativo
+- **Filtri completi**: Tutti i filtri incluso mese funzionano correttamente in vista raggruppata
+- **Coerenza filtri**: Parametri URL passati correttamente dall'interfaccia all'API
+
+### 🏗️ **IMPLEMENTAZIONE TECNICA CORREZIONI v2.33.2**
+
+#### **1. Correzione API route.ts per estrazione parametro mese**
+```typescript
+// File: src/app/api/gestione/route.ts
+// Aggiunto estrazione parametro mese per filtri vista raggruppata
+const mese = searchParams.get('mese');
+if (mese) filters.mese = mese;
+```
+
+#### **2. Aggiunta 'mese' a filterParams in DeliveryTable.tsx**
+```typescript
+// File: src/components/DeliveryTable.tsx
+// Aggiunto 'mese' all'array filterParams per passaggio corretto all'API
+const filterParams = ['viaggio', 'ordine', 'bu', 'divisione', 'deposito', 'vettore', 'tipologia', 'codCliente', 'cliente', 'dataDa', 'dataA', 'mese'];
+```
+
+#### **3. Miglioramento funzione formatDate con opzioni specifiche**
+```typescript
+// File: src/components/DeliveryTable.tsx
+// Funzione formatDate con opzioni specifiche per formato gg/mm/aaaa
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('it-IT', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
+};
+```
+
+#### **4. Implementazione DateInput nei filtri DeliveryFilters.tsx**
+```typescript
+// File: src/components/DeliveryFilters.tsx
+// Sostituiti input type="date" con DateInput personalizzato
+<DateInput
+  value={filters.dataDa}
+  onChange={(isoValue) => handleInputChange('dataDa', isoValue)}
+  placeholder="gg/mm/aaaa"
+  className="form-control"
+/>
+<DateInput
+  value={filters.dataA}
+  onChange={(isoValue) => handleInputChange('dataA', isoValue)}
+  placeholder="gg/mm/aaaa"
+  className="form-control"
+/>
+```
+
+### 📈 **BENEFICI OPERATIVI v2.33.2**
+- ✅ **Filtri completi**: Tutti i filtri incluso mese funzionano correttamente in vista raggruppata
+- ✅ **Coerenza filtri**: Parametri URL passati correttamente dall'interfaccia all'API
+- ✅ **Date italiane**: Formato gg/mm/aaaa uniforme in tabella e campi filtro
+- ✅ **UX ottimizzata**: Input date con auto-completamento e validazione in tempo reale
+- ✅ **Formato italiano**: Date uniformi in formato gg/mm/aaaa in tutta l'applicazione
+- ✅ **Coerenza applicazione**: Formato date uniforme eliminando discrepanze browser
+
+## 🚀 **VERSIONE 2.33.0** - Calendario Integrato Ferie Dipendenti
 
 ### 📅 **CALENDARIO INTEGRATO FERIE E VEICOLI**
 - **Visualizzazione unificata**: Calendario che mostra sia scadenze veicoli che eventi ferie dipendenti

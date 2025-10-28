@@ -1,6 +1,68 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-## 🔧 Ottimizzazioni UI e Correzioni - v2.33.1 ⭐ **NUOVO**
+## 🗓️ Correzioni Filtri e Formattazione Date - v2.33.2 ⭐ **NUOVO**
+
+### 🎯 Risoluzione Problemi Filtri e Date
+**Data implementazione**: Gennaio 2025  
+**Stato**: ✅ Completato e testato
+
+### 🛠️ Correzioni Implementate
+
+#### 📊 Fix Filtri Mese Vista Raggruppata
+- **Problema**: Filtro mese non funzionante nella vista raggruppata gestione consegne
+- **File API**: `src/app/api/gestione/route.ts`
+- **Correzione**: Aggiunto estrazione parametro `mese` dall'URL
+- **Codice aggiunto**:
+  ```typescript
+  const mese = searchParams.get('mese');
+  if (mese) filters.mese = mese;
+  ```
+- **Risultato**: Filtro mese ora applicato correttamente in vista raggruppata
+
+#### 🔄 Fix Passaggio Parametro Mese Frontend
+- **Problema**: Parametro `mese` non passato dal frontend all'API
+- **File**: `src/components/DeliveryTable.tsx`
+- **Correzione**: Aggiunto 'mese' all'array `filterParams` (riga 62)
+- **Prima**: `['viaggio', 'ordine', 'bu', 'divisione', 'deposito', 'vettore', 'tipologia', 'codCliente', 'cliente', 'dataDa', 'dataA']`
+- **Dopo**: `['viaggio', 'ordine', 'bu', 'divisione', 'deposito', 'vettore', 'tipologia', 'codCliente', 'cliente', 'dataDa', 'dataA', 'mese']`
+- **Risultato**: Parametro mese ora correttamente passato all'API
+
+#### 📅 Formattazione Date Italiana Tabella
+- **File**: `src/components/DeliveryTable.tsx`
+- **Modifica**: Funzione `formatDate` con opzioni specifiche formato italiano
+- **Implementazione**:
+  ```typescript
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('it-IT', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+  ```
+- **Risultato**: Date sempre in formato gg/mm/aaaa (es: 15/01/2024)
+
+#### 🎛️ Campi Data Filtri con DateInput
+- **File**: `src/components/DeliveryFilters.tsx`
+- **Modifiche**:
+  1. Aggiunto import: `import DateInput from './DateInput';`
+  2. Sostituito campo "Data Da" con componente `DateInput`
+  3. Sostituito campo "Data A" con componente `DateInput`
+- **Benefici**:
+  - Auto-completamento barre oblique
+  - Validazione automatica date
+  - Formato gg/mm/aaaa garantito
+  - Blocco caratteri non numerici
+  - Gestione anni bisestili
+
+### 📈 Benefici Operativi
+- ✅ **Filtri funzionanti**: Vista raggruppata applica correttamente tutti i filtri
+- ✅ **Formato italiano**: Date uniformi in formato gg/mm/aaaa
+- ✅ **UX migliorata**: Input date intuitivi con validazione automatica
+- ✅ **Coerenza applicazione**: Formato date uniforme in tutta l'app
+
+## 🔧 Ottimizzazioni UI e Correzioni - v2.33.1
 
 ### 🎯 Miglioramenti Interfaccia Utente
 **Data implementazione**: Gennaio 2025  
