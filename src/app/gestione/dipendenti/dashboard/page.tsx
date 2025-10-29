@@ -134,7 +134,10 @@ export default function Dashboard() {
       });
 
       setExpiringDocs(expiringData.data.documents);
-      setPendingLeaves(leavesData.data);
+      
+      // Assegnazione richieste ferie pendenti
+      const pendingLeavesData = leavesData.data || [];
+      setPendingLeaves(pendingLeavesData);
 
       // Caricamento nuovi dati per statistiche documenti
       const [documentStatsRes, expiredDocsRes] = await Promise.all([
@@ -764,8 +767,7 @@ export default function Dashboard() {
                             <strong className="text-sm text-light">{leave.employee_name}</strong>
                             <br />
                             <small className="text-light">
-                              {new Date(leave.start_date).toLocaleDateString('it-IT')} - 
-                              {new Date(leave.end_date).toLocaleDateString('it-IT')}
+                              {leave.start_date} - {leave.end_date}
                             </small>
                             <br />
                             <small className="text-light">

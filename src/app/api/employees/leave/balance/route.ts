@@ -50,14 +50,15 @@ export async function GET(request: NextRequest) {
     // Se il bilancio non esiste, crealo automaticamente con valori standard
     if (!leaveBalance) {
       const currentYear = new Date().getFullYear();
-      console.log(`Bilancio ferie non trovato per ${employee.nome} ${employee.cognome} (${employee.id}) per l'anno ${currentYear}. Creazione automatica...`);
+      const currentMonth = new Date().getMonth() + 1;
+      console.log(`Bilancio ferie non trovato per ${employee.nome} ${employee.cognome} (${employee.id}) per l'anno ${currentYear} mese ${currentMonth}. Creazione automatica...`);
       
       const newBalance = {
         employee_id: employee.id,
         year: currentYear,
+        month: currentMonth,
         vacation_days_total: 26,
         vacation_days_used: 0,
-        vacation_days_remaining: 26,
         sick_days_used: 0,
         personal_days_used: 0
       };

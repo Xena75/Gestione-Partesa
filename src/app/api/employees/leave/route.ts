@@ -214,7 +214,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { user_id, start_date, end_date, leave_type, reason, notes, days_requested } = body;
+    const { user_id, start_date, end_date, leave_type, reason, notes, days_requested, hours_requested } = body;
     
     // Se l'utente è employee, può creare richieste solo per se stesso
     let targetUserId = user_id;
@@ -227,6 +227,32 @@ export async function POST(request: NextRequest) {
         success: false,
         error: 'Dati mancanti: user_id, start_date, end_date e leave_type sono obbligatori'
       }, { status: 400 });
+    }
+
+    // Validazione specifica per permessi ad ore
+    if (leave_type === 'permesso') {
+      // Per i permessi, se ci sono ore, i giorni devono essere 0
+      if (hours_requested && hours_requested > 0) {
+        if (days_requested && days_requested !== 0) {
+          return NextResponse.json({
+            success: false,
+            error: 'Per i permessi ad ore, il campo giorni richiesti deve essere 0'
+          }, { status: 400 });
+        }
+      } else if (!days_requested || days_requested <= 0) {
+        return NextResponse.json({
+          success: false,
+          error: 'Per i permessi è obbligatorio specificare ore o giorni'
+        }, { status: 400 });
+      }
+    } else {
+      // Per ferie, malattia, congedo: i giorni devono essere > 0
+      if (!days_requested || days_requested <= 0) {
+        return NextResponse.json({
+          success: false,
+          error: 'Per ferie, malattia e congedo il campo giorni richiesti deve essere maggiore di 0'
+        }, { status: 400 });
+      }
     }
     
     console.log('POST - Creazione richiesta ferie per dipendente ID:', targetUserId);
@@ -250,28 +276,33 @@ export async function POST(request: NextRequest) {
     
     // Calcola automaticamente i giorni lavorativi se non forniti
     let calculatedDays = days_requested;
-    if (!calculatedDays || calculatedDays <= 0) {
+    
+    // Per i permessi ad ore, i giorni devono essere 0
+    if (leave_type === 'permesso' && hours_requested && hours_requested > 0) {
+      calculatedDays = 0;
+    } else if (!calculatedDays || calculatedDays <= 0) {
       calculatedDays = calculateWorkingDays(start_date, end_date);
     }
     
-    // Converti le date in formato ISO per il database
-    const parseDate = (dateStr: string): Date => {
-      // Se è in formato italiano gg/mm/aaaa, convertilo
-      if (dateStr.length === 10 && dateStr.includes('/')) {
-        const parts = dateStr.split('/');
-        const day = parseInt(parts[0], 10);
-        const month = parseInt(parts[1], 10);
-        const year = parseInt(parts[2], 10);
-        return new Date(year, month - 1, day);
-      }
-      return new Date(dateStr);
-    };
+    console.log('POST - Giorni calcolati:', calculatedDays);
+    console.log('POST - Dati ricevuti dal form:', {
+      user_id,
+      start_date,
+      end_date,
+      leave_type,
+      reason,
+      notes,
+      days_requested
+    });
     
+    // Non convertiamo le date in oggetti Date, lasciamole come stringhe
+    // La funzione createLeaveRequest si occuperà della conversione
     const leaveData: Partial<LeaveRequest> = {
       employee_id: employee.id, // Usa l'ID del dipendente trovato
-      start_date: parseDate(start_date),
-      end_date: parseDate(end_date),
+      start_date: start_date, // Mantieni come stringa
+      end_date: end_date, // Mantieni come stringa
       days_requested: calculatedDays,
+      hours_requested: hours_requested || null,
       leave_type,
       reason: reason || null,
       notes: notes || null,
@@ -279,6 +310,8 @@ export async function POST(request: NextRequest) {
       approved_by: null,
       approved_at: null
     };
+    
+    console.log('POST - Dati preparati per createLeaveRequest:', leaveData);
     
     const newLeaveRequest = await createLeaveRequest(leaveData);
     

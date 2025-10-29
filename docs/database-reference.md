@@ -2392,4 +2392,107 @@ WHERE status = 'completed' AND created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)
 
 ---
 
-*Ultimo aggiornamento: Dicembre 2024 - Aggiunta API dashboard-stats per dashboard moderna*
+## Miglioramenti Sistema Gestione Ferie
+**Data implementazione:** Gennaio 2025
+
+### Calcolo Dinamico Ore Utilizzate Permessi
+**Problema risolto:**
+- Mancanza di visualizzazione delle ore utilizzate per i permessi nella tabella bilanci ferie
+- Necessità di calcolo dinamico basato sulle richieste approvate invece di campo statico
+
+**Implementazione tecnica:**
+
+1. **Nuova funzione calculateUsedPermissionHours():**
+   ```typescript
+   // File: src/app/gestione/employees/ferie/page.tsx
+   const calculateUsedPermissionHours = (employeeId: string, year: number): number => {
+     const employeeRequests = leaveRequests.filter(request => {
+       const requestEmployeeId = String(request.employee_id);
+       if (requestEmployeeId !== String(employeeId)) return false;
+       
+       if (request.leave_type !== 'permesso') return false;
+       if (request.status !== 'approved') return false;
+       
+       // Estrazione anno da diversi formati data
+       let requestYear = null;
+       if (request.start_date) {
+         const startDate = new Date(request.start_date);
+         if (!isNaN(startDate.getTime())) {
+           requestYear = startDate.getFullYear();
+         }
+       }
+       
+       return requestYear === year;
+     });
+     
+     return employeeRequests.reduce((total, request) => {
+       return total + (request.hours_requested || 0);
+     }, 0);
+   };
+   ```
+
+2. **Nuova colonna "Ore Utilizzate" nella tabella bilanci:**
+   ```tsx
+   <th className="text-dark">Ore Utilizzate</th>
+   // ...
+   <td>
+     <span className="badge" style={{ backgroundColor: '#6f42c1', color: 'white' }}>
+       {calculateUsedPermissionHours(balance.employee_id, balance.year)} ore
+     </span>
+   </td>
+   ```
+
+3. **Aggiornamento statistiche a fondo pagina:**
+   ```typescript
+   const totalUsedPermissionHours = filteredBalances.reduce((total, balance) => {
+     return total + calculateUsedPermissionHours(balance.employee_id, balance.year);
+   }, 0);
+   ```
+
+**Caratteristiche implementate:**
+- ✅ **Calcolo dinamico**: Ore calcolate in tempo reale dalle richieste approvate
+- ✅ **Filtro per tipo**: Solo richieste di tipo 'permesso' considerate
+- ✅ **Filtro per stato**: Solo richieste 'approved' incluse nel calcolo
+- ✅ **Filtro per anno**: Calcolo specifico per l'anno del bilancio
+- ✅ **Badge viola distintivo**: Colore #6f42c1 per differenziare dalle altre colonne
+- ✅ **Statistiche aggregate**: Totale ore utilizzate mostrato a fondo pagina
+- ✅ **Debug completo**: Log dettagliati per verifica funzionamento
+
+### Correzioni UI Gestione Ferie
+**Data implementazione:** Gennaio 2025
+
+**Problemi risolti:**
+- Testo campo "Dipendente" non leggibile su sfondo scuro nella tabella richieste
+- Inconsistenza colori tra tabella richieste e tabella bilanci
+
+**Correzioni implementate:**
+
+1. **Ripristino testo bianco campo Dipendente (tabella richieste):**
+   ```tsx
+   // File: src/app/gestione/employees/ferie/page.tsx - riga 1091
+   <strong className="text-white">{request.nome} {request.cognome}</strong>
+   ```
+
+2. **Mantenimento testo bianco campo Dipendente (tabella bilanci):**
+   ```tsx
+   // File: src/app/gestione/employees/ferie/page.tsx - riga 1229
+   <strong className="text-white">{balance.cognome}, {balance.nome}</strong>
+   ```
+
+**Benefici:**
+- ✅ **Leggibilità ottimale**: Testo bianco su sfondo scuro per massimo contrasto
+- ✅ **Coerenza UI**: Stile uniforme tra tabella richieste e tabella bilanci
+- ✅ **Accessibilità**: Rispetto standard di leggibilità per interfacce scure
+- ✅ **UX migliorata**: Eliminazione problemi di visualizzazione testo
+
+### Tabelle Coinvolte
+- **employee_leave_requests**: Utilizzata per calcolo dinamico ore permessi utilizzate
+- **employee_leave_balance**: Visualizzazione saldi con nuova colonna ore utilizzate
+
+### File Modificati
+- `src/app/gestione/employees/ferie/page.tsx` - Aggiunta funzione calcolo e correzioni UI
+- Nessuna modifica struttura database richiesta (calcolo dinamico da dati esistenti)
+
+---
+
+*Ultimo aggiornamento: Gennaio 2025 - Miglioramenti sistema gestione ferie con calcolo dinamico ore utilizzate*

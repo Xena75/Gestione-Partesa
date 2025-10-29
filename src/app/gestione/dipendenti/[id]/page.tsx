@@ -11,6 +11,7 @@ interface Employee {
   nominativo: string;
   email: string;
   login_email?: string;
+  username_login?: string;
   email_aziendale?: string;
   cellulare: string;
   indirizzo?: string;
@@ -51,9 +52,12 @@ interface Document {
 interface LeaveBalance {
   id: number;
   year: number;
+  month: number; // Campo per mese di riferimento (1-12) per saldi mensili
   vacation_days_total: number;
   vacation_days_used: number;
-  vacation_days_remaining: number;
+  vacation_hours_remaining?: number;
+  ex_holiday_hours_remaining?: number;
+  rol_hours_remaining?: number;
   sick_days_used: number;
   personal_days_used: number;
 }
@@ -114,6 +118,12 @@ export default function AutistaDettaglio() {
   });
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
+
+  // Stati per gestione username
+  const [showUsernameForm, setShowUsernameForm] = useState(false);
+  const [usernameForm, setUsernameForm] = useState('');
+  const [usernameLoading, setUsernameLoading] = useState(false);
+  const [usernameMessage, setUsernameMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
 
   useEffect(() => {
     if (employeeId) {
@@ -278,6 +288,59 @@ export default function AutistaDettaglio() {
     setShowPasswordForm(false);
     setPasswordForm({password: '', confirmPassword: ''});
     setPasswordMessage(null);
+  };
+
+  // Funzione per aggiornare l'username
+  const handleUsernameUpdate = async () => {
+    if (!usernameForm.trim()) {
+      setUsernameMessage({type: 'error', text: 'L\'username non può essere vuoto'});
+      return;
+    }
+    
+    if (usernameForm.trim().length < 3) {
+      setUsernameMessage({type: 'error', text: 'L\'username deve essere di almeno 3 caratteri'});
+      return;
+    }
+
+    // Validazione formato username
+    const usernameRegex = /^[a-zA-Z0-9._]+$/;
+    if (!usernameRegex.test(usernameForm.trim())) {
+      setUsernameMessage({type: 'error', text: 'L\'username può contenere solo lettere, numeri, punti e underscore'});
+      return;
+    }
+    
+    try {
+      setUsernameLoading(true);
+      setUsernameMessage(null);
+      
+      const response = await fetch(`/api/employees/${employeeId}/username`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username_login: usernameForm.trim()
+        }),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setUsernameMessage({type: 'success', text: 'Username aggiornato con successo!'});
+        // Aggiorna i dati del dipendente con il nuovo username
+        setEmployee(prev => prev ? {...prev, username_login: result.username_login} : null);
+        setShowUsernameForm(false);
+        setUsernameForm('');
+      } else {
+        setUsernameMessage({type: 'error', text: result.error || 'Errore nell\'aggiornamento dell\'username'});
+      }
+      
+    } catch (error) {
+      console.error('Errore nell\'aggiornamento username:', error);
+      setUsernameMessage({type: 'error', text: 'Errore nell\'aggiornamento dell\'username'});
+    } finally {
+      setUsernameLoading(false);
+    }
   };
 
   if (loading) {
@@ -709,120 +772,95 @@ export default function AutistaDettaglio() {
                         </h5>
                       </div>
                       <div className="card-body">
-                        <div className="row">
-                          <div className="col-md-6 mb-3">
-                            <label className="form-label text-light">Email Personale</label>
-                            <p className="text-light">
-                              {employee.email ? (
-                                <span>{employee.email}</span>
-                              ) : (
-                                <span className="text-secondary">Non disponibile</span>
-                              )}
-                            </p>
-                          </div>
-                          <div className="col-md-6 mb-3">
-                            <label className="form-label text-light">Email di Accesso</label>
-                            <p className="text-light">
-                              {employee.login_email ? (
-                                <span>{employee.login_email}</span>
-                              ) : (
-                                <span className="text-warning">
-                                  <i className="fas fa-exclamation-triangle me-1"></i>
-                                  Non configurata
-                                </span>
-                              )}
-                            </p>
-                            {!employee.login_email && (
-                              <small className="text-secondary">
-                                L'email di accesso è necessaria per il login al sistema
-                              </small>
-                            )}
-                          </div>
-                        </div>
-
                         <div className="mb-3">
-                          <label className="form-label text-light">Stato Password</label>
-                          <div>
-                            {hasPassword ? (
-                              <span className="badge bg-success">Configurata</span>
-                            ) : (
-                              <span className="badge bg-warning">Non configurata</span>
-                            )}
-                          </div>
-                        </div>
-
-                        {passwordMessage && (
-                          <div className={`alert alert-${passwordMessage.type === 'success' ? 'success' : 'danger'} alert-sm`}>
-                            {passwordMessage.text}
-                          </div>
-                        )}
-
-                        {!showPasswordForm ? (
-                          <div className="d-grid">
-                            <button 
-                              className="btn btn-outline-primary btn-sm"
-                              onClick={() => setShowPasswordForm(true)}
-                            >
-                              <i className="fas fa-key me-1"></i>
-                              {hasPassword ? 'Cambia Password' : 'Imposta Password'}
-                            </button>
-                          </div>
-                        ) : (
-                          <form onSubmit={handlePasswordSubmit}>
-                            <div className="mb-3">
-                              <label className="form-label text-light">Nuova Password</label>
-                              <input
-                                type="password"
-                                className="form-control form-control-sm bg-dark text-light border-secondary"
-                                value={passwordForm.password}
-                                onChange={(e) => setPasswordForm(prev => ({...prev, password: e.target.value}))}
-                                placeholder="Inserisci la password"
-                                required
-                                minLength={6}
-                              />
-                            </div>
-                            <div className="mb-3">
-                              <label className="form-label text-light">Conferma Password</label>
-                              <input
-                                type="password"
-                                className="form-control form-control-sm bg-dark text-light border-secondary"
-                                value={passwordForm.confirmPassword}
-                                onChange={(e) => setPasswordForm(prev => ({...prev, confirmPassword: e.target.value}))}
-                                placeholder="Conferma la password"
-                                required
-                                minLength={6}
-                              />
-                            </div>
-                            <div className="d-grid gap-2">
-                              <button 
-                                type="submit" 
-                                className="btn btn-primary btn-sm"
-                                disabled={passwordLoading}
-                              >
-                                {passwordLoading ? (
-                                  <>
-                                    <span className="spinner-border spinner-border-sm me-1"></span>
-                                    Salvando...
-                                  </>
+                          <label className="form-label text-light">Username Login</label>
+                          
+                          {!showUsernameForm ? (
+                            <div className="d-flex align-items-center gap-2">
+                              <p className="text-light mb-0">
+                                {employee.username_login ? (
+                                  <span>{employee.username_login}</span>
                                 ) : (
-                                  <>
-                                    <i className="fas fa-save me-1"></i>
-                                    Salva Password
-                                  </>
+                                  <span className="text-warning">
+                                    <i className="fas fa-exclamation-triangle me-1"></i>
+                                    Non configurato
+                                  </span>
                                 )}
-                              </button>
-                              <button 
-                                type="button" 
-                                className="btn btn-outline-secondary btn-sm"
-                                onClick={resetPasswordForm}
-                                disabled={passwordLoading}
+                              </p>
+                              <button
+                                type="button"
+                                className="btn btn-outline-primary btn-sm"
+                                onClick={() => {
+                                  setUsernameForm(employee.username_login || '');
+                                  setShowUsernameForm(true);
+                                  setUsernameMessage(null);
+                                }}
                               >
-                                <i className="fas fa-times me-1"></i>
-                                Annulla
+                                <i className="fas fa-edit me-1"></i>
+                                {employee.username_login ? 'Modifica' : 'Imposta'} Username
                               </button>
                             </div>
-                          </form>
-                        )}
+                          ) : (
+                            <div className="mt-2">
+                              <div className="input-group mb-2">
+                                <input
+                                  type="text"
+                                  className="form-control"
+                                  placeholder="Inserisci username"
+                                  value={usernameForm}
+                                  onChange={(e) => setUsernameForm(e.target.value)}
+                                  disabled={usernameLoading}
+                                />
+                              </div>
+                              <div className="d-flex gap-2">
+                                <button
+                                  type="button"
+                                  className="btn btn-success btn-sm"
+                                  onClick={handleUsernameUpdate}
+                                  disabled={usernameLoading || !usernameForm.trim()}
+                                >
+                                  {usernameLoading ? (
+                                    <>
+                                      <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                      Salvataggio...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <i className="fas fa-save me-1"></i>
+                                      Salva
+                                    </>
+                                  )}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn btn-secondary btn-sm"
+                                  onClick={() => {
+                                    setShowUsernameForm(false);
+                                    setUsernameForm('');
+                                    setUsernameMessage(null);
+                                  }}
+                                  disabled={usernameLoading}
+                                >
+                                  <i className="fas fa-times me-1"></i>
+                                  Annulla
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {usernameMessage && (
+                            <div className={`alert alert-${usernameMessage.type === 'success' ? 'success' : 'danger'} mt-2 mb-0`}>
+                              <i className={`fas fa-${usernameMessage.type === 'success' ? 'check-circle' : 'exclamation-circle'} me-1`}></i>
+                              {usernameMessage.text}
+                            </div>
+                          )}
+
+                          {!employee.username_login && !showUsernameForm && (
+                            <small className="text-secondary">
+                              L'username è necessario per il login al sistema
+                            </small>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -941,8 +979,17 @@ export default function AutistaDettaglio() {
                               </div>
                             </div>
                             <div className="col-4">
-                              <h4 className="text-success mb-1">{leaveBalance.vacation_days_remaining}</h4>
-                              <small className="text-light">Rimanenti</small>
+                              {leaveBalance.vacation_hours_remaining !== undefined ? (
+                                <>
+                                  <h4 className="text-success mb-1">{leaveBalance.vacation_hours_remaining}</h4>
+                                  <small className="text-light">Ore Rimanenti</small>
+                                </>
+                              ) : (
+                                <>
+                                  <h4 className="text-success mb-1">{leaveBalance.vacation_days_total - leaveBalance.vacation_days_used}</h4>
+                                  <small className="text-light">Giorni Rimanenti</small>
+                                </>
+                              )}
                             </div>
                           </div>
                         ) : (

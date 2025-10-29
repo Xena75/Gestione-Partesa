@@ -22,6 +22,7 @@ interface LeaveRequest {
   start_date: string;
   end_date: string;
   days_requested: number;
+  hours_requested?: number;
   reason?: string;
   status: string;
   created_at: string;
@@ -32,14 +33,17 @@ interface LeaveRequest {
 
 interface LeaveBalance {
   id: number;
-  employee_id: number;
+  employee_id: string;
   employee_name: string;
   nome: string;
   cognome: string;
   year: number;
+  month: number; // Campo per mese di riferimento (1-12) per saldi mensili
   vacation_days_total: number;
   vacation_days_used: number;
-  vacation_days_remaining: number;
+  vacation_hours_remaining?: number;
+  ex_holiday_hours_remaining?: number;
+  rol_hours_remaining?: number;
   sick_days_used: number;
   personal_days_used: number;
   last_updated: string;
@@ -58,22 +62,41 @@ const STATUS_TYPES = [
   { value: 'rejected', label: 'Rifiutata', color: 'danger' }
 ];
 
+// Funzione helper per parsare date in formato italiano (dd/mm/yyyy)
+const parseItalianDate = (dateString: string): Date | null => {
+  if (!dateString || dateString === '' || dateString === 'Data non valida') return null;
+  
+  // Se è già un timestamp o formato ISO, usalo direttamente
+  if (!isNaN(Number(dateString)) || dateString.includes('T') || dateString.includes('-')) {
+    const date = new Date(dateString);
+    return isNaN(date.getTime()) ? null : date;
+  }
+  
+  // Gestisce formato italiano dd/mm/yyyy
+  const parts = dateString.split('/');
+  if (parts.length === 3) {
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1; // I mesi in JavaScript sono 0-based
+    const year = parseInt(parts[2], 10);
+    
+    if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+      const date = new Date(year, month, day);
+      return isNaN(date.getTime()) ? null : date;
+    }
+  }
+  
+  // Fallback: prova il parsing standard
+  const date = new Date(dateString);
+  return isNaN(date.getTime()) ? null : date;
+};
+
 // Funzione helper per formattare le date in modo sicuro
 const formatDateSafe = (dateString: string | null | undefined): string => {
   if (!dateString || dateString === '') return '-';
   
-  // Prova diversi formati di data
-  let date: Date;
+  const date = parseItalianDate(dateString);
+  if (!date) return 'Data non valida';
   
-  // Se è un numero (timestamp)
-  if (typeof dateString === 'number' || !isNaN(Number(dateString))) {
-    date = new Date(Number(dateString));
-  } else {
-    // Se è una stringa
-    date = new Date(dateString);
-  }
-  
-  if (isNaN(date.getTime())) return 'Data non valida';
   return date.toLocaleDateString('it-IT');
 };
 
@@ -81,18 +104,9 @@ const formatDateSafe = (dateString: string | null | undefined): string => {
 const formatDateTimeSafe = (dateString: string | null | undefined): { date: string; time: string } => {
   if (!dateString || dateString === '') return { date: '-', time: '-' };
   
-  // Prova diversi formati di data
-  let date: Date;
+  const date = parseItalianDate(dateString);
+  if (!date) return { date: 'Data non valida', time: '-' };
   
-  // Se è un numero (timestamp)
-  if (typeof dateString === 'number' || !isNaN(Number(dateString))) {
-    date = new Date(Number(dateString));
-  } else {
-    // Se è una stringa
-    date = new Date(dateString);
-  }
-  
-  if (isNaN(date.getTime())) return { date: 'Data non valida', time: '-' };
   return {
     date: date.toLocaleDateString('it-IT'),
     time: date.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
@@ -100,6 +114,8 @@ const formatDateTimeSafe = (dateString: string | null | undefined): { date: stri
 };
 
 export default function GestioneFerie() {
+  console.log('🚀 COMPONENT LOADED - GestioneFerie');
+  
   const [activeTab, setActiveTab] = useState<'richieste' | 'bilanci'>('richieste');
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
@@ -113,6 +129,10 @@ export default function GestioneFerie() {
   const [employeeFilter, setEmployeeFilter] = useState('');
   const [yearFilter, setYearFilter] = useState(new Date().getFullYear().toString());
 
+  // Ordinamento
+  const [sortField, setSortField] = useState<string>('');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
   // Form nuova richiesta
   const [showNewRequestForm, setShowNewRequestForm] = useState(false);
   const [newRequest, setNewRequest] = useState({
@@ -122,6 +142,12 @@ export default function GestioneFerie() {
     end_date: '',
     reason: ''
   });
+
+  // Stati per import Excel
+  const [showImportForm, setShowImportForm] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importResult, setImportResult] = useState<any>(null);
 
   useEffect(() => {
     loadData();
@@ -165,6 +191,28 @@ export default function GestioneFerie() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Funzione per gestire l'ordinamento
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      // Se è lo stesso campo, cambia direzione
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Se è un campo diverso, imposta nuovo campo con direzione ascendente
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  // Funzione per renderizzare l'icona di ordinamento
+  const renderSortIcon = (field: string) => {
+    if (sortField !== field) {
+      return <i className="fas fa-sort ms-1 text-secondary"></i>;
+    }
+    return sortDirection === 'asc' 
+      ? <i className="fas fa-sort-up ms-1 text-primary"></i>
+      : <i className="fas fa-sort-down ms-1 text-primary"></i>;
   };
 
   const handleApproveRequest = async (requestId: number, action: 'approve' | 'reject') => {
@@ -218,6 +266,161 @@ export default function GestioneFerie() {
     }
     
     return count;
+  };
+
+  // Funzione per calcolare le ferie utilizzate da un dipendente in un anno specifico
+  const calculateUsedVacationDays = (employeeId: string, year: number): number => {
+    console.log('🔍 FUNCTION CALLED:', employeeId, year);
+    
+    if (!leaveRequests) {
+      console.log('❌ leaveRequests is null/undefined');
+      return 0;
+    }
+    
+    console.log('✅ leaveRequests exists, length:', leaveRequests.length);
+    
+    // Debug: mostra tutti i leave_type e status unici presenti nei dati
+    const uniqueLeaveTypes = [...new Set(leaveRequests.map(req => req.leave_type))];
+    const uniqueStatuses = [...new Set(leaveRequests.map(req => req.status))];
+    console.log('🔍 UNIQUE LEAVE TYPES:', uniqueLeaveTypes);
+    console.log('🔍 UNIQUE STATUSES:', uniqueStatuses);
+    
+    // Debug: mostra la struttura delle prime 2 richieste
+    if (leaveRequests.length > 0) {
+      console.log('🔍 FIRST REQUEST STRUCTURE:', leaveRequests[0]);
+      if (leaveRequests.length > 1) {
+        console.log('🔍 SECOND REQUEST STRUCTURE:', leaveRequests[1]);
+      }
+    }
+    
+    const filteredRequests = leaveRequests.filter(request => {
+      // Debug: mostra la data originale
+      console.log(`🔍 ORIGINAL START_DATE: "${request.start_date}"`);
+      
+      // Funzione per estrarre l'anno da diversi formati di data
+      const extractYear = (dateString: string): number => {
+        if (!dateString) return NaN;
+        
+        // Prova diversi formati
+        // Formato DD/MM/YYYY
+        if (dateString.includes('/')) {
+          const parts = dateString.split('/');
+          if (parts.length === 3) {
+            const year = parseInt(parts[2]);
+            console.log(`🔍 EXTRACTED YEAR FROM DD/MM/YYYY: ${year}`);
+            return year;
+          }
+        }
+        
+        // Formato YYYY-MM-DD
+        if (dateString.includes('-')) {
+          const parts = dateString.split('-');
+          if (parts.length === 3) {
+            const year = parseInt(parts[0]);
+            console.log(`🔍 EXTRACTED YEAR FROM YYYY-MM-DD: ${year}`);
+            return year;
+          }
+        }
+        
+        // Fallback: prova con new Date()
+        const fallbackYear = new Date(dateString).getFullYear();
+        console.log(`🔍 FALLBACK YEAR FROM new Date(): ${fallbackYear}`);
+        return fallbackYear;
+      };
+      
+      const requestYear = extractYear(request.start_date);
+      
+      // Costruisci il nome completo dalla richiesta
+      const requestEmployeeName = `${request.nome} ${request.cognome}`;
+      
+      console.log(`🔍 COMPARING: "${employeeId}" vs "${requestEmployeeName}" (ID: ${request.employee_id})`);
+      console.log(`🔍 REQUEST DETAILS: leave_type="${request.leave_type}", status="${request.status}", year=${requestYear}`);
+      
+      const match = requestEmployeeName === employeeId &&
+                   request.leave_type === 'ferie' &&
+                   request.status === 'approved' &&
+                   requestYear === year;
+      
+      if (match) {
+        console.log('✅ MATCH FOUND:', request);
+      }
+      
+      return match;
+    });
+    
+    console.log('📊 Filtered requests:', filteredRequests.length);
+    
+    const total = filteredRequests.reduce((total, request) => total + request.days_requested, 0);
+    console.log('🎯 TOTAL DAYS:', total);
+    
+    return total;
+  };
+
+  // Funzione per calcolare le ore utilizzate dei permessi da un dipendente in un anno specifico
+  const calculateUsedPermissionHours = (employeeId: string, year: number): number => {
+    console.log('🔍 PERMISSION HOURS FUNCTION CALLED:', employeeId, year);
+    
+    if (!leaveRequests) {
+      console.log('❌ leaveRequests is null/undefined for permission hours');
+      return 0;
+    }
+    
+    console.log('✅ leaveRequests exists for permission hours, length:', leaveRequests.length);
+    
+    const filteredRequests = leaveRequests.filter(request => {
+      // Funzione per estrarre l'anno da diversi formati di data
+      const extractYear = (dateString: string): number => {
+        if (!dateString) return NaN;
+        
+        // Formato DD/MM/YYYY
+        if (dateString.includes('/')) {
+          const parts = dateString.split('/');
+          if (parts.length === 3) {
+            const year = parseInt(parts[2]);
+            return year;
+          }
+        }
+        
+        // Formato YYYY-MM-DD
+        if (dateString.includes('-')) {
+          const parts = dateString.split('-');
+          if (parts.length === 3) {
+            const year = parseInt(parts[0]);
+            return year;
+          }
+        }
+        
+        // Fallback: prova con new Date()
+        const fallbackYear = new Date(dateString).getFullYear();
+        return fallbackYear;
+      };
+      
+      const requestYear = extractYear(request.start_date);
+      
+      // Costruisci il nome completo dalla richiesta
+      const requestEmployeeName = `${request.nome} ${request.cognome}`;
+      
+      console.log(`🔍 PERMISSION COMPARING: "${employeeId}" vs "${requestEmployeeName}"`);
+      console.log(`🔍 PERMISSION REQUEST DETAILS: leave_type="${request.leave_type}", status="${request.status}", year=${requestYear}, hours_requested=${request.hours_requested}`);
+      
+      const match = requestEmployeeName === employeeId &&
+                   request.leave_type === 'permesso' &&
+                   request.status === 'approved' &&
+                   requestYear === year;
+      
+      if (match) {
+        console.log('✅ PERMISSION MATCH FOUND:', request);
+      }
+      
+      return match;
+    });
+    
+    console.log('📊 Filtered permission requests:', filteredRequests.length);
+    
+    const total = filteredRequests.reduce((total, request) => total + (request.hours_requested || 0), 0);
+    console.log('🎯 TOTAL PERMISSION HOURS:', total);
+    
+    return total;
   };
 
   const handleNewRequest = async (e: React.FormEvent) => {
@@ -305,6 +508,60 @@ export default function GestioneFerie() {
     );
   };
 
+  const handleImportExcel = async () => {
+    if (!importFile) {
+      alert('Seleziona un file Excel da importare');
+      return;
+    }
+
+    setImportLoading(true);
+    setImportResult(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', importFile);
+
+      const response = await fetch('/api/employees/import-leave-balance', {
+        method: 'POST',
+        body: formData
+      });
+
+      const result = await response.json();
+      setImportResult(result);
+
+      if (result.success) {
+        await loadData(); // Ricarica i dati per mostrare gli aggiornamenti
+        alert(`Import completato con successo! ${result.data.successfulImports} su ${result.data.totalRows} righe elaborate.`);
+      } else {
+        alert(`Import fallito: ${result.error || 'Errore sconosciuto'}`);
+      }
+
+    } catch (error) {
+      console.error('Errore durante l\'import:', error);
+      alert('Errore durante l\'import del file Excel');
+      setImportResult({
+        success: false,
+        error: 'Errore di connessione durante l\'import'
+      });
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Verifica che sia un file Excel
+      if (file.name.match(/\.(xlsx|xls)$/i)) {
+        setImportFile(file);
+        setImportResult(null);
+      } else {
+        alert('Seleziona un file Excel (.xlsx o .xls)');
+        event.target.value = '';
+      }
+    }
+  };
+
   const calculateDays = (startDate: string, endDate: string) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -318,6 +575,36 @@ export default function GestioneFerie() {
     if (typeFilter && request.leave_type !== typeFilter) return false;
     if (employeeFilter && request.employee_id.toString() !== employeeFilter) return false;
     return true;
+  }).sort((a, b) => {
+    if (!sortField) return 0;
+    
+    let aValue: any;
+    let bValue: any;
+    
+    switch (sortField) {
+      case 'dipendente':
+        aValue = `${a.nome} ${a.cognome}`.toLowerCase();
+        bValue = `${b.nome} ${b.cognome}`.toLowerCase();
+        break;
+      case 'tipo':
+        aValue = a.leave_type.toLowerCase();
+        bValue = b.leave_type.toLowerCase();
+        break;
+      case 'richiesta_il':
+        aValue = parseItalianDate(a.created_at)?.getTime() || 0;
+        bValue = parseItalianDate(b.created_at)?.getTime() || 0;
+        break;
+      case 'periodo':
+        aValue = parseItalianDate(a.start_date)?.getTime() || 0;
+        bValue = parseItalianDate(b.start_date)?.getTime() || 0;
+        break;
+      default:
+        return 0;
+    }
+    
+    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+    return 0;
   });
 
   const filteredBalances = leaveBalances.filter(balance => {
@@ -332,7 +619,7 @@ export default function GestioneFerie() {
           <div className="spinner-border text-primary" role="status">
             <span className="visually-hidden">Caricamento...</span>
           </div>
-          <p className="mt-3 text-light">Caricamento dati ferie...</p>
+          <p className="mt-3 text-dark">Caricamento dati ferie...</p>
         </div>
       </div>
     );
@@ -382,6 +669,13 @@ export default function GestioneFerie() {
             </div>
             <div>
               <button 
+                className="btn btn-success me-2"
+                onClick={() => setShowImportForm(!showImportForm)}
+              >
+                <i className="fas fa-file-excel me-1"></i>
+                Import Excel
+              </button>
+              <button 
                 className="btn btn-primary me-2"
                 onClick={() => setShowNewRequestForm(!showNewRequestForm)}
               >
@@ -394,6 +688,120 @@ export default function GestioneFerie() {
               </Link>
             </div>
           </div>
+
+          {/* Form Import Excel */}
+          {showImportForm && (
+            <div className="card mb-4">
+              <div className="card-header">
+                <h5 className="mb-0">
+                  <i className="fas fa-file-excel me-2"></i>
+                  Import Saldi Ferie da Excel
+                </h5>
+              </div>
+              <div className="card-body">
+                <div className="row">
+                  <div className="col-md-8">
+                    <div className="mb-3">
+                      <label htmlFor="excelFile" className="form-label">
+                        File Excel <span className="text-danger">*</span>
+                      </label>
+                      <input
+                        type="file"
+                        id="excelFile"
+                        className="form-control"
+                        accept=".xlsx,.xls"
+                        onChange={handleFileChange}
+                        disabled={importLoading}
+                      />
+                      <div className="form-text">
+                        Il file deve contenere le colonne: ID, Anno, Mese, Ferie-Residue, EX FEST-F-Residue, ROL-R-Residue
+                      </div>
+                    </div>
+                    
+                    {importFile && (
+                      <div className="alert alert-info">
+                        <i className="fas fa-file-excel me-2"></i>
+                        File selezionato: <strong>{importFile.name}</strong> ({(importFile.size / 1024).toFixed(1)} KB)
+                      </div>
+                    )}
+                  </div>
+                  <div className="col-md-4">
+                    <div className="d-grid gap-2">
+                      <button
+                        type="button"
+                        className="btn btn-success"
+                        onClick={handleImportExcel}
+                        disabled={!importFile || importLoading}
+                      >
+                        {importLoading ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            Elaborazione...
+                          </>
+                        ) : (
+                          <>
+                            <i className="fas fa-upload me-1"></i>
+                            Importa Dati
+                          </>
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary"
+                        onClick={() => {
+                          setShowImportForm(false);
+                          setImportFile(null);
+                          setImportResult(null);
+                        }}
+                      >
+                        <i className="fas fa-times me-1"></i>
+                        Annulla
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Risultati Import */}
+                {importResult && (
+                  <div className="mt-4">
+                    <div className={`alert ${importResult.success ? 'alert-success' : 'alert-danger'}`}>
+                      <h6 className="alert-heading">
+                        <i className={`fas ${importResult.success ? 'fa-check-circle' : 'fa-exclamation-triangle'} me-2`}></i>
+                        Risultato Import
+                      </h6>
+                      <p className="mb-2">{importResult.message}</p>
+                      
+                      {importResult.data && (
+                        <div className="row">
+                          <div className="col-md-6">
+                            <small>
+                              <strong>Righe totali:</strong> {importResult.data.totalRows}<br/>
+                              <strong>Import riusciti:</strong> {importResult.data.successfulImports}<br/>
+                              <strong>Errori:</strong> {importResult.data.errors?.length || 0}
+                            </small>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {importResult.data?.errors && importResult.data.errors.length > 0 && (
+                        <div className="mt-3">
+                          <h6>Errori riscontrati:</h6>
+                          <ul className="mb-0">
+                            {importResult.data.errors.slice(0, 5).map((error: string, index: number) => (
+                              <li key={index}><small>{error}</small></li>
+                            ))}
+                            {importResult.data.errors.length > 5 && (
+                              <li><small>... e altri {importResult.data.errors.length - 5} errori</small></li>
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Form Nuova Richiesta */}
           {showNewRequestForm && (
@@ -634,29 +1042,53 @@ export default function GestioneFerie() {
                 {filteredRequests.length === 0 ? (
                   <div className="text-center py-5">
                     <i className="fas fa-calendar-times fa-3x text-secondary mb-3"></i>
-                    <h5 className="text-light">Nessuna richiesta trovata</h5>
-                    <p className="text-light">Non ci sono richieste che corrispondono ai filtri selezionati</p>
+                    <h5 className="text-dark">Nessuna richiesta trovata</h5>
+                    <p className="text-dark">Non ci sono richieste che corrispondono ai filtri selezionati</p>
                   </div>
                 ) : (
                   <div className="table-responsive">
                     <table className="table table-hover table-dark">
                       <thead>
                         <tr>
-                          <th className="text-light">Dipendente</th>
-                          <th className="text-light">Tipo</th>
-                          <th className="text-light">Periodo</th>
-                          <th className="text-light">Giorni</th>
-                          <th className="text-light">Stato</th>
-                          <th className="text-light">Richiesta il</th>
-                          <th className="text-light">Motivo</th>
-                          <th className="text-light">Azioni</th>
+                          <th 
+                            className="text-dark user-select-none" 
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => handleSort('dipendente')}
+                          >
+                            Dipendente {renderSortIcon('dipendente')}
+                          </th>
+                          <th 
+                            className="text-dark user-select-none" 
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => handleSort('tipo')}
+                          >
+                            Tipo {renderSortIcon('tipo')}
+                          </th>
+                          <th 
+                            className="text-dark user-select-none" 
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => handleSort('periodo')}
+                          >
+                            Periodo {renderSortIcon('periodo')}
+                          </th>
+                          <th className="text-dark">Giorni/Ore</th>
+                          <th className="text-dark">Stato</th>
+                          <th 
+                            className="text-dark user-select-none" 
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => handleSort('richiesta_il')}
+                          >
+                            Richiesta il {renderSortIcon('richiesta_il')}
+                          </th>
+                          <th className="text-dark">Motivo</th>
+                          <th className="text-dark">Azioni</th>
                         </tr>
                       </thead>
                       <tbody>
                         {filteredRequests.map((request) => (
                           <tr key={request.id}>
                             <td>
-                              <strong className="text-light">{request.nome} {request.cognome}</strong>
+                              <strong className="text-white">{request.nome} {request.cognome}</strong>
                             </td>
                             <td>{getTypeBadge(request.leave_type)}</td>
                             <td>
@@ -667,9 +1099,34 @@ export default function GestioneFerie() {
                               </div>
                             </td>
                             <td>
-                              <span className="badge bg-info">
-                                {request.days_requested} giorni
-                              </span>
+                              <div>
+                                {request.leave_type === 'permesso' ? (
+                                  // Per i permessi: solo ore
+                                  request.hours_requested ? (
+                                    <span className="badge bg-warning">
+                                      {request.hours_requested} ore
+                                    </span>
+                                  ) : (
+                                    <span className="badge bg-secondary">
+                                      0 ore
+                                    </span>
+                                  )
+                                ) : (
+                                  // Per ferie, malattia, congedo: giorni + ore opzionali
+                                  <>
+                                    <span className="badge bg-info">
+                                      {request.days_requested} giorni
+                                    </span>
+                                    {request.hours_requested && (
+                                      <div className="mt-1">
+                                        <span className="badge bg-warning">
+                                          {request.hours_requested} ore
+                                        </span>
+                                      </div>
+                                    )}
+                                  </>
+                                )}
+                              </div>
                             </td>
                             <td>{getStatusBadge(request.status)}</td>
                             <td>
@@ -756,7 +1213,10 @@ export default function GestioneFerie() {
                           <th className="text-light">Anno</th>
                           <th className="text-light">Ferie Totali</th>
                           <th className="text-light">Ferie Utilizzate</th>
+                          <th className="text-light">Ore Utilizzate</th>
                           <th className="text-light">Ferie Rimanenti</th>
+                          <th className="text-light">Ex Festività Residue</th>
+                          <th className="text-light">ROL Residui</th>
                           <th className="text-light">Giorni Malattia</th>
                           <th className="text-light">Permessi</th>
                           <th className="text-light">Ultimo Aggiornamento</th>
@@ -766,7 +1226,7 @@ export default function GestioneFerie() {
                         {filteredBalances.map((balance) => (
                           <tr key={balance.id}>
                             <td>
-                              <strong className="text-light">{balance.cognome}, {balance.nome}</strong>
+                              <strong className="text-white">{balance.cognome}, {balance.nome}</strong>
                             </td>
                             <td>
                               <span className="badge bg-secondary">{balance.year}</span>
@@ -778,13 +1238,56 @@ export default function GestioneFerie() {
                             </td>
                             <td>
                               <span className="badge bg-warning">
-                                {balance.vacation_days_used} giorni
+                                {(() => {
+                                  console.log('=== BALANCE DEBUG ===');
+                                  console.log('Balance data:', { employee_id: balance.employee_id, year: balance.year, nome: balance.nome, cognome: balance.cognome });
+                                  const result = calculateUsedVacationDays(balance.employee_id, balance.year);
+                                  console.log('Function result:', result);
+                                  console.log('=== END BALANCE DEBUG ===');
+                                  return result;
+                                })()} giorni
                               </span>
                             </td>
                             <td>
-                              <span className={`badge ${balance.vacation_days_remaining > 0 ? 'bg-success' : 'bg-danger'}`}>
-                                {balance.vacation_days_remaining} giorni
+                              <span className="badge" style={{ backgroundColor: '#6f42c1', color: 'white' }}>
+                                {(() => {
+                                  const result = calculateUsedPermissionHours(balance.employee_id, balance.year);
+                                  return result;
+                                })()} ore
                               </span>
+                            </td>
+                            <td>
+                              {balance.vacation_hours_remaining !== undefined ? (
+                                <span className={`badge ${balance.vacation_hours_remaining > 0 ? 'bg-success' : 'bg-danger'}`}>
+                                  {balance.vacation_hours_remaining} ore
+                                </span>
+                              ) : (
+                                <span className={`badge ${(balance.vacation_days_total - balance.vacation_days_used) > 0 ? 'bg-success' : 'bg-danger'}`}>
+                                  {balance.vacation_days_total - balance.vacation_days_used} giorni
+                                </span>
+                              )}
+                            </td>
+                            <td>
+                              {balance.ex_holiday_hours_remaining !== undefined ? (
+                                <span className={`badge ${balance.ex_holiday_hours_remaining > 0 ? 'bg-success' : 'bg-warning'}`}>
+                                  {balance.ex_holiday_hours_remaining} ore
+                                </span>
+                              ) : (
+                                <span className="badge bg-secondary">
+                                  N/A
+                                </span>
+                              )}
+                            </td>
+                            <td>
+                              {balance.rol_hours_remaining !== undefined ? (
+                                <span className={`badge ${balance.rol_hours_remaining > 0 ? 'bg-success' : 'bg-warning'}`}>
+                                  {balance.rol_hours_remaining} ore
+                                </span>
+                              ) : (
+                                <span className="badge bg-secondary">
+                                  N/A
+                                </span>
+                              )}
                             </td>
                             <td>
                               <span className="badge bg-danger">
@@ -831,7 +1334,8 @@ export default function GestioneFerie() {
                   Totale bilanci: {filteredBalances.length} | 
                   Anno: {yearFilter} | 
                   Ferie totali: {filteredBalances.reduce((sum, b) => sum + b.vacation_days_total, 0)} giorni | 
-                  Ferie utilizzate: {filteredBalances.reduce((sum, b) => sum + b.vacation_days_used, 0)} giorni
+                  Ferie utilizzate: {filteredBalances.reduce((sum, b) => sum + calculateUsedVacationDays(b.employee_id, b.year), 0)} giorni | 
+                  Ore permessi utilizzate: {filteredBalances.reduce((sum, b) => sum + calculateUsedPermissionHours(b.employee_id, b.year), 0)} ore
                 </>
               )}
             </small>

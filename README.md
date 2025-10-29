@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.33.2
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.35.0
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -96,6 +96,18 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Storico completo**: Tracciamento tutte le richieste con stati e cronologia approvazioni
 - **Integrazione calendario**: Eventi ferie visualizzati nel calendario aziendale integrato
 - **Database esteso**: Tabelle `employee_leave_requests` e `employee_leave_balance` ottimizzate
+
+### 🎯 **Miglioramenti Sistema Gestione Ferie** ⭐ **NUOVO v2.35.0**
+- **Calcolo dinamico ore utilizzate**: Nuova colonna "Ore Utilizzate" nella tabella bilanci ferie
+- **Badge viola distintivo**: Visualizzazione ore permessi utilizzate con colore #6f42c1 per contrasto ottimale
+- **Calcolo automatico**: Ore calcolate dinamicamente dalle richieste approvate per dipendente/anno
+- **Filtri intelligenti**: Solo richieste tipo 'permesso', stato 'approved' e anno specifico
+- **Statistiche aggregate**: Totale ore utilizzate mostrato nelle statistiche a fondo pagina
+- **Aggiornamento real-time**: Calcolo dinamico senza modifiche database
+- **Correzioni UI**: Ripristino testo bianco per campo "Dipendente" in tabella richieste
+- **Coerenza visiva**: Stile uniforme tra tabella richieste e tabella bilanci
+- **Leggibilità ottimale**: Testo bianco su sfondo scuro per massimo contrasto
+- **Accessibilità migliorata**: Rispetto standard di leggibilità per interfacce scure
 
 ### 🗓️ **Correzioni Filtri e Formattazione Date** ⭐ **NUOVO v2.33.2**
 - **Filtri vista raggruppata**: Risolto problema filtri mese non funzionanti nella vista raggruppata gestione consegne

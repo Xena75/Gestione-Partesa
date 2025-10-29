@@ -10,6 +10,7 @@ interface LeaveRequest {
   start_date: string;
   end_date: string;
   days_requested: number;
+  hours_requested?: number;
   reason: string;
   status: string;
   created_at: string;
@@ -31,6 +32,7 @@ interface LeaveFormData {
   start_date: string;
   end_date: string;
   days_requested: number;
+  hours_requested?: number;
   reason: string;
   notes: string;
 }
@@ -50,6 +52,7 @@ export default function AutistiFeriePage() {
     start_date: '',
     end_date: '',
     days_requested: 0,
+    hours_requested: 0,
     reason: '',
     notes: ''
   });
@@ -112,9 +115,11 @@ export default function AutistiFeriePage() {
 
   useEffect(() => {
     // Calcola automaticamente i giorni lavorativi quando cambiano le date
+    // ESCLUSO per i permessi che hanno sempre 1 giorno fisso
     console.log('useEffect - Date changed:', { 
       start_date: formData.start_date, 
       end_date: formData.end_date,
+      leave_type: formData.leave_type,
       start_length: formData.start_date?.length,
       end_length: formData.end_date?.length,
       current_days: formData.days_requested
@@ -125,6 +130,16 @@ export default function AutistiFeriePage() {
       setError('');
     }
     
+    // Per i permessi, mantieni sempre 0 giorni fisso (permessi ad ore)
+    if (formData.leave_type === 'permesso') {
+      if (formData.days_requested !== 0) {
+        console.log('useEffect - Setting days to 0 for permesso');
+        setFormData(prev => ({ ...prev, days_requested: 0 }));
+      }
+      return;
+    }
+    
+    // Per tutti gli altri tipi (ferie, malattia, congedo), calcola i giorni lavorativi
     if (formData.start_date && formData.end_date) {
       // Verifica che le date abbiano la lunghezza corretta (gg/mm/aaaa = 10 caratteri)
       if (formData.start_date.length === 10 && formData.end_date.length === 10) {
@@ -152,24 +167,33 @@ export default function AutistiFeriePage() {
         setFormData(prev => ({ ...prev, days_requested: 0 }));
       }
     }
-  }, [formData.start_date, formData.end_date, formData.days_requested, error]);
+  }, [formData.start_date, formData.end_date, formData.leave_type]);
 
   const fetchLeaveData = async () => {
     try {
       setLoading(true);
       
       // Fetch richieste ferie
-      const requestsResponse = await fetch(`/api/employees/leave?user_id=${user?.username}`);
+      const requestsResponse = await fetch(`/api/employees/leave?user_id=${user?.username}`, {
+        credentials: 'include'
+      });
       if (requestsResponse.ok) {
         const requestsData = await requestsResponse.json();
-        setLeaveRequests(requestsData.data || []);
+        const leaveData = requestsData.data || [];
+        setLeaveRequests(leaveData);
+      } else {
+        console.error('Errore fetch richieste ferie:', requestsResponse.status, requestsResponse.statusText);
       }
 
       // Fetch bilancio ferie
-      const balanceResponse = await fetch(`/api/employees/leave/balance?user_id=${user?.username}`);
+      const balanceResponse = await fetch(`/api/employees/leave/balance?user_id=${user?.username}`, {
+        credentials: 'include'
+      });
       if (balanceResponse.ok) {
         const balanceData = await balanceResponse.json();
         setLeaveBalance(balanceData.data);
+      } else {
+        console.error('Errore fetch bilancio ferie:', balanceResponse.status, balanceResponse.statusText);
       }
 
     } catch (error) {
@@ -182,10 +206,40 @@ export default function AutistiFeriePage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    // Se si cambia il tipo di richiesta
+    if (name === 'leave_type') {
+      if (value === 'permesso') {
+        // Per i permessi: imposta automaticamente end_date = start_date e days_requested = 0
+        setFormData(prev => ({
+          ...prev,
+          [name]: value,
+          end_date: prev.start_date,
+          days_requested: 0
+        }));
+      } else {
+        // Per altri tipi: resetta le ore
+        setFormData(prev => ({
+          ...prev,
+          [name]: value,
+          hours_requested: 0
+        }));
+      }
+    } 
+    // Se si cambia la data di inizio e il tipo è permesso, aggiorna anche la data fine
+    else if (name === 'start_date' && formData.leave_type === 'permesso') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        end_date: value
+      }));
+    } 
+    else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   // Funzione helper per parsare le date italiane (gg/mm/aaaa)
@@ -217,38 +271,87 @@ export default function AutistiFeriePage() {
   };
 
   const validateForm = (): boolean => {
-    if (!formData.start_date || !formData.end_date) {
-      setError('Le date di inizio e fine sono obbligatorie');
-      return false;
+    // Validazione specifica per tipo di richiesta
+    if (formData.leave_type === 'permesso') {
+      // Per i permessi ad ore: validazione speciale
+      if (formData.days_requested !== 0) {
+        setError('Per i permessi ad ore, i giorni richiesti devono essere 0');
+        return false;
+      }
+      if (!formData.hours_requested || formData.hours_requested <= 0) {
+        setError('Per i permessi è obbligatorio inserire le ore richieste');
+        return false;
+      }
+      if (formData.hours_requested > 8) {
+        setError('Le ore di permesso non possono superare 8 ore');
+        return false;
+      }
+      if (formData.hours_requested < 0.5) {
+        setError('Le ore di permesso devono essere almeno 0.5 ore');
+        return false;
+      }
+
+      // Per i permessi, le date sono opzionali ma se fornite devono essere valide
+      if (formData.start_date && formData.end_date) {
+        const startDate = parseItalianDate(formData.start_date);
+        const endDate = parseItalianDate(formData.end_date);
+        
+        if (!startDate || !endDate) {
+          setError('Formato date non valido. Usa il formato gg/mm/aaaa');
+          return false;
+        }
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (startDate < today) {
+          setError('La data di inizio non può essere nel passato');
+          return false;
+        }
+
+        if (endDate < startDate) {
+          setError('La data di fine non può essere precedente alla data di inizio');
+          return false;
+        }
+      }
+
+    } else {
+      // Per ferie, malattia, congedo: le date sono obbligatorie
+      if (!formData.start_date || !formData.end_date) {
+        setError('Le date di inizio e fine sono obbligatorie');
+        return false;
+      }
+
+      const startDate = parseItalianDate(formData.start_date);
+      const endDate = parseItalianDate(formData.end_date);
+      
+      if (!startDate || !endDate) {
+        setError('Formato date non valido. Usa il formato gg/mm/aaaa');
+        return false;
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (startDate < today) {
+        setError('La data di inizio non può essere nel passato');
+        return false;
+      }
+
+      if (endDate < startDate) {
+        setError('La data di fine non può essere precedente alla data di inizio');
+        return false;
+      }
+
+      // Per ferie, malattia, congedo: giorni devono essere > 0
+      if (formData.days_requested <= 0) {
+        setError('Il numero di giorni deve essere maggiore di zero');
+        return false;
+      }
     }
 
-    const startDate = parseItalianDate(formData.start_date);
-    const endDate = parseItalianDate(formData.end_date);
-    
-    if (!startDate || !endDate) {
-      setError('Formato date non valido. Usa il formato gg/mm/aaaa');
-      return false;
-    }
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    if (startDate < today) {
-      setError('La data di inizio non può essere nel passato');
-      return false;
-    }
-
-    if (endDate < startDate) {
-      setError('La data di fine non può essere precedente alla data di inizio');
-      return false;
-    }
-
-    if (formData.days_requested <= 0) {
-      setError('Il numero di giorni deve essere maggiore di zero');
-      return false;
-    }
-
-    if (leaveBalance && formData.days_requested > leaveBalance.remaining_days) {
+    // Validazione bilancio ferie solo per ferie (non per permessi)
+    if (formData.leave_type === 'ferie' && leaveBalance && formData.days_requested > leaveBalance.remaining_days) {
       setError(`Non hai abbastanza giorni di ferie disponibili (${leaveBalance.remaining_days} rimanenti)`);
       return false;
     }
@@ -266,15 +369,81 @@ export default function AutistiFeriePage() {
     setLoading(true);
 
     try {
+      // LOG 1: Date PRIMA di qualsiasi elaborazione
+      console.log('=== INIZIO HANDLESUBMIT ===');
+      console.log('1. formData.start_date ORIGINALE:', formData.start_date);
+      console.log('1. formData.end_date ORIGINALE:', formData.end_date);
+      console.log('1. formData completo:', formData);
+      
+      // Prepara i dati per l'invio
+      const submitData = { ...formData };
+      
+      // LOG 2: Date DOPO la copia di formData
+      console.log('2. submitData.start_date DOPO COPIA:', submitData.start_date);
+      console.log('2. submitData.end_date DOPO COPIA:', submitData.end_date);
+      
+      // Per i permessi ad ore, gestione speciale
+      if (formData.leave_type === 'permesso') {
+        submitData.days_requested = 0;
+        
+        // Controlla se le date sono fornite
+        const startDateEmpty = !submitData.start_date || submitData.start_date.trim() === '';
+        const endDateEmpty = !submitData.end_date || submitData.end_date.trim() === '';
+        
+        if (startDateEmpty && endDateEmpty) {
+          // ENTRAMBE le date sono vuote → usa la data odierna
+          const today = new Date();
+          const todayString = today.toLocaleDateString('it-IT', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          });
+          submitData.start_date = todayString;
+          submitData.end_date = todayString;
+          console.log('Entrambe le date vuote per permesso, usando data odierna:', todayString);
+        } else if (!startDateEmpty && endDateEmpty) {
+          // start_date fornita ma end_date vuota → copia start_date in end_date
+          submitData.end_date = submitData.start_date;
+          console.log('Solo start_date fornita, copiando in end_date:', submitData.start_date);
+        } else if (startDateEmpty && !endDateEmpty) {
+          // end_date fornita ma start_date vuota → copia end_date in start_date
+          submitData.start_date = submitData.end_date;
+          console.log('Solo end_date fornita, copiando in start_date:', submitData.end_date);
+        } else {
+          // Entrambe le date sono fornite → usale così come sono
+          console.log('Entrambe le date fornite dall\'utente:', submitData.start_date, submitData.end_date);
+        }
+      }
+
+      // LOG 3: Date DOPO il controllo per i permessi
+      console.log('3. submitData.start_date DOPO CONTROLLO PERMESSI:', submitData.start_date);
+      console.log('3. submitData.end_date DOPO CONTROLLO PERMESSI:', submitData.end_date);
+
+      // Verifica che tutti i campi obbligatori siano presenti
+      const dataToSend = {
+        user_id: user?.username,
+        leave_type: submitData.leave_type,
+        start_date: submitData.start_date,
+        end_date: submitData.end_date,
+        days_requested: submitData.days_requested,
+        hours_requested: submitData.hours_requested || 0,
+        reason: submitData.reason,
+        notes: submitData.notes
+      };
+
+      // LOG 4: Date prima dell'invio
+      console.log('4. dataToSend.start_date PRIMA INVIO:', dataToSend.start_date);
+      console.log('4. dataToSend.end_date PRIMA INVIO:', dataToSend.end_date);
+      console.log('4. dataToSend completo:', dataToSend);
+      console.log('=== FINE PREPARAZIONE DATI ===');
+      
       const response = await fetch('/api/employees/leave', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          user_id: user?.username,
-          ...formData
-        }),
+        credentials: 'include',
+        body: JSON.stringify(dataToSend),
       });
 
       const result = await response.json();
@@ -286,6 +455,7 @@ export default function AutistiFeriePage() {
           start_date: '',
           end_date: '',
           days_requested: 0,
+          hours_requested: 0,
           reason: '',
           notes: ''
         });
@@ -302,20 +472,13 @@ export default function AutistiFeriePage() {
   };
 
   const formatDate = (dateString: string) => {
-    if (!dateString) return '-';
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return '-';
-      
-      // Formato italiano: gg/mm/aaaa
-      return date.toLocaleDateString('it-IT', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      });
-    } catch (error) {
+    if (!dateString) {
       return '-';
     }
+    
+    // Le date arrivano già formattate dal database in formato gg/mm/aaaa
+    // Restituisce la data così com'è
+    return dateString;
   };
 
   const getStatusBadgeClass = (status: string) => {
@@ -499,18 +662,58 @@ export default function AutistiFeriePage() {
                     <div className="col-md-6 mb-3">
                       <label htmlFor="days_requested" className="form-label text-light">
                         Giorni Richiesti
+                        {formData.leave_type === 'permesso' && (
+                          <small className="text-muted ms-2">(fisso a 1 per permessi)</small>
+                        )}
                       </label>
                       <input
                         id="days_requested"
                         name="days_requested"
                         type="number"
-                        className="form-control bg-dark text-light border-secondary"
+                        className={`form-control bg-dark text-light border-secondary ${
+                          formData.leave_type === 'permesso' ? 'bg-secondary bg-opacity-50' : ''
+                        }`}
                         value={formData.days_requested}
                         readOnly
                         min="1"
                       />
+                      {formData.leave_type === 'permesso' && (
+                        <small className="text-muted">
+                          Per i permessi rappresenta la giornata lavorativa
+                        </small>
+                      )}
                     </div>
                   </div>
+
+                  {/* Campo ore per permessi */}
+                  {formData.leave_type === 'permesso' && (
+                    <div className="row">
+                      <div className="col-md-6 mb-3">
+                        <label htmlFor="hours_requested" className="form-label text-light">
+                          Ore Richieste <span className="text-danger">*</span>
+                        </label>
+                        <input
+                          id="hours_requested"
+                          name="hours_requested"
+                          type="number"
+                          className="form-control bg-dark text-light border-secondary"
+                          value={formData.hours_requested || ''}
+                          onChange={(e) => {
+                            const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                            setFormData(prev => ({ ...prev, hours_requested: value }));
+                          }}
+                          min="0.5"
+                          max="8"
+                          step="0.5"
+                          placeholder="Es: 2.5"
+                          required
+                        />
+                        <small className="text-muted">
+                          Inserisci le ore di permesso richieste (da 0.5 a 8 ore) - Campo obbligatorio
+                        </small>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="row">
                     <div className="col-md-6 mb-3">
@@ -543,29 +746,44 @@ export default function AutistiFeriePage() {
                     <div className="col-md-6 mb-3">
                       <label htmlFor="end_date" className="form-label text-light">
                         Data Fine
+                        {formData.leave_type === 'permesso' && (
+                          <small className="text-muted ms-2">(automatica per permessi)</small>
+                        )}
                       </label>
                       <input
                         id="end_date"
                         name="end_date"
                         type="text"
-                        className="form-control bg-dark text-light border-secondary"
+                        className={`form-control bg-dark text-light border-secondary ${
+                          formData.leave_type === 'permesso' ? 'bg-secondary bg-opacity-50' : ''
+                        }`}
                         value={formData.end_date}
                         onChange={(e) => {
-                          const value = e.target.value;
-                          setFormData(prev => ({ ...prev, end_date: value }));
-                        }}
-                        onBlur={(e) => {
-                          let value = e.target.value.replace(/[^\d]/g, '');
-                          if (value.length >= 8) {
-                            const formatted = `${value.slice(0,2)}/${value.slice(2,4)}/${value.slice(4,8)}`;
-                            setFormData(prev => ({ ...prev, end_date: formatted }));
+                          if (formData.leave_type !== 'permesso') {
+                            const value = e.target.value;
+                            setFormData(prev => ({ ...prev, end_date: value }));
                           }
                         }}
+                        onBlur={(e) => {
+                          if (formData.leave_type !== 'permesso') {
+                            let value = e.target.value.replace(/[^\d]/g, '');
+                            if (value.length >= 8) {
+                              const formatted = `${value.slice(0,2)}/${value.slice(2,4)}/${value.slice(4,8)}`;
+                              setFormData(prev => ({ ...prev, end_date: formatted }));
+                            }
+                          }
+                        }}
+                        readOnly={formData.leave_type === 'permesso'}
                         required
                         placeholder="gg/mm/aaaa"
                         maxLength={10}
                       />
-                      <small className="text-muted">Formato: gg/mm/aaaa</small>
+                      <small className="text-muted">
+                        {formData.leave_type === 'permesso' 
+                          ? 'Per i permessi la data fine è uguale alla data inizio'
+                          : 'Formato: gg/mm/aaaa'
+                        }
+                      </small>
                     </div>
                   </div>
 
@@ -643,7 +861,7 @@ export default function AutistiFeriePage() {
                         <tr>
                           <th>Tipo</th>
                           <th>Periodo</th>
-                          <th>Giorni</th>
+                          <th>Giorni/Ore</th>
                           <th>Motivo</th>
                           <th>Stato</th>
                           <th>Data Richiesta</th>
@@ -660,7 +878,18 @@ export default function AutistiFeriePage() {
                             <td>
                               {formatDate(request.start_date)} - {formatDate(request.end_date)}
                             </td>
-                            <td>{request.days_requested}</td>
+                            <td>
+                              {request.hours_requested && request.hours_requested > 0 ? (
+                                <span>
+                                  <strong>{request.hours_requested} ore</strong>
+                                  {request.days_requested > 0 && (
+                                    <small className="text-muted d-block">({request.days_requested} giorni)</small>
+                                  )}
+                                </span>
+                              ) : (
+                                <span>{request.days_requested} giorni</span>
+                              )}
+                            </td>
                             <td>{request.reason || '-'}</td>
                             <td>
                               <span className={`badge ${getStatusBadgeClass(request.status)} d-flex align-items-center`}>

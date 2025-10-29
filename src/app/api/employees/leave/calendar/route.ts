@@ -2,6 +2,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAllLeaveRequests } from '@/lib/db-employees';
 
+// Funzione helper per convertire date dal formato italiano (dd/mm/yyyy) a Date object
+function parseItalianDate(dateString: string): Date {
+  if (!dateString) return new Date();
+  
+  // Se la data è già in formato ISO, usala direttamente
+  if (dateString.includes('-')) {
+    return new Date(dateString);
+  }
+  
+  // Converte da dd/mm/yyyy a yyyy-mm-dd
+  const parts = dateString.split('/');
+  if (parts.length === 3) {
+    const [day, month, year] = parts;
+    return new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+  }
+  
+  return new Date(dateString);
+}
+
 export async function GET(request: NextRequest) {
   try {
     console.log('API leave calendar GET chiamata');
@@ -28,8 +47,8 @@ export async function GET(request: NextRequest) {
       const end = new Date(endDate);
       
       approvedLeaves = approvedLeaves.filter(leave => {
-        const leaveStart = new Date(leave.start_date);
-        const leaveEnd = new Date(leave.end_date);
+        const leaveStart = parseItalianDate(leave.start_date);
+        const leaveEnd = parseItalianDate(leave.end_date);
         
         // Include se c'è sovrapposizione con il range richiesto
         return leaveStart <= end && leaveEnd >= start;
@@ -38,8 +57,8 @@ export async function GET(request: NextRequest) {
     
     // Converte le ferie in formato eventi calendario
     const calendarEvents = approvedLeaves.map(leave => {
-      const startDate = new Date(leave.start_date);
-      const endDate = new Date(leave.end_date);
+      const startDate = parseItalianDate(leave.start_date);
+      const endDate = parseItalianDate(leave.end_date);
       
       // Per eventi multi-giorno, aggiungi un giorno alla fine per includere l'ultimo giorno
       const adjustedEndDate = new Date(endDate);
@@ -47,7 +66,7 @@ export async function GET(request: NextRequest) {
       
       return {
         id: `leave-${leave.id}`,
-        title: `${leave.cognome} ${leave.nome} - ${getLeaveTypeLabel(leave.leave_type)}`,
+        title: `${leave.cognome || 'N/A'} ${leave.nome || 'N/A'} - ${getLeaveTypeLabel(leave.leave_type)}`,
         start: startDate.toISOString(),
         end: adjustedEndDate.toISOString(),
         allDay: true,
@@ -55,7 +74,7 @@ export async function GET(request: NextRequest) {
           type: 'leave',
           leave_id: leave.id,
           employee_id: leave.employee_id,
-          employee_name: `${leave.cognome} ${leave.nome}`,
+          employee_name: `${leave.cognome || 'N/A'} ${leave.nome || 'N/A'}`,
           leave_type: leave.leave_type,
           days_requested: leave.days_requested,
           reason: leave.reason,

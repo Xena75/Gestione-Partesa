@@ -1,6 +1,72 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.34.0
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.35.0
 
-## 🚀 **VERSIONE 2.34.0** - Sistema Gestione Ferie Dipendenti ⭐ **NUOVO**
+## 🚀 **VERSIONE 2.35.0** - Miglioramenti Sistema Gestione Ferie ⭐ **NUOVO**
+
+### 🎯 **CALCOLO DINAMICO ORE UTILIZZATE PERMESSI**
+- **Nuova colonna "Ore Utilizzate"**: Visualizzazione ore permessi utilizzate nella tabella bilanci ferie
+- **Calcolo automatico**: Ore calcolate dinamicamente dalle richieste approvate per dipendente/anno
+- **Badge viola distintivo**: Colore #6f42c1 per evidenziare le ore utilizzate con contrasto ottimale
+- **Statistiche aggregate**: Totale ore utilizzate mostrato nelle statistiche a fondo pagina
+- **Filtri intelligenti**: Solo richieste tipo 'permesso', stato 'approved' e anno specifico
+- **Aggiornamento real-time**: Calcolo dinamico senza modifiche database
+
+### 🎨 **CORREZIONI UI E UX GESTIONE FERIE**
+- **Ripristino testo bianco**: Campo "Dipendente" in tabella richieste ora con testo bianco (text-white)
+- **Coerenza visiva**: Stile uniforme tra tabella richieste e tabella bilanci
+- **Leggibilità ottimale**: Testo bianco su sfondo scuro per massimo contrasto
+- **Accessibilità migliorata**: Rispetto standard di leggibilità per interfacce scure
+
+### 🔧 **IMPLEMENTAZIONE TECNICA v2.35.0**
+
+#### Funzione calculateUsedPermissionHours()
+```typescript
+// File: src/app/gestione/employees/ferie/page.tsx
+const calculateUsedPermissionHours = (employeeId: string, year: number): number => {
+  const employeeRequests = leaveRequests.filter(request => {
+    const requestEmployeeId = String(request.employee_id);
+    if (requestEmployeeId !== String(employeeId)) return false;
+    
+    if (request.leave_type !== 'permesso') return false;
+    if (request.status !== 'approved') return false;
+    
+    // Estrazione anno da diversi formati data
+    let requestYear = null;
+    if (request.start_date) {
+      const startDate = new Date(request.start_date);
+      if (!isNaN(startDate.getTime())) {
+        requestYear = startDate.getFullYear();
+      }
+    }
+    
+    return requestYear === year;
+  });
+  
+  return employeeRequests.reduce((total, request) => {
+    return total + (request.hours_requested || 0);
+  }, 0);
+};
+```
+
+#### Caratteristiche Implementate v2.35.0
+- ✅ **Filtro per dipendente**: Calcolo specifico per ogni employee_id
+- ✅ **Filtro per tipo**: Solo richieste di tipo 'permesso' considerate
+- ✅ **Filtro per stato**: Solo richieste 'approved' incluse nel calcolo
+- ✅ **Filtro per anno**: Calcolo specifico per l'anno del bilancio
+- ✅ **Badge viola**: Colore #6f42c1 per differenziare dalle altre colonne
+- ✅ **Statistiche aggregate**: Totale ore utilizzate nelle statistiche finali
+- ✅ **Debug completo**: Log dettagliati per verifica funzionamento
+- ✅ **UI coerente**: Testo bianco per nomi dipendenti su sfondo scuro
+
+### 📊 **TABELLE DATABASE COINVOLTE v2.35.0**
+- **employee_leave_requests**: Fonte dati per calcolo ore utilizzate (nessuna modifica struttura)
+- **employee_leave_balance**: Visualizzazione con nuova colonna ore utilizzate (nessuna modifica struttura)
+
+### 📁 **FILE MODIFICATI v2.35.0**
+- `src/app/gestione/employees/ferie/page.tsx` - Aggiunta funzione calcolo e correzioni UI
+
+---
+
+## 🚀 **VERSIONE 2.34.0** - Sistema Gestione Ferie Dipendenti
 
 ### 🏖️ **SISTEMA GESTIONE FERIE DIPENDENTI**
 - **Gestione completa ferie**: Sistema integrato per gestione ferie, permessi e congedi dipendenti
