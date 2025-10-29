@@ -1,6 +1,68 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.33.2
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.34.0
 
-## 🚀 **VERSIONE 2.33.2** - Correzioni Filtri e Formattazione Date ⭐ **NUOVO**
+## 🚀 **VERSIONE 2.34.0** - Sistema Gestione Ferie Dipendenti ⭐ **NUOVO**
+
+### 🏖️ **SISTEMA GESTIONE FERIE DIPENDENTI**
+- **Gestione completa ferie**: Sistema integrato per gestione ferie, permessi e congedi dipendenti
+- **Import Excel mensile**: Caricamento automatico saldi ferie da file Excel con mapping dipendenti
+- **Logica ore/giorni**: Ferie in giorni (conversione automatica 1 giorno = 8 ore), permessi in ore
+- **Tipologie supportate**: Ferie, Ex Festività, ROL, Malattia, Congedi con gestione separata
+- **Dashboard saldi**: Visualizzazione saldi disponibili per ogni dipendente (ferie, ex festività, ROL)
+- **Workflow approvazione**: Sistema completo richiesta → approvazione → aggiornamento saldi
+- **Pagina centralizzata**: `/gestione/employees/ferie` per gestione completa sistema ferie
+- **API dedicate**: Endpoint per richieste, approvazioni, saldi e import Excel
+- **Validazione saldi**: Controllo automatico disponibilità prima dell'approvazione richieste
+- **Storico completo**: Tracciamento tutte le richieste con stati e cronologia approvazioni
+- **Integrazione calendario**: Eventi ferie visualizzati nel calendario aziendale integrato
+- **Database esteso**: Tabelle `employee_leave_requests` e `employee_leave_balance` ottimizzate
+
+### 🏗️ **IMPLEMENTAZIONE TECNICA SISTEMA FERIE v2.34.0**
+
+#### **1. Analisi File Excel Saldi Ferie**
+```javascript
+// File: scripts/analyze-excel.js
+// Analisi struttura file Excel mensile saldi ferie
+- Foglio1: 21 righe (20 dipendenti + intestazione)
+- Colonne: Anno, Mese, Cognome, Nome, Centri di costo, Ferie-Residue, EX FEST-F-Residue, ROL-R-Residue, id, cdc
+- Foglio2: Mappatura centri di costo (Centro di costo → cdc)
+- Valori già in ore, import diretto senza conversioni
+```
+
+#### **2. Estensione Database employee_leave_balance**
+```sql
+-- Migration: Aggiunta campi ore per gestione saldi
+ALTER TABLE employee_leave_balance ADD COLUMN vacation_hours_remaining DECIMAL(5,2) NULL;
+ALTER TABLE employee_leave_balance ADD COLUMN ex_holiday_hours_remaining DECIMAL(5,2) NULL;
+ALTER TABLE employee_leave_balance ADD COLUMN rol_hours_remaining DECIMAL(5,2) NULL;
+```
+
+#### **3. Estensione Database employee_leave_requests**
+```sql
+-- Migration: Aggiunta campo ore per richieste permessi
+ALTER TABLE employee_leave_requests ADD COLUMN hours_requested DECIMAL(5,2) NULL;
+```
+
+#### **4. API Import Excel Saldi Ferie**
+```typescript
+// File: src/app/api/employees/import-leave-balance/route.ts
+// Endpoint per import mensile saldi da file Excel
+- Lettura file Excel con libreria xlsx
+- Mapping automatico dipendenti tramite nome/cognome
+- Aggiornamento saldi ore (Ferie, Ex Festività, ROL)
+- Gestione centri di costo con foglio mappature
+```
+
+#### **5. Pagina Gestione Ferie Centralizzata**
+```typescript
+// File: src/app/gestione/employees/ferie/page.tsx
+// Interfaccia completa gestione ferie dipendenti
+- Dashboard saldi per tutti i dipendenti
+- Upload file Excel mensile
+- Lista richieste ferie con approvazione
+- Storico richieste e saldi
+```
+
+## 🚀 **VERSIONE 2.33.2** - Correzioni Filtri e Formattazione Date ⭐ **PRECEDENTE**
 
 ### 🗓️ **CORREZIONI FILTRI E FORMATTAZIONE DATE**
 - **Filtri vista raggruppata**: Risolto problema filtri mese non funzionanti nella vista raggruppata gestione consegne

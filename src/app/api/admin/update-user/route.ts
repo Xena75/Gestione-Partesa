@@ -51,8 +51,8 @@ function validateUpdateUserData(data: any) {
     errors.push('Email non valida');
   }
 
-  if (data.role && !['admin', 'user'].includes(data.role)) {
-    errors.push('Ruolo deve essere admin o user');
+  if (data.role && !['admin', 'user', 'employee'].includes(data.role)) {
+    errors.push('Ruolo deve essere admin, user o employee');
   }
 
   return errors;

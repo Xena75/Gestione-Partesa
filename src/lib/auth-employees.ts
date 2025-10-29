@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { NextRequest } from 'next/server';
 import { getConnection } from './db-employees';
+import pool from './db-auth';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 const JWT_EXPIRES_IN = '24h';
@@ -11,7 +12,7 @@ export interface Employee {
   nome: string;
   cognome: string;
   email?: string;
-  login_email?: string;
+  username_login?: string;
   role: 'employee';
   is_driver?: boolean;
 }
@@ -69,73 +70,74 @@ export function verifyEmployeeToken(token: string): Employee | null {
   }
 }
 
-// Autentica dipendente usando tabella employees
+// Autentica dipendente usando prima tabella users poi employees
 export async function authenticateEmployee(username: string, password: string): Promise<EmployeeAuthResult> {
-  const connection = await getConnection();
-  
   try {
-    // Cerca il dipendente per nome, cognome, login_email o email (tutti i dipendenti, non solo autisti)
-    // Priorità: login_email > email > nome/cognome
-    const [rows] = await connection.execute(
-      `SELECT id, nome, cognome, email, login_email, password_hash, is_driver 
-       FROM employees 
-       WHERE (id = ? OR login_email = ? OR email = ? OR CONCAT(nome, ' ', cognome) = ? OR CONCAT(cognome, ' ', nome) = ?)
-       AND active = 1
-       ORDER BY 
-         CASE 
-           WHEN login_email = ? THEN 1
-           WHEN email = ? THEN 2
-           ELSE 3
-         END`,
-      [username, username, username, username, username, username, username]
+    // Prima autentica l'utente nella tabella users
+    const [userRows] = await pool.execute(
+      'SELECT id, username, password_hash, email, role FROM users WHERE username = ? OR email = ?',
+      [username, username]
     );
 
-    const employees = rows as any[];
-    if (employees.length === 0) {
+    const users = userRows as any[];
+    if (users.length === 0) {
       return { success: false, message: 'Credenziali non valide' };
     }
 
-    const employee = employees[0];
+    const user = users[0];
     
-    // Verifica se il dipendente ha una password impostata
-    if (!employee.password_hash) {
-      return { success: false, message: 'Password non impostata per questo dipendente. Contattare l\'amministratore.' };
+    // Verifica che sia un dipendente
+    if (user.role !== 'employee') {
+      return { success: false, message: 'Accesso non autorizzato per questo tipo di utente' };
     }
 
-    const isValidPassword = await verifyPassword(password, employee.password_hash);
-
+    // Verifica la password
+    const isValidPassword = await verifyPassword(password, user.password_hash);
     if (!isValidPassword) {
       return { success: false, message: 'Credenziali non valide' };
     }
 
-    const employeeObj: Employee = {
-      id: employee.id,
-      nome: employee.nome,
-      cognome: employee.cognome,
-      email: employee.email,
-      login_email: employee.login_email,
-      role: 'employee',
-      is_driver: employee.is_driver === 1
-    };
+    // Ora cerca i dati del dipendente nella tabella employees usando username_login
+    const connection = await getConnection();
+    try {
+      const [employeeRows] = await connection.execute(
+        `SELECT id, nome, cognome, email, username_login, is_driver 
+         FROM employees 
+         WHERE username_login = ?
+         AND active = 1`,
+        [user.username]
+      );
 
-    const token = generateEmployeeToken(employeeObj);
+      const employees = employeeRows as any[];
+      if (employees.length === 0) {
+        return { success: false, message: 'Dipendente non collegato a questo utente. Contattare l\'amministratore.' };
+      }
 
-    // Aggiorna last_login
-    await connection.execute(
-      'UPDATE employees SET last_login = NOW() WHERE id = ?',
-      [employee.id]
-    );
+      const employee = employees[0];
 
-    return {
-      success: true,
-      user: employeeObj,
-      token
-    };
+      const employeeObj: Employee = {
+        id: employee.id,
+        nome: employee.nome,
+        cognome: employee.cognome,
+        email: employee.email,
+        username_login: employee.username_login,
+        role: 'employee',
+        is_driver: employee.is_driver === 1
+      };
+
+      const token = generateEmployeeToken(employeeObj);
+
+      return {
+        success: true,
+        user: employeeObj,
+        token
+      };
+    } finally {
+      await connection.end();
+    }
   } catch (error) {
     console.error('Errore autenticazione dipendente:', error);
     return { success: false, message: 'Errore interno del server' };
-  } finally {
-    await connection.end();
   }
 }
 
@@ -153,7 +155,7 @@ export async function verifyEmployeeSession(token: string): Promise<Employee | n
     const connection = await getConnection();
     try {
       const [rows] = await connection.execute(
-        'SELECT id, nome, cognome, email, login_email, is_driver FROM employees WHERE id = ? AND active = 1',
+        'SELECT id, nome, cognome, email, username_login, is_driver FROM employees WHERE id = ? AND active = 1',
         [employee.id]
       );
 
@@ -168,7 +170,7 @@ export async function verifyEmployeeSession(token: string): Promise<Employee | n
       return {
         ...employee,
         email: dbEmployee.email,
-        login_email: dbEmployee.login_email,
+        username_login: dbEmployee.username_login,
         is_driver: dbEmployee.is_driver === 1
       };
     } finally {

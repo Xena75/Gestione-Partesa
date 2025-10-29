@@ -83,6 +83,20 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Database ottimizzato**: Tabella `employee_documents` con indici per performance e foreign key
 - **Aggiornamento automatico**: Sistema automatico di aggiornamento stato documenti basato su scadenze
 
+### 🏖️ **Sistema Gestione Ferie Dipendenti** ⭐ **NUOVO v2.34.0**
+- **Gestione completa ferie**: Sistema integrato per gestione ferie, permessi e congedi dipendenti
+- **Import Excel mensile**: Caricamento automatico saldi ferie da file Excel con mapping dipendenti
+- **Logica ore/giorni**: Ferie in giorni (conversione automatica 1 giorno = 8 ore), permessi in ore
+- **Tipologie supportate**: Ferie, Ex Festività, ROL, Malattia, Congedi con gestione separata
+- **Dashboard saldi**: Visualizzazione saldi disponibili per ogni dipendente (ferie, ex festività, ROL)
+- **Workflow approvazione**: Sistema completo richiesta → approvazione → aggiornamento saldi
+- **Pagina centralizzata**: `/gestione/employees/ferie` per gestione completa sistema ferie
+- **API dedicate**: Endpoint per richieste, approvazioni, saldi e import Excel
+- **Validazione saldi**: Controllo automatico disponibilità prima dell'approvazione richieste
+- **Storico completo**: Tracciamento tutte le richieste con stati e cronologia approvazioni
+- **Integrazione calendario**: Eventi ferie visualizzati nel calendario aziendale integrato
+- **Database esteso**: Tabelle `employee_leave_requests` e `employee_leave_balance` ottimizzate
+
 ### 🗓️ **Correzioni Filtri e Formattazione Date** ⭐ **NUOVO v2.33.2**
 - **Filtri vista raggruppata**: Risolto problema filtri mese non funzionanti nella vista raggruppata gestione consegne
 - **Parametro mese API**: Aggiunto estrazione parametro 'mese' nell'API /api/gestione/route.ts

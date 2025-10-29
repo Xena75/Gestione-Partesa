@@ -292,6 +292,16 @@ export default function DeliveryFilters() {
             </div>
 
             <div className="col-md-2">
+              <label className="form-label">Data A</label>
+              <DateInput
+                value={filters.dataA}
+                onChange={(isoValue) => handleInputChange('dataA', isoValue)}
+                placeholder="gg/mm/aaaa"
+                className="form-control"
+              />
+            </div>
+
+            <div className="col-md-2">
               <label className="form-label">Deposito</label>
               <select
                 className="form-select"
@@ -305,16 +315,6 @@ export default function DeliveryFilters() {
                   </option>
                 ))}
               </select>
-            </div>
-
-            <div className="col-md-2">
-              <label className="form-label">Data A</label>
-              <DateInput
-                value={filters.dataA}
-                onChange={(isoValue) => handleInputChange('dataA', isoValue)}
-                placeholder="gg/mm/aaaa"
-                className="form-control"
-              />
             </div>
 
             <div className="col-md-2">

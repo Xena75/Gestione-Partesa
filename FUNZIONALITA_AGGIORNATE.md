@@ -1,6 +1,40 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-## 🗓️ Correzioni Filtri e Formattazione Date - v2.33.2 ⭐ **NUOVO**
+## 🏖️ Sistema Gestione Ferie Dipendenti - v2.34.0 ⭐ **NUOVO**
+
+### 🎯 Sistema Completo Gestione Ferie e Permessi
+**Data implementazione**: Gennaio 2025  
+**Stato**: 🚧 In sviluppo - Analisi completata
+
+### 📊 Analisi File Excel Saldi Ferie
+- **File analizzato**: `m:\Progetti\In produzione\gestione-partesa\import\Saldi ferie.xlsx`
+- **Struttura identificata**:
+  - **Foglio1**: 21 righe (20 dipendenti + intestazione)
+  - **Colonne**: Anno, Mese, Cognome, Nome, Centri di costo, Ferie-Residue, EX FEST-F-Residue, ROL-R-Residue, id, cdc
+  - **Foglio2**: Mappatura centri di costo (Centro di costo → cdc)
+- **Valori**: Già in ore, import diretto senza conversioni
+- **Mapping**: Dipendenti tramite nome/cognome, centri di costo con foglio separato
+
+### 🗄️ Database Design
+- **Tabella employee_leave_balance**: Estesa con campi ore (vacation_hours_remaining, ex_holiday_hours_remaining, rol_hours_remaining)
+- **Tabella employee_leave_requests**: Aggiunto campo hours_requested per gestione permessi in ore
+- **Logica**: Ferie in giorni, permessi (Ex Festività/ROL) in ore, conversione 1 giorno = 8 ore
+
+### 🛠️ Implementazione Pianificata
+1. **Migration database**: Aggiunta campi ore alle tabelle esistenti
+2. **Funzione import Excel**: Lettura file con mapping automatico dipendenti
+3. **API endpoint**: `/api/employees/import-leave-balance` per caricamento mensile
+4. **Interface upload**: Pagina `/gestione/employees/ferie` con upload Excel
+5. **Dashboard saldi**: Visualizzazione saldi ore/giorni per dipendente
+6. **Form richieste**: Selezione ore/giorni basata su tipologia richiesta
+
+### ✅ Benefici Attesi
+- **Automazione**: Import mensile saldi senza inserimento manuale
+- **Precisione**: Gestione ore per permessi, giorni per ferie
+- **Controllo**: Validazione saldi prima approvazione richieste
+- **Tracciabilità**: Storico completo richieste e saldi
+
+## 🗓️ Correzioni Filtri e Formattazione Date - v2.33.2 ⭐ **PRECEDENTE**
 
 ### 🎯 Risoluzione Problemi Filtri e Date
 **Data implementazione**: Gennaio 2025  

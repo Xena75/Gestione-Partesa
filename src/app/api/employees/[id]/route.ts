@@ -1,6 +1,6 @@
 // src/app/api/employees/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { getEmployeeById, updateEmployee, deleteEmployee, Employee } from '@/lib/db-employees';
+import { getEmployeeById, getEmployeeByUsername, updateEmployee, deleteEmployee, Employee } from '@/lib/db-employees';
 
 export async function GET(
   request: NextRequest,
@@ -13,10 +13,16 @@ export async function GET(
     console.log('API employee GET chiamata per ID originale:', resolvedParams.id);
     console.log('API employee GET ID decodificato:', decodedId);
     
-    const employee = await getEmployeeById(decodedId);
+    let employee = await getEmployeeById(decodedId);
+    
+    // Se non trova per ID, prova a cercare per username
+    if (!employee) {
+      console.log('Dipendente non trovato per ID, provo con username:', decodedId);
+      employee = await getEmployeeByUsername(decodedId);
+    }
     
     if (!employee) {
-      console.log('Dipendente non trovato per ID:', decodedId);
+      console.log('Dipendente non trovato né per ID né per username:', decodedId);
       return NextResponse.json({
         success: false,
         error: 'Dipendente non trovato'

@@ -55,38 +55,118 @@ export default function AutistiFeriePage() {
   });
 
   useEffect(() => {
-    if (user?.id) {
+    if (user?.username) {
       fetchLeaveData();
     }
   }, [user]);
 
-  useEffect(() => {
-    // Calcola automaticamente i giorni quando cambiano le date
-    if (formData.start_date && formData.end_date) {
-      const startDate = new Date(formData.start_date);
-      const endDate = new Date(formData.end_date);
+  // Funzione per calcolare i giorni lavorativi
+  const calculateWorkingDays = (startDateStr: string, endDateStr: string): number => {
+    console.log('calculateWorkingDays - Input:', { startDateStr, endDateStr });
+    
+    const startDate = parseItalianDate(startDateStr);
+    const endDate = parseItalianDate(endDateStr);
+    
+    console.log('calculateWorkingDays - Parsed dates:', { 
+      startDate: startDate?.toISOString(), 
+      endDate: endDate?.toISOString(),
+      startDay: startDate?.getDay(),
+      endDay: endDate?.getDay()
+    });
+    
+    if (!startDate || !endDate) {
+      console.log('calculateWorkingDays - Invalid dates, returning 0');
+      return 0;
+    }
+
+    if (endDate < startDate) {
+      console.log('calculateWorkingDays - End date before start date, returning 0');
+      return 0;
+    }
+
+    let workingDays = 0;
+    const currentDate = new Date(startDate);
+    
+    // Assicuriamoci che il ciclo funzioni correttamente anche per date uguali
+    while (currentDate <= endDate) {
+      const dayOfWeek = currentDate.getDay();
+      console.log('calculateWorkingDays - Checking date:', {
+        date: currentDate.toISOString().split('T')[0],
+        dayOfWeek,
+        isWeekend: dayOfWeek === 0 || dayOfWeek === 6
+      });
       
-      if (endDate >= startDate) {
-        const timeDiff = endDate.getTime() - startDate.getTime();
-        const days = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
-        setFormData(prev => ({ ...prev, days_requested: days }));
+      // 0 = Domenica, 6 = Sabato - escludiamo weekend
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        workingDays++;
+        console.log('calculateWorkingDays - Added working day, total:', workingDays);
+      }
+      
+      // Importante: incrementa la data per evitare loop infiniti
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    console.log('calculateWorkingDays - Final result:', workingDays);
+    return workingDays;
+  };
+
+  useEffect(() => {
+    // Calcola automaticamente i giorni lavorativi quando cambiano le date
+    console.log('useEffect - Date changed:', { 
+      start_date: formData.start_date, 
+      end_date: formData.end_date,
+      start_length: formData.start_date?.length,
+      end_length: formData.end_date?.length,
+      current_days: formData.days_requested
+    });
+    
+    // Reset dell'errore quando cambiano le date
+    if (error && error.includes('numero di giorni')) {
+      setError('');
+    }
+    
+    if (formData.start_date && formData.end_date) {
+      // Verifica che le date abbiano la lunghezza corretta (gg/mm/aaaa = 10 caratteri)
+      if (formData.start_date.length === 10 && formData.end_date.length === 10) {
+        console.log('useEffect - Both dates complete, calculating working days...');
+        const workingDays = calculateWorkingDays(formData.start_date, formData.end_date);
+        console.log('useEffect - Calculated working days:', workingDays);
+        
+        // Aggiorna solo se il valore è diverso per evitare loop infiniti
+        if (workingDays !== formData.days_requested) {
+          console.log('useEffect - Updating days_requested from', formData.days_requested, 'to', workingDays);
+          setFormData(prev => ({ ...prev, days_requested: workingDays }));
+        } else {
+          console.log('useEffect - Days already correct, no update needed');
+        }
+      } else {
+        console.log('useEffect - Date incomplete, resetting days to 0');
+        if (formData.days_requested !== 0) {
+          setFormData(prev => ({ ...prev, days_requested: 0 }));
+        }
+      }
+    } else {
+      // Se le date non sono complete, resetta i giorni
+      console.log('useEffect - Missing dates, resetting days to 0');
+      if (formData.days_requested !== 0) {
+        setFormData(prev => ({ ...prev, days_requested: 0 }));
       }
     }
-  }, [formData.start_date, formData.end_date]);
+  }, [formData.start_date, formData.end_date, formData.days_requested, error]);
 
   const fetchLeaveData = async () => {
     try {
       setLoading(true);
       
       // Fetch richieste ferie
-      const requestsResponse = await fetch(`/api/employees/leave?user_id=${user?.id}`);
+      const requestsResponse = await fetch(`/api/employees/leave?user_id=${user?.username}`);
       if (requestsResponse.ok) {
         const requestsData = await requestsResponse.json();
         setLeaveRequests(requestsData.data || []);
       }
 
       // Fetch bilancio ferie
-      const balanceResponse = await fetch(`/api/employees/leave/balance?user_id=${user?.id}`);
+      const balanceResponse = await fetch(`/api/employees/leave/balance?user_id=${user?.username}`);
       if (balanceResponse.ok) {
         const balanceData = await balanceResponse.json();
         setLeaveBalance(balanceData.data);
@@ -108,14 +188,48 @@ export default function AutistiFeriePage() {
     }));
   };
 
+  // Funzione helper per parsare le date italiane (gg/mm/aaaa)
+  const parseItalianDate = (dateString: string): Date | null => {
+    if (!dateString) return null;
+    
+    // Se la data è già in formato ISO (yyyy-mm-dd), usala direttamente
+    if (dateString.includes('-') && dateString.length === 10) {
+      return new Date(dateString);
+    }
+    
+    // Se la data è in formato italiano (gg/mm/aaaa)
+    if (dateString.includes('/')) {
+      const parts = dateString.split('/');
+      if (parts.length === 3) {
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1; // I mesi in JavaScript sono 0-based
+        const year = parseInt(parts[2], 10);
+        
+        if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+          return new Date(year, month, day);
+        }
+      }
+    }
+    
+    // Fallback: prova il parsing standard
+    const date = new Date(dateString);
+    return isNaN(date.getTime()) ? null : date;
+  };
+
   const validateForm = (): boolean => {
     if (!formData.start_date || !formData.end_date) {
       setError('Le date di inizio e fine sono obbligatorie');
       return false;
     }
 
-    const startDate = new Date(formData.start_date);
-    const endDate = new Date(formData.end_date);
+    const startDate = parseItalianDate(formData.start_date);
+    const endDate = parseItalianDate(formData.end_date);
+    
+    if (!startDate || !endDate) {
+      setError('Formato date non valido. Usa il formato gg/mm/aaaa');
+      return false;
+    }
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -158,7 +272,7 @@ export default function AutistiFeriePage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          user_id: user?.id,
+          user_id: user?.username,
           ...formData
         }),
       });
@@ -188,10 +302,26 @@ export default function AutistiFeriePage() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('it-IT');
+    if (!dateString) return '-';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '-';
+      
+      // Formato italiano: gg/mm/aaaa
+      return date.toLocaleDateString('it-IT', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    } catch (error) {
+      return '-';
+    }
   };
 
   const getStatusBadgeClass = (status: string) => {
+    if (!status || typeof status !== 'string') {
+      return 'bg-secondary';
+    }
     switch (status.toLowerCase()) {
       case 'approved':
       case 'approvata':
@@ -208,6 +338,9 @@ export default function AutistiFeriePage() {
   };
 
   const getStatusText = (status: string) => {
+    if (!status || typeof status !== 'string') {
+      return 'Sconosciuto';
+    }
     switch (status.toLowerCase()) {
       case 'approved':
       case 'approvata':
@@ -224,6 +357,9 @@ export default function AutistiFeriePage() {
   };
 
   const getStatusIcon = (status: string) => {
+    if (!status || typeof status !== 'string') {
+      return <AlertTriangle size={16} className="text-secondary" />;
+    }
     switch (status.toLowerCase()) {
       case 'approved':
       case 'approvata':
@@ -384,13 +520,25 @@ export default function AutistiFeriePage() {
                       <input
                         id="start_date"
                         name="start_date"
-                        type="date"
+                        type="text"
                         className="form-control bg-dark text-light border-secondary"
                         value={formData.start_date}
-                        onChange={handleInputChange}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setFormData(prev => ({ ...prev, start_date: value }));
+                        }}
+                        onBlur={(e) => {
+                          let value = e.target.value.replace(/[^\d]/g, '');
+                          if (value.length >= 8) {
+                            const formatted = `${value.slice(0,2)}/${value.slice(2,4)}/${value.slice(4,8)}`;
+                            setFormData(prev => ({ ...prev, start_date: formatted }));
+                          }
+                        }}
                         required
-                        min={new Date().toISOString().split('T')[0]}
+                        placeholder="gg/mm/aaaa"
+                        maxLength={10}
                       />
+                      <small className="text-muted">Formato: gg/mm/aaaa</small>
                     </div>
                     <div className="col-md-6 mb-3">
                       <label htmlFor="end_date" className="form-label text-light">
@@ -399,13 +547,25 @@ export default function AutistiFeriePage() {
                       <input
                         id="end_date"
                         name="end_date"
-                        type="date"
+                        type="text"
                         className="form-control bg-dark text-light border-secondary"
                         value={formData.end_date}
-                        onChange={handleInputChange}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setFormData(prev => ({ ...prev, end_date: value }));
+                        }}
+                        onBlur={(e) => {
+                          let value = e.target.value.replace(/[^\d]/g, '');
+                          if (value.length >= 8) {
+                            const formatted = `${value.slice(0,2)}/${value.slice(2,4)}/${value.slice(4,8)}`;
+                            setFormData(prev => ({ ...prev, end_date: formatted }));
+                          }
+                        }}
                         required
-                        min={formData.start_date || new Date().toISOString().split('T')[0]}
+                        placeholder="gg/mm/aaaa"
+                        maxLength={10}
                       />
+                      <small className="text-muted">Formato: gg/mm/aaaa</small>
                     </div>
                   </div>
 

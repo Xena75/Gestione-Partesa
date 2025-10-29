@@ -462,6 +462,7 @@ export default function SistemaPage() {
                           >
                             <option value="user">Utente</option>
                             <option value="admin">Amministratore</option>
+                            <option value="employee">Dipendente</option>
                           </select>
                         </div>
                       </div>
@@ -524,8 +525,8 @@ export default function SistemaPage() {
                               </span>
                             </td>
                             <td>
-                              <span className={`badge bg-${user.role === 'admin' ? 'danger' : 'primary'}`}>
-                                {user.role === 'admin' ? 'Admin' : 'Utente'}
+                              <span className={`badge bg-${user.role === 'admin' ? 'danger' : user.role === 'employee' ? 'success' : 'primary'}`}>
+                                {user.role === 'admin' ? 'Admin' : user.role === 'employee' ? 'Dipendente' : 'Utente'}
                               </span>
                             </td>
                             <td>{new Date(user.created_at).toLocaleDateString('it-IT')}</td>
@@ -601,8 +602,8 @@ export default function SistemaPage() {
                             <td>{login.username}</td>
                             <td>{login.email}</td>
                             <td>
-                              <span className={`badge bg-${login.role === 'admin' ? 'danger' : 'primary'} badge-sm`}>
-                                {login.role === 'admin' ? 'Admin' : 'Utente'}
+                              <span className={`badge bg-${login.role === 'admin' ? 'danger' : login.role === 'employee' ? 'success' : 'primary'} badge-sm`}>
+                                {login.role === 'admin' ? 'Admin' : login.role === 'employee' ? 'Dipendente' : 'Utente'}
                               </span>
                             </td>
                             <td>
@@ -941,6 +942,7 @@ export default function SistemaPage() {
                     >
                       <option value="user">Utente</option>
                       <option value="admin">Amministratore</option>
+                      <option value="employee">Dipendente</option>
                     </select>
                   </div>
                   

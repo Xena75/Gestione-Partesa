@@ -3,7 +3,11 @@ import { verifyUserAccess } from '@/lib/auth';
 import { 
   getEmployeeLeaveRequests, 
   createLeaveRequest, 
-  LeaveRequest 
+  LeaveRequest,
+  getEmployeeById,
+  getEmployeeByUsername,
+  getPendingLeaveRequests,
+  getAllLeaveRequests
 } from '@/lib/db-employees';
 
 export async function GET(request: NextRequest) {
@@ -25,7 +29,35 @@ export async function GET(request: NextRequest) {
     // Se l'utente è employee, può vedere solo le proprie richieste
     let targetUserId = userId;
     if (userCheck.user?.role === 'employee') {
-      targetUserId = userCheck.user.id;
+      targetUserId = userCheck.user.username;
+    }
+    
+    // Se non c'è user_id ma c'è status=pending, recupera tutte le richieste pendenti
+    if (!targetUserId && status === 'pending') {
+      console.log('Recupero tutte le richieste ferie pendenti per la dashboard');
+      const pendingRequests = await getPendingLeaveRequests();
+      
+      console.log(`Recuperate ${pendingRequests.length} richieste ferie pendenti totali`);
+      
+      return NextResponse.json({
+        success: true,
+        data: pendingRequests,
+        message: 'Richieste ferie pendenti recuperate con successo'
+      });
+    }
+    
+    // Se non ci sono parametri user_id e status, restituisci tutte le richieste ferie
+    if (!targetUserId && !status) {
+      console.log('Recupero tutte le richieste ferie (nessun parametro specificato)');
+      const allRequests = await getAllLeaveRequests();
+      
+      console.log(`Recuperate ${allRequests.length} richieste ferie totali`);
+      
+      return NextResponse.json({
+        success: true,
+        data: allRequests,
+        message: 'Tutte le richieste ferie recuperate con successo'
+      });
     }
     
     if (!targetUserId) {
@@ -37,8 +69,52 @@ export async function GET(request: NextRequest) {
     
     console.log('Recupero richieste ferie per dipendente ID:', targetUserId);
     
-    // Recupera le richieste ferie del dipendente
-    const leaveRequests = await getEmployeeLeaveRequests(targetUserId, status || undefined);
+    // Trova il dipendente usando getEmployeeByUsername (ora cerca in più campi)
+    const employee = await getEmployeeByUsername(targetUserId);
+    
+    if (!employee) {
+      console.error('ERRORE: Dipendente non trovato per username:', targetUserId);
+      console.log('Tentativo di ricerca diretta per ID...');
+      
+      // Fallback: prova a cercare direttamente per ID
+      const employeeById = await getEmployeeById(targetUserId);
+      if (!employeeById) {
+        console.error('ERRORE: Dipendente non trovato neanche per ID:', targetUserId);
+        return NextResponse.json({
+          success: false,
+          error: 'Dipendente non trovato. Verificare che l\'utente sia registrato nella tabella employees.'
+        }, { status: 404 });
+      }
+      
+      console.log('Dipendente trovato tramite ricerca per ID:', employeeById.nome, employeeById.cognome);
+      // Usa il dipendente trovato per ID
+      const leaveRequestsById = await getEmployeeLeaveRequests(employeeById.id, status || undefined);
+      
+      let filteredRequestsById = leaveRequestsById;
+      if (limit) {
+        const limitNum = parseInt(limit);
+        filteredRequestsById = leaveRequestsById.slice(0, limitNum);
+      }
+      
+      filteredRequestsById.sort((a, b) => {
+        const dateA = new Date(a.created_at || a.start_date);
+        const dateB = new Date(b.created_at || b.start_date);
+        return dateB.getTime() - dateA.getTime();
+      });
+      
+      console.log(`Recuperate ${filteredRequestsById.length} richieste ferie per dipendente ${targetUserId} (tramite ID)`);
+      
+      return NextResponse.json({
+        success: true,
+        data: filteredRequestsById,
+        message: 'Richieste ferie recuperate con successo'
+      });
+    }
+    
+    console.log('Recuperate richieste ferie per dipendente:', employee.nome, employee.cognome);
+    
+    // Recupera le richieste ferie del dipendente usando l'ID corretto
+    const leaveRequests = await getEmployeeLeaveRequests(employee.id, status || undefined);
     
     // Applica limite se specificato
     let filteredRequests = leaveRequests;
@@ -73,6 +149,59 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// Funzione per calcolare i giorni lavorativi
+function calculateWorkingDays(startDateStr: string, endDateStr: string): number {
+  // Converte formato italiano gg/mm/aaaa in Date
+  const parseItalianDate = (dateStr: string): Date | null => {
+    if (!dateStr) return null;
+    
+    // Se è già in formato ISO (yyyy-mm-dd), convertilo direttamente
+    if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      return new Date(dateStr);
+    }
+    
+    // Se è in formato italiano (gg/mm/aaaa)
+    if (dateStr.length === 10 && dateStr.includes('/')) {
+      const parts = dateStr.split('/');
+      if (parts.length !== 3) return null;
+      
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10);
+      const year = parseInt(parts[2], 10);
+      
+      if (isNaN(day) || isNaN(month) || isNaN(year)) return null;
+      if (day < 1 || day > 31 || month < 1 || month > 12 || year < 1900) return null;
+      
+      return new Date(year, month - 1, day);
+    }
+    
+    // Prova a parsare come data standard
+    const date = new Date(dateStr);
+    return isNaN(date.getTime()) ? null : date;
+  };
+
+  const startDate = parseItalianDate(startDateStr);
+  const endDate = parseItalianDate(endDateStr);
+  
+  if (!startDate || !endDate || endDate < startDate) {
+    return 0;
+  }
+
+  let workingDays = 0;
+  const currentDate = new Date(startDate);
+  
+  while (currentDate <= endDate) {
+    const dayOfWeek = currentDate.getDay();
+    // 0 = Domenica, 6 = Sabato - escludiamo weekend
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      workingDays++;
+    }
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+  
+  return workingDays;
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Verifica accesso utente
@@ -85,12 +214,12 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { user_id, start_date, end_date, leave_type, reason, notes } = body;
+    const { user_id, start_date, end_date, leave_type, reason, notes, days_requested } = body;
     
     // Se l'utente è employee, può creare richieste solo per se stesso
     let targetUserId = user_id;
     if (userCheck.user?.role === 'employee') {
-      targetUserId = userCheck.user.id;
+      targetUserId = userCheck.user.username;
     }
     
     if (!targetUserId || !start_date || !end_date || !leave_type) {
@@ -100,14 +229,55 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
     
+    console.log('POST - Creazione richiesta ferie per dipendente ID:', targetUserId);
+    
+    // Verifica che il dipendente esista prima di creare la richiesta
+    let employee = await getEmployeeByUsername(targetUserId);
+    if (!employee) {
+      console.log('POST - Dipendente non trovato per username, provo per ID:', targetUserId);
+      employee = await getEmployeeById(targetUserId);
+    }
+    
+    if (!employee) {
+      console.error('POST - ERRORE: Dipendente non trovato per:', targetUserId);
+      return NextResponse.json({
+        success: false,
+        error: 'Dipendente non trovato. Verificare che l\'utente sia registrato nella tabella employees.'
+      }, { status: 404 });
+    }
+    
+    console.log('POST - Dipendente trovato:', employee.nome, employee.cognome, 'ID:', employee.id);
+    
+    // Calcola automaticamente i giorni lavorativi se non forniti
+    let calculatedDays = days_requested;
+    if (!calculatedDays || calculatedDays <= 0) {
+      calculatedDays = calculateWorkingDays(start_date, end_date);
+    }
+    
+    // Converti le date in formato ISO per il database
+    const parseDate = (dateStr: string): Date => {
+      // Se è in formato italiano gg/mm/aaaa, convertilo
+      if (dateStr.length === 10 && dateStr.includes('/')) {
+        const parts = dateStr.split('/');
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10);
+        const year = parseInt(parts[2], 10);
+        return new Date(year, month - 1, day);
+      }
+      return new Date(dateStr);
+    };
+    
     const leaveData: Partial<LeaveRequest> = {
-      employee_id: targetUserId,
-      start_date: new Date(start_date),
-      end_date: new Date(end_date),
+      employee_id: employee.id, // Usa l'ID del dipendente trovato
+      start_date: parseDate(start_date),
+      end_date: parseDate(end_date),
+      days_requested: calculatedDays,
       leave_type,
-      reason,
-      notes,
-      status: 'pending'
+      reason: reason || null,
+      notes: notes || null,
+      status: 'pending',
+      approved_by: null,
+      approved_at: null
     };
     
     const newLeaveRequest = await createLeaveRequest(leaveData);

@@ -161,13 +161,13 @@ function ViaggiPageContent() {
 
   // Funzione per sincronizzare i dati
   const handleSync = async () => {
-    if (!confirm('Questa operazione sincronizzerà i dati degli ultimi 4 giorni e richiederà pochi secondi. Continuare?')) {
+    if (!confirm('Questa operazione sincronizzerà i dati degli ultimi 5 giorni e richiederà pochi secondi. Continuare?')) {
       return;
     }
     
     setIsSyncing(true);
     try {
-      const response = await fetch('/api/viaggi/sync-tab-viaggi?days=4', {
+      const response = await fetch('/api/viaggi/sync-tab-viaggi?days=5', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -193,13 +193,13 @@ function ViaggiPageContent() {
 
   // Funzione per sincronizzare i dati dei terzisti
   const handleSyncTerzisti = async () => {
-    if (!confirm('Questa operazione sincronizzerà i dati dei TERZISTI degli ultimi 4 giorni e richiederà pochi secondi. Continuare?')) {
+    if (!confirm('Questa operazione sincronizzerà i dati dei TERZISTI degli ultimi 5 giorni e richiederà pochi secondi. Continuare?')) {
       return;
     }
     
     setIsSyncingTerzisti(true);
     try {
-      const response = await fetch('/api/viaggi/sync-tab-terzisti?days=4', {
+      const response = await fetch('/api/viaggi/sync-tab-terzisti?days=5', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -177,6 +177,56 @@ export async function middleware(request: NextRequest) {
     }
   }
   
+  // Verifica se la route è per autisti (employee only)
+  const isAutistiRoute = pathname.startsWith('/autisti');
+  
+  if (isAutistiRoute) {
+    try {
+      // Ottieni il token dal cookie
+      const token = request.cookies.get('auth-token')?.value;
+      
+      if (!token) {
+        const loginUrl = new URL('/login', request.url);
+        loginUrl.searchParams.set('redirect', pathname);
+        const response = NextResponse.redirect(loginUrl);
+        response.headers.set('x-redirect-count', (loopCounter + 1).toString());
+        return response;
+      }
+
+      // Verifica il token JWT per controllare il ruolo
+      const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+      let decoded: JWTPayload;
+      
+      try {
+        decoded = await verifyJWT(token, JWT_SECRET);
+      } catch (jwtError) {
+        console.error('Token JWT non valido per route autisti:', jwtError);
+        const loginUrl = new URL('/login', request.url);
+        loginUrl.searchParams.set('redirect', pathname);
+        loginUrl.searchParams.set('error', 'token_invalid');
+        const response = NextResponse.redirect(loginUrl);
+        response.headers.set('x-redirect-count', (loopCounter + 1).toString());
+        return response;
+      }
+
+      // Verifica che l'utente sia un dipendente (employee)
+      if (decoded.role !== 'employee') {
+        // Reindirizza alla dashboard appropriata in base al ruolo
+        const redirectUrl = decoded.role === 'admin' ? '/dashboard' : '/dashboard';
+        return NextResponse.redirect(new URL(redirectUrl, request.url));
+      }
+
+      // Continua con la richiesta per utenti employee
+      return NextResponse.next();
+
+    } catch (error) {
+      console.error('Errore middleware autisti auth:', error);
+      const errorUrl = new URL('/error', request.url);
+      errorUrl.searchParams.set('code', '500');
+      return NextResponse.redirect(errorUrl);
+    }
+  }
+  
   // Controlla se la route è protetta (logica normale)
   const isProtectedRoute = protectedRoutes.some(route => 
     pathname.startsWith(route)
@@ -199,8 +249,29 @@ export async function middleware(request: NextRequest) {
     return response;
   }
   
-  // Se c'è un token, lascia che il client verifichi la validità
-  // La verifica completa sarà fatta lato client nell'AuthContext
+  // Verifica il ruolo per route protette (impedisci accesso employee a route admin)
+  try {
+    const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+    const decoded = await verifyJWT(token, JWT_SECRET);
+    
+    // Se l'utente è employee e sta tentando di accedere a route non autorizzate
+    if (decoded.role === 'employee' && !pathname.startsWith('/autisti')) {
+      // Reindirizza alla dashboard autisti
+      return NextResponse.redirect(new URL('/autisti/dashboard', request.url));
+    }
+    
+  } catch (jwtError) {
+    // Se il token non è valido, reindirizza al login
+    console.error('Token JWT non valido:', jwtError);
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('redirect', pathname);
+    loginUrl.searchParams.set('error', 'token_invalid');
+    const response = NextResponse.redirect(loginUrl);
+    response.headers.set('x-redirect-count', (loopCounter + 1).toString());
+    return response;
+  }
+  
+  // Se c'è un token valido e l'utente ha i permessi, continua
   return NextResponse.next();
 }
 

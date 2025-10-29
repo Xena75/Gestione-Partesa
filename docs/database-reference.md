@@ -51,6 +51,56 @@ Questo documento contiene la documentazione completa delle tre basi di dati util
 - Assicurarsi di utilizzare le variabili d'ambiente corrette per ogni database
 - Prima di creare nuove query o funzionalità, consultare sempre questo documento per verificare la struttura delle tabelle
 
+## Collegamento tra Database
+
+### Autenticazione e Dipendenti
+**IMPORTANTE:** Il sistema utilizza due database separati che devono essere collegati correttamente:
+
+1. **gestionelogistica.users** - Contiene i dati di autenticazione
+2. **viaggi_db.employees** - Contiene i dati dei dipendenti
+
+**Collegamento:** `gestionelogistica.users.username` = `viaggi_db.employees.username_login`
+
+**Implementazione in `src/lib/db-employees.ts`:**
+```typescript
+export async function getEmployeeByUsername(username: string): Promise<Employee | null> {
+  // STEP 1: Verifica che l'utente esista in gestionelogistica.users
+  const [userRows] = await connection.execute(
+    `SELECT username FROM gestionelogistica.users WHERE username = ?`,
+    [username]
+  );
+  
+  if (userRows.length === 0) {
+    return null; // Utente non autenticato
+  }
+  
+  // STEP 2: Cerca il dipendente in viaggi_db.employees
+  const [rows] = await connection.execute(
+    `SELECT e.*, c.name as company_name 
+     FROM employees e 
+     LEFT JOIN companies c ON e.company_id = c.id 
+     WHERE e.username_login = ?`,
+    [username]
+  );
+  
+  return rows.length > 0 ? rows[0] : null;
+}
+```
+
+**Perché due query separate:**
+- I database hanno collation diverse che impediscono JOIN diretti
+- Questo approccio garantisce la verifica dell'autenticazione prima della ricerca del dipendente
+- Mantiene la separazione logica tra autenticazione e dati aziendali
+
+**Utilizzo nelle API:**
+```typescript
+// In src/app/api/employees/leave/route.ts
+const employee = await getEmployeeByUsername(userCheck.user.username);
+if (!employee) {
+  return NextResponse.json({ error: 'Dipendente non trovato' }, { status: 404 });
+}
+```
+
 ## Correzioni Recenti
 
 ### Gestione Timestamp Dipendenti (employees)
@@ -105,6 +155,58 @@ Questo documento contiene la documentazione completa delle tre basi di dati util
 **File modificati:**
 - `src/lib/db-employees.ts` - Correzione interfacce e funzioni CRUD
 - Risoluzione completa errori "Unknown column" e "cannot be null"
+
+### Collegamento Database Autenticazione-Dipendenti
+**Data implementazione:** Gennaio 2025
+
+**Problema risolto:**
+- Errore "Dipendente non trovato" per utenti autenticati correttamente
+- Sistema di autenticazione dipendenti non collegava correttamente i due database
+- L'API utilizzava UUID dal database `gestionelogistica` invece dell'username per cercare in `viaggi_db`
+
+**Causa identificata:**
+Il sistema utilizzava due database separati senza un collegamento corretto:
+1. **gestionelogistica.users** - Autenticazione (campo: `username`)
+2. **viaggi_db.employees** - Dati dipendenti (campo: `username_login`)
+
+Il problema era che l'API cercava il dipendente usando l'UUID invece dell'username.
+
+**Correzioni implementate:**
+
+1. **Funzione getEmployeeByUsername() in `src/lib/db-employees.ts`:**
+   ```typescript
+   // STEP 1: Verifica esistenza utente in gestionelogistica.users
+   const [userRows] = await connection.execute(
+     `SELECT username FROM gestionelogistica.users WHERE username = ?`,
+     [username]
+   );
+   
+   // STEP 2: Cerca dipendente in viaggi_db.employees
+   const [rows] = await connection.execute(
+     `SELECT e.*, c.name as company_name 
+      FROM employees e 
+      LEFT JOIN companies c ON e.company_id = c.id 
+      WHERE e.username_login = ?`,
+     [username]
+   );
+   ```
+
+2. **API employees/leave in `src/app/api/employees/leave/route.ts`:**
+   ```typescript
+   // Usa username invece di UUID per employee
+   if (userCheck.user?.role === 'employee') {
+     targetUserId = userCheck.user.username; // Era: userCheck.user.id
+   }
+   ```
+
+**Benefici:**
+- ✅ Collegamento corretto tra database di autenticazione e dipendenti
+- ✅ Risoluzione errore "Dipendente non trovato" per utenti validi
+- ✅ Sistema robusto con verifica a due step (autenticazione + dipendente)
+- ✅ Gestione collation diverse tra database con query separate
+- ✅ Fallback per compatibilità con ricerca per email
+
+**Collegamento:** `gestionelogistica.users.username` = `viaggi_db.employees.username_login`
 
 ### Gestione Campo company_name vs company_id (employees)
 **Data implementazione:** Gennaio 2025
@@ -845,31 +947,38 @@ updated_at    timestamp    NO        current_timestamp()  on update current_time
 - `idx_employee_documents_expiry` - Controllo scadenze
 
 #### employee_leave_requests
-**Descrizione:** Sistema gestione richieste ferie, permessi e congedi dipendenti.
+**Descrizione:** Sistema gestione richieste ferie, permessi e congedi dipendenti con supporto ore/giorni.
 
 ```sql
-Field         Type                                           Null  Key  Default              Extra
-id            int(11)                                        NO    PRI  NULL                 auto_increment
-employee_id   varchar(191)                                   NO    MUL  NULL                 
-leave_type    enum('ferie','permesso','malattia','congedo')  NO        NULL                 
-start_date    date                                           NO    MUL  NULL                 
-end_date      date                                           NO    MUL  NULL                 
-days_requested int(11)                                       NO        NULL                 
-reason        text                                           YES        NULL                 
-status        enum('pending','approved','rejected')          NO    MUL  pending              
-approved_by   varchar(191)                                   YES        NULL                 
-approved_at   timestamp                                      YES        NULL                 
-notes         text                                           YES        NULL                 
-created_at    timestamp                                      NO        current_timestamp()  
-updated_at    timestamp                                      NO        current_timestamp()  on update current_timestamp()
+Field          Type                                           Null  Key  Default              Extra
+id             int(11)                                        NO    PRI  NULL                 auto_increment
+employee_id    varchar(191)                                   NO    MUL  NULL                 
+leave_type     enum('ferie','permesso','malattia','congedo')  NO        NULL                 
+start_date     date                                           NO    MUL  NULL                 
+end_date       date                                           NO    MUL  NULL                 
+days_requested int(11)                                        NO        NULL                 
+hours_requested decimal(5,2)                                  YES       NULL                 
+reason         text                                           YES        NULL                 
+status         enum('pending','approved','rejected')          NO    MUL  pending              
+approved_by    varchar(191)                                   YES        NULL                 
+approved_at    timestamp                                      YES        NULL                 
+notes          text                                           YES        NULL                 
+created_at     timestamp                                      NO        current_timestamp()  
+updated_at     timestamp                                      NO        current_timestamp()  on update current_timestamp()
 ```
 
+**Logica Richieste:**
+- **Ferie**: Richieste in giorni (days_requested), conversione automatica in ore (1 giorno = 8 ore)
+- **Permessi**: Richieste in ore (hours_requested) per Ex Festività e ROL
+- **Malattia/Congedo**: Richieste in giorni (days_requested)
+- **Validazione**: Controllo saldi disponibili prima dell'approvazione
+
 **Utilizzo nel progetto:**
-- **Pagine**: `/gestione/dipendenti/[id]/ferie` - Gestione richieste ferie
-- **API**: `/api/employees/[id]/leave-requests` per gestione richieste
-- **Componenti**: `LeaveRequestForm`, `LeaveRequestList` per workflow approvazione
-- **Funzionalità**: Richiesta ferie, approvazione manager, calcolo giorni
-- **Dashboard**: Statistiche ferie, richieste pendenti
+- **Pagine**: `/gestione/employees/ferie` - Gestione completa richieste
+- **API**: `/api/employees/leave` per gestione richieste e approvazioni
+- **Componenti**: Form richieste con selezione ore/giorni, workflow approvazione
+- **Funzionalità**: Richiesta ferie/permessi, approvazione manager, calcolo saldi
+- **Dashboard**: Statistiche richieste, saldi disponibili, storico
 
 **Indici di performance:**
 - `idx_employee_leave_requests_employee_id` - Ricerca per dipendente
@@ -877,28 +986,45 @@ updated_at    timestamp                                      NO        current_t
 - `idx_employee_leave_requests_status` - Filtro per stato richiesta
 
 #### employee_leave_balance
-**Descrizione:** Bilancio annuale ferie e permessi per ogni dipendente.
+**Descrizione:** Bilancio annuale ferie e permessi per ogni dipendente con gestione ore e giorni.
 
 ```sql
-Field                    Type         Null  Key  Default              Extra
-id                       int(11)      NO    PRI  NULL                 auto_increment
-employee_id              varchar(191) NO    UNI  NULL                 
-year                     int(11)      NO    MUL  NULL                 
-vacation_days_total      int(11)      NO        26                   
-vacation_days_used       int(11)      NO        0                    
-vacation_days_remaining  int(11)      NO        26                   
-sick_days_used           int(11)      NO        0                    
-personal_days_used       int(11)      NO        0                    
-last_updated             timestamp    NO        current_timestamp()  on update current_timestamp()
-created_at               timestamp    NO        current_timestamp()  
+Field                      Type         Null  Key  Default              Extra
+id                         int(11)      NO    PRI  NULL                 auto_increment
+employee_id                varchar(191) NO    UNI  NULL                 
+year                       int(11)      NO    MUL  NULL                 
+vacation_days_total        int(11)      NO        26                   
+vacation_days_used         int(11)      NO        0                    
+vacation_days_remaining    int(11)      NO        26                   
+vacation_hours_remaining   decimal(5,2) YES       NULL                 
+ex_holiday_hours_remaining decimal(5,2) YES       NULL                 
+rol_hours_remaining        decimal(5,2) YES       NULL                 
+sick_days_used             int(11)      NO        0                    
+personal_days_used         int(11)      NO        0                    
+last_updated               timestamp    NO        current_timestamp()  on update current_timestamp()
+created_at                 timestamp    NO        current_timestamp()  
 ```
 
+**Sistema Gestione Ferie - Logica di Funzionamento:**
+- **Ferie**: Gestite in giorni (vacation_days_*) e ore (vacation_hours_remaining)
+- **Ex Festività**: Gestite solo in ore (ex_holiday_hours_remaining)
+- **ROL**: Gestiti solo in ore (rol_hours_remaining)
+- **Import Excel**: Aggiornamento mensile dei saldi residui tramite file Excel
+- **Conversione**: 1 giorno = 8 ore per calcoli automatici
+
+**Import Excel Mensile:**
+- File: `Saldi ferie.xlsx` con colonne: Anno, Mese, Cognome, Nome, Centri di costo, Ferie-Residue, EX FEST-F-Residue, ROL-R-Residue
+- Valori già in ore, import diretto senza conversioni
+- Mapping automatico dipendenti tramite nome/cognome
+- Gestione centri di costo con foglio separato per mappature
+
 **Utilizzo nel progetto:**
-- **Pagine**: `/gestione/dipendenti/[id]/bilancio-ferie` - Visualizzazione bilancio
-- **API**: `/api/employees/[id]/leave-balance` per calcolo giorni disponibili
-- **Componenti**: `LeaveBalanceCard`, `LeaveBalanceChart` per visualizzazione
-- **Funzionalità**: Calcolo automatico giorni rimanenti, storico annuale
-- **Dashboard**: Statistiche utilizzo ferie aziendali
+- **Pagine**: `/gestione/employees/ferie` - Gestione completa ferie dipendenti
+- **API**: `/api/employees/leave-balance` per gestione saldi
+- **API**: `/api/employees/import-leave-balance` per import Excel
+- **Componenti**: Dashboard saldi, richieste ferie, storico
+- **Funzionalità**: Import Excel, calcolo automatico, approvazione richieste
+- **Dashboard**: Statistiche utilizzo ferie, saldi disponibili
 
 **Indici di performance:**
 - `idx_employee_leave_balance_employee_year` - Ricerca per dipendente e anno

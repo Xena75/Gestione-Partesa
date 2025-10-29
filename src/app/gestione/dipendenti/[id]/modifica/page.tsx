@@ -12,7 +12,7 @@ interface Employee {
   nome: string;
   cognome: string;
   email: string;
-  login_email?: string;
+  username_login?: string;
   cellulare?: string;
   cod_fiscale?: string;
   cdc?: string;
@@ -46,6 +46,13 @@ interface Company {
   code: string;
 }
 
+interface User {
+  id: number;
+  username: string;
+  email: string;
+  role: string;
+}
+
 
 
 export default function ModificaDipendente() {
@@ -61,15 +68,9 @@ export default function ModificaDipendente() {
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [companies, setCompanies] = useState<Company[]>([]);
 
-  // Stati per gestione credenziali
-  const [hasPassword, setHasPassword] = useState(false);
-  const [showPasswordForm, setShowPasswordForm] = useState(false);
-  const [passwordForm, setPasswordForm] = useState({
-    password: '',
-    confirmPassword: ''
-  });
-  const [passwordLoading, setPasswordLoading] = useState(false);
-  const [passwordMessage, setPasswordMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
+  // Stati per gestione utenti disponibili
+  const [availableUsers, setAvailableUsers] = useState<User[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
 
   // Carica i dati del dipendente
   useEffect(() => {
@@ -93,13 +94,6 @@ export default function ModificaDipendente() {
           };
           
           setFormData(formattedData);
-
-          // Carica stato credenziali
-          const passwordResponse = await fetch(`/api/employees/${employeeId}/password`);
-          if (passwordResponse.ok) {
-            const passwordData = await passwordResponse.json();
-            setHasPassword(passwordData.has_password || false);
-          }
         } else {
           throw new Error(data.error || 'Errore nel caricamento dei dati');
         }
@@ -131,6 +125,29 @@ export default function ModificaDipendente() {
     };
 
     fetchCompanies();
+  }, []);
+
+  // Carica gli utenti disponibili
+  useEffect(() => {
+    const fetchAvailableUsers = async () => {
+      try {
+        setLoadingUsers(true);
+        const response = await fetch('/api/employees/available-users');
+        if (!response.ok) {
+          throw new Error('Errore nel caricamento degli utenti');
+        }
+        const data = await response.json();
+        if (data.success) {
+          setAvailableUsers(data.data);
+        }
+      } catch (err) {
+        console.error('Errore nel caricamento degli utenti:', err);
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+
+    fetchAvailableUsers();
   }, []);
 
   // Gestisce i cambiamenti nei campi del form
@@ -179,10 +196,6 @@ export default function ModificaDipendente() {
       errors.email_aziendale = 'Formato email aziendale non valido';
     }
 
-    if (formData.login_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.login_email)) {
-      errors.login_email = 'Formato email di accesso non valido';
-    }
-
     if (formData.cod_fiscale && formData.cod_fiscale.length !== 16) {
       errors.cod_fiscale = 'Il codice fiscale deve essere di 16 caratteri';
     }
@@ -204,58 +217,7 @@ export default function ModificaDipendente() {
     return Object.keys(errors).length === 0;
   };
 
-  // Funzioni per gestione credenziali
-  const handlePasswordSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (passwordForm.password !== passwordForm.confirmPassword) {
-      setPasswordMessage({type: 'error', text: 'Le password non coincidono'});
-      return;
-    }
-    
-    if (passwordForm.password.length < 6) {
-      setPasswordMessage({type: 'error', text: 'La password deve essere di almeno 6 caratteri'});
-      return;
-    }
-    
-    try {
-      setPasswordLoading(true);
-      setPasswordMessage(null);
-      
-      const response = await fetch(`/api/employees/${employeeId}/password`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          password: passwordForm.password
-        }),
-      });
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        setPasswordMessage({type: 'success', text: 'Password impostata con successo!'});
-        setHasPassword(true);
-        setShowPasswordForm(false);
-        setPasswordForm({password: '', confirmPassword: ''});
-      } else {
-        setPasswordMessage({type: 'error', text: result.error || 'Errore nell\'impostazione della password'});
-      }
-      
-    } catch (error) {
-      console.error('Errore nell\'impostazione password:', error);
-      setPasswordMessage({type: 'error', text: 'Errore nell\'impostazione della password'});
-    } finally {
-      setPasswordLoading(false);
-    }
-  };
 
-  const resetPasswordForm = () => {
-    setShowPasswordForm(false);
-    setPasswordForm({password: '', confirmPassword: ''});
-    setPasswordMessage(null);
-  };
 
   // Salva le modifiche
   const handleSave = async () => {
@@ -798,123 +760,53 @@ export default function ModificaDipendente() {
               </div>
               <div className="card-body">
                 <div className="row">
-                  <div className="col-md-6">
+                  <div className="col-md-8">
                     <div className="mb-3">
-                      <label className="form-label text-light">Email di Accesso</label>
-                      <input
-                        type="email"
-                        className={`form-control bg-dark text-light border-secondary ${validationErrors.login_email ? 'is-invalid' : ''}`}
-                        value={formData.login_email || ''}
-                        onChange={(e) => handleInputChange('login_email', e.target.value)}
-                        placeholder="Email dedicata per l'accesso al sistema"
-                      />
-                      {validationErrors.login_email && (
-                        <div className="invalid-feedback">
-                          {validationErrors.login_email}
-                        </div>
+                      <label className="form-label text-light">Utente Collegato</label>
+                      <select
+                        className="form-select bg-dark text-light border-secondary"
+                        value={formData.username_login || ''}
+                        onChange={(e) => handleInputChange('username_login', e.target.value)}
+                        disabled={loadingUsers}
+                      >
+                        <option value="">Seleziona un utente...</option>
+                        {availableUsers.map(user => (
+                          <option key={user.id} value={user.username}>
+                            {user.username} - {user.email} ({user.role})
+                          </option>
+                        ))}
+                      </select>
+                      {loadingUsers && (
+                        <small className="text-muted">
+                          <i className="fas fa-spinner fa-spin me-1"></i>
+                          Caricamento utenti...
+                        </small>
                       )}
-                      <small className="text-muted">
-                        {formData.login_email 
-                          ? "Email utilizzata per l'accesso al sistema" 
-                          : "Se non impostata, verrà utilizzata l'email personale per l'accesso"
+                      <small className="text-muted d-block mt-1">
+                        {formData.username_login 
+                          ? `Dipendente collegato all'utente: ${formData.username_login}` 
+                          : "Seleziona un utente per collegare questo dipendente al sistema di accesso"
                         }
                       </small>
                     </div>
                   </div>
-                  <div className="col-md-6">
+                  <div className="col-md-4">
                     <div className="mb-3">
-                      <label className="form-label text-light">Stato Password</label>
-                      <div className="d-flex align-items-center gap-2">
-                        <span className={`badge ${hasPassword ? 'bg-success' : 'bg-warning'}`}>
-                          {hasPassword ? 'Password impostata' : 'Password non impostata'}
+                      <label className="form-label text-light">Stato Collegamento</label>
+                      <div className="d-flex align-items-center">
+                        <span className={`badge ${formData.username_login ? 'bg-success' : 'bg-warning'}`}>
+                          {formData.username_login ? 'Collegato' : 'Non collegato'}
                         </span>
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-primary"
-                          onClick={() => setShowPasswordForm(!showPasswordForm)}
-                        >
-                          {hasPassword ? 'Cambia Password' : 'Imposta Password'}
-                        </button>
                       </div>
+                      <small className="text-muted d-block mt-1">
+                        {formData.username_login 
+                          ? "Il dipendente può accedere al sistema" 
+                          : "Il dipendente non può accedere al sistema"
+                        }
+                      </small>
                     </div>
                   </div>
                 </div>
-
-                {/* Form per impostare/cambiare password */}
-                {showPasswordForm && (
-                  <div className="row mt-3">
-                    <div className="col-12">
-                      <div className="border border-secondary rounded p-3">
-                        <h6 className="text-light mb-3">
-                          {hasPassword ? 'Cambia Password' : 'Imposta Nuova Password'}
-                        </h6>
-                        <form onSubmit={handlePasswordSubmit}>
-                          <div className="row">
-                            <div className="col-md-6 mb-3">
-                              <label className="form-label text-light">Nuova Password</label>
-                              <input
-                                type="password"
-                                className="form-control bg-dark text-light border-secondary"
-                                value={passwordForm.password}
-                                onChange={(e) => setPasswordForm(prev => ({...prev, password: e.target.value}))}
-                                placeholder="Inserisci la nuova password"
-                                required
-                                minLength={6}
-                              />
-                              <small className="text-muted">Minimo 6 caratteri</small>
-                            </div>
-                            <div className="col-md-6 mb-3">
-                              <label className="form-label text-light">Conferma Password</label>
-                              <input
-                                type="password"
-                                className="form-control bg-dark text-light border-secondary"
-                                value={passwordForm.confirmPassword}
-                                onChange={(e) => setPasswordForm(prev => ({...prev, confirmPassword: e.target.value}))}
-                                placeholder="Conferma la password"
-                                required
-                              />
-                            </div>
-                          </div>
-                          
-                          {passwordMessage && (
-                            <div className={`alert ${passwordMessage.type === 'success' ? 'alert-success' : 'alert-danger'} mb-3`}>
-                              {passwordMessage.text}
-                            </div>
-                          )}
-                          
-                          <div className="d-flex gap-2">
-                            <button
-                              type="submit"
-                              className="btn btn-primary"
-                              disabled={passwordLoading}
-                            >
-                              {passwordLoading ? (
-                                <>
-                                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                  Salvando...
-                                </>
-                              ) : (
-                                <>
-                                  <i className="fas fa-save me-1"></i>
-                                  {hasPassword ? 'Cambia Password' : 'Imposta Password'}
-                                </>
-                              )}
-                            </button>
-                            <button
-                              type="button"
-                              className="btn btn-secondary"
-                              onClick={resetPasswordForm}
-                              disabled={passwordLoading}
-                            >
-                              <i className="fas fa-times me-1"></i>
-                              Annulla
-                            </button>
-                          </div>
-                        </form>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
 

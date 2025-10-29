@@ -28,11 +28,14 @@ interface ExpiringDocument {
 
 interface PendingLeave {
   id: number;
-  employee_id: number;
+  employee_id: string;
   employee_name: string;
+  nome: string;
+  cognome: string;
   start_date: string;
   end_date: string;
   days_requested: number;
+  reason?: string;
   status: string;
 }
 
@@ -740,7 +743,7 @@ export default function Dashboard() {
                   <i className="fas fa-calendar-alt me-2"></i>
                   Richieste Ferie Pendenti
                 </h6>
-                <Link href="/gestione/dipendenti/ferie" className="btn btn-sm btn-outline-primary">
+                <Link href="/gestione/employees/ferie" className="btn btn-sm btn-outline-primary">
                   <i className="fas fa-eye me-1"></i>
                   Gestisci
                 </Link>
@@ -768,6 +771,15 @@ export default function Dashboard() {
                             <small className="text-light">
                               ({leave.days_requested} giorni)
                             </small>
+                            {leave.reason && (
+                              <>
+                                <br />
+                                <small className="text-muted">
+                                  <i className="fas fa-comment me-1"></i>
+                                  {leave.reason}
+                                </small>
+                              </>
+                            )}
                           </div>
                           <div>
                             <button 
@@ -837,7 +849,7 @@ export default function Dashboard() {
                     </Link>
                   </div>
                   <div className="col-md-3 mb-3">
-                    <Link href="/gestione/dipendenti/ferie" className="btn btn-outline-success w-100">
+                    <Link href="/gestione/employees/ferie" className="btn btn-outline-success w-100">
                       <i className="fas fa-calendar-check fa-2x mb-2 d-block"></i>
                       Gestisci Ferie
                     </Link>

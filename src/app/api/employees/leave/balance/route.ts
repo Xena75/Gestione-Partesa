@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyUserAccess } from '@/lib/auth';
-import { getEmployeeLeaveBalance } from '@/lib/db-employees';
+import { getEmployeeLeaveBalance, getEmployeeById, getEmployeeByUsername, createOrUpdateLeaveBalance } from '@/lib/db-employees';
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     // Se l'utente è employee, può vedere solo il proprio bilancio
     let targetUserId = userId;
     if (userCheck.user?.role === 'employee') {
-      targetUserId = userCheck.user.id;
+      targetUserId = userCheck.user.username;
     }
     
     if (!targetUserId) {
@@ -31,8 +31,50 @@ export async function GET(request: NextRequest) {
     
     console.log('Recupero bilancio ferie per dipendente ID:', targetUserId);
     
-    // Recupera il bilancio ferie del dipendente
-    const leaveBalance = await getEmployeeLeaveBalance(targetUserId);
+    // Cerca il dipendente prima per ID, poi per username
+    let employee = await getEmployeeById(targetUserId);
+    if (!employee) {
+      employee = await getEmployeeByUsername(targetUserId);
+    }
+    
+    if (!employee) {
+      return NextResponse.json({
+        success: false,
+        error: `Dipendente con ID/username '${targetUserId}' non trovato nella tabella employees`
+      }, { status: 404 });
+    }
+    
+    // Recupera il bilancio ferie del dipendente usando l'ID corretto
+    let leaveBalance = await getEmployeeLeaveBalance(employee.id);
+    
+    // Se il bilancio non esiste, crealo automaticamente con valori standard
+    if (!leaveBalance) {
+      const currentYear = new Date().getFullYear();
+      console.log(`Bilancio ferie non trovato per ${employee.nome} ${employee.cognome} (${employee.id}) per l'anno ${currentYear}. Creazione automatica...`);
+      
+      const newBalance = {
+        employee_id: employee.id,
+        year: currentYear,
+        vacation_days_total: 26,
+        vacation_days_used: 0,
+        vacation_days_remaining: 26,
+        sick_days_used: 0,
+        personal_days_used: 0
+      };
+      
+      const created = await createOrUpdateLeaveBalance(newBalance);
+      if (created) {
+        // Ricarica il bilancio appena creato
+        leaveBalance = await getEmployeeLeaveBalance(employee.id);
+        console.log(`Bilancio ferie creato automaticamente per ${employee.nome} ${employee.cognome}`);
+      } else {
+        console.error(`Errore nella creazione del bilancio ferie per ${employee.nome} ${employee.cognome}`);
+        return NextResponse.json({
+          success: false,
+          error: `Errore nella creazione automatica del bilancio ferie per ${employee.nome} ${employee.cognome}`
+        }, { status: 500 });
+      }
+    }
     
     console.log(`Bilancio ferie recuperato per dipendente ${targetUserId}:`, leaveBalance);
     

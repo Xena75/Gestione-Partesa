@@ -72,28 +72,30 @@ export default function Navbar() {
             </button>
             
             <div className="collapse navbar-collapse" id="navbarNav">
-              <div className="navbar-nav me-auto">
-                <Link 
-                  className={`nav-link ${pathname === '/' || pathname === '/dashboard' ? 'active' : ''}`} 
-                  href="/dashboard"
-                >
-                  Dashboard
-                </Link>
-                <Link 
-                  className={`nav-link ${pathname === '/monitoraggio' ? 'active' : ''}`} 
-                  href="/monitoraggio"
-                >
-                  📋 Monitoraggio
-                </Link>
-                <Link 
-                  className={`nav-link ${pathname === '/vehicles/schedules/calendar' ? 'active' : ''}`} 
-                  href="/vehicles/schedules/calendar"
-                >
-                  <Calendar size={16} className="me-1" />
-                  Calendario
-                </Link>
-
-              </div>
+              {/* Mostra i link di navigazione solo se l'utente non è un dipendente */}
+              {user?.role !== 'employee' && (
+                <div className="navbar-nav me-auto">
+                  <Link 
+                    className={`nav-link ${pathname === '/' || pathname === '/dashboard' ? 'active' : ''}`} 
+                    href="/dashboard"
+                  >
+                    Dashboard
+                  </Link>
+                  <Link 
+                    className={`nav-link ${pathname === '/monitoraggio' ? 'active' : ''}`} 
+                    href="/monitoraggio"
+                  >
+                    📋 Monitoraggio
+                  </Link>
+                  <Link 
+                    className={`nav-link ${pathname === '/vehicles/schedules/calendar' ? 'active' : ''}`} 
+                    href="/vehicles/schedules/calendar"
+                  >
+                    <Calendar size={16} className="me-1" />
+                    Calendario
+                  </Link>
+                </div>
+              )}
               
               {/* Sezione utente e logout */}
               <div className="navbar-nav ms-auto">

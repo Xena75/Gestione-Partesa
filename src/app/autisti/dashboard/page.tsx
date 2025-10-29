@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Calendar, FileText, Clock, AlertTriangle, User, MapPin } from 'lucide-react';
+import { Calendar, FileText, Clock, AlertTriangle, User, MapPin, ChevronDown, ChevronUp, UserCircle, Briefcase, Phone, CreditCard, GraduationCap } from 'lucide-react';
 
 interface EmployeeData {
   id: number;
@@ -15,6 +15,26 @@ interface EmployeeData {
   ferie_residue: number;
   documenti_in_scadenza: number;
   richieste_ferie_pending: number;
+  // Campi aggiuntivi per il profilo
+  cod_fiscale?: string;
+  data_nascita?: string;
+  luogo_nascita?: string;
+  cittadinanza?: string;
+  qualifica?: string;
+  tipo_contratto?: string;
+  ccnl?: string;
+  livello?: string;
+  cdc?: string;
+  cellulare?: string;
+  email_aziendale?: string;
+  indirizzo?: string;
+  cap?: string;
+  citta?: string;
+  patente?: string;
+  driver_license_number?: string;
+  driver_license_expiry?: string;
+  titolo_studio?: string;
+  permesso_soggiorno?: string;
 }
 
 interface RecentLeaveRequest {
@@ -40,9 +60,11 @@ export default function AutistiDashboardPage() {
   const [expiringDocuments, setExpiringDocuments] = useState<ExpiringDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [profileExpanded, setProfileExpanded] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({});
 
   useEffect(() => {
-    if (user?.id) {
+    if (user?.username) {
       fetchDashboardData();
     }
   }, [user]);
@@ -51,25 +73,50 @@ export default function AutistiDashboardPage() {
     try {
       setLoading(true);
       
-      // Fetch dati dipendente
-      const employeeResponse = await fetch(`/api/employees/${user?.id}`);
-      if (employeeResponse.ok) {
-        const employeeData = await employeeResponse.json();
-        setEmployeeData(employeeData);
+      // Fetch dati dipendente usando username
+      const employeeResponse = await fetch(`/api/employees/${encodeURIComponent(user?.username || '')}`);
+      
+      if (!employeeResponse.ok) {
+        const errorData = await employeeResponse.json();
+        throw new Error(`Errore ${employeeResponse.status}: ${errorData.error || 'Errore sconosciuto'}`);
+      }
+      
+      const employeeResult = await employeeResponse.json();
+      if (employeeResult.success && employeeResult.data) {
+        setEmployeeData(employeeResult.data);
       }
 
       // Fetch richieste ferie recenti
-      const leaveResponse = await fetch(`/api/employees/${user?.id}/leave?limit=5`);
+      const leaveResponse = await fetch(`/api/employees/leave?user_id=${user?.username}&limit=5`);
       if (leaveResponse.ok) {
-        const leaveData = await leaveResponse.json();
-        setRecentLeaveRequests(leaveData);
+        const leaveResult = await leaveResponse.json();
+        console.log('Risposta API ferie:', leaveResult);
+        if (leaveResult.success && leaveResult.data) {
+          setRecentLeaveRequests(leaveResult.data);
+        } else if (Array.isArray(leaveResult)) {
+          // Fallback per formato array diretto
+          setRecentLeaveRequests(leaveResult);
+        }
       }
 
       // Fetch documenti in scadenza
-      const documentsResponse = await fetch(`/api/employees/${user?.id}/documents?expiring=true`);
+      const documentsResponse = await fetch(`/api/employees/${user?.username}/documents`);
       if (documentsResponse.ok) {
-        const documentsData = await documentsResponse.json();
-        setExpiringDocuments(documentsData);
+        const documentsResult = await documentsResponse.json();
+        console.log('Risposta API documenti:', documentsResult);
+        if (documentsResult.success && documentsResult.data) {
+          // Filtra solo i documenti in scadenza
+          const expiringDocs = documentsResult.data.filter((doc: any) => 
+            doc.status === 'in_scadenza' || doc.status === 'scaduto'
+          );
+          setExpiringDocuments(expiringDocs);
+        } else if (Array.isArray(documentsResult)) {
+          // Fallback per formato array diretto
+          const expiringDocs = documentsResult.filter((doc: any) => 
+            doc.status === 'in_scadenza' || doc.status === 'scaduto'
+          );
+          setExpiringDocuments(expiringDocs);
+        }
       }
 
     } catch (error) {
@@ -85,6 +132,7 @@ export default function AutistiDashboardPage() {
   };
 
   const getStatusBadgeClass = (status: string) => {
+    if (!status) return 'bg-secondary';
     switch (status.toLowerCase()) {
       case 'approvata':
         return 'bg-success';
@@ -99,6 +147,7 @@ export default function AutistiDashboardPage() {
   };
 
   const getStatusText = (status: string) => {
+    if (!status) return 'Sconosciuto';
     switch (status.toLowerCase()) {
       case 'approvata':
         return 'Approvata';
@@ -110,6 +159,18 @@ export default function AutistiDashboardPage() {
       default:
         return status;
     }
+  };
+
+  const toggleSection = (sectionName: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [sectionName]: !prev[sectionName]
+    }));
+  };
+
+  const formatDateProfile = (dateString: string | null) => {
+    if (!dateString) return 'Non specificato';
+    return new Date(dateString).toLocaleDateString('it-IT');
   };
 
   if (loading) {
@@ -164,6 +225,257 @@ export default function AutistiDashboardPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Il Mio Profilo - Mobile First */}
+      <div className="row mb-4">
+        <div className="col-12">
+          <div className="card bg-dark border-info">
+            <div 
+              className="card-header d-flex justify-content-between align-items-center cursor-pointer"
+              onClick={() => setProfileExpanded(!profileExpanded)}
+              style={{ cursor: 'pointer' }}
+            >
+              <h5 className="text-info mb-0 d-flex align-items-center">
+                <UserCircle className="me-2" size={20} />
+                Il Mio Profilo
+              </h5>
+              {profileExpanded ? (
+                <ChevronUp className="text-info" size={20} />
+              ) : (
+                <ChevronDown className="text-info" size={20} />
+              )}
+            </div>
+            
+            {profileExpanded && (
+              <div className="card-body">
+                {/* Sezione Dati Anagrafici */}
+                <div className="mb-3">
+                  <div 
+                    className="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary cursor-pointer"
+                    onClick={() => toggleSection('anagrafica')}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <h6 className="text-light mb-0 d-flex align-items-center">
+                      <UserCircle className="me-2 text-info" size={18} />
+                      📝 Dati Anagrafici
+                    </h6>
+                    {expandedSections.anagrafica ? (
+                      <ChevronUp className="text-muted" size={16} />
+                    ) : (
+                      <ChevronDown className="text-muted" size={16} />
+                    )}
+                  </div>
+                  
+                  {expandedSections.anagrafica && (
+                    <div className="mt-3">
+                      <div className="row g-3">
+                        <div className="col-12 col-md-6">
+                          <small className="text-dark d-block fw-bold">Nome</small>
+                          <span className="text-light fs-6">{employeeData?.nome || 'Non specificato'}</span>
+                        </div>
+                        <div className="col-12 col-md-6">
+                          <small className="text-dark d-block fw-bold">Cognome</small>
+                          <span className="text-light fs-6">{employeeData?.cognome || 'Non specificato'}</span>
+                        </div>
+                        <div className="col-12">
+                          <small className="text-dark d-block fw-bold">Codice Fiscale</small>
+                          <span className="text-light fs-6">{employeeData?.cod_fiscale || 'Non specificato'}</span>
+                        </div>
+                        <div className="col-12 col-md-6">
+                          <small className="text-dark d-block fw-bold">Data di Nascita</small>
+                          <span className="text-light fs-6">{formatDateProfile(employeeData?.data_nascita || null)}</span>
+                        </div>
+                        <div className="col-12 col-md-6">
+                          <small className="text-dark d-block fw-bold">Luogo di Nascita</small>
+                          <span className="text-light fs-6">{employeeData?.luogo_nascita || 'Non specificato'}</span>
+                        </div>
+                        <div className="col-12">
+                          <small className="text-dark d-block fw-bold">Cittadinanza</small>
+                          <span className="text-light fs-6">{employeeData?.cittadinanza || 'Non specificato'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Sezione Dati Lavorativi */}
+                <div className="mb-3">
+                  <div 
+                    className="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary cursor-pointer"
+                    onClick={() => toggleSection('lavorativi')}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <h6 className="text-light mb-0 d-flex align-items-center">
+                      <Briefcase className="me-2 text-warning" size={18} />
+                      💼 Dati Lavorativi
+                    </h6>
+                    {expandedSections.lavorativi ? (
+                      <ChevronUp className="text-muted" size={16} />
+                    ) : (
+                      <ChevronDown className="text-muted" size={16} />
+                    )}
+                  </div>
+                  
+                  {expandedSections.lavorativi && (
+                    <div className="mt-3">
+                      <div className="row g-3">
+                        <div className="col-12 col-md-6">
+                          <small className="text-dark d-block fw-bold">Qualifica</small>
+                          <span className="text-light fs-6">{employeeData?.qualifica || 'Non specificato'}</span>
+                        </div>
+                        <div className="col-12 col-md-6">
+                          <small className="text-dark d-block fw-bold">Tipo Contratto</small>
+                          <span className="text-light fs-6">{employeeData?.tipo_contratto || 'Non specificato'}</span>
+                        </div>
+                        <div className="col-12 col-md-6">
+                          <small className="text-dark d-block fw-bold">CCNL</small>
+                          <span className="text-light fs-6">{employeeData?.ccnl || 'Non specificato'}</span>
+                        </div>
+                        <div className="col-12 col-md-6">
+                          <small className="text-dark d-block fw-bold">Livello</small>
+                          <span className="text-light fs-6">{employeeData?.livello || 'Non specificato'}</span>
+                        </div>
+                        <div className="col-12 col-md-6">
+                          <small className="text-dark d-block fw-bold">Data Assunzione</small>
+                          <span className="text-light fs-6">{formatDateProfile(employeeData?.data_assunzione || null)}</span>
+                        </div>
+                        <div className="col-12 col-md-6">
+                          <small className="text-dark d-block fw-bold">Centro di Costo</small>
+                          <span className="text-light fs-6">{employeeData?.cdc || 'Non specificato'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Sezione Contatti */}
+                <div className="mb-3">
+                  <div 
+                    className="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary cursor-pointer"
+                    onClick={() => toggleSection('contatti')}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <h6 className="text-light mb-0 d-flex align-items-center">
+                      <Phone className="me-2 text-success" size={18} />
+                      📞 Contatti
+                    </h6>
+                    {expandedSections.contatti ? (
+                      <ChevronUp className="text-muted" size={16} />
+                    ) : (
+                      <ChevronDown className="text-muted" size={16} />
+                    )}
+                  </div>
+                  
+                  {expandedSections.contatti && (
+                    <div className="mt-3">
+                      <div className="row g-3">
+                        <div className="col-12">
+                          <small className="text-dark d-block fw-bold">Cellulare</small>
+                          <span className="text-light fs-6">{employeeData?.cellulare || employeeData?.telefono || 'Non specificato'}</span>
+                        </div>
+                        <div className="col-12">
+                          <small className="text-dark d-block fw-bold">Email Personale</small>
+                          <span className="text-light fs-6">{employeeData?.email || 'Non specificato'}</span>
+                        </div>
+                        <div className="col-12">
+                          <small className="text-dark d-block fw-bold">Email Aziendale</small>
+                          <span className="text-light fs-6">{employeeData?.email_aziendale || 'Non specificato'}</span>
+                        </div>
+                        <div className="col-12">
+                          <small className="text-dark d-block fw-bold">Indirizzo</small>
+                          <span className="text-light fs-6">{employeeData?.indirizzo || 'Non specificato'}</span>
+                        </div>
+                        <div className="col-12 col-md-6">
+                          <small className="text-dark d-block fw-bold">CAP</small>
+                          <span className="text-light fs-6">{employeeData?.cap || 'Non specificato'}</span>
+                        </div>
+                        <div className="col-12 col-md-6">
+                          <small className="text-dark d-block fw-bold">Città</small>
+                          <span className="text-light fs-6">{employeeData?.citta || 'Non specificato'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Sezione Patente */}
+                <div className="mb-3">
+                  <div 
+                    className="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary cursor-pointer"
+                    onClick={() => toggleSection('patente')}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <h6 className="text-light mb-0 d-flex align-items-center">
+                      <CreditCard className="me-2 text-danger" size={18} />
+                      🚗 Patente
+                    </h6>
+                    {expandedSections.patente ? (
+                      <ChevronUp className="text-muted" size={16} />
+                    ) : (
+                      <ChevronDown className="text-muted" size={16} />
+                    )}
+                  </div>
+                  
+                  {expandedSections.patente && (
+                    <div className="mt-3">
+                      <div className="row g-3">
+                        <div className="col-12">
+                          <small className="text-dark d-block fw-bold">Categoria Patente</small>
+                          <span className="text-light fs-6">{employeeData?.patente || 'Non specificato'}</span>
+                        </div>
+                        <div className="col-12">
+                          <small className="text-dark d-block fw-bold">Numero Patente</small>
+                          <span className="text-light fs-6">{employeeData?.driver_license_number || 'Non specificato'}</span>
+                        </div>
+                        <div className="col-12">
+                          <small className="text-dark d-block fw-bold">Scadenza Patente</small>
+                          <span className="text-light fs-6">{formatDateProfile(employeeData?.driver_license_expiry || null)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Sezione Formazione */}
+                <div className="mb-0">
+                  <div 
+                    className="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary cursor-pointer"
+                    onClick={() => toggleSection('formazione')}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <h6 className="text-light mb-0 d-flex align-items-center">
+                      <GraduationCap className="me-2 text-primary" size={18} />
+                      🎓 Formazione
+                    </h6>
+                    {expandedSections.formazione ? (
+                      <ChevronUp className="text-muted" size={16} />
+                    ) : (
+                      <ChevronDown className="text-muted" size={16} />
+                    )}
+                  </div>
+                  
+                  {expandedSections.formazione && (
+                    <div className="mt-3">
+                      <div className="row g-3">
+                        <div className="col-12">
+                          <small className="text-dark d-block fw-bold">Titolo di Studio</small>
+                          <span className="text-light fs-6">{employeeData?.titolo_studio || 'Non specificato'}</span>
+                        </div>
+                        {employeeData?.permesso_soggiorno && (
+                          <div className="col-12">
+                            <small className="text-dark d-block fw-bold">Permesso di Soggiorno</small>
+                            <span className="text-light fs-6">{employeeData.permesso_soggiorno}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -9,13 +9,23 @@ const dbConfig = {
   database: process.env.DB_VIAGGI_NAME || 'viaggi_db'
 };
 
+// Pool di connessioni
+const pool = mysql.createPool({
+  ...dbConfig,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+});
+
+export default pool;
+
 // Interfacce TypeScript
 export interface Employee {
   id: string;
   nome: string;
   cognome: string;
   email: string;
-  login_email?: string;
+  username_login?: string; // Campo per collegare con users.username
   cellulare?: string;
   data_nascita?: string;
   codice_fiscale?: string;
@@ -34,8 +44,6 @@ export interface Employee {
   driver_license_number?: string;
   driver_license_expiry?: string;
   foto_url?: string;
-  password_hash?: string;
-  last_login?: string;
   active: boolean;
   company_id: number;
   company_name?: string;
@@ -155,21 +163,61 @@ export async function getEmployeeById(id: string): Promise<Employee | null> {
   }
 }
 
-export async function getEmployeeByLoginEmail(loginEmail: string): Promise<Employee | null> {
+export async function getEmployeeByUsername(username: string): Promise<Employee | null> {
   const connection = await getConnection();
   try {
-    const [rows] = await connection.execute(
+    console.log('getEmployeeByUsername - Cercando dipendente con username:', username);
+    
+    // STEP 1: Verifica che l'utente esista in gestionelogistica.users
+    console.log('getEmployeeByUsername - Verifica esistenza utente in gestionelogistica.users');
+    const [userRows] = await connection.execute(
+      `SELECT username FROM gestionelogistica.users WHERE username = ?`,
+      [username]
+    );
+    const users = userRows as any[];
+    console.log('getEmployeeByUsername - Utente trovato in gestionelogistica.users:', users.length > 0);
+    
+    if (users.length === 0) {
+      console.log('getEmployeeByUsername - Utente non trovato in gestionelogistica.users');
+      return null;
+    }
+    
+    // STEP 2: Cerca il dipendente in viaggi_db.employees usando username_login
+    console.log('getEmployeeByUsername - Cerca dipendente in viaggi_db.employees con username_login:', username);
+    const [rows1] = await connection.execute(
       `SELECT e.*, c.name as company_name 
        FROM employees e 
        LEFT JOIN companies c ON e.company_id = c.id 
-       WHERE e.login_email = ? AND e.active = 1`,
-      [loginEmail]
+       WHERE e.username_login = ?`,
+      [username]
     );
-    const employees = rows as Employee[];
-    return employees.length > 0 ? employees[0] : null;
-  } catch (error) {
-    console.error('Errore nella query getEmployeeByLoginEmail:', error);
-    throw error;
+    const employees1 = rows1 as Employee[];
+    console.log('getEmployeeByUsername - Risultati ricerca per username_login:', employees1.length);
+    
+    if (employees1.length > 0) {
+      console.log('getEmployeeByUsername - Dipendente trovato tramite username_login:', employees1[0].nome, employees1[0].cognome);
+      return employees1[0];
+    }
+    
+    // Fallback: cerca per email
+    console.log('getEmployeeByUsername - Fallback: ricerca per email:', username);
+    const [rows2] = await connection.execute(
+      `SELECT e.*, c.name as company_name 
+       FROM employees e 
+       LEFT JOIN companies c ON e.company_id = c.id 
+       WHERE e.email = ?`,
+      [username]
+    );
+    const employees2 = rows2 as Employee[];
+    console.log('getEmployeeByUsername - Risultati fallback email:', employees2.length);
+    
+    if (employees2.length > 0) {
+      console.log('getEmployeeByUsername - Dipendente trovato tramite fallback email:', employees2[0].nome, employees2[0].cognome);
+      return employees2[0];
+    }
+    
+    console.log('getEmployeeByUsername - Nessun dipendente trovato per:', username);
+    return null;
   } finally {
     await connection.end();
   }
@@ -566,14 +614,39 @@ export async function updateDocumentStatus(): Promise<void> {
 
 // LEAVE OPERATIONS
 
-export async function getEmployeeLeaveRequests(employeeId: string): Promise<LeaveRequest[]> {
+export async function getEmployeeLeaveRequests(employeeId: string, status?: string): Promise<LeaveRequest[]> {
   const connection = await getConnection();
   try {
-    const [rows] = await connection.execute(
-      'SELECT * FROM employee_leave_requests WHERE employee_id = ? ORDER BY created_at DESC',
-      [employeeId]
-    );
-    return rows as LeaveRequest[];
+    console.log('getEmployeeLeaveRequests - Cercando richieste per employee_id:', employeeId, 'status:', status);
+    
+    let query = 'SELECT * FROM employee_leave_requests WHERE employee_id = ?';
+    let params: any[] = [employeeId];
+    
+    if (status) {
+      query += ' AND status = ?';
+      params.push(status);
+    }
+    
+    query += ' ORDER BY created_at DESC';
+    
+    console.log('getEmployeeLeaveRequests - Query:', query);
+    console.log('getEmployeeLeaveRequests - Params:', params);
+    
+    const [rows] = await connection.execute(query, params);
+    const requests = rows as LeaveRequest[];
+    
+    console.log('getEmployeeLeaveRequests - Risultati trovati:', requests.length);
+    if (requests.length > 0) {
+      console.log('getEmployeeLeaveRequests - Prima richiesta:', {
+        id: requests[0].id,
+        employee_id: requests[0].employee_id,
+        leave_type: requests[0].leave_type,
+        start_date: requests[0].start_date,
+        status: requests[0].status
+      });
+    }
+    
+    return requests;
   } finally {
     await connection.end();
   }
@@ -764,13 +837,13 @@ export async function getPendingLeaveRequests(): Promise<LeaveRequest[]> {
   const connection = await getConnection();
   try {
     const [rows] = await connection.execute(
-      `SELECT lr.*, e.nome, e.cognome 
+      `SELECT lr.*, e.nome, e.cognome, CONCAT(e.nome, ' ', e.cognome) as employee_name
        FROM employee_leave_requests lr 
-       JOIN employees e ON lr.employee_id COLLATE utf8mb4_general_ci = e.id COLLATE utf8mb4_general_ci
+       JOIN employees e ON lr.employee_id = e.username_login
        WHERE lr.status = 'pending' 
        ORDER BY lr.created_at ASC`
     );
-    return rows as (LeaveRequest & { nome: string; cognome: string })[];
+    return rows as (LeaveRequest & { nome: string; cognome: string; employee_name: string })[];
   } finally {
     await connection.end();
   }
@@ -780,9 +853,12 @@ export async function getAllLeaveRequests(): Promise<LeaveRequest[]> {
   const connection = await getConnection();
   try {
     const [rows] = await connection.execute(
-      `SELECT lr.*, e.nome, e.cognome 
+      `SELECT lr.*, 
+              COALESCE(e1.nome, e2.nome, SUBSTRING_INDEX(lr.employee_id, ' ', 1)) as nome,
+              COALESCE(e1.cognome, e2.cognome, SUBSTRING_INDEX(lr.employee_id, ' ', -1)) as cognome
        FROM employee_leave_requests lr 
-       JOIN employees e ON lr.employee_id COLLATE utf8mb4_general_ci = e.id COLLATE utf8mb4_general_ci
+       LEFT JOIN employees e1 ON lr.employee_id COLLATE utf8mb4_general_ci = e1.username_login COLLATE utf8mb4_general_ci
+       LEFT JOIN employees e2 ON lr.employee_id COLLATE utf8mb4_general_ci = e2.id COLLATE utf8mb4_general_ci
        ORDER BY lr.created_at DESC`
     );
     return rows as (LeaveRequest & { nome: string; cognome: string })[];

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getConnection } from '@/lib/db-employees';
 import { hashPassword } from '@/lib/auth-employees';
+import { getEmployeeById, getEmployeeByUsername } from '@/lib/db-employees';
 
 export async function PUT(
   request: NextRequest,
@@ -9,7 +10,7 @@ export async function PUT(
   try {
     const { password } = await request.json();
     const resolvedParams = await params;
-    const employeeId = resolvedParams.id;
+    const employeeId = decodeURIComponent(resolvedParams.id);
 
     // Validazione password
     if (!password || password.length < 6) {
@@ -19,24 +20,22 @@ export async function PUT(
       );
     }
 
+    // Cerca il dipendente prima per ID, poi per username
+    let employee = await getEmployeeById(employeeId);
+    if (!employee) {
+      employee = await getEmployeeByUsername(employeeId);
+    }
+
+    if (!employee) {
+      return NextResponse.json(
+        { error: 'Dipendente non trovato' },
+        { status: 404 }
+      );
+    }
+
     const connection = await getConnection();
 
     try {
-      // Verifica che l'employee esista
-      const [employeeRows] = await connection.execute(
-        'SELECT id, nome, cognome FROM employees WHERE id = ? AND active = 1',
-        [employeeId]
-      );
-
-      const employees = employeeRows as any[];
-      if (employees.length === 0) {
-        return NextResponse.json(
-          { error: 'Dipendente non trovato o non attivo' },
-          { status: 404 }
-        );
-      }
-
-      const employee = employees[0];
 
       // Hash della password
       const passwordHash = await hashPassword(password);
@@ -44,10 +43,10 @@ export async function PUT(
       // Aggiorna la password nel database
       await connection.execute(
         'UPDATE employees SET password_hash = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?',
-        [passwordHash, employeeId]
+        [passwordHash, employee.id]
       );
 
-      console.log(`Password aggiornata per dipendente: ${employee.nome} ${employee.cognome} (${employeeId})`);
+      console.log(`Password aggiornata per dipendente: ${employee.nome} ${employee.cognome} (${employee.id})`);
 
       return NextResponse.json({
         success: true,
@@ -74,13 +73,27 @@ export async function GET(
 ) {
   try {
     const resolvedParams = await params;
-    const employeeId = resolvedParams.id;
+    const employeeId = decodeURIComponent(resolvedParams.id);
+
+    // Cerca il dipendente prima per ID, poi per username
+    let employee = await getEmployeeById(employeeId);
+    if (!employee) {
+      employee = await getEmployeeByUsername(employeeId);
+    }
+
+    if (!employee) {
+      return NextResponse.json(
+        { error: 'Dipendente non trovato' },
+        { status: 404 }
+      );
+    }
+
     const connection = await getConnection();
 
     try {
       const [rows] = await connection.execute(
         'SELECT id, nome, cognome, password_hash IS NOT NULL as has_password FROM employees WHERE id = ?',
-        [employeeId]
+        [employee.id]
       );
 
       const employees = rows as any[];
@@ -91,13 +104,13 @@ export async function GET(
         );
       }
 
-      const employee = employees[0];
+      const employeeData = employees[0];
 
       return NextResponse.json({
-        id: employee.id,
-        nome: employee.nome,
-        cognome: employee.cognome,
-        has_password: Boolean(employee.has_password)
+        id: employeeData.id,
+        nome: employeeData.nome,
+        cognome: employeeData.cognome,
+        has_password: Boolean(employeeData.has_password)
       });
 
     } finally {

@@ -5,6 +5,7 @@ import {
   createEmployeeDocument, 
   deleteEmployeeDocument,
   getEmployeeById,
+  getEmployeeByUsername,
   updateDocumentStatus,
   updateEmployeeDocument,
   getEmployeeDocumentById
@@ -21,11 +22,15 @@ export async function GET(
     
     console.log('API GET documents - Employee ID ricevuto:', employeeId);
     
-    // Verifica che il dipendente esista
-    const employee = await getEmployeeById(employeeId);
+    // Cerca il dipendente prima per ID, poi per username
+    let employee = await getEmployeeById(employeeId);
+    if (!employee) {
+      employee = await getEmployeeByUsername(employeeId);
+    }
+    
     console.log('API GET documents - Employee trovato:', employee ? 'SI' : 'NO');
     if (!employee) {
-      console.log('API GET documents - Dipendente non trovato per ID:', employeeId);
+      console.log('API GET documents - Dipendente non trovato per ID/username:', employeeId);
       return NextResponse.json(
         { error: 'Dipendente non trovato' },
         { status: 404 }
@@ -35,7 +40,7 @@ export async function GET(
     // Aggiorna lo status dei documenti prima di recuperarli
     await updateDocumentStatus();
     
-    const documents = await getEmployeeDocuments(employeeId);
+    const documents = await getEmployeeDocuments(employee.id);
     
     return NextResponse.json({
       success: true,
@@ -62,11 +67,15 @@ export async function POST(
     
     console.log('API POST documents - Employee ID ricevuto:', employeeId);
     
-    // Verifica che il dipendente esista
-    const employee = await getEmployeeById(employeeId);
+    // Cerca il dipendente prima per ID, poi per username
+    let employee = await getEmployeeById(employeeId);
+    if (!employee) {
+      employee = await getEmployeeByUsername(employeeId);
+    }
+    
     console.log('API POST documents - Employee trovato:', employee ? 'SI' : 'NO');
     if (!employee) {
-      console.log('API POST documents - Dipendente non trovato per ID:', employeeId);
+      console.log('API POST documents - Dipendente non trovato per ID/username:', employeeId);
       return NextResponse.json(
         { error: 'Dipendente non trovato' },
         { status: 404 }
@@ -169,7 +178,7 @@ export async function POST(
 
     // Salva nel database
     const documentId = await createEmployeeDocument({
-      employee_id: employeeId,
+      employee_id: employee.id,
       document_type: documentType,
       document_name: finalDocumentName,
       file_path: blobUrl,
@@ -220,8 +229,12 @@ export async function DELETE(
       );
     }
 
-    // Verifica che il dipendente esista
-    const employee = await getEmployeeById(employeeId);
+    // Cerca il dipendente prima per ID, poi per username
+    let employee = await getEmployeeById(employeeId);
+    if (!employee) {
+      employee = await getEmployeeByUsername(employeeId);
+    }
+    
     if (!employee) {
       return NextResponse.json(
         { error: 'Dipendente non trovato' },
@@ -270,8 +283,12 @@ export async function PUT(
       );
     }
 
-    // Verifica che il dipendente esista
-    const employee = await getEmployeeById(employeeId);
+    // Cerca il dipendente prima per ID, poi per username
+    let employee = await getEmployeeById(employeeId);
+    if (!employee) {
+      employee = await getEmployeeByUsername(employeeId);
+    }
+    
     if (!employee) {
       return NextResponse.json(
         { error: 'Dipendente non trovato' },
