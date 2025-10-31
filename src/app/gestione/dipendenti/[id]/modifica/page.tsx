@@ -58,7 +58,7 @@ interface User {
 export default function ModificaDipendente() {
   const router = useRouter();
   const params = useParams();
-  const employeeId = params.id as string;
+  const employeeId = params?.id as string;
 
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [formData, setFormData] = useState<Partial<Employee>>({});

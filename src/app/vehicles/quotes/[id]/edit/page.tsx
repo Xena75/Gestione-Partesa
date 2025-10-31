@@ -63,7 +63,7 @@ export default function EditQuotePage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const quoteId = params.id as string;
+  const quoteId = params?.id as string;
   
   const [quote, setQuote] = useState<Quote | null>(null);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -120,7 +120,7 @@ export default function EditQuotePage() {
 
   // Funzione per preservare i parametri URL quando si torna alla lista
   const getBackToListURL = () => {
-    const currentParams = searchParams.toString();
+    const currentParams = searchParams?.toString();
     return currentParams ? `/vehicles/quotes?${currentParams}` : '/vehicles/quotes';
   };
 

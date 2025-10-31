@@ -2493,6 +2493,68 @@ WHERE status = 'completed' AND created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)
 - `src/app/gestione/employees/ferie/page.tsx` - Aggiunta funzione calcolo e correzioni UI
 - Nessuna modifica struttura database richiesta (calcolo dinamico da dati esistenti)
 
+### Toggle Card Profilo Dipendente - Dashboard Autisti
+**Data implementazione:** Gennaio 2025
+
+**Funzionalità implementata:**
+- Toggle per ridurre/espandere la card "Profilo Dipendente" nella dashboard autisti
+- Miglioramento UX per ottimizzare lo spazio disponibile nella dashboard
+
+**Implementazione tecnica:**
+
+1. **Stato per controllo espansione:**
+   ```typescript
+   // File: src/app/autisti/dashboard/page.tsx
+   const [profileCardExpanded, setProfileCardExpanded] = useState(true);
+   ```
+
+2. **Header clickable con icone toggle:**
+   ```tsx
+   <div 
+     className="d-flex justify-content-between align-items-center"
+     onClick={() => setProfileCardExpanded(!profileCardExpanded)}
+     style={{ cursor: 'pointer' }}
+   >
+     <h5 className="text-light mb-0">
+       <UserCircle className="me-2" size={20} />
+       Profilo Dipendente
+     </h5>
+     {profileCardExpanded ? (
+       <ChevronUp className="text-muted" size={20} />
+     ) : (
+       <ChevronDown className="text-muted" size={20} />
+     )}
+   </div>
+   ```
+
+3. **Contenuto condizionale:**
+   ```tsx
+   {profileCardExpanded && (
+     <div className="card-body">
+       {/* Tutto il contenuto del profilo dipendente */}
+     </div>
+   )}
+   ```
+
+**Caratteristiche implementate:**
+- ✅ **Stato predefinito espanso**: La card si apre automaticamente al caricamento
+- ✅ **Icone dinamiche**: ChevronUp quando espansa, ChevronDown quando ridotta
+- ✅ **Stile coerente**: Segue il pattern delle altre sezioni espandibili esistenti
+- ✅ **Interazione intuitiva**: Header completamente clickable con cursor pointer
+- ✅ **Ottimizzazione spazio**: Permette di nascondere il contenuto quando non necessario
+
+**Benefici UX:**
+- ✅ **Gestione spazio**: Possibilità di ridurre la card per vedere meglio altre informazioni
+- ✅ **Navigazione migliorata**: Controllo utente sulla visualizzazione del contenuto
+- ✅ **Coerenza interfaccia**: Stile uniforme con le altre sezioni espandibili della dashboard
+- ✅ **Accessibilità**: Indicatori visivi chiari dello stato espanso/ridotto
+
+### File Modificati
+- `src/app/autisti/dashboard/page.tsx` - Aggiunta funzionalità toggle card profilo dipendente
+
+### Pagine Coinvolte
+- **Dashboard Autisti**: `/autisti/dashboard` - Implementazione toggle card profilo dipendente
+
 ---
 
-*Ultimo aggiornamento: Gennaio 2025 - Miglioramenti sistema gestione ferie con calcolo dinamico ore utilizzate*
+*Ultimo aggiornamento: Gennaio 2025 - Aggiunta toggle card Profilo Dipendente e miglioramenti sistema gestione ferie*

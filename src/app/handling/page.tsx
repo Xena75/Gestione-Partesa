@@ -14,7 +14,7 @@ function HandlingContent() {
   // Stato per i filtri attivi, sincronizzato con i parametri URL
   const [activeFilters, setActiveFilters] = useState(() => {
     const filters: any = {};
-    searchParams.forEach((value, key) => {
+    searchParams?.forEach((value, key) => {
       filters[key] = value;
     });
     return filters;

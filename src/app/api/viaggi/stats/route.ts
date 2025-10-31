@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
       stats = await getTotalsByFilters(filters);
     } else {
       // Statistiche generali
-      stats = await getViaggiStats(page, recordsPerPage);
+      stats = await getViaggiStats(recordsPerPage);
     }
     return NextResponse.json(stats);
     

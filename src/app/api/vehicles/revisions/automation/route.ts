@@ -260,7 +260,7 @@ export async function POST(request: NextRequest) {
           const [vehicleResult] = await connection.execute(
             'SELECT id, targa, tipo_patente, data_ultima_revisione FROM vehicles WHERE id = ? AND data_ultima_revisione IS NOT NULL',
             [vehicleId]
-          );
+          ) as any;
           
           if (!vehicleResult || vehicleResult.length === 0) {
             return NextResponse.json({
@@ -277,7 +277,7 @@ export async function POST(request: NextRequest) {
              WHERE vehicle_id = ? AND schedule_type = 'revisione' 
              AND status = 'pending' AND data_scadenza > CURDATE()`,
             [vehicleId]
-          );
+          ) as any;
           
           const hasFutureRevision = futureRevisions[0].count > 0;
           
@@ -337,7 +337,7 @@ export async function DELETE(request: NextRequest) {
     const [result] = await connection.execute(
       'DELETE FROM automation_logs WHERE created_at < DATE_SUB(NOW(), INTERVAL ? DAY)',
       [days]
-    );
+    ) as any;
     
     return NextResponse.json({
       success: true,

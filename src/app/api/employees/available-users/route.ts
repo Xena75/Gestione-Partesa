@@ -1,12 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifySession } from '@/lib/auth';
+import { getTokenFromRequest, verifySession } from '@/lib/auth';
 import pool from '@/lib/db-employees';
 import poolAuth from '@/lib/db-auth';
 
 export async function GET(request: NextRequest) {
   try {
     // Verifica autenticazione
-    const user = await verifySession(request);
+    const token = getTokenFromRequest(request);
+    if (!token) {
+      return NextResponse.json(
+        { error: 'Token non trovato' },
+        { status: 401 }
+      );
+    }
+
+    const user = await verifySession(token);
     if (!user || user.role !== 'admin') {
       return NextResponse.json(
         { error: 'Accesso non autorizzato' },

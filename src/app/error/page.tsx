@@ -7,7 +7,7 @@ function ErrorContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [countdown, setCountdown] = useState(10);
-  const errorCode = searchParams.get('errorCode');
+  const errorCode = searchParams?.get('errorCode');
 
   useEffect(() => {
     const timer = setInterval(() => {

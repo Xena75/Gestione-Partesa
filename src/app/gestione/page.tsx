@@ -75,13 +75,13 @@ function GestioneContent() {
           <DeliveryStats />
 
           {/* Filtri Avanzati */}
-          <DeliveryFilters activeFilters={activeFilters} setActiveFilters={setActiveFilters} />
+          <DeliveryFilters />
 
           {/* Toggle Vista */}
           <ViewToggle viewType={viewType} setViewType={setViewType} />
 
           {/* Tabella Dati */}
-          <DeliveryTable viewType={viewType} filters={activeFilters} />
+          <DeliveryTable viewType={viewType} />
         </div>
       </div>
     </div>

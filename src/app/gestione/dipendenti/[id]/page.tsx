@@ -10,7 +10,6 @@ interface Employee {
   cognome: string;
   nominativo: string;
   email: string;
-  login_email?: string;
   username_login?: string;
   email_aziendale?: string;
   cellulare: string;
@@ -89,7 +88,7 @@ const formatDateItalian = (dateString: string): string => {
 export default function AutistaDettaglio() {
   const params = useParams();
   const router = useRouter();
-  const employeeId = params.id as string;
+  const employeeId = params?.id as string;
 
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);

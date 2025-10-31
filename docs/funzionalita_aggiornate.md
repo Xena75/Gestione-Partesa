@@ -1,6 +1,65 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.35.0
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.36.0
 
-## 🚀 **VERSIONE 2.35.0** - Miglioramenti Sistema Gestione Ferie ⭐ **NUOVO**
+## 🚀 **VERSIONE 2.36.0** - Toggle Card Profilo Dipendente ⭐ **NUOVO**
+
+### 🎛️ **TOGGLE CARD PROFILO DIPENDENTE - DASHBOARD AUTISTI**
+- **Funzionalità**: Toggle per ridurre/espandere la card "Profilo Dipendente" nella dashboard autisti
+- **Pagina**: `/autisti/dashboard` - Miglioramento UX per ottimizzazione spazio
+- **Stato predefinito**: Card espansa automaticamente al caricamento pagina
+- **Interazione**: Header completamente clickable con icone dinamiche ChevronUp/ChevronDown
+- **Stile coerente**: Pattern uniforme con altre sezioni espandibili della dashboard
+- **Benefici UX**: Controllo utente sulla visualizzazione, gestione spazio ottimizzata
+
+### 🔧 **IMPLEMENTAZIONE TECNICA v2.36.0**
+
+#### Stato React per controllo espansione
+```typescript
+// File: src/app/autisti/dashboard/page.tsx
+const [profileCardExpanded, setProfileCardExpanded] = useState(true);
+```
+
+#### Header clickable con toggle
+```tsx
+<div 
+  className="d-flex justify-content-between align-items-center"
+  onClick={() => setProfileCardExpanded(!profileCardExpanded)}
+  style={{ cursor: 'pointer' }}
+>
+  <h5 className="text-light mb-0">
+    <UserCircle className="me-2" size={20} />
+    Profilo Dipendente
+  </h5>
+  {profileCardExpanded ? (
+    <ChevronUp className="text-muted" size={20} />
+  ) : (
+    <ChevronDown className="text-muted" size={20} />
+  )}
+</div>
+```
+
+#### Contenuto condizionale
+```tsx
+{profileCardExpanded && (
+  <div className="card-body">
+    {/* Tutto il contenuto del profilo dipendente */}
+  </div>
+)}
+```
+
+### ✅ **CARATTERISTICHE IMPLEMENTATE v2.36.0**
+- ✅ **Stato predefinito espanso**: Card si apre automaticamente al caricamento
+- ✅ **Icone dinamiche**: ChevronUp quando espansa, ChevronDown quando ridotta
+- ✅ **Stile coerente**: Segue pattern delle altre sezioni espandibili esistenti
+- ✅ **Interazione intuitiva**: Header completamente clickable con cursor pointer
+- ✅ **Ottimizzazione spazio**: Permette di nascondere contenuto quando non necessario
+- ✅ **Accessibilità**: Indicatori visivi chiari dello stato espanso/ridotto
+
+### 📁 **FILE MODIFICATI v2.36.0**
+- `src/app/autisti/dashboard/page.tsx` - Implementazione toggle card profilo dipendente
+
+---
+
+## 🚀 **VERSIONE 2.35.0** - Miglioramenti Sistema Gestione Ferie
 
 ### 🎯 **CALCOLO DINAMICO ORE UTILIZZATE PERMESSI**
 - **Nuova colonna "Ore Utilizzate"**: Visualizzazione ore permessi utilizzate nella tabella bilanci ferie

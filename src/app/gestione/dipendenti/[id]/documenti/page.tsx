@@ -63,7 +63,7 @@ const DOCUMENT_TYPES = [
 export default function DocumentiAutista() {
   const params = useParams();
   const router = useRouter();
-  const employeeId = params.id as string;
+  const employeeId = params?.id as string;
 
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [documents, setDocuments] = useState<EmployeeDocument[]>([]);
@@ -867,9 +867,9 @@ export default function DocumentiAutista() {
               <small className="text-light">
                 <i className="fas fa-info-circle me-1"></i>
                 Totale documenti: {documents.length} | 
-                Attivi: {documents.filter(d => d.status === 'active').length} | 
-                Scaduti: {documents.filter(d => d.status === 'expired').length} | 
-                Archiviati: {documents.filter(d => d.status === 'archived').length}
+                Validi: {documents.filter(d => d.status === 'valido').length} | 
+                Scaduti: {documents.filter(d => d.status === 'scaduto').length} | 
+                In scadenza: {documents.filter(d => d.status === 'in_scadenza').length}
               </small>
             </div>
           )}

@@ -236,20 +236,18 @@ export async function createEmployee(employee: Omit<Employee, 'id' | 'createdAt'
     
     const [result] = await connection.execute(
       `INSERT INTO employees (
-        id, nome, cognome, email, login_email, cellulare, data_nascita, codice_fiscale,
+        id, nome, cognome, email, username_login, cellulare, data_nascita, codice_fiscale,
         indirizzo, citta, cap, provincia, data_assunzione, contratto,
         stipendio, ore_settimanali, ferie_annuali, permessi_annuali,
-        is_driver, driver_license_number, driver_license_expiry,
-        password_hash, active
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        is_driver, driver_license_number, driver_license_expiry, active
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         employeeId, employee.nome, employee.cognome, employee.email,
-        employee.login_email, employee.cellulare, employee.data_nascita, employee.codice_fiscale,
+        employee.username_login, employee.cellulare, employee.data_nascita, employee.codice_fiscale,
         employee.indirizzo, employee.citta, employee.cap, employee.provincia,
         employee.data_assunzione, employee.contratto, employee.stipendio,
         employee.ore_settimanali, employee.ferie_annuali, employee.permessi_annuali,
-        employee.is_driver, employee.driver_license_number, employee.driver_license_expiry,
-        employee.password_hash, employee.active
+        employee.is_driver, employee.driver_license_number, employee.driver_license_expiry, employee.active
       ]
     );
     

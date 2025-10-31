@@ -14,7 +14,7 @@ import {
 // GET - Recupera tutti i documenti di un dipendente
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const resolvedParams = await params;
@@ -59,7 +59,7 @@ export async function GET(
 // POST - Carica un nuovo documento
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const resolvedParams = await params;
@@ -214,7 +214,7 @@ export async function POST(
 // DELETE - Elimina un documento
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const resolvedParams = await params;
@@ -268,7 +268,7 @@ export async function DELETE(
 // PUT - Aggiorna un documento esistente
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const resolvedParams = await params;

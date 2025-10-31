@@ -241,6 +241,11 @@ function VehicleSuppliersContent() {
     const aValue = a[sortBy as keyof Supplier];
     const bValue = b[sortBy as keyof Supplier];
     
+    // Gestione valori undefined/null
+    if (aValue == null && bValue == null) return 0;
+    if (aValue == null) return sortOrder === 'asc' ? 1 : -1;
+    if (bValue == null) return sortOrder === 'asc' ? -1 : 1;
+    
     if (sortOrder === 'asc') {
       return aValue > bValue ? 1 : -1;
     } else {

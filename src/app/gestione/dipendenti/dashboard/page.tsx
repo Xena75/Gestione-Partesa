@@ -317,7 +317,7 @@ export default function Dashboard() {
         color: '#5a5c69',
         font: {
           size: 14,
-          weight: 'bold',
+          weight: 'bold' as const,
         },
       },
     },

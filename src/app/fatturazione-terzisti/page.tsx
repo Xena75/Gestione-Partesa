@@ -317,16 +317,16 @@ function FatturazioneTerzistiContent() {
     const initialFilters: TerzistiFilters = {};
     
     // Leggi tutti i parametri URL
-    const dataDa = searchParams.get('dataDa');
-    const dataA = searchParams.get('dataA');
-    const azienda = searchParams.get('azienda');
-    const vettore = searchParams.get('vettore');
-    const divisione = searchParams.get('divisione');
-    const viaggio = searchParams.get('viaggio');
-    const cliente = searchParams.get('cliente');
-    const ordine = searchParams.get('ordine');
-    const consegna = searchParams.get('consegna');
-    const mese = searchParams.get('mese');
+    const dataDa = searchParams?.get('dataDa');
+    const dataA = searchParams?.get('dataA');
+    const azienda = searchParams?.get('azienda');
+    const vettore = searchParams?.get('vettore');
+    const divisione = searchParams?.get('divisione');
+    const viaggio = searchParams?.get('viaggio');
+    const cliente = searchParams?.get('cliente');
+    const ordine = searchParams?.get('ordine');
+    const consegna = searchParams?.get('consegna');
+    const mese = searchParams?.get('mese');
     
     // Imposta i filtri se presenti
     if (dataDa) initialFilters.dataDa = dataDa;

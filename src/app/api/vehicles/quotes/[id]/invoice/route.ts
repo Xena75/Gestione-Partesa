@@ -17,12 +17,13 @@ const pool = mysql.createPool({
 // PUT - Aggiorna dati fatturazione di un preventivo
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   let connection: any = null;
   
   try {
-    const quoteId = params.id;
+    const resolvedParams = await params;
+    const quoteId = resolvedParams.id;
     const body = await request.json();
     
     const {
@@ -166,12 +167,13 @@ export async function PUT(
 // GET - Recupera dati fatturazione di un preventivo
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   let connection: any = null;
   
   try {
-    const quoteId = params.id;
+    const resolvedParams = await params;
+    const quoteId = resolvedParams.id;
 
     if (!quoteId || isNaN(parseInt(quoteId))) {
       return NextResponse.json(

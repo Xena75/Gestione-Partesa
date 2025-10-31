@@ -222,7 +222,8 @@ function TipologieChart({ data, loading }: { data: RipartizioneData[]; loading: 
 
   const RADIAN = Math.PI / 180;
   const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
-    if (percent < 0.05) return null; // Non mostrare label per fette < 5%
+    const percentValue = typeof percent === 'number' ? percent : 0;
+    if (percentValue < 0.05) return null; // Non mostrare label per fette < 5%
     
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
@@ -238,7 +239,7 @@ function TipologieChart({ data, loading }: { data: RipartizioneData[]; loading: 
         fontSize={12}
         fontWeight="bold"
       >
-        {`${(percent * 100).toFixed(0)}%`}
+        {`${(percentValue * 100).toFixed(0)}%`}
       </text>
     );
   };
@@ -248,7 +249,7 @@ function TipologieChart({ data, loading }: { data: RipartizioneData[]; loading: 
       <ResponsiveContainer width="100%" height={300}>
         <PieChart>
           <Pie
-            data={data}
+            data={data as any}
             cx="50%"
             cy="50%"
             labelLine={false}
@@ -265,11 +266,14 @@ function TipologieChart({ data, loading }: { data: RipartizioneData[]; loading: 
           <Legend 
             verticalAlign="bottom" 
             height={36}
-            formatter={(value, entry: any) => (
-              <span style={{ color: entry.color }}>
-                {value} ({entry.payload.percentage.toFixed(1)}%)
-              </span>
-            )}
+            formatter={(value, entry: any) => {
+              const percentage = typeof entry.payload?.percentage === 'number' ? entry.payload.percentage : 0;
+              return (
+                <span style={{ color: entry.color }}>
+                  {value} ({percentage.toFixed(1)}%)
+                </span>
+              );
+            }}
           />
         </PieChart>
       </ResponsiveContainer>
@@ -384,7 +388,7 @@ export default function DeliveryCharts({
           chartId="timeseries"
           defaultVisible={true}
         >
-          <TimeSeriesChart data={timeSeriesData} loading={loading} />
+          <TimeSeriesChart data={timeSeriesData} loading={loading || false} />
         </ChartWrapper>
       </div>
 
@@ -409,7 +413,7 @@ export default function DeliveryCharts({
           chartId="tipologie"
           defaultVisible={true}
         >
-          <TipologieChart data={ripartizioneTipologie} loading={loading} />
+          <TipologieChart data={ripartizioneTipologie} loading={loading || false} />
         </ChartWrapper>
       </div>
 
@@ -422,7 +426,7 @@ export default function DeliveryCharts({
           chartId="clienti"
           defaultVisible={true}
         >
-          <TopClientiChart data={topClienti} loading={loading} />
+          <TopClientiChart data={topClienti} loading={loading || false} />
         </ChartWrapper>
       </div>
       
@@ -438,13 +442,16 @@ export default function DeliveryCharts({
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={ripartizioneDepositi}
+                  data={ripartizioneDepositi as any}
                   cx="50%"
                   cy="50%"
                   outerRadius={100}
                   fill="#6366F1"
                   dataKey="value"
-                  label={({ name, percentage }) => `${name} (${percentage.toFixed(1)}%)`}
+                  label={({ name, percentage }: any) => {
+                    const percentValue = typeof percentage === 'number' ? percentage : 0;
+                    return `${name} (${percentValue.toFixed(1)}%)`;
+                  }}
                 >
                   {ripartizioneDepositi.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={`hsl(${index * 45}, 70%, 50%)`} />

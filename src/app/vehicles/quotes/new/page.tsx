@@ -111,7 +111,7 @@ function NewQuotePageContent() {
     fetchInterventionTypes();
     
     // Preseleziona il veicolo se passato come parametro URL
-    const vehicleId = searchParams.get('vehicleId');
+    const vehicleId = searchParams?.get('vehicleId');
     if (vehicleId) {
       setFormData(prev => ({
         ...prev,

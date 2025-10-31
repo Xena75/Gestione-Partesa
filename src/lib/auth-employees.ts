@@ -43,7 +43,7 @@ export function generateEmployeeToken(employee: Employee): string {
       nome: employee.nome,
       cognome: employee.cognome,
       email: employee.email,
-      login_email: employee.login_email,
+      username_login: employee.username_login,
       role: employee.role,
       is_driver: employee.is_driver
     },
@@ -61,7 +61,7 @@ export function verifyEmployeeToken(token: string): Employee | null {
       nome: decoded.nome,
       cognome: decoded.cognome,
       email: decoded.email,
-      login_email: decoded.login_email,
+      username_login: decoded.username_login,
       role: 'employee',
       is_driver: decoded.is_driver
     };

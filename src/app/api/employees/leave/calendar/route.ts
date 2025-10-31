@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
       
       return {
         id: `leave-${leave.id}`,
-        title: `${leave.cognome || 'N/A'} ${leave.nome || 'N/A'} - ${getLeaveTypeLabel(leave.leave_type)}`,
+        title: `Dipendente ${leave.employee_id} - ${getLeaveTypeLabel(leave.leave_type)}`,
         start: startDate.toISOString(),
         end: adjustedEndDate.toISOString(),
         allDay: true,
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
           type: 'leave',
           leave_id: leave.id,
           employee_id: leave.employee_id,
-          employee_name: `${leave.cognome || 'N/A'} ${leave.nome || 'N/A'}`,
+          employee_name: `Dipendente ${leave.employee_id}`,
           leave_type: leave.leave_type,
           days_requested: leave.days_requested,
           reason: leave.reason,

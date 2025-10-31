@@ -360,6 +360,46 @@
 - **Gestione errori**: Messaggi di errore specifici e informativi
 - **Logging**: Tracciamento completo operazioni per debugging
 
+## 🎛️ Toggle Card Profilo Dipendente - Dashboard Autisti - v2.35.0 ⭐ **NUOVO**
+
+### 🎯 Miglioramento UX Dashboard Autisti
+**Data implementazione**: Gennaio 2025  
+**Stato**: ✅ Completato e testato
+
+### 🛠️ Funzionalità Implementata
+
+#### 📱 Toggle Card Profilo Dipendente
+- **Pagina**: `/autisti/dashboard`
+- **Funzionalità**: Toggle per ridurre/espandere la card "Profilo Dipendente"
+- **Beneficio**: Ottimizzazione spazio disponibile nella dashboard
+
+#### 🎨 Implementazione Tecnica
+- **Stato React**: `profileCardExpanded` per controllo espansione
+- **Icone dinamiche**: ChevronUp/ChevronDown per indicare stato
+- **Header clickable**: Intera area header cliccabile per toggle
+- **Stile coerente**: Pattern uniforme con altre sezioni espandibili
+
+#### ✅ Caratteristiche
+- **Stato predefinito**: Card espansa al caricamento pagina
+- **Interazione intuitiva**: Cursor pointer e feedback visivo
+- **Contenuto condizionale**: Mostra/nasconde tutto il contenuto profilo
+- **Accessibilità**: Indicatori visivi chiari dello stato
+
+#### 🎯 Benefici UX
+- **Gestione spazio**: Controllo utente sulla visualizzazione contenuto
+- **Navigazione migliorata**: Possibilità di focalizzarsi su altre informazioni
+- **Coerenza interfaccia**: Stile uniforme con resto della dashboard
+- **Ottimizzazione mobile**: Migliore utilizzo spazio su schermi piccoli
+
+### 📁 File Modificati
+- `src/app/autisti/dashboard/page.tsx` - Implementazione toggle card profilo
+
+### 🧪 Test Completati
+- ✅ Funzionamento toggle espandi/riduci
+- ✅ Persistenza stato durante navigazione
+- ✅ Compatibilità responsive design
+- ✅ Coerenza stile con altre sezioni
+
 ---
 
-*Ultimo aggiornamento: Dicembre 2024*
+*Ultimo aggiornamento: Gennaio 2025*

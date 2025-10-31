@@ -45,7 +45,7 @@ export default function ScheduleDetailPage({ params }: ScheduleDetailPageProps) 
     completed_date: '',
     status: '',
     priority: '',
-    cost: '',
+    cost: undefined,
     provider: '',
     notes: '',
     quote_number: '',

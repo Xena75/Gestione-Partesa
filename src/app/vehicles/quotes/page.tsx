@@ -101,7 +101,10 @@ function VehicleQuotesContent() {
     pendingInvoices: 0,
     invoiced: 0,
     discrepancies: 0,
-    totalInvoicedValue: 0
+    totalInvoicedValue: 0,
+    pendingInvoicesValue: 0,
+    invoicedValue: 0,
+    discrepanciesValue: 0
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -114,14 +117,14 @@ function VehicleQuotesContent() {
     hasPrevPage: false
   });
   // Inizializza tutti i filtri dai parametri URL
-  const [filterStatus, setFilterStatus] = useState<string>(searchParams.get('filterStatus') || 'all');
-  const [filterSupplier, setFilterSupplier] = useState<string>(searchParams.get('filterSupplier') || 'all');
-  const [filterInvoiceStatus, setFilterInvoiceStatus] = useState<string>(searchParams.get('filterInvoiceStatus') || 'all');
-  const [filterDiscrepancies, setFilterDiscrepancies] = useState<string>(searchParams.get('filterDiscrepancies') || 'all');
-  const [searchTarga, setSearchTarga] = useState<string>(searchParams.get('searchTarga') || '');
-  const [searchTargaInput, setSearchTargaInput] = useState<string>(searchParams.get('searchTarga') || ''); // Stato locale per l'input
-  const [sortBy, setSortBy] = useState<string>(searchParams.get('sortBy') || 'created_at');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>((searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc');
+  const [filterStatus, setFilterStatus] = useState<string>(searchParams?.get('filterStatus') || 'all');
+  const [filterSupplier, setFilterSupplier] = useState<string>(searchParams?.get('filterSupplier') || 'all');
+  const [filterInvoiceStatus, setFilterInvoiceStatus] = useState<string>(searchParams?.get('filterInvoiceStatus') || 'all');
+  const [filterDiscrepancies, setFilterDiscrepancies] = useState<string>(searchParams?.get('filterDiscrepancies') || 'all');
+  const [searchTarga, setSearchTarga] = useState<string>(searchParams?.get('searchTarga') || '');
+  const [searchTargaInput, setSearchTargaInput] = useState<string>(searchParams?.get('searchTarga') || ''); // Stato locale per l'input
+  const [sortBy, setSortBy] = useState<string>(searchParams?.get('sortBy') || 'created_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>((searchParams?.get('sortOrder') as 'asc' | 'desc') || 'desc');
 
   // Debounce per la ricerca per targa
   useEffect(() => {
@@ -141,7 +144,7 @@ function VehicleQuotesContent() {
 
   // Sincronizza searchTargaInput con i parametri URL (per navigazione browser)
   useEffect(() => {
-    const urlSearchTarga = searchParams.get('searchTarga') || '';
+    const urlSearchTarga = searchParams?.get('searchTarga') || '';
     if (urlSearchTarga !== searchTargaInput) {
       setSearchTargaInput(urlSearchTarga);
       setSearchTarga(urlSearchTarga);
@@ -372,7 +375,7 @@ function VehicleQuotesContent() {
     const stats = quotes.reduce(
       (acc, quote) => {
         const validUntil = new Date(quote.valid_until);
-        const amount = parseFloat(quote.amount) || 0;
+        const amount = typeof quote.amount === 'number' ? quote.amount : parseFloat(String(quote.amount)) || 0;
         
         switch (quote.status) {
           case 'pending':
@@ -406,20 +409,20 @@ function VehicleQuotesContent() {
           case 'invoiced':
             acc.invoiced++;
             if (quote.invoice_amount) {
-              acc.invoicedValue += parseFloat(quote.invoice_amount) || 0;
+              acc.invoicedValue += (typeof quote.invoice_amount === 'number' ? quote.invoice_amount : parseFloat(String(quote.invoice_amount || 0))) || 0;
             }
             break;
           case 'partial':
             // Partial viene contato come invoiced per semplicità
             acc.invoiced++;
             if (quote.invoice_amount) {
-              acc.invoicedValue += parseFloat(quote.invoice_amount) || 0;
+              acc.invoicedValue += (typeof quote.invoice_amount === 'number' ? quote.invoice_amount : parseFloat(String(quote.invoice_amount || 0))) || 0;
             }
             break;
         }
         
         if (quote.invoice_amount) {
-          const invoiceAmount = parseFloat(quote.invoice_amount) || 0;
+          const invoiceAmount = (typeof quote.invoice_amount === 'number' ? quote.invoice_amount : parseFloat(String(quote.invoice_amount || 0))) || 0;
           acc.totalInvoicedValue += invoiceAmount;
         }
         
@@ -428,7 +431,7 @@ function VehicleQuotesContent() {
             Math.abs(quote.invoice_amount - quote.amount) > 0.01) {
           acc.discrepancies++;
           // Calcolo corretto: Valore Fatture - Valore Preventivi (può essere negativo)
-          acc.discrepanciesValue += (parseFloat(quote.invoice_amount) || 0) - amount;
+          acc.discrepanciesValue += ((typeof quote.invoice_amount === 'number' ? quote.invoice_amount : parseFloat(String(quote.invoice_amount || 0))) || 0) - amount;
         }
         
         // Escludiamo i preventivi rifiutati dal totale
@@ -468,7 +471,7 @@ function VehicleQuotesContent() {
     const stats = filteredQuotes.reduce(
       (acc, quote) => {
         const validUntil = new Date(quote.valid_until);
-        const amount = parseFloat(quote.amount) || 0;
+        const amount = (typeof quote.amount === 'number' ? quote.amount : parseFloat(String(quote.amount || 0))) || 0;
         
         switch (quote.status) {
           case 'pending':
@@ -502,20 +505,20 @@ function VehicleQuotesContent() {
           case 'invoiced':
             acc.invoiced++;
             if (quote.invoice_amount) {
-              acc.invoicedValue += parseFloat(quote.invoice_amount) || 0;
+              acc.invoicedValue += (typeof quote.invoice_amount === 'number' ? quote.invoice_amount : parseFloat(String(quote.invoice_amount || 0))) || 0;
             }
             break;
           case 'partial':
             // Partial viene contato come invoiced per semplicità
             acc.invoiced++;
             if (quote.invoice_amount) {
-              acc.invoicedValue += parseFloat(quote.invoice_amount) || 0;
+              acc.invoicedValue += (typeof quote.invoice_amount === 'number' ? quote.invoice_amount : parseFloat(String(quote.invoice_amount || 0))) || 0;
             }
             break;
         }
         
         if (quote.invoice_amount) {
-          const invoiceAmount = parseFloat(quote.invoice_amount) || 0;
+          const invoiceAmount = (typeof quote.invoice_amount === 'number' ? quote.invoice_amount : parseFloat(String(quote.invoice_amount || 0))) || 0;
           acc.totalInvoicedValue += invoiceAmount;
         }
         
@@ -524,7 +527,7 @@ function VehicleQuotesContent() {
             Math.abs(quote.invoice_amount - quote.amount) > 0.01) {
           acc.discrepancies++;
           // Calcolo corretto: Valore Fatture - Valore Preventivi (può essere negativo)
-          acc.discrepanciesValue += (parseFloat(quote.invoice_amount) || 0) - amount;
+          acc.discrepanciesValue += ((typeof quote.invoice_amount === 'number' ? quote.invoice_amount : parseFloat(String(quote.invoice_amount || 0))) || 0) - amount;
         }
         
         // Escludiamo i preventivi rifiutati dal totale
@@ -1054,7 +1057,7 @@ function VehicleQuotesContent() {
                           </td>
                           {/* 11. Stato Fatturazione */}
                           <td>
-                            {quote.status === 'approved' || quote.invoice_status === 'not_applicable' ? (
+                            {quote.status === 'approved' ? (
                               <span className={`badge ${getInvoiceStatusBadge(quote.invoice_status)}`}>
                                 {getInvoiceStatusText(quote.invoice_status)}
                               </span>

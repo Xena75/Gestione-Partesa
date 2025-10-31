@@ -16,19 +16,11 @@ export async function POST(_request: NextRequest) {
 
     // Verifica che l'aggiornamento sia avvenuto
     const updatedSchedules = await BackupDatabase.getBackupSchedules();
-    const updated = updatedSchedules.find(s => s.id === schedule_id);
-
-    if (!updated) {
-      return NextResponse.json(
-        { error: 'Schedule non trovato' },
-        { status: 404 }
-      );
-    }
 
     return NextResponse.json({
       success: true,
-      message: 'Data prossimo backup aggiornata con successo',
-      schedule: updated
+      message: 'Date prossimi backup aggiornate con successo',
+      schedules: updatedSchedules
     });
 
   } catch (error) {

@@ -15,6 +15,7 @@ interface VehicleSchedule {
   data_scadenza: string;
   completed_date?: string;
   booking_date?: string;
+  provider?: string;
   status: string;
   priority: string;
   cost_estimate?: number;
@@ -93,7 +94,7 @@ function VehicleSchedulesContent() {
 
   // Effetto per leggere il parametro vehicle dall'URL
   useEffect(() => {
-    const vehicleParam = searchParams.get('vehicle');
+    const vehicleParam = searchParams?.get('vehicle');
     if (vehicleParam) {
       setFilterPlate(vehicleParam);
     }

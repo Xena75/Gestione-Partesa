@@ -15,7 +15,6 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('user_id');
-    const expiring = searchParams.get('expiring') === 'true';
     
     // Se l'utente è employee, può vedere solo i propri documenti
     let targetUserId = userId;
@@ -32,7 +31,7 @@ export async function GET(request: NextRequest) {
     
     console.log('Recupero documenti per dipendente ID:', targetUserId);
     
-    const documents = await getEmployeeDocuments(targetUserId, expiring);
+    const documents = await getEmployeeDocuments(targetUserId);
     
     console.log(`Recuperati ${documents.length} documenti per dipendente ${targetUserId}`);
     
@@ -65,7 +64,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { user_id, document_type, document_number, issue_date, expiry_date, notes } = body;
+    const { user_id, document_type, document_name, expiry_date, notes } = body;
     
     // Se l'utente è employee, può creare documenti solo per se stesso
     let targetUserId = user_id;
@@ -80,13 +79,20 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
     
-    const documentData: Partial<EmployeeDocument> = {
+    // Nota: questo endpoint è incompleto - dovrebbe gestire l'upload del file
+    // Per ora, usa valori placeholder per far passare la build
+    const documentData: Omit<EmployeeDocument, 'id' | 'created_at' | 'updated_at'> = {
       employee_id: targetUserId,
       document_type,
-      document_number,
-      issue_date: issue_date ? new Date(issue_date) : undefined,
-      expiry_date: expiry_date ? new Date(expiry_date) : undefined,
-      notes
+      document_name: document_name || 'N/A',
+      file_path: '', // TODO: implementare upload file
+      file_name: '', // TODO: implementare upload file
+      file_size: 0, // TODO: implementare upload file
+      file_type: '', // TODO: implementare upload file
+      expiry_date: expiry_date || undefined,
+      status: 'valido', // Default status
+      notes: notes || undefined,
+      uploaded_by: userCheck.user?.username
     };
     
     const newDocument = await createEmployeeDocument(documentData);

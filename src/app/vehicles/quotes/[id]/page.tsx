@@ -29,7 +29,7 @@ export default function QuoteDetailPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const quoteId = params.id as string;
+  const quoteId = params?.id as string;
   
   const [quote, setQuote] = useState<Quote | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,7 +59,7 @@ export default function QuoteDetailPage() {
     }
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('it-IT');
   };
@@ -88,7 +88,7 @@ export default function QuoteDetailPage() {
 
   // Funzione per preservare i parametri URL quando si torna alla lista
   const getBackToListURL = () => {
-    const currentParams = searchParams.toString();
+    const currentParams = searchParams?.toString();
     return currentParams ? `/vehicles/quotes?${currentParams}` : '/vehicles/quotes';
   };
 
@@ -123,7 +123,7 @@ export default function QuoteDetailPage() {
   };
 
   const handleEdit = () => {
-    const currentParams = searchParams.toString();
+    const currentParams = searchParams?.toString();
     const editURL = currentParams 
       ? `/vehicles/quotes/${quote?.id}/edit?${currentParams}`
       : `/vehicles/quotes/${quote?.id}/edit`;

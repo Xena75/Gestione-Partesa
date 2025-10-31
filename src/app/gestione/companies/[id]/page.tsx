@@ -37,7 +37,7 @@ interface FormErrors {
 export default function EditCompanyPage() {
   const router = useRouter();
   const params = useParams();
-  const companyId = params.id as string;
+  const companyId = params?.id as string;
 
   const [company, setCompany] = useState<Company | null>(null);
   const [formData, setFormData] = useState<FormData>({

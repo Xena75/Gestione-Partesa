@@ -11,8 +11,7 @@ const pool = mysql.createPool({
   charset: 'utf8mb4',
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0,
-  timeout: 60000
+  queueLimit: 0
 });
 
 export async function GET(

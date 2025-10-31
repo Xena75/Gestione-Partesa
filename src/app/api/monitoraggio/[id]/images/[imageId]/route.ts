@@ -14,13 +14,14 @@ const dbConfig = {
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; imageId: string } }
+  { params }: { params: Promise<{ id: string; imageId: string }> }
 ) {
   let connection;
   
   try {
-    const travelId = decodeURIComponent(params.id);
-    const imageId = params.imageId;
+    const resolvedParams = await params;
+    const travelId = decodeURIComponent(resolvedParams.id);
+    const imageId = resolvedParams.imageId;
 
     console.log('DELETE Image - Travel ID:', travelId, 'Image ID:', imageId);
 

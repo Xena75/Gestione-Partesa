@@ -9,35 +9,55 @@ interface AutistiLayoutProps {
 }
 
 export default function AutistiLayout({ children }: AutistiLayoutProps) {
+  console.log('🏗️ AutistiLayout caricato');
+  
   const router = useRouter();
   const pathname = usePathname();
+  
+  console.log('📍 Pathname corrente:', pathname);
 
   // Verifica se siamo effettivamente nell'area autisti
-  const isAutistiArea = pathname.startsWith('/autisti');
+  const isAutistiArea = pathname?.startsWith('/autisti') ?? false;
+  console.log('🎯 È area autisti:', isAutistiArea);
   
   // Se non siamo nell'area autisti, renderizza solo i children senza hook
   if (!isAutistiArea) {
+    console.log('❌ Non è area autisti, rendering diretto');
     return <>{children}</>;
   }
 
   const { user, isLoading, logout } = useAuth();
+  console.log('👤 User dal layout autisti:', user);
+  console.log('⏳ IsLoading:', isLoading);
 
   // Pagine che non richiedono autenticazione
   const publicPages = ['/autisti/login'];
-  const isPublicPage = publicPages.includes(pathname);
+  const isPublicPage = pathname ? publicPages.includes(pathname) : false;
 
   useEffect(() => {
+    console.log('🔄 useEffect layout autisti - controllo autenticazione');
+    console.log('📄 isPublicPage:', isPublicPage);
+    
     // Se siamo su una pagina pubblica, non fare controlli di autenticazione
     if (isPublicPage) {
+      console.log('✅ Pagina pubblica, nessun controllo necessario');
       return;
     }
 
+    console.log('🔍 Controllo autenticazione - isLoading:', isLoading);
+    
     if (!isLoading) {
+      console.log('👤 User per controllo ruolo:', user);
+      console.log('🎭 Ruolo utente:', user?.role);
+      
       // Se l'utente non è autenticato o non è un employee, reindirizza al login autisti
       if (!user || user.role !== 'employee') {
+        console.log('❌ Utente non autenticato o ruolo non employee, redirect a login');
         router.push('/autisti/login');
         return;
       }
+      
+      console.log('✅ Utente autenticato con ruolo employee, accesso consentito');
     }
   }, [user, isLoading, router, isPublicPage]);
 

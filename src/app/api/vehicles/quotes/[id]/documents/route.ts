@@ -21,12 +21,13 @@ const pool = mysql.createPool({
 // POST - Upload documento fattura
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   let connection: any = null;
   
   try {
-    const quoteId = params.id;
+    const resolvedParams = await params;
+    const quoteId = resolvedParams.id;
 
     if (!quoteId || isNaN(parseInt(quoteId))) {
       return NextResponse.json(
@@ -173,12 +174,13 @@ export async function POST(
 // GET - Recupera documenti di un preventivo
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   let connection: any = null;
   
   try {
-    const quoteId = params.id;
+    const resolvedParams = await params;
+    const quoteId = resolvedParams.id;
 
     if (!quoteId || isNaN(parseInt(quoteId))) {
       return NextResponse.json(
@@ -231,12 +233,13 @@ export async function GET(
 // DELETE - Elimina un documento
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   let connection: any = null;
   
   try {
-    const quoteId = params.id;
+    const resolvedParams = await params;
+    const quoteId = resolvedParams.id;
     const { searchParams } = new URL(request.url);
     const documentId = searchParams.get('documentId');
 

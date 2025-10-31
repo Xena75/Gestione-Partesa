@@ -297,18 +297,18 @@ export async function POST(request: NextRequest) {
     
     // Non convertiamo le date in oggetti Date, lasciamole come stringhe
     // La funzione createLeaveRequest si occuperà della conversione
-    const leaveData: Partial<LeaveRequest> = {
+    const leaveData: Omit<LeaveRequest, 'id' | 'created_at' | 'updated_at'> = {
       employee_id: employee.id, // Usa l'ID del dipendente trovato
       start_date: start_date, // Mantieni come stringa
       end_date: end_date, // Mantieni come stringa
       days_requested: calculatedDays,
-      hours_requested: hours_requested || null,
+      hours_requested: hours_requested,
       leave_type,
-      reason: reason || null,
-      notes: notes || null,
+      reason,
+      notes,
       status: 'pending',
-      approved_by: null,
-      approved_at: null
+      approved_by: undefined,
+      approved_at: undefined
     };
     
     console.log('POST - Dati preparati per createLeaveRequest:', leaveData);

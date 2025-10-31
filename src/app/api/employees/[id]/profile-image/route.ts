@@ -5,10 +5,11 @@ import { uploadProfileImage, deleteProfileImage, validateImageFile } from '@/lib
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const decodedId = decodeURIComponent(params.id);
+    const resolvedParams = await params;
+    const decodedId = decodeURIComponent(resolvedParams.id);
     console.log('API profile-image POST chiamata per ID:', decodedId);
     
     const formData = await request.formData();
@@ -71,10 +72,11 @@ export async function POST(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const decodedId = decodeURIComponent(params.id);
+    const resolvedParams = await params;
+    const decodedId = decodeURIComponent(resolvedParams.id);
     console.log('API profile-image DELETE chiamata per ID:', decodedId);
     
     // Ottieni l'URL della foto attuale dal body della richiesta
@@ -91,7 +93,7 @@ export async function DELETE(
     }
     
     // Rimuovi il riferimento alla foto dal database
-    const success = await updateEmployee(decodedId, { foto_url: null });
+    const success = await updateEmployee(decodedId, { foto_url: undefined });
 
     if (!success) {
       return NextResponse.json({

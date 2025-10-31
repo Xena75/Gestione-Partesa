@@ -96,7 +96,7 @@ interface FormData {
 export default function VehicleDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const plate = params.plate as string;
+  const plate = params?.plate as string;
   
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -114,6 +114,7 @@ export default function VehicleDetailPage() {
     km_ultimo_tagliando: '',
     data_ultimo_tagliando: '',
     data_ultima_revisione: '',
+    data_revisione_tachigrafo: '',
     note: ''
   });
   const [updateLoading, setUpdateLoading] = useState(false);
@@ -1018,7 +1019,7 @@ export default function VehicleDetailPage() {
                               {quote.documents && quote.documents.length > 0 && (
                                 <button 
                                   className="btn btn-outline-success"
-                                  onClick={() => handleQuoteDocumentDownload(quote.documents[0])}
+                                  onClick={() => quote.documents?.[0] && handleQuoteDocumentDownload(quote.documents[0])}
                                   title="Scarica allegato"
                                 >
                                   <i className="fas fa-download"></i>

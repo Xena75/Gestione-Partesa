@@ -421,12 +421,12 @@ export async function POST(request: NextRequest) {
     try {
       [result] = await connection.execute(insertQuery, insertValues);
       console.log('Query INSERT eseguita con successo, result:', result);
-    } catch (insertError) {
+    } catch (insertError: any) {
       console.error('Errore durante l\'inserimento:', insertError);
-      console.error('Codice errore MySQL:', insertError.code);
-      console.error('Messaggio errore MySQL:', insertError.message);
-      console.error('SQL State:', insertError.sqlState);
-      console.error('Errno:', insertError.errno);
+      console.error('Codice errore MySQL:', insertError?.code);
+      console.error('Messaggio errore MySQL:', insertError?.message);
+      console.error('SQL State:', insertError?.sqlState);
+      console.error('Errno:', insertError?.errno);
       throw insertError;
     }
 

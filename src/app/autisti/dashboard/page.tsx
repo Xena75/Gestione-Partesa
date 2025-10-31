@@ -67,7 +67,11 @@ interface LeaveBalance {
 }
 
 export default function AutistiDashboardPage() {
+  console.log('🎯 Componente AutistiDashboardPage caricato');
+  
   const { user } = useAuth();
+  console.log('🔐 Hook useAuth chiamato, user:', user);
+  
   const [employeeData, setEmployeeData] = useState<EmployeeData | null>(null);
   const [recentLeaveRequests, setRecentLeaveRequests] = useState<RecentLeaveRequest[]>([]);
   const [expiringDocuments, setExpiringDocuments] = useState<ExpiringDocument[]>([]);
@@ -81,6 +85,7 @@ export default function AutistiDashboardPage() {
     patente: false,
     formazione: false
   });
+  const [profileCardExpanded, setProfileCardExpanded] = useState(true);
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({
@@ -111,51 +116,109 @@ export default function AutistiDashboardPage() {
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      if (!user?.codice_dipendente) return;
+      console.log('🔄 Inizio fetchDashboardData');
+      console.log('👤 User object:', user);
+      console.log('📝 Username:', user?.username);
+      
+      if (!user?.username) {
+        console.log('❌ Nessun username trovato, uscita dalla funzione');
+        return;
+      }
 
       try {
+        console.log('🚀 Inizio caricamento dati dashboard');
         setLoading(true);
         setError(null);
 
         // Fetch employee data
-        const employeeResponse = await fetch(`/api/employees/${user.codice_dipendente}`);
+        const employeeUrl = `/api/employees/${user.username}`;
+        console.log('📞 Chiamata API dipendente:', employeeUrl);
+        
+        const employeeResponse = await fetch(employeeUrl);
+        console.log('📥 Risposta API dipendente:', {
+          status: employeeResponse.status,
+          statusText: employeeResponse.statusText,
+          ok: employeeResponse.ok
+        });
+        
         if (!employeeResponse.ok) {
+          console.log('❌ Errore nella risposta API dipendente');
           throw new Error('Errore nel caricamento dei dati dipendente');
         }
-        const employeeData = await employeeResponse.json();
-        setEmployeeData(employeeData);
+        
+        const employeeResult = await employeeResponse.json();
+        console.log('📊 Dati dipendente ricevuti:', employeeResult);
+        
+        if (employeeResult.success && employeeResult.data) {
+          console.log('✅ Impostazione dati dipendente:', employeeResult.data);
+          setEmployeeData(employeeResult.data);
+        } else {
+          console.log('❌ Errore nei dati dipendente:', employeeResult.error);
+          throw new Error(employeeResult.error || 'Errore nel caricamento dei dati dipendente');
+        }
 
         // Fetch recent leave requests
-        const leaveResponse = await fetch(`/api/employees/${user.codice_dipendente}/leave-requests?limit=5`);
+        const leaveUrl = `/api/employees/leave?user_id=${user.username}&limit=5`;
+        console.log('📞 Chiamata API ferie:', leaveUrl);
+        
+        const leaveResponse = await fetch(leaveUrl);
+        console.log('📥 Risposta API ferie:', {
+          status: leaveResponse.status,
+          ok: leaveResponse.ok
+        });
+        
         if (leaveResponse.ok) {
           const leaveData = await leaveResponse.json();
-          setRecentLeaveRequests(leaveData);
+          console.log('📊 Dati ferie ricevuti:', leaveData);
+          setRecentLeaveRequests(leaveData.data || leaveData);
         }
 
         // Fetch expiring documents
-        const documentsResponse = await fetch(`/api/employees/${user.codice_dipendente}/expiring-documents`);
+        const documentsUrl = `/api/employees/documents/expiring`;
+        console.log('📞 Chiamata API documenti:', documentsUrl);
+        
+        const documentsResponse = await fetch(documentsUrl);
+        console.log('📥 Risposta API documenti:', {
+          status: documentsResponse.status,
+          ok: documentsResponse.ok
+        });
+        
         if (documentsResponse.ok) {
           const documentsData = await documentsResponse.json();
-          setExpiringDocuments(documentsData);
+          console.log('📊 Dati documenti ricevuti:', documentsData);
+          setExpiringDocuments(documentsData.data?.documents || documentsData);
         }
 
         // Fetch leave balance
-        const balanceResponse = await fetch(`/api/employees/${user.codice_dipendente}/leave-balance`);
+        const balanceUrl = `/api/employees/leave/balance?user_id=${user.username}`;
+        console.log('📞 Chiamata API bilancio:', balanceUrl);
+        
+        const balanceResponse = await fetch(balanceUrl);
+        console.log('📥 Risposta API bilancio:', {
+          status: balanceResponse.status,
+          ok: balanceResponse.ok
+        });
+        
         if (balanceResponse.ok) {
           const balanceData = await balanceResponse.json();
-          setLeaveBalance(balanceData);
+          console.log('📊 Dati bilancio ricevuti:', balanceData);
+          setLeaveBalance(balanceData.data || balanceData);
         }
 
+        console.log('✅ Caricamento dati dashboard completato con successo');
+
       } catch (error) {
-        console.error('Errore nel caricamento dei dati dashboard:', error);
+        console.error('❌ Errore nel caricamento dei dati dashboard:', error);
+        console.error('📋 Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
         setError(error instanceof Error ? error.message : 'Errore sconosciuto');
       } finally {
+        console.log('🏁 Fine caricamento, impostazione loading = false');
         setLoading(false);
       }
     };
 
     fetchDashboardData();
-  }, [user?.codice_dipendente]);
+  }, [user?.username]);
 
   if (loading) {
     return (
@@ -202,11 +265,23 @@ export default function AutistiDashboardPage() {
         <div className="col-12">
           <div className="card bg-dark border-secondary">
             <div className="card-header">
-              <h5 className="text-light mb-0">
-                <UserCircle className="me-2" size={20} />
-                Profilo Dipendente
-              </h5>
+              <div 
+                className="d-flex justify-content-between align-items-center"
+                onClick={() => setProfileCardExpanded(!profileCardExpanded)}
+                style={{ cursor: 'pointer' }}
+              >
+                <h5 className="text-light mb-0">
+                  <UserCircle className="me-2" size={20} />
+                  Profilo Dipendente
+                </h5>
+                {profileCardExpanded ? (
+                  <ChevronUp className="text-muted" size={20} />
+                ) : (
+                  <ChevronDown className="text-muted" size={20} />
+                )}
+              </div>
             </div>
+            {profileCardExpanded && (
             <div className="card-body">
               <div className="row">
                 <div className="col-md-6">
@@ -455,6 +530,7 @@ export default function AutistiDashboardPage() {
                 </div>
               </div>
             </div>
+            )}
           </div>
         </div>
       </div>

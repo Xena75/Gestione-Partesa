@@ -21,19 +21,21 @@ export async function GET(request: NextRequest) {
     
     const expiringDocuments = await getExpiringDocuments(days);
     
-    // Raggruppa i documenti per status
+    // Raggruppa i documenti per status (valori in italiano)
     const groupedDocuments = {
-      expired: expiringDocuments.filter(doc => doc.status === 'expired'),
-      active: expiringDocuments.filter(doc => doc.status === 'active'),
-      archived: expiringDocuments.filter(doc => doc.status === 'archived')
+      scaduto: expiringDocuments.filter(doc => doc.status === 'scaduto'),
+      in_scadenza: expiringDocuments.filter(doc => doc.status === 'in_scadenza'),
+      valido: expiringDocuments.filter(doc => doc.status === 'valido'),
+      da_rinnovare: expiringDocuments.filter(doc => doc.status === 'da_rinnovare')
     };
 
     // Statistiche
     const stats = {
       totale: expiringDocuments.length,
-      expired: groupedDocuments.expired.length,
-      active: groupedDocuments.active.length,
-      archived: groupedDocuments.archived.length
+      scaduto: groupedDocuments.scaduto.length,
+      in_scadenza: groupedDocuments.in_scadenza.length,
+      valido: groupedDocuments.valido.length,
+      da_rinnovare: groupedDocuments.da_rinnovare.length
     };
 
     return NextResponse.json({

@@ -126,7 +126,7 @@ export async function GET(
     // Assicurati che la connessione sia chiusa in caso di errore
     if (connection) {
       try {
-        await connection.end();
+        await (connection as mysql.Connection).end();
         console.log(`[GET /api/vehicles/schedules/${scheduleId || 'unknown'}] Database connection closed after error`);
       } catch (closeError) {
         console.error(`[GET /api/vehicles/schedules/${scheduleId || 'unknown'}] Error closing database connection:`, closeError);
@@ -267,8 +267,11 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let scheduleId: string | undefined;
+  
   try {
     const { id } = await params;
+    scheduleId = id;
     const body = await request.json();
     
     console.log(`[PATCH /api/vehicles/schedules/${id}] Received data:`, body);
@@ -373,7 +376,7 @@ export async function PATCH(
     return NextResponse.json({ success: true });
 
   } catch (error) {
-    console.error(`[PATCH /api/vehicles/schedules/${id || 'unknown'}] Error:`, error);
+    console.error(`[PATCH /api/vehicles/schedules/${scheduleId || 'unknown'}] Error:`, error);
     return NextResponse.json(
       { 
         success: false, 

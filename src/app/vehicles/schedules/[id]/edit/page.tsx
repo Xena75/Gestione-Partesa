@@ -156,7 +156,7 @@ function formatDateInput(value: string): string {
 export default function EditSchedulePage() {
   const router = useRouter();
   const params = useParams();
-  const scheduleId = params.id as string;
+  const scheduleId = params?.id as string;
   const { theme } = useTheme();
   
   // Classi dinamiche basate sul tema
@@ -594,12 +594,16 @@ export default function EditSchedulePage() {
                     Stato
                   </label>
                   <div className={`p-3 ${cardClass} border rounded`}>
-                    <span className={`badge ${getStatusBadge(schedule.status).class}`}>
-                      {getStatusBadge(schedule.status).label}
-                    </span>
-                    <small className={`${theme === 'dark' ? 'text-light-emphasis' : 'text-muted'} d-block mt-1`}>
-                      Stato attuale della scadenza
-                    </small>
+                    {schedule && (
+                      <>
+                        <span className={`badge ${getStatusBadge(schedule.status).class}`}>
+                          {getStatusBadge(schedule.status).label}
+                        </span>
+                        <small className={`${theme === 'dark' ? 'text-light-emphasis' : 'text-muted'} d-block mt-1`}>
+                          Stato attuale della scadenza
+                        </small>
+                      </>
+                    )}
                   </div>
                 </div>
 

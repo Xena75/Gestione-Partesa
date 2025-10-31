@@ -71,9 +71,9 @@ export default function AutistiDocumentiPage() {
       
       // Cerca il dipendente corrispondente
       const employee = data.data.find((emp: any) => {
-        // Cerca per email, login_email, ID o nome/cognome
+        // Cerca per email, username_login, ID o nome/cognome
         const emailMatch = emp.email === `${username}@partesa.it`;
-        const loginEmailMatch = emp.login_email === `${username}@partesa.it`;
+        const usernameLoginMatch = emp.username_login === `${username}@partesa.it`;
         const idMatch = emp.id === username;
         const nameMatch = emp.id === username.replace('.', ' ').split(' ').map((word: string) => 
           word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
@@ -81,12 +81,12 @@ export default function AutistiDocumentiPage() {
         
         console.log('Controllo dipendente:', emp.id, {
           emailMatch,
-          loginEmailMatch,
+          usernameLoginMatch,
           idMatch,
           nameMatch
         });
         
-        return emailMatch || loginEmailMatch || idMatch || nameMatch;
+        return emailMatch || usernameLoginMatch || idMatch || nameMatch;
       });
       
       if (employee) {

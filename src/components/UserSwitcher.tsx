@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface User {
-  id: string;
+  id: number;
   username: string;
   role: string;
 }

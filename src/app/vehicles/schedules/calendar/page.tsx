@@ -12,20 +12,11 @@ const Calendar = dynamic(
   () => import('react-big-calendar').then((mod) => mod.Calendar),
   { ssr: false }
 );
-const momentLocalizer = dynamic(
-  () => import('react-big-calendar').then((mod) => mod.momentLocalizer),
-  { ssr: false }
-);
-const Views = dynamic(
-  () => import('react-big-calendar').then((mod) => mod.Views),
-  { ssr: false }
-);
 
-// Import CSS in modo sicuro
-if (typeof window !== 'undefined') {
-  import('react-big-calendar/lib/css/react-big-calendar.css');
-  import('react-big-calendar/lib/addons/dragAndDrop/styles.css');
-}
+// Import diretto per funzioni e oggetti (non componenti)
+import { momentLocalizer as createMomentLocalizer, Views } from 'react-big-calendar';
+import 'react-big-calendar/lib/css/react-big-calendar.css';
+import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
 
 // CSS globale per forzare tutti i colori degli eventi in modalità dark
 const forceEventColorsCSS = `
@@ -295,17 +286,9 @@ function VehicleSchedulesCalendarContent() {
   // Inizializzazione del calendario
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      Promise.all([
-        import('react-big-calendar'),
-        import('react-big-calendar/lib/addons/dragAndDrop')
-      ]).then(([calendarMod, dragAndDropMod]) => {
-        const localizer = calendarMod.momentLocalizer(moment);
-        const withDragAndDrop = dragAndDropMod.default;
-        const DragAndDropCalendarComponent = withDragAndDrop(calendarMod.Calendar);
-        setCurrentLocalizer(localizer);
-        setDragAndDropCalendar(() => DragAndDropCalendarComponent);
-        setCalendarReady(true);
-      });
+      const localizer = createMomentLocalizer(moment);
+      setCurrentLocalizer(localizer);
+      setCalendarReady(true);
     }
   }, []);
 
@@ -418,7 +401,7 @@ function VehicleSchedulesCalendarContent() {
 
   // Funzione per generare tooltip informativi
   const getEventTooltip = (event: CalendarEvent) => {
-    if (event.resource.type === 'leave') {
+    if ('type' in event.resource && event.resource.type === 'leave') {
       const leaveEvent = event.resource as LeaveEvent;
       const startDate = moment(event.start).format('DD/MM/YYYY');
       const endDate = moment(event.end).subtract(1, 'day').format('DD/MM/YYYY');
@@ -452,18 +435,25 @@ function VehicleSchedulesCalendarContent() {
 
   const handleEventDrop = useCallback(async ({ event, start, end }: { event: CalendarEvent, start: Date, end: Date }) => {
 
+    // Se è un evento leave, non permettere il drag
+    if ('type' in event.resource && event.resource.type === 'leave') {
+      setDragFeedback('Gli eventi di assenza non possono essere spostati dal calendario');
+      setTimeout(() => setDragFeedback(''), 3000);
+      return;
+    }
     
     try {
       setDragFeedback('Aggiornamento in corso...');
       
-      const scheduleId = event.resource.id;
+      const vehicleSchedule = event.resource as VehicleSchedule;
+      const scheduleId = vehicleSchedule.id;
       const newDate = start.toISOString().split('T')[0]; // Formato YYYY-MM-DD
       
       // Determina quale campo aggiornare basandosi sulla logica esistente
       const updateData: any = {};
       
       // Se l'evento ha booking_date, aggiorna quello, altrimenti data_scadenza
-      if (event.resource.booking_date && event.resource.booking_date.trim() !== '') {
+      if (vehicleSchedule.booking_date && vehicleSchedule.booking_date.trim() !== '') {
         updateData.booking_date = newDate;
       } else {
         updateData.data_scadenza = newDate;
@@ -525,7 +515,7 @@ function VehicleSchedulesCalendarContent() {
     const resource = event.resource;
     
     // Gestisci eventi ferie
-    if (resource.type === 'leave') {
+    if ('type' in resource && resource.type === 'leave') {
       const leaveResource = resource as LeaveEvent;
       
       switch (leaveResource.leave_type) {
@@ -894,16 +884,16 @@ function VehicleSchedulesCalendarContent() {
                     time: 'Ora',
                     event: 'Evento',
                     noEventsInRange: 'Nessun evento in questo periodo',
-                    showMore: (total) => `+ Altri ${total}`
+                    showMore: (total: number) => `+ Altri ${total}`
                   }}
                   formats={{
                     monthHeaderFormat: 'MMMM YYYY',
                     dayHeaderFormat: 'dddd DD/MM',
-                    dayRangeHeaderFormat: ({ start, end }) => 
+                    dayRangeHeaderFormat: ({ start, end }: { start: Date, end: Date }) => 
                       `${moment(start).format('DD/MM')} - ${moment(end).format('DD/MM/YYYY')}`,
                     agendaDateFormat: 'DD/MM/YYYY',
                     agendaTimeFormat: 'HH:mm',
-                    agendaTimeRangeFormat: ({ start, end }) => 
+                    agendaTimeRangeFormat: ({ start, end }: { start: Date, end: Date }) => 
                       `${moment(start).format('HH:mm')} - ${moment(end).format('HH:mm')}`
                   }}
                 />
@@ -929,7 +919,7 @@ function VehicleSchedulesCalendarContent() {
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">
-                  {selectedEvent.resource.type === 'leave' ? (
+                  {('type' in selectedEvent.resource && selectedEvent.resource.type === 'leave') ? (
                     <>🏖️ Dettagli Ferie - {(selectedEvent.resource as LeaveEvent).employee_name}</>
                   ) : (
                     <>🚗 Dettagli Scadenza - {(selectedEvent.resource as VehicleSchedule).vehicle?.targa}</>
@@ -942,7 +932,7 @@ function VehicleSchedulesCalendarContent() {
                 ></button>
               </div>
               <div className="modal-body">
-                {selectedEvent.resource.type === 'leave' ? (
+                {('type' in selectedEvent.resource && selectedEvent.resource.type === 'leave') ? (
                   // Modal per eventi ferie
                   <>
                     <div className="row">
@@ -1037,7 +1027,7 @@ function VehicleSchedulesCalendarContent() {
                 >
                   Chiudi
                 </button>
-                {selectedEvent.resource.type !== 'leave' && (
+                {!('type' in selectedEvent.resource && selectedEvent.resource.type === 'leave') && (
                   <>
                     <Link 
                       href={`/vehicles/schedules/${(selectedEvent.resource as VehicleSchedule).id}`}
@@ -1053,7 +1043,7 @@ function VehicleSchedulesCalendarContent() {
                     </Link>
                   </>
                 )}
-                {selectedEvent.resource.type === 'leave' && (
+                {('type' in selectedEvent.resource && selectedEvent.resource.type === 'leave') && (
                   <Link 
                     href="/gestione/employees/ferie"
                     className="btn btn-primary"

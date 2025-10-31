@@ -40,7 +40,7 @@ const DOCUMENT_TYPES = [
 export default function VehicleDocumentsPage() {
   const params = useParams();
   const router = useRouter();
-  const plate = params.plate as string;
+  const plate = params?.plate as string;
   
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);

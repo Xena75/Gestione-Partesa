@@ -181,7 +181,7 @@ export default function ImportDeliveryPage() {
           isOpen={showMappingsModal}
           onClose={() => setShowMappingsModal(false)}
           fileId={currentFileInfo.fileId}
-          filename={currentFileInfo.filename}
+          _filename={currentFileInfo.filename}
           blobUrl={currentFileInfo.blobUrl}
         />
       )}

@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
         user: {
           id: employee.id, // Questo è il nome completo del dipendente
           username: employee.nome + ' ' + employee.cognome,
-          email: employee.email || employee.login_email,
+          email: employee.email,
           role: employee.role
         },
         expires: '24h'
