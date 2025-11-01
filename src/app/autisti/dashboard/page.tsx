@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Calendar, FileText, Clock, AlertTriangle, User, MapPin, ChevronDown, ChevronUp, UserCircle, Briefcase, Phone, CreditCard, GraduationCap } from 'lucide-react';
+import ProfileImageUpload from '@/components/ProfileImageUpload';
 
 interface EmployeeData {
   id: number;
@@ -34,6 +35,7 @@ interface EmployeeData {
   driver_license_expiry?: string;
   titolo_studio?: string;
   permesso_soggiorno?: string;
+  foto_url?: string;
 }
 
 interface RecentLeaveRequest {
@@ -127,6 +129,7 @@ export default function AutistiDashboardPage() {
   const [recentLeaveRequests, setRecentLeaveRequests] = useState<RecentLeaveRequest[]>([]);
   const [expiringDocuments, setExpiringDocuments] = useState<ExpiringDocument[]>([]);
   const [leaveBalance, setLeaveBalance] = useState<LeaveBalance | null>(null);
+  const [totalDocuments, setTotalDocuments] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedSections, setExpandedSections] = useState({
@@ -137,6 +140,7 @@ export default function AutistiDashboardPage() {
     formazione: false
   });
   const [profileCardExpanded, setProfileCardExpanded] = useState(true);
+  const [editingPhoto, setEditingPhoto] = useState(false);
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({
@@ -145,13 +149,25 @@ export default function AutistiDashboardPage() {
     }));
   };
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'N/A';
+  const formatDate = (dateString: string | null | undefined): string => {
+    if (!dateString) {
+      return '';
+    }
+    
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString('it-IT');
-    } catch {
-      return 'Data non valida';
+      
+      if (isNaN(date.getTime())) {
+        return dateString;
+      }
+      
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      
+      return `${day}/${month}/${year}`;
+    } catch (error) {
+      return dateString;
     }
   };
 
@@ -159,8 +175,11 @@ export default function AutistiDashboardPage() {
     if (!dateString) return 'Non specificato';
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString('it-IT');
-    } catch {
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
+    } catch (error) {
       return 'Data non valida';
     }
   };
@@ -268,6 +287,22 @@ export default function AutistiDashboardPage() {
           setLeaveBalance(balanceData.data || balanceData);
         }
 
+        // Fetch total documents count
+        const documentsCountUrl = `/api/employees/${user.username}/documents`;
+        console.log('📞 Chiamata API conteggio documenti:', documentsCountUrl);
+        
+        const documentsCountResponse = await fetch(documentsCountUrl);
+        console.log('📥 Risposta API conteggio documenti:', {
+          status: documentsCountResponse.status,
+          ok: documentsCountResponse.ok
+        });
+        
+        if (documentsCountResponse.ok) {
+          const documentsCountData = await documentsCountResponse.json();
+          console.log('📊 Dati conteggio documenti ricevuti:', documentsCountData);
+          setTotalDocuments(documentsCountData.count || 0);
+        }
+
         console.log('✅ Caricamento dati dashboard completato con successo');
 
       } catch (error) {
@@ -318,112 +353,193 @@ export default function AutistiDashboardPage() {
 
   try {
     return (
-      <div className="container-fluid py-4">
-        <div className="row mb-4">
+      <div className="container-fluid py-2 py-md-4">
+        <div className="row mb-3 mb-md-4">
           <div className="col-12">
-            <h1 className="h3 text-dark mb-3">
-              <User className="me-2" size={28} />
+            <h1 className="h4 h3-md text-dark mb-2 mb-md-3">
+              <User className="me-2" size={24} />
               Dashboard Autista
             </h1>
-            <p className="text-muted">
+            <p className="text-muted small">
               Benvenuto, {employeeData?.nome} {employeeData?.cognome}
             </p>
           </div>
         </div>
 
       {/* Profilo dipendente */}
-      <div className="row mb-4">
+      <div className="row mb-3 mb-md-4">
         <div className="col-12">
           <div className="card bg-dark border-secondary">
-            <div className="card-header">
+            <div className="card-header py-2">
               <div 
                 className="d-flex justify-content-between align-items-center"
                 onClick={() => setProfileCardExpanded(!profileCardExpanded)}
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: 'pointer', minHeight: '44px' }}
               >
-                <h5 className="text-light mb-0">
-                  <UserCircle className="me-2" size={20} />
+                <h6 className="text-light mb-0">
+                  <UserCircle className="me-2" size={18} />
                   Profilo Dipendente
-                </h5>
+                </h6>
                 {profileCardExpanded ? (
-                  <ChevronUp className="text-muted" size={20} />
+                  <ChevronUp className="text-muted" size={18} />
                 ) : (
-                  <ChevronDown className="text-muted" size={20} />
+                  <ChevronDown className="text-muted" size={18} />
                 )}
               </div>
             </div>
             {profileCardExpanded && (
-            <div className="card-body">
-              <div className="row">
-                <div className="col-md-6">
+            <div className="card-body py-3">
+              {/* Sezione Foto Profilo */}
+              <div className="row mb-3">
+                <div className="col-12 col-md-4 text-center mb-3 mb-md-0">
                   <div className="mb-3">
-                    <small className="text-dark d-block fw-bold">Nome Completo</small>
-                    <span className="text-light fs-6">{employeeData?.nome} {employeeData?.cognome}</span>
-                  </div>
-                  <div className="mb-3">
-                    <small className="text-dark d-block fw-bold">Codice Dipendente</small>
-                    <span className="text-light fs-6">{employeeData?.codice_dipendente}</span>
-                  </div>
-                  <div className="mb-3">
-                    <small className="text-dark d-block fw-bold">Email</small>
-                    <span className="text-light fs-6">{employeeData?.email}</span>
+                    {/* Visualizzazione foto in modalità normale */}
+                    {!editingPhoto && (
+                      <>
+                        {employeeData?.foto_url ? (
+                          <img 
+                            src={employeeData.foto_url} 
+                            alt="Foto Profilo" 
+                            className="rounded-circle border border-success"
+                            style={{ width: '100px', height: '100px', objectFit: 'cover' }}
+                          />
+                        ) : (
+                          <div 
+                            className="rounded-circle border border-secondary d-flex align-items-center justify-content-center bg-dark"
+                            style={{ width: '100px', height: '100px', margin: '0 auto' }}
+                          >
+                            <UserCircle size={50} className="text-muted" />
+                          </div>
+                        )}
+                        <div className="mt-2">
+                          <button 
+                            type="button" 
+                            className="btn btn-outline-primary btn-sm"
+                            onClick={() => setEditingPhoto(true)}
+                            style={{ minHeight: '36px' }}
+                          >
+                            <i className="fas fa-edit me-1"></i>
+                            <span className="d-none d-sm-inline">Modifica Foto</span>
+                            <span className="d-sm-none">Modifica</span>
+                          </button>
+                        </div>
+                      </>
+                    )}
+
+                    {/* Componente upload in modalità modifica */}
+                    {editingPhoto && (
+                      <div>
+                        <ProfileImageUpload
+                          employeeId={user?.username || ''}
+                          currentImageUrl={employeeData?.foto_url}
+                          onImageUploaded={(imageUrl) => {
+                            setEmployeeData(prev => prev ? { ...prev, foto_url: imageUrl } : null);
+                          }}
+                          onImageRemoved={() => {
+                            setEmployeeData(prev => prev ? { ...prev, foto_url: undefined } : null);
+                          }}
+                        />
+                        <div className="mt-3 d-flex gap-2 justify-content-center">
+                          <button 
+                            type="button" 
+                            className="btn btn-success btn-sm"
+                            onClick={() => setEditingPhoto(false)}
+                            style={{ minHeight: '36px' }}
+                          >
+                            <i className="fas fa-check me-1"></i>
+                            Salva
+                          </button>
+                          <button 
+                            type="button" 
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => setEditingPhoto(false)}
+                            style={{ minHeight: '36px' }}
+                          >
+                            <i className="fas fa-times me-1"></i>
+                            Annulla
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div className="col-md-6">
-                  <div className="mb-3">
-                    <small className="text-dark d-block fw-bold">Telefono</small>
-                    <span className="text-light fs-6">{employeeData?.telefono}</span>
-                  </div>
-                  <div className="mb-3">
-                    <small className="text-dark d-block fw-bold">Data Assunzione</small>
-                    <span className="text-light fs-6">{formatDate(employeeData?.data_assunzione || null)}</span>
+                <div className="col-12 col-md-8">
+                  <div className="row g-2">
+                    <div className="col-12 col-sm-6">
+                       <div className="mb-2">
+                         <small className="text-dark d-block fw-bold">Nome</small>
+                         <span className="text-light small">{employeeData?.nome}</span>
+                       </div>
+                       <div className="mb-2">
+                         <small className="text-dark d-block fw-bold">Codice Dipendente</small>
+                         <span className="text-light small">{employeeData?.codice_dipendente}</span>
+                       </div>
+                       <div className="mb-2">
+                         <small className="text-dark d-block fw-bold">Email</small>
+                         <span className="text-light small">{employeeData?.email}</span>
+                       </div>
+                     </div>
+                     <div className="col-12 col-sm-6">
+                       <div className="mb-2">
+                         <small className="text-dark d-block fw-bold">Cognome</small>
+                         <span className="text-light small">{employeeData?.cognome}</span>
+                       </div>
+                       <div className="mb-2">
+                         <small className="text-dark d-block fw-bold">Telefono</small>
+                         <span className="text-light small">{employeeData?.telefono}</span>
+                       </div>
+                       <div className="mb-2">
+                         <small className="text-dark d-block fw-bold">Data Assunzione</small>
+                         <span className="text-light small">{formatDateProfile(employeeData?.data_assunzione || null)}</span>
+                       </div>
+                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Sezioni espandibili */}
-              <div className="mt-4">
+              <div className="mt-3">
                 {/* Sezione Anagrafica */}
                 <div className="mb-3">
                   <div 
-                    className="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary cursor-pointer"
+                    className="d-flex justify-content-between align-items-center py-3 border-bottom border-secondary cursor-pointer"
                     onClick={() => toggleSection('anagrafica')}
-                    style={{ cursor: 'pointer' }}
+                    style={{ cursor: 'pointer', minHeight: '48px' }}
                   >
                     <h6 className="text-light mb-0 d-flex align-items-center">
                       <UserCircle className="me-2 text-info" size={18} />
-                      👤 Dati Anagrafici
+                      <span className="small">👤 Dati Anagrafici</span>
                     </h6>
                     {expandedSections.anagrafica ? (
-                      <ChevronUp className="text-muted" size={16} />
+                      <ChevronUp className="text-muted" size={18} />
                     ) : (
-                      <ChevronDown className="text-muted" size={16} />
+                      <ChevronDown className="text-muted" size={18} />
                     )}
                   </div>
                   
                   {expandedSections.anagrafica && (
                     <div className="mt-3">
-                      <div className="row g-3">
+                      <div className="row g-2">
                         <div className="col-12 col-md-6">
                           <small className="text-dark d-block fw-bold">Codice Fiscale</small>
-                          <span className="text-light fs-6">{employeeData?.cod_fiscale || 'Non specificato'}</span>
+                          <span className="text-light small">{employeeData?.cod_fiscale || 'Non specificato'}</span>
                         </div>
                         <div className="col-12 col-md-6">
                           <small className="text-dark d-block fw-bold">Data di Nascita</small>
-                          <span className="text-light fs-6">{formatDateProfile(employeeData?.data_nascita || null)}</span>
+                          <span className="text-light small">{formatDateProfile(employeeData?.data_nascita || null)}</span>
                         </div>
                         <div className="col-12 col-md-6">
                           <small className="text-dark d-block fw-bold">Luogo di Nascita</small>
-                          <span className="text-light fs-6">{employeeData?.luogo_nascita || 'Non specificato'}</span>
+                          <span className="text-light small">{employeeData?.luogo_nascita || 'Non specificato'}</span>
                         </div>
                         <div className="col-12 col-md-6">
                           <small className="text-dark d-block fw-bold">Cittadinanza</small>
-                          <span className="text-light fs-6">{employeeData?.cittadinanza || 'Non specificato'}</span>
+                          <span className="text-light small">{employeeData?.cittadinanza || 'Non specificato'}</span>
                         </div>
                         {employeeData?.permesso_soggiorno && (
                           <div className="col-12">
                             <small className="text-dark d-block fw-bold">Permesso di Soggiorno</small>
-                            <span className="text-light fs-6">{employeeData.permesso_soggiorno}</span>
+                            <span className="text-light small">{employeeData.permesso_soggiorno}</span>
                           </div>
                         )}
                       </div>
@@ -434,18 +550,18 @@ export default function AutistiDashboardPage() {
                 {/* Sezione Dati Lavorativi */}
                 <div className="mb-3">
                   <div 
-                    className="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary cursor-pointer"
+                    className="d-flex justify-content-between align-items-center py-3 border-bottom border-secondary cursor-pointer"
                     onClick={() => toggleSection('lavorativi')}
-                    style={{ cursor: 'pointer' }}
+                    style={{ cursor: 'pointer', minHeight: '48px' }}
                   >
                     <h6 className="text-light mb-0 d-flex align-items-center">
                       <Briefcase className="me-2 text-warning" size={18} />
-                      💼 Dati Lavorativi
+                      <span className="small">💼 Dati Lavorativi</span>
                     </h6>
                     {expandedSections.lavorativi ? (
-                      <ChevronUp className="text-muted" size={16} />
+                      <ChevronUp className="text-muted" size={18} />
                     ) : (
-                      <ChevronDown className="text-muted" size={16} />
+                      <ChevronDown className="text-muted" size={18} />
                     )}
                   </div>
                   
@@ -484,12 +600,12 @@ export default function AutistiDashboardPage() {
                 {/* Sezione Contatti */}
                 <div className="mb-3">
                   <div 
-                    className="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary cursor-pointer"
+                    className="d-flex justify-content-between align-items-center py-3 border-bottom border-secondary cursor-pointer"
                     onClick={() => toggleSection('contatti')}
-                    style={{ cursor: 'pointer' }}
+                    style={{ cursor: 'pointer', minHeight: '48px' }}
                   >
-                    <h6 className="text-light mb-0 d-flex align-items-center">
-                      <Phone className="me-2 text-success" size={18} />
+                    <h6 className="text-light mb-0 d-flex align-items-center" style={{ fontSize: '0.9rem' }}>
+                      <Phone className="me-2 text-success" size={16} />
                       📞 Contatti
                     </h6>
                     {expandedSections.contatti ? (
@@ -500,27 +616,27 @@ export default function AutistiDashboardPage() {
                   </div>
                   
                   {expandedSections.contatti && (
-                    <div className="mt-3">
-                      <div className="row g-3">
+                    <div className="mt-2">
+                      <div className="row g-2">
                         <div className="col-12 col-md-6">
-                          <small className="text-dark d-block fw-bold">Telefono</small>
-                          <span className="text-light fs-6">{employeeData?.telefono || 'Non specificato'}</span>
+                          <small className="text-dark d-block fw-bold" style={{ fontSize: '0.75rem' }}>Telefono</small>
+                          <span className="text-light" style={{ fontSize: '0.8rem' }}>{employeeData?.telefono || 'Non specificato'}</span>
                         </div>
                         <div className="col-12 col-md-6">
-                          <small className="text-dark d-block fw-bold">Cellulare</small>
-                          <span className="text-light fs-6">{employeeData?.cellulare || 'Non specificato'}</span>
+                          <small className="text-dark d-block fw-bold" style={{ fontSize: '0.75rem' }}>Cellulare</small>
+                          <span className="text-light" style={{ fontSize: '0.8rem' }}>{employeeData?.cellulare || 'Non specificato'}</span>
                         </div>
                         <div className="col-12 col-md-6">
-                          <small className="text-dark d-block fw-bold">Email Personale</small>
-                          <span className="text-light fs-6">{employeeData?.email || 'Non specificato'}</span>
+                          <small className="text-dark d-block fw-bold" style={{ fontSize: '0.75rem' }}>Email Personale</small>
+                          <span className="text-light" style={{ fontSize: '0.8rem' }}>{employeeData?.email || 'Non specificato'}</span>
                         </div>
                         <div className="col-12 col-md-6">
-                          <small className="text-dark d-block fw-bold">Email Aziendale</small>
-                          <span className="text-light fs-6">{employeeData?.email_aziendale || 'Non specificato'}</span>
+                          <small className="text-dark d-block fw-bold" style={{ fontSize: '0.75rem' }}>Email Aziendale</small>
+                          <span className="text-light" style={{ fontSize: '0.8rem' }}>{employeeData?.email_aziendale || 'Non specificato'}</span>
                         </div>
                         <div className="col-12">
-                          <small className="text-dark d-block fw-bold">Indirizzo</small>
-                          <span className="text-light fs-6">
+                          <small className="text-dark d-block fw-bold" style={{ fontSize: '0.75rem' }}>Indirizzo</small>
+                          <span className="text-light" style={{ fontSize: '0.8rem' }}>
                             {employeeData?.indirizzo ? 
                               `${employeeData.indirizzo}${employeeData.cap ? `, ${employeeData.cap}` : ''}${employeeData.citta ? ` ${employeeData.citta}` : ''}` : 
                               'Non specificato'
@@ -535,12 +651,12 @@ export default function AutistiDashboardPage() {
                 {/* Sezione Patente */}
                 <div className="mb-3">
                   <div 
-                    className="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary cursor-pointer"
+                    className="d-flex justify-content-between align-items-center py-3 border-bottom border-secondary cursor-pointer"
                     onClick={() => toggleSection('patente')}
-                    style={{ cursor: 'pointer' }}
+                    style={{ cursor: 'pointer', minHeight: '48px' }}
                   >
-                    <h6 className="text-light mb-0 d-flex align-items-center">
-                      <CreditCard className="me-2 text-danger" size={18} />
+                    <h6 className="text-light mb-0 d-flex align-items-center" style={{ fontSize: '0.9rem' }}>
+                      <CreditCard className="me-2 text-danger" size={16} />
                       🚗 Patente
                     </h6>
                     {expandedSections.patente ? (
@@ -551,19 +667,19 @@ export default function AutistiDashboardPage() {
                   </div>
                   
                   {expandedSections.patente && (
-                    <div className="mt-3">
-                      <div className="row g-3">
+                    <div className="mt-2">
+                      <div className="row g-2">
                         <div className="col-12">
-                          <small className="text-dark d-block fw-bold">Categoria Patente</small>
-                          <span className="text-light fs-6">{employeeData?.patente || 'Non specificato'}</span>
+                          <small className="text-dark d-block fw-bold" style={{ fontSize: '0.75rem' }}>Categoria Patente</small>
+                          <span className="text-light" style={{ fontSize: '0.8rem' }}>{employeeData?.patente || 'Non specificato'}</span>
                         </div>
                         <div className="col-12">
-                          <small className="text-dark d-block fw-bold">Numero Patente</small>
-                          <span className="text-light fs-6">{employeeData?.driver_license_number || 'Non specificato'}</span>
+                          <small className="text-dark d-block fw-bold" style={{ fontSize: '0.75rem' }}>Numero Patente</small>
+                          <span className="text-light" style={{ fontSize: '0.8rem' }}>{employeeData?.driver_license_number || 'Non specificato'}</span>
                         </div>
                         <div className="col-12">
-                          <small className="text-dark d-block fw-bold">Scadenza Patente</small>
-                          <span className="text-light fs-6">{formatDateProfile(employeeData?.driver_license_expiry || null)}</span>
+                          <small className="text-dark d-block fw-bold" style={{ fontSize: '0.75rem' }}>Scadenza Patente</small>
+                          <span className="text-light" style={{ fontSize: '0.8rem' }}>{formatDateProfile(employeeData?.driver_license_expiry || null)}</span>
                         </div>
                       </div>
                     </div>
@@ -573,12 +689,12 @@ export default function AutistiDashboardPage() {
                 {/* Sezione Formazione */}
                 <div className="mb-0">
                   <div 
-                    className="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary cursor-pointer"
+                    className="d-flex justify-content-between align-items-center py-3 border-bottom border-secondary cursor-pointer"
                     onClick={() => toggleSection('formazione')}
-                    style={{ cursor: 'pointer' }}
+                    style={{ cursor: 'pointer', minHeight: '48px' }}
                   >
-                    <h6 className="text-light mb-0 d-flex align-items-center">
-                      <GraduationCap className="me-2 text-primary" size={18} />
+                    <h6 className="text-light mb-0 d-flex align-items-center" style={{ fontSize: '0.9rem' }}>
+                      <GraduationCap className="me-2 text-primary" size={16} />
                       🎓 Formazione
                     </h6>
                     {expandedSections.formazione ? (
@@ -589,11 +705,11 @@ export default function AutistiDashboardPage() {
                   </div>
                   
                   {expandedSections.formazione && (
-                    <div className="mt-3">
-                      <div className="row g-3">
+                    <div className="mt-2">
+                      <div className="row g-2">
                         <div className="col-12">
-                          <small className="text-dark d-block fw-bold">Titolo di Studio</small>
-                          <span className="text-light fs-6">{employeeData?.titolo_studio || 'Non specificato'}</span>
+                          <small className="text-dark d-block fw-bold" style={{ fontSize: '0.75rem' }}>Titolo di Studio</small>
+                          <span className="text-light" style={{ fontSize: '0.8rem' }}>{employeeData?.titolo_studio || 'Non specificato'}</span>
                         </div>
                       </div>
                     </div>
@@ -607,21 +723,21 @@ export default function AutistiDashboardPage() {
       </div>
 
       {/* Cards di riepilogo */}
-      <div className="row mb-4">
-        <div className="col-md-3 mb-3">
+      <div className="row mb-3 mb-md-4">
+        <div className="col-6 col-md-3 mb-3">
           <div className="card bg-dark border-success">
-            <div className="card-body text-center">
-              <Calendar className="text-success mb-2" size={32} />
-              <h5 className="text-success">{employeeData?.ferie_residue || 0}</h5>
-              <p className="text-light mb-0">Giorni di Ferie</p>
+            <div className="card-body text-center py-3">
+              <Calendar className="text-success mb-2" size={28} />
+              <h6 className="text-success mb-1">{employeeData?.ferie_residue || 0}</h6>
+              <p className="text-light mb-0 small">Giorni di Ferie</p>
             </div>
           </div>
         </div>
-        <div className="col-md-3 mb-3">
+        <div className="col-6 col-md-3 mb-3">
           <div className="card bg-dark border-warning">
-            <div className="card-body text-center">
-              <Clock className="text-warning mb-2" size={32} />
-              <h5 className="text-warning">
+            <div className="card-body text-center py-3">
+              <Clock className="text-warning mb-2" size={28} />
+              <h6 className="text-warning mb-1">
                 {recentLeaveRequests.filter(request => {
                   const status = request.status?.toLowerCase();
                   return status === 'pending' || 
@@ -630,111 +746,111 @@ export default function AutistiDashboardPage() {
                          status === 'in_corso' ||
                          status === 'da_approvare';
                 }).length}
-              </h5>
-              <p className="text-light mb-0">Richieste in Attesa</p>
+              </h6>
+              <p className="text-light mb-0 small">Richieste in Attesa</p>
             </div>
           </div>
         </div>
-        <div className="col-md-3 mb-3">
+        <div className="col-6 col-md-3 mb-3">
           <div className="card bg-dark border-danger">
-            <div className="card-body text-center">
-              <AlertTriangle className="text-danger mb-2" size={32} />
-              <h5 className="text-danger">{expiringDocuments.length}</h5>
-              <p className="text-light mb-0">Documenti in Scadenza</p>
+            <div className="card-body text-center py-3">
+              <AlertTriangle className="text-danger mb-2" size={28} />
+              <h6 className="text-danger mb-1">{expiringDocuments.length}</h6>
+              <p className="text-light mb-0 small">Documenti in Scadenza</p>
             </div>
           </div>
         </div>
-        <div className="col-md-3 mb-3">
+        <div className="col-6 col-md-3 mb-3">
           <div className="card bg-dark border-info">
-            <div className="card-body text-center">
-              <FileText className="text-info mb-2" size={32} />
-              <h5 className="text-info">{employeeData?.documenti_in_scadenza || 0}</h5>
-              <p className="text-light mb-0">Documenti Totali</p>
+            <div className="card-body text-center py-3">
+              <FileText className="text-info mb-2" size={28} />
+              <h6 className="text-info mb-1">{totalDocuments}</h6>
+              <p className="text-light mb-0 small">Documenti Totali</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Cards saldi ferie dettagliati */}
-      <div className="row mb-4">
-        <div className="col-md-4 mb-3">
+      <div className="row mb-3 mb-md-4">
+        <div className="col-12 col-md-4 mb-3">
           <div className="card bg-dark border-success">
-            <div className="card-body text-center">
-              <Calendar className="text-success mb-2" size={32} />
-              <h5 className="text-success">
+            <div className="card-body text-center py-3">
+              <Calendar className="text-success mb-2" size={28} />
+              <h6 className="text-success mb-1">
                 {leaveBalance?.vacation_hours_remaining != null ? 
                   `${Number(leaveBalance.vacation_hours_remaining).toFixed(1)} ore` : 
                   '0 ore'
                 }
-              </h5>
-              <p className="text-light mb-0">Ferie Residue</p>
+              </h6>
+              <p className="text-light mb-0 small">Ferie Residue</p>
             </div>
           </div>
         </div>
-        <div className="col-md-4 mb-3">
+        <div className="col-12 col-md-4 mb-3">
           <div className="card bg-dark border-warning">
-            <div className="card-body text-center">
-              <Clock className="text-warning mb-2" size={32} />
-              <h5 className="text-warning">
+            <div className="card-body text-center py-3">
+              <Clock className="text-warning mb-2" size={28} />
+              <h6 className="text-warning mb-1">
                 {leaveBalance?.ex_holiday_hours_remaining != null ? 
                   `${Number(leaveBalance.ex_holiday_hours_remaining).toFixed(1)} ore` : 
                   '0 ore'
                 }
-              </h5>
-              <p className="text-light mb-0">Ex-Festività Residue</p>
+              </h6>
+              <p className="text-light mb-0 small">Ex-Festività Residue</p>
             </div>
           </div>
         </div>
-        <div className="col-md-4 mb-3">
+        <div className="col-12 col-md-4 mb-3">
           <div className="card bg-dark border-info">
-            <div className="card-body text-center">
-              <User className="text-info mb-2" size={32} />
-              <h5 className="text-info">
+            <div className="card-body text-center py-3">
+              <User className="text-info mb-2" size={28} />
+              <h6 className="text-info mb-1">
                 {leaveBalance?.rol_hours_remaining != null ? 
                   `${Number(leaveBalance.rol_hours_remaining).toFixed(1)} ore` : 
                   '0 ore'
                 }
-              </h5>
-              <p className="text-light mb-0">ROL Residui</p>
+              </h6>
+              <p className="text-light mb-0 small">ROL Residui</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Azioni rapide */}
-      <div className="row mb-4">
+      <div className="row mb-3 mb-md-4">
         <div className="col-12">
           <div className="card bg-dark border-secondary">
-            <div className="card-header">
-              <h5 className="text-light mb-0">
-                <MapPin className="me-2" size={20} />
+            <div className="card-header py-2">
+              <h6 className="text-light mb-0">
+                <MapPin className="me-2" size={18} />
                 Azioni Rapide
-              </h5>
+              </h6>
             </div>
-            <div className="card-body">
-              <div className="row">
-                <div className="col-md-3 mb-2">
-                  <a href="/autisti/ferie" className="btn btn-outline-success w-100">
-                    <Calendar className="me-2" size={16} />
-                    Richiedi Ferie
+            <div className="card-body py-3">
+              <div className="row g-2">
+                <div className="col-6 col-md-3 mb-2">
+                  <a href="/autisti/ferie" className="btn btn-outline-success w-100 py-2" style={{ minHeight: '44px' }}>
+                    <Calendar className="me-1 d-none d-md-inline" size={16} />
+                    <span className="small">Richiedi Ferie</span>
                   </a>
                 </div>
-                <div className="col-md-3 mb-2">
-                  <a href="/gestione/employees/documenti" className="btn btn-outline-info w-100">
-                    <FileText className="me-2" size={16} />
-                    I Miei Documenti
+                <div className="col-6 col-md-3 mb-2">
+                  <a href="/autisti/documenti" className="btn btn-outline-info w-100 py-2" style={{ minHeight: '44px' }}>
+                    <FileText className="me-1 d-none d-md-inline" size={16} />
+                    <span className="small">I Miei Documenti</span>
                   </a>
                 </div>
-                <div className="col-md-3 mb-2">
-                  <a href="/gestione/employees/profile" className="btn btn-outline-warning w-100">
-                    <User className="me-2" size={16} />
-                    Modifica Profilo
+                <div className="col-6 col-md-3 mb-2">
+                  <a href="/gestione/employees/profile" className="btn btn-outline-warning w-100 py-2" style={{ minHeight: '44px' }}>
+                    <User className="me-1 d-none d-md-inline" size={16} />
+                    <span className="small">Modifica Profilo</span>
                   </a>
                 </div>
-                <div className="col-md-3 mb-2">
-                  <a href="/gestione/employees/timesheet" className="btn btn-outline-primary w-100">
-                    <Clock className="me-2" size={16} />
-                    Timesheet
+                <div className="col-6 col-md-3 mb-2">
+                  <a href="/gestione/employees/timesheet" className="btn btn-outline-primary w-100 py-2" style={{ minHeight: '44px' }}>
+                    <Clock className="me-1 d-none d-md-inline" size={16} />
+                    <span className="small">Timesheet</span>
                   </a>
                 </div>
               </div>
@@ -745,43 +861,43 @@ export default function AutistiDashboardPage() {
 
       {/* Richieste ferie recenti */}
       {recentLeaveRequests.length > 0 && (
-        <div className="row mb-4">
+        <div className="row mb-2 mb-md-4">
           <div className="col-12">
             <div className="card bg-dark border-secondary">
-              <div className="card-header">
-                <h5 className="text-light mb-0">
-                  <Clock className="me-2" size={20} />
+              <div className="card-header py-2">
+                <h5 className="text-light mb-0" style={{ fontSize: '1rem' }}>
+                  <Clock className="me-2" size={18} />
                   Richieste Ferie Recenti
                 </h5>
               </div>
-              <div className="card-body">
+              <div className="card-body p-2">
                 <div className="table-responsive">
-                  <table className="table table-dark table-striped">
+                  <table className="table table-dark table-striped table-sm">
                     <thead>
                       <tr>
-                        <th>Data Inizio</th>
-                        <th>Data Fine</th>
-                        <th>Giorni</th>
-                        <th>Stato</th>
-                        <th>Richiesta</th>
+                        <th style={{ fontSize: '0.75rem' }}>Data Inizio</th>
+                        <th style={{ fontSize: '0.75rem' }}>Data Fine</th>
+                        <th style={{ fontSize: '0.75rem' }}>Giorni</th>
+                        <th style={{ fontSize: '0.75rem' }}>Stato</th>
+                        <th style={{ fontSize: '0.75rem' }}>Richiesta</th>
                       </tr>
                     </thead>
                     <tbody>
                       {recentLeaveRequests.map((request) => (
                         <tr key={request.id}>
-                          <td>{formatDate(request.start_date)}</td>
-                          <td>{formatDate(request.end_date)}</td>
-                          <td>{request.days_requested}</td>
+                          <td style={{ fontSize: '0.8rem' }}>{formatDate(request.start_date)}</td>
+                          <td style={{ fontSize: '0.8rem' }}>{formatDate(request.end_date)}</td>
+                          <td style={{ fontSize: '0.8rem' }}>{request.days_requested}</td>
                           <td>
                             <span className={`badge ${
                               request.status === 'approved' ? 'bg-success' :
                               request.status === 'rejected' ? 'bg-danger' :
                               'bg-warning'
-                            }`}>
+                            }`} style={{ fontSize: '0.7rem' }}>
                               {request.status}
                             </span>
                           </td>
-                          <td>{formatDate(request.created_at)}</td>
+                          <td style={{ fontSize: '0.8rem' }}>{formatDate(request.created_at)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -797,34 +913,34 @@ export default function AutistiDashboardPage() {
       <div className="row">
         <div className="col-12">
           <div className="card bg-dark border-secondary">
-            <div className="card-header">
-              <h5 className="text-light mb-0">
-                <AlertTriangle className="me-2" size={20} />
+            <div className="card-header py-2">
+              <h5 className="text-light mb-0" style={{ fontSize: '1rem' }}>
+                <AlertTriangle className="me-2" size={18} />
                 Documenti in Scadenza
               </h5>
             </div>
-            <div className="card-body">
+            <div className="card-body p-2">
               {expiringDocuments.length > 0 ? (
                 <div className="table-responsive">
-                  <table className="table table-dark table-striped">
+                  <table className="table table-dark table-striped table-sm">
                     <thead>
                       <tr>
-                        <th>Tipo Documento</th>
-                        <th>Data Scadenza</th>
-                        <th>Giorni Rimanenti</th>
+                        <th style={{ fontSize: '0.75rem' }}>Tipo Documento</th>
+                        <th style={{ fontSize: '0.75rem' }}>Data Scadenza</th>
+                        <th style={{ fontSize: '0.75rem' }}>Giorni Rimanenti</th>
                       </tr>
                     </thead>
                     <tbody>
                       {expiringDocuments.map((doc) => (
                         <tr key={doc.id}>
-                          <td>{doc.tipo_documento}</td>
-                          <td>{formatDate(doc.data_scadenza)}</td>
+                          <td style={{ fontSize: '0.8rem' }}>{doc.tipo_documento}</td>
+                          <td style={{ fontSize: '0.8rem' }}>{formatDate(doc.data_scadenza)}</td>
                           <td>
                             <span className={`badge ${
                               doc.giorni_alla_scadenza <= 7 ? 'bg-danger' :
                               doc.giorni_alla_scadenza <= 30 ? 'bg-warning' :
                               'bg-success'
-                            }`}>
+                            }`} style={{ fontSize: '0.7rem' }}>
                               {doc.giorni_alla_scadenza} giorni
                             </span>
                           </td>
@@ -834,10 +950,10 @@ export default function AutistiDashboardPage() {
                   </table>
                 </div>
               ) : (
-                <div className="text-center py-4">
-                  <AlertTriangle className="text-muted mb-3" size={48} />
-                  <p className="text-muted mb-3">Nessun documento in scadenza</p>
-                  <a href="/gestione/employees/documenti" className="btn btn-outline-info">
+                <div className="text-center py-2 py-md-4">
+                  <AlertTriangle className="text-muted mb-2 mb-md-3" size={40} />
+                  <p className="text-muted mb-2 mb-md-3" style={{ fontSize: '0.9rem' }}>Nessun documento in scadenza</p>
+                  <a href="/autisti/documenti" className="btn btn-outline-info btn-sm">
                     Visualizza tutti i documenti
                   </a>
                 </div>

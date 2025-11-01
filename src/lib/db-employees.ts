@@ -626,8 +626,16 @@ export async function getEmployeeLeaveRequests(employeeId: string, status?: stri
       id, 
       employee_id, 
       leave_type, 
-      DATE_FORMAT(start_date, '%d/%m/%Y') as start_date,
-      DATE_FORMAT(end_date, '%d/%m/%Y') as end_date,
+      CONCAT(
+        LPAD(DAY(start_date), 2, '0'), '/',
+        LPAD(MONTH(start_date), 2, '0'), '/',
+        YEAR(start_date)
+      ) as start_date,
+      CONCAT(
+        LPAD(DAY(end_date), 2, '0'), '/',
+        LPAD(MONTH(end_date), 2, '0'), '/',
+        YEAR(end_date)
+      ) as end_date,
       days_requested,
       hours_requested,
       reason,
@@ -635,7 +643,11 @@ export async function getEmployeeLeaveRequests(employeeId: string, status?: stri
       approved_by,
       approved_at,
       notes,
-      DATE_FORMAT(created_at, '%d/%m/%Y') as created_at,
+      CONCAT(
+        LPAD(DAY(created_at), 2, '0'), '/',
+        LPAD(MONTH(created_at), 2, '0'), '/',
+        YEAR(created_at)
+      ) as created_at,
       updated_at
       FROM employee_leave_requests WHERE employee_id = ?`;
     let params: any[] = [employeeId];
@@ -725,9 +737,17 @@ export async function createLeaveRequest(request: Omit<LeaveRequest, 'id' | 'cre
         reason, status, approved_by, approved_at, notes
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        request.employee_id, request.leave_type, formattedStartDate,
-        formattedEndDate, request.days_requested, request.hours_requested,
-        request.reason, request.status, request.approved_by, request.approved_at, request.notes
+        String(request.employee_id), // Assicurati che sia una stringa
+        request.leave_type, 
+        formattedStartDate,
+        formattedEndDate, 
+        request.days_requested, 
+        request.hours_requested || null, // Converti undefined in null
+        request.reason || null, // Converti undefined in null
+        request.status, 
+        request.approved_by || null, // Converti undefined in null
+        request.approved_at || null, // Converti undefined in null
+        request.notes || null // Converti undefined in null
       ]
     );
     
@@ -914,8 +934,16 @@ export async function getPendingLeaveRequests(): Promise<LeaveRequest[]> {
     const query = `SELECT lr.id,
               lr.employee_id,
               lr.leave_type,
-              DATE_FORMAT(lr.start_date, '%d/%m/%Y') as start_date,
-              DATE_FORMAT(lr.end_date, '%d/%m/%Y') as end_date,
+              CONCAT(
+                LPAD(DAY(lr.start_date), 2, '0'), '/',
+                LPAD(MONTH(lr.start_date), 2, '0'), '/',
+                YEAR(lr.start_date)
+              ) as start_date,
+              CONCAT(
+                LPAD(DAY(lr.end_date), 2, '0'), '/',
+                LPAD(MONTH(lr.end_date), 2, '0'), '/',
+                YEAR(lr.end_date)
+              ) as end_date,
               lr.days_requested,
               lr.hours_requested,
               lr.reason,
@@ -923,7 +951,11 @@ export async function getPendingLeaveRequests(): Promise<LeaveRequest[]> {
               lr.approved_by,
               lr.approved_at,
               lr.notes,
-              DATE_FORMAT(lr.created_at, '%d/%m/%Y') as created_at,
+              CONCAT(
+                LPAD(DAY(lr.created_at), 2, '0'), '/',
+                LPAD(MONTH(lr.created_at), 2, '0'), '/',
+                YEAR(lr.created_at)
+              ) as created_at,
               lr.updated_at,
               COALESCE(e.nome, SUBSTRING_INDEX(lr.employee_id, ' ', 1)) as nome,
               COALESCE(e.cognome, SUBSTRING_INDEX(lr.employee_id, ' ', -1)) as cognome,
@@ -949,8 +981,16 @@ export async function getAllLeaveRequests(): Promise<LeaveRequest[]> {
       `SELECT lr.id,
               lr.employee_id,
               lr.leave_type,
-              DATE_FORMAT(lr.start_date, '%d/%m/%Y') as start_date,
-              DATE_FORMAT(lr.end_date, '%d/%m/%Y') as end_date,
+              CONCAT(
+                LPAD(DAY(lr.start_date), 2, '0'), '/',
+                LPAD(MONTH(lr.start_date), 2, '0'), '/',
+                YEAR(lr.start_date)
+              ) as start_date,
+              CONCAT(
+                LPAD(DAY(lr.end_date), 2, '0'), '/',
+                LPAD(MONTH(lr.end_date), 2, '0'), '/',
+                YEAR(lr.end_date)
+              ) as end_date,
               lr.days_requested,
               lr.hours_requested,
               lr.reason,
@@ -958,7 +998,11 @@ export async function getAllLeaveRequests(): Promise<LeaveRequest[]> {
               lr.approved_by,
               lr.approved_at,
               lr.notes,
-              DATE_FORMAT(lr.created_at, '%d/%m/%Y') as created_at,
+              CONCAT(
+                LPAD(DAY(lr.created_at), 2, '0'), '/',
+                LPAD(MONTH(lr.created_at), 2, '0'), '/',
+                YEAR(lr.created_at)
+              ) as created_at,
               lr.updated_at,
               COALESCE(e1.nome, e2.nome, SUBSTRING_INDEX(lr.employee_id, ' ', 1)) as nome,
               COALESCE(e1.cognome, e2.cognome, SUBSTRING_INDEX(lr.employee_id, ' ', -1)) as cognome

@@ -957,70 +957,100 @@ export default function ModernDashboard() {
                 </h5>
                 
                 {sectionToggleStates.avvisi && (
-                <div className="row g-3">
-                  {/* Card Richieste Ferie - Design con Conteggio Prominente */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                  gap: '20px',
+                  paddingBottom: '10px',
+                  maxWidth: '100%'
+                }}>
+                  {/* Card Richieste Ferie - Design Glassmorphism */}
                   {pendingLeaveCount > 0 && (
-                  <div className="col-lg-4 col-md-6 col-sm-12">
+                  <div>
                       <div 
                         className="card"
                         style={{
-                          background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
-                          border: 'none',
-                          borderRadius: '16px',
+                          background: 'rgba(255, 107, 53, 0.15)',
+                          backdropFilter: 'blur(15px)',
+                          WebkitBackdropFilter: 'blur(15px)',
+                          border: '1px solid rgba(255, 107, 53, 0.3)',
+                          borderRadius: '20px',
                           minHeight: '120px',
-                          boxShadow: '0 8px 32px rgba(255, 107, 53, 0.3)',
-                          transition: 'all 0.3s ease',
+                          boxShadow: '0 8px 32px rgba(255, 107, 53, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+                          transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                           cursor: 'pointer',
                           position: 'relative',
                           overflow: 'hidden'
                         }}
                         onClick={handleOpenLeaveRequestsModal}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-4px)';
-                          e.currentTarget.style.boxShadow = '0 12px 40px rgba(255, 107, 53, 0.4)';
+                          e.currentTarget.style.transform = 'translateY(-6px) scale(1.02)';
+                          e.currentTarget.style.boxShadow = '0 16px 48px rgba(255, 107, 53, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
+                          e.currentTarget.style.backdropFilter = 'blur(20px)';
+                          e.currentTarget.style.background = 'rgba(255, 107, 53, 0.2)';
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0)';
-                          e.currentTarget.style.boxShadow = '0 8px 32px rgba(255, 107, 53, 0.3)';
+                          e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                          e.currentTarget.style.boxShadow = '0 8px 32px rgba(255, 107, 53, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
+                          e.currentTarget.style.backdropFilter = 'blur(15px)';
+                          e.currentTarget.style.background = 'rgba(255, 107, 53, 0.15)';
                         }}
                       >
-                        {/* Effetto di sfondo animato */}
+                        {/* Effetto di sfondo glassmorphism */}
                         <div style={{
                           position: 'absolute',
                           top: 0,
                           left: 0,
                           right: 0,
                           bottom: 0,
-                          background: 'radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%)',
+                          background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 50%, rgba(255,107,53,0.1) 100%)',
+                          borderRadius: '20px',
                           pointerEvents: 'none'
                         }}></div>
                         
-                        <div className="card-body text-white p-4">
+                        {/* Riflesso glassmorphism */}
+                        <div style={{
+                          position: 'absolute',
+                          top: '0',
+                          left: '0',
+                          width: '100%',
+                          height: '50%',
+                          background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 100%)',
+                          borderRadius: '20px 20px 0 0',
+                          pointerEvents: 'none'
+                        }}></div>
+                        
+                        <div className="card-body p-4" style={{ position: 'relative', zIndex: 2 }}>
                           <div className="d-flex align-items-center justify-content-between h-100">
                             {/* Sezione sinistra con icona e testo */}
                             <div className="d-flex align-items-center flex-grow-1">
                               <div 
                                 className="me-3"
                                 style={{
-                                  background: 'rgba(255,255,255,0.2)',
-                                  borderRadius: '12px',
-                                  padding: '12px',
-                                  backdropFilter: 'blur(10px)'
+                                  background: 'rgba(255, 107, 53, 0.2)',
+                                  backdropFilter: 'blur(10px)',
+                                  WebkitBackdropFilter: 'blur(10px)',
+                                  border: '1px solid rgba(255, 107, 53, 0.3)',
+                                  borderRadius: '16px',
+                                  padding: '14px',
+                                  boxShadow: '0 4px 16px rgba(255, 107, 53, 0.2)'
                                 }}
                               >
-                                <Calendar size={24} />
+                                <Calendar size={24} style={{ color: '#ff6b35' }} />
                               </div>
                               <div>
                                 <h6 className="mb-1" style={{ 
                                   fontSize: '1rem', 
                                   fontWeight: '700',
-                                  textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                                  color: '#2d3748',
+                                  textShadow: 'none'
                                 }}>
                                   Richieste Ferie
                                 </h6>
-                                <p className="mb-0 opacity-90" style={{ 
+                                <p className="mb-0" style={{ 
                                   fontSize: '0.85rem',
-                                  fontWeight: '500'
+                                  fontWeight: '500',
+                                  color: '#4a5568'
                                 }}>
                                   In attesa di approvazione
                                 </p>
@@ -1031,27 +1061,30 @@ export default function ModernDashboard() {
                             <div className="text-end">
                               <div 
                                 style={{
-                                  background: 'rgba(255,255,255,0.95)',
+                                  background: 'rgba(255, 255, 255, 0.9)',
+                                  backdropFilter: 'blur(10px)',
+                                  WebkitBackdropFilter: 'blur(10px)',
                                   color: '#ff6b35',
-                                  borderRadius: '16px',
-                                  padding: '8px 16px',
+                                  border: '1px solid rgba(255, 107, 53, 0.2)',
+                                  borderRadius: '18px',
+                                  padding: '10px 18px',
                                   fontSize: '1.8rem',
                                   fontWeight: '900',
                                   lineHeight: '1',
-                                  minWidth: '60px',
+                                  minWidth: '65px',
                                   textAlign: 'center',
-                                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                                  border: '2px solid rgba(255,255,255,0.3)'
+                                  boxShadow: '0 6px 20px rgba(255, 107, 53, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.5)'
                                 }}
                               >
                                 {isLoadingLeaveCount ? (
                                   <div 
-                                    className="spinner-border text-warning" 
+                                    className="spinner-border" 
                                     role="status" 
                                     style={{ 
                                       width: '1.2rem', 
                                       height: '1.2rem',
-                                      borderWidth: '2px'
+                                      borderWidth: '2px',
+                                      color: '#ff6b35'
                                     }}
                                   >
                                     <span className="visually-hidden">Caricamento...</span>
@@ -1063,13 +1096,17 @@ export default function ModernDashboard() {
                               <div 
                                 className="mt-2"
                                 style={{
-                                  background: 'rgba(255,255,255,0.2)',
-                                  borderRadius: '8px',
-                                  padding: '2px 8px',
+                                  background: 'rgba(255, 107, 53, 0.15)',
+                                  backdropFilter: 'blur(8px)',
+                                  WebkitBackdropFilter: 'blur(8px)',
+                                  border: '1px solid rgba(255, 107, 53, 0.2)',
+                                  borderRadius: '10px',
+                                  padding: '4px 10px',
                                   fontSize: '0.7rem',
                                   fontWeight: '600',
                                   textTransform: 'uppercase',
-                                  letterSpacing: '0.5px'
+                                  letterSpacing: '0.5px',
+                                  color: '#ff6b35'
                                 }}
                               >
                                 Nuovo!
@@ -1081,69 +1118,93 @@ export default function ModernDashboard() {
                   </div>
                   )}
 
-                  {/* Card Manutenzioni Scadute */}
+                  {/* Card Manutenzioni Scadute - Design Glassmorphism */}
                   {expiredMaintenanceCount > 0 && (
-                  <div className="col-lg-4 col-md-6 col-sm-12">
+                  <div>
                     <div 
                       className="card"
                       style={{
-                        background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
-                        border: 'none',
-                        borderRadius: '16px',
+                        background: 'rgba(220, 53, 69, 0.15)',
+                        backdropFilter: 'blur(15px)',
+                        WebkitBackdropFilter: 'blur(15px)',
+                        border: '1px solid rgba(220, 53, 69, 0.3)',
+                        borderRadius: '20px',
                         minHeight: '120px',
-                        boxShadow: '0 8px 32px rgba(220, 53, 69, 0.3)',
-                        transition: 'all 0.3s ease',
+                        boxShadow: '0 8px 32px rgba(220, 53, 69, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+                        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                         cursor: 'pointer',
                         position: 'relative',
                         overflow: 'hidden'
                       }}
                       onClick={() => setIsExpiredMaintenanceModalOpen(true)}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-4px)';
-                        e.currentTarget.style.boxShadow = '0 12px 40px rgba(220, 53, 69, 0.4)';
+                        e.currentTarget.style.transform = 'translateY(-6px) scale(1.02)';
+                        e.currentTarget.style.boxShadow = '0 16px 48px rgba(220, 53, 69, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
+                        e.currentTarget.style.backdropFilter = 'blur(20px)';
+                        e.currentTarget.style.background = 'rgba(220, 53, 69, 0.2)';
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = '0 8px 32px rgba(220, 53, 69, 0.3)';
+                        e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                        e.currentTarget.style.boxShadow = '0 8px 32px rgba(220, 53, 69, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
+                        e.currentTarget.style.backdropFilter = 'blur(15px)';
+                        e.currentTarget.style.background = 'rgba(220, 53, 69, 0.15)';
                       }}
                     >
-                      {/* Effetto di sfondo animato */}
+                      {/* Effetto di sfondo glassmorphism */}
                       <div style={{
                         position: 'absolute',
                         top: 0,
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        background: 'radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%)',
+                        background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 50%, rgba(220,53,69,0.1) 100%)',
+                        borderRadius: '20px',
                         pointerEvents: 'none'
                       }}></div>
                       
-                      <div className="card-body text-white p-4">
+                      {/* Riflesso glassmorphism */}
+                      <div style={{
+                        position: 'absolute',
+                        top: '0',
+                        left: '0',
+                        width: '100%',
+                        height: '50%',
+                        background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 100%)',
+                        borderRadius: '20px 20px 0 0',
+                        pointerEvents: 'none'
+                      }}></div>
+                      
+                      <div className="card-body p-4" style={{ position: 'relative', zIndex: 2 }}>
                         <div className="d-flex align-items-center justify-content-between h-100">
                           {/* Sezione sinistra con icona e testo */}
                           <div className="d-flex align-items-center flex-grow-1">
                             <div 
                               className="me-3"
                               style={{
-                                background: 'rgba(255,255,255,0.2)',
-                                borderRadius: '12px',
-                                padding: '12px',
-                                backdropFilter: 'blur(10px)'
+                                background: 'rgba(220, 53, 69, 0.2)',
+                                backdropFilter: 'blur(10px)',
+                                WebkitBackdropFilter: 'blur(10px)',
+                                border: '1px solid rgba(220, 53, 69, 0.3)',
+                                borderRadius: '16px',
+                                padding: '14px',
+                                boxShadow: '0 4px 16px rgba(220, 53, 69, 0.2)'
                               }}
                             >
-                              <Construction size={24} />
+                              <Construction size={24} style={{ color: '#dc3545' }} />
                             </div>
                             <div>
                               <h6 className="mb-1" style={{ 
                                 fontSize: '1rem', 
                                 fontWeight: '700',
-                                textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                                color: '#2d3748',
+                                textShadow: 'none'
                               }}>
                                 Manutenzioni Scadute
                               </h6>
-                              <p className="mb-0 opacity-90" style={{ 
+                              <p className="mb-0" style={{ 
                                 fontSize: '0.85rem',
-                                fontWeight: '500'
+                                fontWeight: '500',
+                                color: '#4a5568'
                               }}>
                                 Richiedono attenzione immediata
                               </p>
@@ -1154,27 +1215,30 @@ export default function ModernDashboard() {
                           <div className="text-end">
                             <div 
                               style={{
-                                background: 'rgba(255,255,255,0.95)',
+                                background: 'rgba(255, 255, 255, 0.9)',
+                                backdropFilter: 'blur(10px)',
+                                WebkitBackdropFilter: 'blur(10px)',
                                 color: '#dc3545',
-                                borderRadius: '16px',
-                                padding: '8px 16px',
+                                border: '1px solid rgba(220, 53, 69, 0.2)',
+                                borderRadius: '18px',
+                                padding: '10px 18px',
                                 fontSize: '1.8rem',
                                 fontWeight: '900',
                                 lineHeight: '1',
-                                minWidth: '60px',
+                                minWidth: '65px',
                                 textAlign: 'center',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                                border: '2px solid rgba(255,255,255,0.3)'
+                                boxShadow: '0 6px 20px rgba(220, 53, 69, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.5)'
                               }}
                             >
                               {isLoadingMaintenanceData ? (
                                 <div 
-                                  className="spinner-border text-danger" 
+                                  className="spinner-border" 
                                   role="status" 
                                   style={{ 
                                     width: '1.2rem', 
                                     height: '1.2rem',
-                                    borderWidth: '2px'
+                                    borderWidth: '2px',
+                                    color: '#dc3545'
                                   }}
                                 >
                                   <span className="visually-hidden">Caricamento...</span>
@@ -1186,13 +1250,17 @@ export default function ModernDashboard() {
                             <div 
                               className="mt-2"
                               style={{
-                                background: 'rgba(255,255,255,0.2)',
-                                borderRadius: '8px',
-                                padding: '2px 8px',
+                                background: 'rgba(220, 53, 69, 0.15)',
+                                backdropFilter: 'blur(8px)',
+                                WebkitBackdropFilter: 'blur(8px)',
+                                border: '1px solid rgba(220, 53, 69, 0.2)',
+                                borderRadius: '10px',
+                                padding: '4px 10px',
                                 fontSize: '0.7rem',
                                 fontWeight: '600',
                                 textTransform: 'uppercase',
-                                letterSpacing: '0.5px'
+                                letterSpacing: '0.5px',
+                                color: '#dc3545'
                               }}
                             >
                               Urgente!
@@ -1204,69 +1272,93 @@ export default function ModernDashboard() {
                   </div>
                   )}
 
-                  {/* Card Manutenzioni in Scadenza */}
+                  {/* Card Manutenzioni in Scadenza - Design Glassmorphism */}
                   {expiringMaintenanceCount > 0 && (
-                  <div className="col-lg-4 col-md-6 col-sm-12">
+                  <div>
                     <div 
                       className="card"
                       style={{
-                        background: 'linear-gradient(135deg, #fd7e14 0%, #e55a00 100%)',
-                        border: 'none',
-                        borderRadius: '16px',
+                        background: 'rgba(253, 126, 20, 0.15)',
+                        backdropFilter: 'blur(15px)',
+                        WebkitBackdropFilter: 'blur(15px)',
+                        border: '1px solid rgba(253, 126, 20, 0.3)',
+                        borderRadius: '20px',
                         minHeight: '120px',
-                        boxShadow: '0 8px 32px rgba(253, 126, 20, 0.3)',
-                        transition: 'all 0.3s ease',
+                        boxShadow: '0 8px 32px rgba(253, 126, 20, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+                        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                         cursor: 'pointer',
                         position: 'relative',
                         overflow: 'hidden'
                       }}
                       onClick={() => setIsExpiringMaintenanceModalOpen(true)}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-4px)';
-                        e.currentTarget.style.boxShadow = '0 12px 40px rgba(253, 126, 20, 0.4)';
+                        e.currentTarget.style.transform = 'translateY(-6px) scale(1.02)';
+                        e.currentTarget.style.boxShadow = '0 16px 48px rgba(253, 126, 20, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
+                        e.currentTarget.style.backdropFilter = 'blur(20px)';
+                        e.currentTarget.style.background = 'rgba(253, 126, 20, 0.2)';
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = '0 8px 32px rgba(253, 126, 20, 0.3)';
+                        e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                        e.currentTarget.style.boxShadow = '0 8px 32px rgba(253, 126, 20, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
+                        e.currentTarget.style.backdropFilter = 'blur(15px)';
+                        e.currentTarget.style.background = 'rgba(253, 126, 20, 0.15)';
                       }}
                     >
-                      {/* Effetto di sfondo animato */}
+                      {/* Effetto di sfondo glassmorphism */}
                       <div style={{
                         position: 'absolute',
                         top: 0,
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        background: 'radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%)',
+                        background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 50%, rgba(253,126,20,0.1) 100%)',
+                        borderRadius: '20px',
                         pointerEvents: 'none'
                       }}></div>
                       
-                      <div className="card-body text-white p-4">
+                      {/* Riflesso glassmorphism */}
+                      <div style={{
+                        position: 'absolute',
+                        top: '0',
+                        left: '0',
+                        width: '100%',
+                        height: '50%',
+                        background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 100%)',
+                        borderRadius: '20px 20px 0 0',
+                        pointerEvents: 'none'
+                      }}></div>
+                      
+                      <div className="card-body p-4" style={{ position: 'relative', zIndex: 2 }}>
                         <div className="d-flex align-items-center justify-content-between h-100">
                           {/* Sezione sinistra con icona e testo */}
                           <div className="d-flex align-items-center flex-grow-1">
                             <div 
                               className="me-3"
                               style={{
-                                background: 'rgba(255,255,255,0.2)',
-                                borderRadius: '12px',
-                                padding: '12px',
-                                backdropFilter: 'blur(10px)'
+                                background: 'rgba(253, 126, 20, 0.2)',
+                                backdropFilter: 'blur(10px)',
+                                WebkitBackdropFilter: 'blur(10px)',
+                                border: '1px solid rgba(253, 126, 20, 0.3)',
+                                borderRadius: '16px',
+                                padding: '14px',
+                                boxShadow: '0 4px 16px rgba(253, 126, 20, 0.2)'
                               }}
                             >
-                              <Construction size={24} />
+                              <Construction size={24} style={{ color: '#fd7e14' }} />
                             </div>
                             <div>
                               <h6 className="mb-1" style={{ 
                                 fontSize: '1rem', 
                                 fontWeight: '700',
-                                textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                                color: '#2d3748',
+                                textShadow: 'none'
                               }}>
                                 Manutenzioni in Scadenza
                               </h6>
-                              <p className="mb-0 opacity-90" style={{ 
+                              <p className="mb-0" style={{ 
                                 fontSize: '0.85rem',
-                                fontWeight: '500'
+                                fontWeight: '500',
+                                color: '#4a5568'
                               }}>
                                 Da programmare a breve
                               </p>
@@ -1277,27 +1369,30 @@ export default function ModernDashboard() {
                           <div className="text-end">
                             <div 
                               style={{
-                                background: 'rgba(255,255,255,0.95)',
+                                background: 'rgba(255, 255, 255, 0.9)',
+                                backdropFilter: 'blur(10px)',
+                                WebkitBackdropFilter: 'blur(10px)',
                                 color: '#fd7e14',
-                                borderRadius: '16px',
-                                padding: '8px 16px',
+                                border: '1px solid rgba(253, 126, 20, 0.2)',
+                                borderRadius: '18px',
+                                padding: '10px 18px',
                                 fontSize: '1.8rem',
                                 fontWeight: '900',
                                 lineHeight: '1',
-                                minWidth: '60px',
+                                minWidth: '65px',
                                 textAlign: 'center',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                                border: '2px solid rgba(255,255,255,0.3)'
+                                boxShadow: '0 6px 20px rgba(253, 126, 20, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.5)'
                               }}
                             >
                               {isLoadingMaintenanceData ? (
                                 <div 
-                                  className="spinner-border text-warning" 
+                                  className="spinner-border" 
                                   role="status" 
                                   style={{ 
                                     width: '1.2rem', 
                                     height: '1.2rem',
-                                    borderWidth: '2px'
+                                    borderWidth: '2px',
+                                    color: '#fd7e14'
                                   }}
                                 >
                                   <span className="visually-hidden">Caricamento...</span>
@@ -1309,13 +1404,17 @@ export default function ModernDashboard() {
                             <div 
                               className="mt-2"
                               style={{
-                                background: 'rgba(255,255,255,0.2)',
-                                borderRadius: '8px',
-                                padding: '2px 8px',
+                                background: 'rgba(253, 126, 20, 0.15)',
+                                backdropFilter: 'blur(8px)',
+                                WebkitBackdropFilter: 'blur(8px)',
+                                border: '1px solid rgba(253, 126, 20, 0.2)',
+                                borderRadius: '10px',
+                                padding: '4px 10px',
                                 fontSize: '0.7rem',
                                 fontWeight: '600',
                                 textTransform: 'uppercase',
-                                letterSpacing: '0.5px'
+                                letterSpacing: '0.5px',
+                                color: '#fd7e14'
                               }}
                             >
                               Attenzione!
@@ -1327,69 +1426,101 @@ export default function ModernDashboard() {
                   </div>
                   )}
 
-                  {/* Card Scadenze Critiche */}
+                  {/* Card Scadenze Critiche - Design Glassmorphism */}
                   {criticalSchedulesCount > 0 && (
-                  <div className="col-lg-4 col-md-6 col-sm-12">
+                  <div>
                     <div 
                       className="card"
                       style={{
-                        background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
-                        border: 'none',
-                        borderRadius: '16px',
+                        background: 'rgba(220, 53, 69, 0.15)',
+                        backdropFilter: 'blur(15px)',
+                        WebkitBackdropFilter: 'blur(15px)',
+                        border: '1px solid rgba(220, 53, 69, 0.3)',
+                        borderRadius: '20px',
                         minHeight: '120px',
-                        boxShadow: '0 8px 32px rgba(220, 53, 69, 0.3)',
-                        transition: 'all 0.3s ease',
+                        boxShadow: '0 8px 32px rgba(220, 53, 69, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+                        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                         cursor: 'pointer',
                         position: 'relative',
                         overflow: 'hidden'
                       }}
                       onClick={() => setIsCriticalSchedulesModalOpen(true)}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-4px)';
-                        e.currentTarget.style.boxShadow = '0 12px 40px rgba(220, 53, 69, 0.4)';
+                        e.currentTarget.style.transform = 'translateY(-6px) scale(1.02)';
+                        e.currentTarget.style.boxShadow = '0 16px 48px rgba(220, 53, 69, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
+                        e.currentTarget.style.backdropFilter = 'blur(20px)';
+                        e.currentTarget.style.background = 'rgba(220, 53, 69, 0.2)';
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = '0 8px 32px rgba(220, 53, 69, 0.3)';
+                        e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                        e.currentTarget.style.boxShadow = '0 8px 32px rgba(220, 53, 69, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
+                        e.currentTarget.style.backdropFilter = 'blur(15px)';
+                        e.currentTarget.style.background = 'rgba(220, 53, 69, 0.15)';
                       }}
                     >
-                      {/* Effetto di sfondo animato */}
+                      {/* Effetto di sfondo glassmorphism */}
                       <div style={{
                         position: 'absolute',
                         top: 0,
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        background: 'radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%)',
+                        background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 50%, rgba(220,53,69,0.1) 100%)',
+                        borderRadius: '20px',
                         pointerEvents: 'none'
                       }}></div>
                       
-                      <div className="card-body text-white p-4">
+                      {/* Riflesso glassmorphism */}
+                      <div style={{
+                        position: 'absolute',
+                        top: '0',
+                        left: '0',
+                        width: '100%',
+                        height: '50%',
+                        background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 100%)',
+                        borderRadius: '20px 20px 0 0',
+                        pointerEvents: 'none'
+                      }}></div>
+                      
+                      <div 
+                        className="card-body p-4"
+                        style={{
+                          position: 'relative',
+                          zIndex: 2
+                        }}
+                      >
                         <div className="d-flex align-items-center justify-content-between h-100">
                           {/* Sezione sinistra con icona e testo */}
                           <div className="d-flex align-items-center flex-grow-1">
                             <div 
                               className="me-3"
                               style={{
-                                background: 'rgba(255,255,255,0.2)',
-                                borderRadius: '12px',
-                                padding: '12px',
-                                backdropFilter: 'blur(10px)'
+                                background: 'rgba(220, 53, 69, 0.3)',
+                                backdropFilter: 'blur(8px)',
+                                border: '1px solid rgba(220, 53, 69, 0.4)',
+                                borderRadius: '16px',
+                                padding: '14px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: '0 4px 16px rgba(220, 53, 69, 0.2)'
                               }}
                             >
-                              <Calendar size={24} />
+                              <AlertTriangle size={24} color="rgba(220, 53, 69, 0.9)" />
                             </div>
                             <div>
                               <h6 className="mb-1" style={{ 
                                 fontSize: '1rem', 
                                 fontWeight: '700',
+                                color: 'rgba(220, 53, 69, 0.9)',
                                 textShadow: '0 1px 2px rgba(0,0,0,0.1)'
                               }}>
                                 Scadenze Critiche
                               </h6>
-                              <p className="mb-0 opacity-90" style={{ 
+                              <p className="mb-0" style={{ 
                                 fontSize: '0.85rem',
-                                fontWeight: '500'
+                                fontWeight: '500',
+                                color: 'rgba(220, 53, 69, 0.7)'
                               }}>
                                 Scadute o entro 7 giorni
                               </p>
@@ -1400,27 +1531,29 @@ export default function ModernDashboard() {
                           <div className="text-end">
                             <div 
                               style={{
-                                background: 'rgba(255,255,255,0.95)',
-                                color: '#dc3545',
-                                borderRadius: '16px',
-                                padding: '8px 16px',
+                                background: 'rgba(220, 53, 69, 0.2)',
+                                backdropFilter: 'blur(8px)',
+                                border: '1px solid rgba(220, 53, 69, 0.3)',
+                                color: 'rgba(220, 53, 69, 0.9)',
+                                borderRadius: '18px',
+                                padding: '10px 18px',
                                 fontSize: '1.8rem',
                                 fontWeight: '900',
                                 lineHeight: '1',
-                                minWidth: '60px',
+                                minWidth: '65px',
                                 textAlign: 'center',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                                border: '2px solid rgba(255,255,255,0.3)'
+                                boxShadow: '0 4px 16px rgba(220, 53, 69, 0.2)'
                               }}
                             >
                               {isLoadingSchedulesData ? (
                                 <div 
-                                  className="spinner-border text-danger" 
+                                  className="spinner-border" 
                                   role="status" 
                                   style={{ 
                                     width: '1.2rem', 
                                     height: '1.2rem',
-                                    borderWidth: '2px'
+                                    borderWidth: '2px',
+                                    color: 'rgba(220, 53, 69, 0.9)'
                                   }}
                                 >
                                   <span className="visually-hidden">Caricamento...</span>
@@ -1432,13 +1565,16 @@ export default function ModernDashboard() {
                             <div 
                               className="mt-2"
                               style={{
-                                background: 'rgba(255,255,255,0.2)',
+                                background: 'rgba(220, 53, 69, 0.1)',
+                                backdropFilter: 'blur(6px)',
+                                border: '1px solid rgba(220, 53, 69, 0.2)',
                                 borderRadius: '8px',
                                 padding: '2px 8px',
                                 fontSize: '0.7rem',
                                 fontWeight: '600',
                                 textTransform: 'uppercase',
-                                letterSpacing: '0.5px'
+                                letterSpacing: '0.5px',
+                                color: 'rgba(220, 53, 69, 0.8)'
                               }}
                             >
                               Urgente!
@@ -1450,69 +1586,101 @@ export default function ModernDashboard() {
                   </div>
                   )}
 
-                  {/* Card Scadenze in Avvicinamento */}
+                  {/* Card Scadenze in Avvicinamento - Design Glassmorphism */}
                   {approachingSchedulesCount > 0 && (
-                  <div className="col-lg-4 col-md-6 col-sm-12">
+                  <div>
                     <div 
                       className="card"
                       style={{
-                        background: 'linear-gradient(135deg, #fd7e14 0%, #e55a00 100%)',
-                        border: 'none',
-                        borderRadius: '16px',
+                        background: 'rgba(253, 126, 20, 0.15)',
+                        backdropFilter: 'blur(15px)',
+                        WebkitBackdropFilter: 'blur(15px)',
+                        border: '1px solid rgba(253, 126, 20, 0.3)',
+                        borderRadius: '20px',
                         minHeight: '120px',
-                        boxShadow: '0 8px 32px rgba(253, 126, 20, 0.3)',
-                        transition: 'all 0.3s ease',
+                        boxShadow: '0 8px 32px rgba(253, 126, 20, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+                        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                         cursor: 'pointer',
                         position: 'relative',
                         overflow: 'hidden'
                       }}
                       onClick={() => setIsApproachingSchedulesModalOpen(true)}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-4px)';
-                        e.currentTarget.style.boxShadow = '0 12px 40px rgba(253, 126, 20, 0.4)';
+                        e.currentTarget.style.transform = 'translateY(-6px) scale(1.02)';
+                        e.currentTarget.style.boxShadow = '0 16px 48px rgba(253, 126, 20, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
+                        e.currentTarget.style.backdropFilter = 'blur(20px)';
+                        e.currentTarget.style.background = 'rgba(253, 126, 20, 0.2)';
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = '0 8px 32px rgba(253, 126, 20, 0.3)';
+                        e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                        e.currentTarget.style.boxShadow = '0 8px 32px rgba(253, 126, 20, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
+                        e.currentTarget.style.backdropFilter = 'blur(15px)';
+                        e.currentTarget.style.background = 'rgba(253, 126, 20, 0.15)';
                       }}
                     >
-                      {/* Effetto di sfondo animato */}
+                      {/* Effetto di sfondo glassmorphism */}
                       <div style={{
                         position: 'absolute',
                         top: 0,
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        background: 'radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%)',
+                        background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 50%, rgba(253,126,20,0.1) 100%)',
+                        borderRadius: '20px',
                         pointerEvents: 'none'
                       }}></div>
                       
-                      <div className="card-body text-white p-4">
+                      {/* Riflesso glassmorphism */}
+                      <div style={{
+                        position: 'absolute',
+                        top: '0',
+                        left: '0',
+                        width: '100%',
+                        height: '50%',
+                        background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 100%)',
+                        borderRadius: '20px 20px 0 0',
+                        pointerEvents: 'none'
+                      }}></div>
+                      
+                      <div 
+                        className="card-body p-4"
+                        style={{
+                          position: 'relative',
+                          zIndex: 2
+                        }}
+                      >
                         <div className="d-flex align-items-center justify-content-between h-100">
                           {/* Sezione sinistra con icona e testo */}
                           <div className="d-flex align-items-center flex-grow-1">
                             <div 
                               className="me-3"
                               style={{
-                                background: 'rgba(255,255,255,0.2)',
-                                borderRadius: '12px',
-                                padding: '12px',
-                                backdropFilter: 'blur(10px)'
+                                background: 'rgba(253, 126, 20, 0.3)',
+                                backdropFilter: 'blur(8px)',
+                                border: '1px solid rgba(253, 126, 20, 0.4)',
+                                borderRadius: '16px',
+                                padding: '14px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: '0 4px 16px rgba(253, 126, 20, 0.2)'
                               }}
                             >
-                              <Calendar size={24} />
+                              <Clock size={24} color="rgba(253, 126, 20, 0.9)" />
                             </div>
                             <div>
                               <h6 className="mb-1" style={{ 
                                 fontSize: '1rem', 
                                 fontWeight: '700',
+                                color: 'rgba(253, 126, 20, 0.9)',
                                 textShadow: '0 1px 2px rgba(0,0,0,0.1)'
                               }}>
                                 Scadenze in Avvicinamento
                               </h6>
-                              <p className="mb-0 opacity-90" style={{ 
+                              <p className="mb-0" style={{ 
                                 fontSize: '0.85rem',
-                                fontWeight: '500'
+                                fontWeight: '500',
+                                color: 'rgba(253, 126, 20, 0.7)'
                               }}>
                                 Da programmare entro 30 giorni
                               </p>
@@ -1523,27 +1691,29 @@ export default function ModernDashboard() {
                           <div className="text-end">
                             <div 
                               style={{
-                                background: 'rgba(255,255,255,0.95)',
-                                color: '#fd7e14',
-                                borderRadius: '16px',
-                                padding: '8px 16px',
+                                background: 'rgba(253, 126, 20, 0.2)',
+                                backdropFilter: 'blur(8px)',
+                                border: '1px solid rgba(253, 126, 20, 0.3)',
+                                color: 'rgba(253, 126, 20, 0.9)',
+                                borderRadius: '18px',
+                                padding: '10px 18px',
                                 fontSize: '1.8rem',
                                 fontWeight: '900',
                                 lineHeight: '1',
-                                minWidth: '60px',
+                                minWidth: '65px',
                                 textAlign: 'center',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                                border: '2px solid rgba(255,255,255,0.3)'
+                                boxShadow: '0 4px 16px rgba(253, 126, 20, 0.2)'
                               }}
                             >
                               {isLoadingSchedulesData ? (
                                 <div 
-                                  className="spinner-border text-warning" 
+                                  className="spinner-border" 
                                   role="status" 
                                   style={{ 
                                     width: '1.2rem', 
                                     height: '1.2rem',
-                                    borderWidth: '2px'
+                                    borderWidth: '2px',
+                                    color: 'rgba(253, 126, 20, 0.9)'
                                   }}
                                 >
                                   <span className="visually-hidden">Caricamento...</span>
@@ -1555,13 +1725,16 @@ export default function ModernDashboard() {
                             <div 
                               className="mt-2"
                               style={{
-                                background: 'rgba(255,255,255,0.2)',
+                                background: 'rgba(253, 126, 20, 0.1)',
+                                backdropFilter: 'blur(6px)',
+                                border: '1px solid rgba(253, 126, 20, 0.2)',
                                 borderRadius: '8px',
                                 padding: '2px 8px',
                                 fontSize: '0.7rem',
                                 fontWeight: '600',
                                 textTransform: 'uppercase',
-                                letterSpacing: '0.5px'
+                                letterSpacing: '0.5px',
+                                color: 'rgba(253, 126, 20, 0.8)'
                               }}
                             >
                               Attenzione!
