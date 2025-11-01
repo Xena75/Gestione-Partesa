@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.35.1
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.35.2
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -97,7 +97,19 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Integrazione calendario**: Eventi ferie visualizzati nel calendario aziendale integrato
 - **Database esteso**: Tabelle `employee_leave_requests` e `employee_leave_balance` ottimizzate
 
-### 🔧 **Correzioni Modal Richieste Ferie Dashboard** ⭐ **NUOVO v2.35.1**
+### 🔧 **Aggiornamenti Database e Compatibilità Next.js 15** ⭐ **NUOVO v2.35.2**
+- **Correzione ID dipendente**: Aggiornato ID "Alberto Racano" → "Alberto Vincenzo Racano" con transazione atomica
+- **Integrità referenziale**: Mantenuta coerenza tra tutte le tabelle collegate (employees, travels, leave_requests, leave_balance)
+- **Aggiornamento massivo**: 105 record aggiornati in travels, 1 in employee_leave_balance, 1 in employees
+- **Compatibilità Next.js 15**: Risolti errori TypeScript per parametri asincroni nelle API routes
+- **API routes aggiornate**: Corretti `src/app/api/employees/leave/[id]/route.ts` per gestione `await params`
+- **Correzione proprietà**: Risolto errore `request.hours` → `request.hours_requested` in gestione ferie
+- **Build testata**: Compilazione completata con successo senza errori TypeScript
+- **Gestione ferie estesa**: Funzionalità modifica/eliminazione richieste per tutti gli stati (non solo pending)
+- **Foreign key gestite**: Script con disabilitazione temporanea vincoli per aggiornamenti complessi
+- **Transazione sicura**: Operazioni atomiche con rollback automatico in caso di errore
+
+### 🔧 **Correzioni Modal Richieste Ferie Dashboard** ⭐ **PRECEDENTE v2.35.1**
 - **Risoluzione "Invalid Date"**: Corretti errori di visualizzazione date nel modal richieste ferie dashboard
 - **Funzioni formattazione robuste**: Implementate funzioni `parseItalianDate()`, `formatItalianDate()` e `getItalianWeekday()`
 - **Gestione formato italiano**: Supporto completo per date in formato `dd/mm/yyyy` da API SQL

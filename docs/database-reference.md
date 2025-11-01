@@ -156,6 +156,67 @@ if (!employee) {
 - `src/lib/db-employees.ts` - Correzione interfacce e funzioni CRUD
 - Risoluzione completa errori "Unknown column" e "cannot be null"
 
+### Correzione ID Dipendente Alberto Racano
+**Data implementazione:** Gennaio 2025
+
+**Problema risolto:**
+- ID dipendente "Alberto Racano" doveva essere aggiornato a "Alberto Vincenzo Racano"
+- Necessità di mantenere l'integrità referenziale con tutte le tabelle collegate
+- Foreign key constraints impedivano l'aggiornamento diretto
+
+**Tabelle coinvolte:**
+1. **employees** - Tabella principale dipendenti
+2. **travels** - Viaggi assegnati (campi: `nominativoId`, `affiancatoDaId`)
+3. **employee_leave_requests** - Richieste ferie
+4. **employee_leave_balance** - Saldi ferie
+
+**Soluzione implementata:**
+Script `update-employee-id-simple.js` con transazione atomica:
+
+```javascript
+// Disabilita temporaneamente i controlli foreign key
+await connection.execute('SET FOREIGN_KEY_CHECKS = 0');
+
+// Aggiorna tutte le tabelle in sequenza
+await connection.execute(
+  'UPDATE travels SET affiancatoDaId = ? WHERE affiancatoDaId = ?',
+  [newId, oldId]
+);
+await connection.execute(
+  'UPDATE travels SET nominativoId = ? WHERE nominativoId = ?', 
+  [newId, oldId]
+);
+await connection.execute(
+  'UPDATE employee_leave_requests SET employee_id = ? WHERE employee_id = ?',
+  [newId, oldId]
+);
+await connection.execute(
+  'UPDATE employee_leave_balance SET employee_id = ? WHERE employee_id = ?',
+  [newId, oldId]
+);
+await connection.execute(
+  'UPDATE employees SET id = ? WHERE id = ?',
+  [newId, oldId]
+);
+
+// Riabilita i controlli foreign key
+await connection.execute('SET FOREIGN_KEY_CHECKS = 1');
+```
+
+**Risultati aggiornamento:**
+- ✅ 1 record aggiornato in `travels` (campo `affiancatoDaId`)
+- ✅ 104 record aggiornati in `travels` (campo `nominativoId`)
+- ✅ 0 record aggiornati in `employee_leave_requests` (nessuna richiesta esistente)
+- ✅ 1 record aggiornato in `employee_leave_balance`
+- ✅ 1 record aggiornato in `employees`
+
+**Benefici:**
+- ✅ Aggiornamento atomico con transazione completa
+- ✅ Mantenimento integrità referenziale
+- ✅ Gestione corretta foreign key constraints
+- ✅ Verifica pre/post aggiornamento per conferma successo
+- ✅ Nessuna perdita di dati storici (105 viaggi mantenuti)
+
 ### Collegamento Database Autenticazione-Dipendenti
 **Data implementazione:** Gennaio 2025
 
@@ -963,6 +1024,7 @@ status         enum('pending','approved','rejected')          NO    MUL  pending
 approved_by    varchar(191)                                   YES        NULL                 
 approved_at    timestamp                                      YES        NULL                 
 notes          text                                           YES        NULL                 
+check_modulo   tinyint(1)                                     YES       0                    
 created_at     timestamp                                      NO        current_timestamp()  
 updated_at     timestamp                                      NO        current_timestamp()  on update current_timestamp()
 ```
@@ -971,6 +1033,7 @@ updated_at     timestamp                                      NO        current_
 - **Ferie**: Richieste in giorni (days_requested), conversione automatica in ore (1 giorno = 8 ore)
 - **Permessi**: Richieste in ore (hours_requested) per Ex Festività e ROL
 - **Malattia/Congedo**: Richieste in giorni (days_requested)
+- **Check Modulo**: Campo `check_modulo` (BOOLEAN) indica se il modulo cartaceo è stato controllato
 - **Validazione**: Controllo saldi disponibili prima dell'approvazione
 
 **Utilizzo nel progetto:**

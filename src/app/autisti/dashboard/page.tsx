@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Calendar, FileText, Clock, AlertTriangle, User, MapPin, ChevronDown, ChevronUp, UserCircle, Briefcase, Phone, CreditCard, GraduationCap } from 'lucide-react';
+import { Calendar, FileText, Clock, AlertTriangle, User, MapPin, ChevronDown, ChevronUp, UserCircle, Briefcase, Phone, CreditCard, GraduationCap, Check, X } from 'lucide-react';
 import ProfileImageUpload from '@/components/ProfileImageUpload';
 
 interface EmployeeData {
@@ -45,6 +45,7 @@ interface RecentLeaveRequest {
   days_requested: number;
   status: string;
   created_at: string;
+  check_modulo?: boolean;
 }
 
 interface ExpiringDocument {
@@ -152,6 +153,11 @@ export default function AutistiDashboardPage() {
   const formatDate = (dateString: string | null | undefined): string => {
     if (!dateString) {
       return '';
+    }
+    
+    // Controlla se la data è già nel formato gg/mm/aaaa
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateString)) {
+      return dateString;
     }
     
     try {
@@ -878,6 +884,7 @@ export default function AutistiDashboardPage() {
                         <th style={{ fontSize: '0.75rem' }}>Data Inizio</th>
                         <th style={{ fontSize: '0.75rem' }}>Data Fine</th>
                         <th style={{ fontSize: '0.75rem' }}>Giorni</th>
+                        <th style={{ fontSize: '0.75rem' }}>Modulo</th>
                         <th style={{ fontSize: '0.75rem' }}>Stato</th>
                         <th style={{ fontSize: '0.75rem' }}>Richiesta</th>
                       </tr>
@@ -888,6 +895,13 @@ export default function AutistiDashboardPage() {
                           <td style={{ fontSize: '0.8rem' }}>{formatDate(request.start_date)}</td>
                           <td style={{ fontSize: '0.8rem' }}>{formatDate(request.end_date)}</td>
                           <td style={{ fontSize: '0.8rem' }}>{request.days_requested}</td>
+                          <td className="text-center">
+                            {request.check_modulo ? (
+                              <Check className="text-success" size={16} />
+                            ) : (
+                              <X className="text-danger" size={16} />
+                            )}
+                          </td>
                           <td>
                             <span className={`badge ${
                               request.status === 'approved' ? 'bg-success' :

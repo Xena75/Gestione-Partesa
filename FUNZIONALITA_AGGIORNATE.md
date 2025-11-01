@@ -1,6 +1,78 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-## 🏖️ Sistema Gestione Ferie Dipendenti - v2.34.0 ⭐ **NUOVO**
+## 🔧 Aggiornamenti Database e Compatibilità Next.js 15 - v2.35.2 ⭐ **NUOVO**
+
+### 🎯 Correzioni Database e Compatibilità Framework
+**Data implementazione**: Gennaio 2025  
+**Stato**: ✅ Completato e testato
+
+### 🗄️ Correzione ID Dipendente Alberto Racano
+
+#### 📊 Problema Risolto
+- **ID originale**: "Alberto Racano"
+- **ID aggiornato**: "Alberto Vincenzo Racano"
+- **Necessità**: Mantenimento integrità referenziale con tutte le tabelle collegate
+- **Complessità**: Foreign key constraints impedivano aggiornamento diretto
+
+#### 🛠️ Soluzione Implementata
+**Script**: `update-employee-id-simple.js`
+**Approccio**: Transazione atomica con disabilitazione temporanea vincoli
+
+```javascript
+// Transazione completa con gestione foreign key
+await connection.execute('SET FOREIGN_KEY_CHECKS = 0');
+
+// Aggiornamento sequenziale tutte le tabelle
+await connection.execute('UPDATE travels SET affiancatoDaId = ? WHERE affiancatoDaId = ?', [newId, oldId]);
+await connection.execute('UPDATE travels SET nominativoId = ? WHERE nominativoId = ?', [newId, oldId]);
+await connection.execute('UPDATE employee_leave_requests SET employee_id = ? WHERE employee_id = ?', [newId, oldId]);
+await connection.execute('UPDATE employee_leave_balance SET employee_id = ? WHERE employee_id = ?', [newId, oldId]);
+await connection.execute('UPDATE employees SET id = ? WHERE id = ?', [newId, oldId]);
+
+await connection.execute('SET FOREIGN_KEY_CHECKS = 1');
+```
+
+#### 📈 Risultati Aggiornamento
+- ✅ **1 record** aggiornato in `travels` (campo `affiancatoDaId`)
+- ✅ **104 record** aggiornati in `travels` (campo `nominativoId`)
+- ✅ **0 record** aggiornati in `employee_leave_requests` (nessuna richiesta esistente)
+- ✅ **1 record** aggiornato in `employee_leave_balance`
+- ✅ **1 record** aggiornato in `employees`
+- ✅ **Totale**: 107 record aggiornati con successo
+
+### 🔧 Compatibilità Next.js 15
+
+#### 📊 Errori TypeScript Risolti
+**Problema**: Parametri asincroni nelle API routes non gestiti correttamente
+**File coinvolti**: `src/app/api/employees/leave/[id]/route.ts`
+
+#### 🛠️ Correzioni Implementate
+```typescript
+// PRIMA (errore)
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+  const id = parseInt(params.id);
+}
+
+// DOPO (corretto)
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
+  const id = parseInt(resolvedParams.id);
+}
+```
+
+#### 📊 Correzione Proprietà Gestione Ferie
+**Problema**: Errore `request.hours` non esistente nel tipo `LeaveRequest`
+**File**: `src/app/gestione/employees/ferie/page.tsx`
+**Correzione**: `request.hours` → `request.hours_requested`
+
+### ✅ Risultati Finali
+- ✅ **Build completata** senza errori TypeScript
+- ✅ **Database aggiornato** con integrità mantenuta
+- ✅ **Compatibilità Next.js 15** garantita
+- ✅ **Funzionalità ferie** estese per tutti gli stati richieste
+- ✅ **105 viaggi storici** mantenuti con nuovo ID dipendente
+
+## 🏖️ Sistema Gestione Ferie Dipendenti - v2.34.0 ⭐ **PRECEDENTE**
 
 ### 🎯 Sistema Completo Gestione Ferie e Permessi
 **Data implementazione**: Gennaio 2025  

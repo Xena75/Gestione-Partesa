@@ -643,6 +643,7 @@ export async function getEmployeeLeaveRequests(employeeId: string, status?: stri
       approved_by,
       approved_at,
       notes,
+      check_modulo,
       CONCAT(
         LPAD(DAY(created_at), 2, '0'), '/',
         LPAD(MONTH(created_at), 2, '0'), '/',
@@ -998,6 +999,7 @@ export async function getAllLeaveRequests(): Promise<LeaveRequest[]> {
               lr.approved_by,
               lr.approved_at,
               lr.notes,
+              lr.check_modulo,
               CONCAT(
                 LPAD(DAY(lr.created_at), 2, '0'), '/',
                 LPAD(MONTH(lr.created_at), 2, '0'), '/',
@@ -1012,6 +1014,110 @@ export async function getAllLeaveRequests(): Promise<LeaveRequest[]> {
        ORDER BY lr.created_at DESC`
     );
     return rows as (LeaveRequest & { nome: string; cognome: string })[];
+  } finally {
+    await connection.end();
+  }
+}
+
+// ==========================================
+// FUNZIONI PER MODIFICARE ED ELIMINARE RICHIESTE FERIE
+// ==========================================
+
+export async function updateLeaveRequest(
+  id: number, 
+  updateData: {
+    start_date?: string;
+    end_date?: string;
+    leave_type?: 'ferie' | 'permesso';
+    hours?: number;
+    notes?: string;
+  }
+): Promise<boolean> {
+  const connection = await getConnection();
+  try {
+    // Verifica che la richiesta esista e sia in stato pending
+    const [existingRows] = await connection.execute(
+      'SELECT status FROM employee_leave_requests WHERE id = ?',
+      [id]
+    );
+    
+    const existing = existingRows as any[];
+    if (existing.length === 0) {
+      throw new Error('Richiesta di ferie non trovata');
+    }
+    
+    if (existing[0].status !== 'pending') {
+      throw new Error('È possibile modificare solo le richieste in stato pending');
+    }
+
+    // Costruisci la query di aggiornamento dinamicamente
+    const updateFields: string[] = [];
+    const updateValues: any[] = [];
+    
+    if (updateData.start_date !== undefined) {
+      updateFields.push('start_date = ?');
+      updateValues.push(updateData.start_date);
+    }
+    
+    if (updateData.end_date !== undefined) {
+      updateFields.push('end_date = ?');
+      updateValues.push(updateData.end_date);
+    }
+    
+    if (updateData.leave_type !== undefined) {
+      updateFields.push('leave_type = ?');
+      updateValues.push(updateData.leave_type);
+    }
+    
+    if (updateData.hours !== undefined) {
+      updateFields.push('hours = ?');
+      updateValues.push(updateData.hours);
+    }
+    
+    if (updateData.notes !== undefined) {
+      updateFields.push('notes = ?');
+      updateValues.push(updateData.notes);
+    }
+    
+    if (updateFields.length === 0) {
+      return false; // Nessun campo da aggiornare
+    }
+    
+    // Aggiungi sempre l'aggiornamento del timestamp
+    updateFields.push('updated_at = CURRENT_TIMESTAMP');
+    updateValues.push(id);
+    
+    const query = `UPDATE employee_leave_requests SET ${updateFields.join(', ')} WHERE id = ?`;
+    
+    const [result] = await connection.execute(query, updateValues);
+    return (result as any).affectedRows > 0;
+    
+  } finally {
+    await connection.end();
+  }
+}
+
+export async function deleteLeaveRequest(id: number): Promise<boolean> {
+  const connection = await getConnection();
+  try {
+    // Verifica che la richiesta esista
+    const [existingRows] = await connection.execute(
+      'SELECT id FROM employee_leave_requests WHERE id = ?',
+      [id]
+    );
+    
+    const existing = existingRows as any[];
+    if (existing.length === 0) {
+      throw new Error('Richiesta di ferie non trovata');
+    }
+
+    const [result] = await connection.execute(
+      'DELETE FROM employee_leave_requests WHERE id = ?',
+      [id]
+    );
+    
+    return (result as any).affectedRows > 0;
+    
   } finally {
     await connection.end();
   }

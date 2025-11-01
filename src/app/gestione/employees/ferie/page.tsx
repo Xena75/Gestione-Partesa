@@ -31,6 +31,7 @@ interface LeaveRequest {
   approved_at?: string;
   approved_by?: number;
   notes?: string;
+  check_modulo?: boolean;
 }
 
 interface LeaveBalance {
@@ -55,7 +56,8 @@ const LEAVE_TYPES = [
   { value: 'ferie', label: 'Ferie', color: 'primary' },
   { value: 'malattia', label: 'Malattia', color: 'danger' },
   { value: 'permesso', label: 'Permesso', color: 'warning' },
-  { value: 'congedo', label: 'Congedo', color: 'info' }
+  { value: 'congedo', label: 'Congedo', color: 'info' },
+  { value: 'L. 104/92', label: 'L. 104/92', color: 'secondary' }
 ];
 
 const STATUS_TYPES = [
@@ -152,6 +154,19 @@ function GestioneFerieContent() {
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importLoading, setImportLoading] = useState(false);
   const [importResult, setImportResult] = useState<any>(null);
+
+  // Stati per modifica e eliminazione richieste
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingRequest, setEditingRequest] = useState<LeaveRequest | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingRequestId, setDeletingRequestId] = useState<number | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    start_date: '',
+    end_date: '',
+    leave_type: '',
+    hours: '',
+    notes: ''
+  });
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
@@ -259,6 +274,150 @@ function GestioneFerieContent() {
     } catch (err) {
       console.error('Errore operazione:', err);
       alert(err instanceof Error ? err.message : 'Errore durante l\'operazione');
+    }
+  };
+
+  // Funzione per aggiornare il campo check_modulo
+  const handleCheckModuloChange = async (requestId: number, checked: boolean) => {
+    try {
+      const response = await fetch('/api/employees/leave/update-modulo', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: requestId,
+          check_modulo: checked
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Errore durante l\'aggiornamento del modulo');
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        // Aggiorna solo il campo specifico senza ricaricare tutti i dati
+        setLeaveRequests(prev => 
+          prev.map(request => 
+            request.id === requestId 
+              ? { ...request, check_modulo: checked }
+              : request
+          )
+        );
+      } else {
+        throw new Error(result.message || 'Errore durante l\'aggiornamento');
+      }
+
+    } catch (err) {
+      console.error('Errore aggiornamento modulo:', err);
+      alert(err instanceof Error ? err.message : 'Errore durante l\'aggiornamento del modulo');
+      // Ripristina lo stato precedente in caso di errore
+      await loadData();
+    }
+  };
+
+  // Funzioni per gestire modifica e eliminazione richieste
+  const handleEditRequest = (request: LeaveRequest) => {
+    setEditingRequest(request);
+    setEditFormData({
+      start_date: request.start_date,
+      end_date: request.end_date,
+      leave_type: request.leave_type,
+      hours: request.hours_requested?.toString() || '',
+      notes: request.notes || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleDeleteRequest = (requestId: number) => {
+    setDeletingRequestId(requestId);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteRequest = async () => {
+    if (!deletingRequestId) return;
+
+    try {
+      const response = await fetch(`/api/employees/leave/${deletingRequestId}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Errore durante l\'eliminazione della richiesta');
+      }
+
+      const result = await response.json();
+      if (result.message) {
+        await loadData();
+        alert('Richiesta eliminata con successo!');
+        setShowDeleteModal(false);
+        setDeletingRequestId(null);
+      }
+
+    } catch (err) {
+      console.error('Errore eliminazione richiesta:', err);
+      alert(err instanceof Error ? err.message : 'Errore durante l\'eliminazione della richiesta');
+    }
+  };
+
+  const handleEditFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingRequest) return;
+
+    try {
+      // Validazione frontend
+      if (!editFormData.start_date || !editFormData.end_date) {
+        alert('Le date di inizio e fine sono obbligatorie');
+        return;
+      }
+
+      if (editFormData.leave_type === 'permesso' && (!editFormData.hours || parseFloat(editFormData.hours) <= 0)) {
+        alert('Per i permessi è necessario specificare le ore');
+        return;
+      }
+
+      if (new Date(editFormData.start_date) > new Date(editFormData.end_date)) {
+        alert('La data di inizio non può essere successiva alla data di fine');
+        return;
+      }
+
+      const updateData: any = {
+        start_date: editFormData.start_date,
+        end_date: editFormData.end_date,
+        leave_type: editFormData.leave_type,
+        notes: editFormData.notes
+      };
+
+      if (editFormData.leave_type === 'permesso' && editFormData.hours) {
+        updateData.hours = parseFloat(editFormData.hours);
+      }
+
+      const response = await fetch(`/api/employees/leave/${editingRequest.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Errore durante l\'aggiornamento della richiesta');
+      }
+
+      const result = await response.json();
+      if (result.message) {
+        await loadData();
+        alert('Richiesta aggiornata con successo!');
+        setShowEditModal(false);
+        setEditingRequest(null);
+      }
+
+    } catch (err) {
+      console.error('Errore aggiornamento richiesta:', err);
+      alert(err instanceof Error ? err.message : 'Errore durante l\'aggiornamento della richiesta');
     }
   };
 
@@ -1179,6 +1338,7 @@ function GestioneFerieContent() {
                             Richiesta il {renderSortIcon('richiesta_il')}
                           </th>
                           <th className="text-dark">Motivo</th>
+                          <th className="text-dark">Modulo</th>
                           <th className="text-dark">Azioni</th>
                         </tr>
                       </thead>
@@ -1249,25 +1409,52 @@ function GestioneFerieContent() {
                                 <span className="text-secondary">-</span>
                               )}
                             </td>
+                            <td className="text-center">
+                              <div className="form-check d-flex justify-content-center">
+                                <input
+                                  className="form-check-input"
+                                  type="checkbox"
+                                  checked={request.check_modulo || false}
+                                  onChange={(e) => handleCheckModuloChange(request.id, e.target.checked)}
+                                  title="Modulo consegnato"
+                                />
+                              </div>
+                            </td>
                             <td>
-                              {request.status === 'pending' && (
-                                <div className="btn-group" role="group">
-                                  <button 
-                                    className="btn btn-sm btn-outline-success"
-                                    title="Approva"
-                                    onClick={() => handleApproveRequest(request.id, 'approve')}
-                                  >
-                                    <i className="fas fa-check"></i>
-                                  </button>
-                                  <button 
-                                    className="btn btn-sm btn-outline-danger"
-                                    title="Rifiuta"
-                                    onClick={() => handleApproveRequest(request.id, 'reject')}
-                                  >
-                                    <i className="fas fa-times"></i>
-                                  </button>
-                                </div>
-                              )}
+                              <div className="btn-group" role="group">
+                                <button 
+                                  className="btn btn-sm btn-outline-primary"
+                                  title="Modifica"
+                                  onClick={() => handleEditRequest(request)}
+                                >
+                                  <i className="fas fa-edit"></i>
+                                </button>
+                                <button 
+                                  className="btn btn-sm btn-outline-danger"
+                                  title="Elimina"
+                                  onClick={() => handleDeleteRequest(request.id)}
+                                >
+                                  <i className="fas fa-trash"></i>
+                                </button>
+                                {request.status === 'pending' && (
+                                  <>
+                                    <button 
+                                      className="btn btn-sm btn-outline-success"
+                                      title="Approva"
+                                      onClick={() => handleApproveRequest(request.id, 'approve')}
+                                    >
+                                      <i className="fas fa-check"></i>
+                                    </button>
+                                    <button 
+                                      className="btn btn-sm btn-outline-warning"
+                                      title="Rifiuta"
+                                      onClick={() => handleApproveRequest(request.id, 'reject')}
+                                    >
+                                      <i className="fas fa-times"></i>
+                                    </button>
+                                  </>
+                                )}
+                              </div>
                               {request.status !== 'pending' && (
                                 <span className="text-light">
                                   {request.approved_at && (
@@ -1336,14 +1523,7 @@ function GestioneFerieContent() {
                             </td>
                             <td>
                               <span className="badge bg-warning">
-                                {(() => {
-                                  console.log('=== BALANCE DEBUG ===');
-                                  console.log('Balance data:', { employee_id: balance.employee_id, year: balance.year, nome: balance.nome, cognome: balance.cognome });
-                                  const result = calculateUsedVacationDays(balance.employee_id, balance.year);
-                                  console.log('Function result:', result);
-                                  console.log('=== END BALANCE DEBUG ===');
-                                  return result;
-                                })()} giorni
+                                {calculateUsedVacationDays(balance.employee_id, balance.year)} giorni
                               </span>
                             </td>
                             <td>
@@ -1438,6 +1618,164 @@ function GestioneFerieContent() {
               )}
             </small>
           </div>
+
+          {/* Modal per modificare richiesta */}
+          {showEditModal && editingRequest && (
+            <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+              <div className="modal-dialog modal-lg">
+                <div className="modal-content bg-dark">
+                  <div className="modal-header border-secondary">
+                    <h5 className="modal-title text-light">
+                      <i className="fas fa-edit me-2"></i>
+                      Modifica Richiesta di {editingRequest.cognome}, {editingRequest.nome}
+                    </h5>
+                    <button 
+                      type="button" 
+                      className="btn-close btn-close-white" 
+                      onClick={() => setShowEditModal(false)}
+                    ></button>
+                  </div>
+                  <form onSubmit={handleEditFormSubmit}>
+                    <div className="modal-body">
+                      <div className="row">
+                        <div className="col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label text-light">Data Inizio</label>
+                            <input
+                              type="date"
+                              className="form-control bg-dark text-light border-secondary"
+                              value={editFormData.start_date}
+                              onChange={(e) => setEditFormData(prev => ({ ...prev, start_date: e.target.value }))}
+                              required
+                            />
+                          </div>
+                        </div>
+                        <div className="col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label text-light">Data Fine</label>
+                            <input
+                              type="date"
+                              className="form-control bg-dark text-light border-secondary"
+                              value={editFormData.end_date}
+                              onChange={(e) => setEditFormData(prev => ({ ...prev, end_date: e.target.value }))}
+                              required
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="row">
+                        <div className="col-md-6">
+                          <div className="mb-3">
+                            <label className="form-label text-light">Tipo Richiesta</label>
+                            <select
+                              className="form-select bg-dark text-light border-secondary"
+                              value={editFormData.leave_type}
+                              onChange={(e) => setEditFormData(prev => ({ ...prev, leave_type: e.target.value }))}
+                              required
+                            >
+                              <option value="">Seleziona tipo</option>
+                              <option value="ferie">Ferie</option>
+                              <option value="permesso">Permesso</option>
+                            </select>
+                          </div>
+                        </div>
+                        {editFormData.leave_type === 'permesso' && (
+                          <div className="col-md-6">
+                            <div className="mb-3">
+                              <label className="form-label text-light">Ore</label>
+                              <input
+                                type="number"
+                                step="0.5"
+                                min="0.5"
+                                max="8"
+                                className="form-control bg-dark text-light border-secondary"
+                                value={editFormData.hours}
+                                onChange={(e) => setEditFormData(prev => ({ ...prev, hours: e.target.value }))}
+                                required
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="mb-3">
+                        <label className="form-label text-light">Note</label>
+                        <textarea
+                          className="form-control bg-dark text-light border-secondary"
+                          rows={3}
+                          value={editFormData.notes}
+                          onChange={(e) => setEditFormData(prev => ({ ...prev, notes: e.target.value }))}
+                          placeholder="Note aggiuntive (opzionale)"
+                        ></textarea>
+                      </div>
+                    </div>
+                    <div className="modal-footer border-secondary">
+                      <button 
+                        type="button" 
+                        className="btn btn-secondary"
+                        onClick={() => setShowEditModal(false)}
+                      >
+                        Annulla
+                      </button>
+                      <button 
+                        type="submit" 
+                        className="btn btn-primary"
+                      >
+                        <i className="fas fa-save me-2"></i>
+                        Salva Modifiche
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Modal per conferma eliminazione */}
+          {showDeleteModal && (
+            <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+              <div className="modal-dialog">
+                <div className="modal-content bg-dark">
+                  <div className="modal-header border-secondary">
+                    <h5 className="modal-title text-light">
+                      <i className="fas fa-exclamation-triangle me-2 text-warning"></i>
+                      Conferma Eliminazione
+                    </h5>
+                    <button 
+                      type="button" 
+                      className="btn-close btn-close-white" 
+                      onClick={() => setShowDeleteModal(false)}
+                    ></button>
+                  </div>
+                  <div className="modal-body">
+                    <p className="text-light">
+                      Sei sicuro di voler eliminare questa richiesta di ferie?
+                    </p>
+                    <p className="text-warning">
+                      <i className="fas fa-exclamation-triangle me-2"></i>
+                      Questa operazione non può essere annullata.
+                    </p>
+                  </div>
+                  <div className="modal-footer border-secondary">
+                    <button 
+                      type="button" 
+                      className="btn btn-secondary"
+                      onClick={() => setShowDeleteModal(false)}
+                    >
+                      Annulla
+                    </button>
+                    <button 
+                      type="button" 
+                      className="btn btn-danger"
+                      onClick={confirmDeleteRequest}
+                    >
+                      <i className="fas fa-trash me-2"></i>
+                      Elimina
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
