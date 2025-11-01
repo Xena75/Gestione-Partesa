@@ -34,7 +34,10 @@ export async function GET(request: NextRequest) {
     
     // Se non c'è user_id ma c'è status=pending, recupera tutte le richieste pendenti
     if (!targetUserId && status === 'pending') {
+      console.log('Recupero tutte le richieste ferie pendenti per la dashboard');
       const pendingRequests = await getPendingLeaveRequests();
+      
+      console.log(`Recuperate ${pendingRequests.length} richieste ferie pendenti totali`);
       
       return NextResponse.json({
         success: true,
@@ -201,61 +204,25 @@ function calculateWorkingDays(startDateStr: string, endDateStr: string): number 
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🚀 API POST /api/employees/leave - INIZIO');
-    
     // Verifica accesso utente
-    console.log('🔐 Verifica accesso utente...');
     const userCheck = await verifyUserAccess(request);
-    console.log('👤 Risultato verifica accesso:', userCheck);
-    
     if (!userCheck.success) {
-      console.error('❌ Accesso negato');
       return NextResponse.json(
         { success: false, error: 'Accesso negato' },
         { status: 401 }
       );
     }
 
-    console.log('📥 Parsing body della richiesta...');
     const body = await request.json();
-    console.log('📄 Body ricevuto:', body);
-    
     const { user_id, start_date, end_date, leave_type, reason, notes, days_requested, hours_requested } = body;
-    console.log('🔍 Dati estratti:', {
-      user_id,
-      start_date,
-      end_date,
-      leave_type,
-      reason,
-      notes,
-      days_requested,
-      hours_requested
-    });
     
     // Se l'utente è employee, può creare richieste solo per se stesso
     let targetUserId = user_id;
-    console.log('👤 Ruolo utente:', userCheck.user?.role);
-    
     if (userCheck.user?.role === 'employee') {
       targetUserId = userCheck.user.username;
-      console.log('🔄 Utente employee, uso username:', targetUserId);
-    }
-    
-    console.log('🎯 Target User ID finale:', targetUserId);
-    
-    // Converti targetUserId in stringa se è un numero
-    if (typeof targetUserId === 'number') {
-      targetUserId = targetUserId.toString();
-      console.log('🔄 Convertito targetUserId da numero a stringa:', targetUserId);
     }
     
     if (!targetUserId || !start_date || !end_date || !leave_type) {
-      console.error('❌ Dati mancanti:', {
-        targetUserId: !!targetUserId,
-        start_date: !!start_date,
-        end_date: !!end_date,
-        leave_type: !!leave_type
-      });
       return NextResponse.json({
         success: false,
         error: 'Dati mancanti: user_id, start_date, end_date e leave_type sono obbligatori'
@@ -291,9 +258,7 @@ export async function POST(request: NextRequest) {
     console.log('POST - Creazione richiesta ferie per dipendente ID:', targetUserId);
     
     // Verifica che il dipendente esista prima di creare la richiesta
-    console.log('POST - Creazione richiesta ferie per dipendente ID:', targetUserId);
     let employee = await getEmployeeByUsername(targetUserId);
-    
     if (!employee) {
       console.log('POST - Dipendente non trovato per username, provo per ID:', targetUserId);
       employee = await getEmployeeById(targetUserId);
@@ -332,7 +297,7 @@ export async function POST(request: NextRequest) {
     
     // Non convertiamo le date in oggetti Date, lasciamole come stringhe
     // La funzione createLeaveRequest si occuperà della conversione
-    const leaveData: Omit<LeaveRequest, 'id' | 'created_at' | 'updated_at'> = {
+    const leaveData: Partial<LeaveRequest> = {
       employee_id: employee.id, // Usa l'ID del dipendente trovato
       start_date: start_date, // Mantieni come stringa
       end_date: end_date, // Mantieni come stringa
@@ -342,15 +307,13 @@ export async function POST(request: NextRequest) {
       reason: reason || null,
       notes: notes || null,
       status: 'pending',
-      approved_by: undefined,
-      approved_at: undefined
+      approved_by: null,
+      approved_at: null
     };
     
     console.log('POST - Dati preparati per createLeaveRequest:', leaveData);
     
-    console.log('💾 Chiamata createLeaveRequest...');
     const newLeaveRequest = await createLeaveRequest(leaveData);
-    console.log('✅ Richiesta creata con successo:', newLeaveRequest);
     
     return NextResponse.json({
       success: true,
@@ -359,12 +322,7 @@ export async function POST(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('💥 ERRORE API employees/leave POST:', error);
-    console.error('📊 Dettagli errore:', {
-      name: error instanceof Error ? error.name : 'Unknown',
-      message: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : 'No stack trace'
-    });
+    console.error('Errore API employees/leave POST:', error);
     
     return NextResponse.json({
       success: false,

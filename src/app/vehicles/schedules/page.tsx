@@ -92,11 +92,17 @@ function VehicleSchedulesContent() {
     fetchSchedules();
   }, []);
 
-  // Effetto per leggere il parametro vehicle dall'URL
+  // Effetto per leggere i parametri dall'URL
   useEffect(() => {
     const vehicleParam = searchParams?.get('vehicle');
+    const statusParam = searchParams?.get('status');
+    
     if (vehicleParam) {
       setFilterPlate(vehicleParam);
+    }
+    
+    if (statusParam) {
+      setFilterStatus(statusParam);
     }
   }, [searchParams]);
 

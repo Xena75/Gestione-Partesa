@@ -120,24 +120,31 @@ export const isValidDate = (dateString: string | null | undefined): boolean => {
  * Converte una data dal formato italiano (dd/mm/yyyy) al formato ISO (yyyy-mm-dd)
  */
 export const convertItalianToISO = (italianDate: string): string => {
-  if (!italianDate || italianDate.trim() === '') return '';
+  if (!italianDate || italianDate.trim() === '') {
+    return '';
+  }
   
   // Verifica che il formato sia dd/mm/yyyy
   const dateRegex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/;
-  if (!dateRegex.test(italianDate)) return '';
+  if (!dateRegex.test(italianDate)) {
+    return '';
+  }
   
   try {
     const [day, month, year] = italianDate.split('/').map(Number);
     const date = new Date(year, month - 1, day);
     
-    if (isNaN(date.getTime())) return '';
+    if (isNaN(date.getTime())) {
+      return '';
+    }
     
     const isoYear = date.getFullYear();
     const isoMonth = (date.getMonth() + 1).toString().padStart(2, '0');
     const isoDay = date.getDate().toString().padStart(2, '0');
     
     return `${isoYear}-${isoMonth}-${isoDay}`;
-  } catch {
+  } catch (error) {
+    console.error('convertItalianToISO - Errore:', error);
     return '';
   }
 };
@@ -146,24 +153,31 @@ export const convertItalianToISO = (italianDate: string): string => {
  * Converte una data dal formato ISO (yyyy-mm-dd) al formato italiano (dd/mm/yyyy)
  */
 export const convertISOToItalian = (isoDate: string): string => {
-  if (!isoDate || isoDate.trim() === '') return '';
+  if (!isoDate || isoDate.trim() === '') {
+    return '';
+  }
   
   // Verifica che il formato sia yyyy-mm-dd
   const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-  if (!dateRegex.test(isoDate)) return '';
+  if (!dateRegex.test(isoDate)) {
+    return '';
+  }
   
   try {
     const [year, month, day] = isoDate.split('-').map(Number);
     const date = new Date(year, month - 1, day);
     
-    if (isNaN(date.getTime())) return '';
+    if (isNaN(date.getTime())) {
+      return '';
+    }
     
     const italianDay = date.getDate().toString().padStart(2, '0');
     const italianMonth = (date.getMonth() + 1).toString().padStart(2, '0');
     const italianYear = date.getFullYear();
     
     return `${italianDay}/${italianMonth}/${italianYear}`;
-  } catch {
+  } catch (error) {
+    console.error('convertISOToItalian - Errore:', error);
     return '';
   }
 };

@@ -275,7 +275,7 @@ export default function EmployeesPage() {
                             <strong>{employee.cognome}</strong>
                           </td>
                           <td>
-                            <span className="badge bg-info">
+                            <span className="badge bg-primary">
                               {employee.company_name || 'N/A'}
                             </span>
                           </td>

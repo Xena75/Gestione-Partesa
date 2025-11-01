@@ -60,17 +60,21 @@ export async function GET(request: NextRequest) {
       const startDate = parseItalianDate(leave.start_date);
       const endDate = parseItalianDate(leave.end_date);
       
+      // Per eventi multi-giorno, aggiungi un giorno alla fine per includere l'ultimo giorno
+      const adjustedEndDate = new Date(endDate);
+      adjustedEndDate.setDate(adjustedEndDate.getDate() + 1);
+      
       return {
         id: `leave-${leave.id}`,
-        title: `Dipendente ${leave.employee_id} - ${getLeaveTypeLabel(leave.leave_type)}`,
+        title: `${leave.cognome || 'N/A'} ${leave.nome || 'N/A'} - ${getLeaveTypeLabel(leave.leave_type)}`,
         start: startDate.toISOString(),
-        end: endDate.toISOString(),
+        end: adjustedEndDate.toISOString(),
         allDay: true,
         resource: {
           type: 'leave',
           leave_id: leave.id,
           employee_id: leave.employee_id,
-          employee_name: `Dipendente ${leave.employee_id}`,
+          employee_name: `${leave.cognome || 'N/A'} ${leave.nome || 'N/A'}`,
           leave_type: leave.leave_type,
           days_requested: leave.days_requested,
           reason: leave.reason,

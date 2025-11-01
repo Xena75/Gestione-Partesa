@@ -234,20 +234,22 @@ export async function createEmployee(employee: Omit<Employee, 'id' | 'createdAt'
     // Genera ID univoco
     const employeeId = `EMP${Date.now()}`;
     
-    const [result] = await connection.execute(
+    const [_result] = await connection.execute(
       `INSERT INTO employees (
-        id, nome, cognome, email, username_login, cellulare, data_nascita, codice_fiscale,
+        id, nome, cognome, email, login_email, cellulare, data_nascita, codice_fiscale,
         indirizzo, citta, cap, provincia, data_assunzione, contratto,
         stipendio, ore_settimanali, ferie_annuali, permessi_annuali,
-        is_driver, driver_license_number, driver_license_expiry, active
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        is_driver, driver_license_number, driver_license_expiry,
+        password_hash, active
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         employeeId, employee.nome, employee.cognome, employee.email,
-        employee.username_login, employee.cellulare, employee.data_nascita, employee.codice_fiscale,
+        employee.login_email, employee.cellulare, employee.data_nascita, employee.codice_fiscale,
         employee.indirizzo, employee.citta, employee.cap, employee.provincia,
         employee.data_assunzione, employee.contratto, employee.stipendio,
         employee.ore_settimanali, employee.ferie_annuali, employee.permessi_annuali,
-        employee.is_driver, employee.driver_license_number, employee.driver_license_expiry, employee.active
+        employee.is_driver, employee.driver_license_number, employee.driver_license_expiry,
+        employee.password_hash, employee.active
       ]
     );
     
@@ -911,7 +913,8 @@ export async function getAllLeaveBalances(year?: number): Promise<(LeaveBalance 
 export async function getPendingLeaveRequests(): Promise<LeaveRequest[]> {
   const connection = await getConnection();
   try {
-    const query = `SELECT lr.id,
+    const [rows] = await connection.execute(
+      `SELECT lr.id,
               lr.employee_id,
               lr.leave_type,
               DATE_FORMAT(lr.start_date, '%d/%m/%Y') as start_date,
@@ -925,18 +928,16 @@ export async function getPendingLeaveRequests(): Promise<LeaveRequest[]> {
               lr.notes,
               DATE_FORMAT(lr.created_at, '%d/%m/%Y') as created_at,
               lr.updated_at,
-              COALESCE(e.nome, SUBSTRING_INDEX(lr.employee_id, ' ', 1)) as nome,
-              COALESCE(e.cognome, SUBSTRING_INDEX(lr.employee_id, ' ', -1)) as cognome,
-              lr.employee_id as employee_name
+              e.nome, 
+              e.cognome, 
+              CONCAT(e.nome, ' ', e.cognome) as employee_name
        FROM employee_leave_requests lr 
-       LEFT JOIN employees e ON TRIM(lr.employee_id) COLLATE utf8mb4_unicode_ci = TRIM(e.id) COLLATE utf8mb4_unicode_ci
+       JOIN employees e ON lr.employee_id COLLATE utf8mb4_unicode_ci = e.id COLLATE utf8mb4_unicode_ci
        WHERE lr.status = 'pending' 
-       ORDER BY lr.created_at ASC`;
+       ORDER BY lr.created_at ASC`
+    );
     
-    const [rows] = await connection.execute(query);
-    const results = rows as (LeaveRequest & { nome: string; cognome: string; employee_name: string })[];
-    
-    return results;
+    return rows as (LeaveRequest & { nome: string; cognome: string; employee_name: string })[];
   } finally {
     await connection.end();
   }

@@ -48,6 +48,7 @@ next-env.d.ts
 
 # backup files
 backups/
+backup-ferie-v2.35.0/
 backup-system/
 *.sql
 *.log

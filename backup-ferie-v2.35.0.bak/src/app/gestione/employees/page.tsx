@@ -1,10 +1,8 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import DateInput from '@/components/DateInput';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface Employee {
   id: number;
@@ -115,11 +113,9 @@ const formatDateTimeSafe = (dateString: string | null | undefined): { date: stri
   };
 };
 
-function GestioneFerieContent() {
+export default function GestioneFerie() {
   console.log('🚀 COMPONENT LOADED - GestioneFerie');
   
-  const { user, isAuthenticated, isLoading } = useAuth();
-  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<'richieste' | 'bilanci'>('richieste');
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
@@ -127,8 +123,8 @@ function GestioneFerieContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Filtri - inizializza statusFilter dal parametro URL
-  const [statusFilter, setStatusFilter] = useState(searchParams?.get('status') || '');
+  // Filtri
+  const [statusFilter, setStatusFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [employeeFilter, setEmployeeFilter] = useState('');
   const [yearFilter, setYearFilter] = useState(new Date().getFullYear().toString());
@@ -154,10 +150,8 @@ function GestioneFerieContent() {
   const [importResult, setImportResult] = useState<any>(null);
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      loadData();
-    }
-  }, [isLoading, isAuthenticated]);
+    loadData();
+  }, []);
 
   const loadData = async () => {
     try {
@@ -169,16 +163,7 @@ function GestioneFerieContent() {
       if (employeesResponse.ok) {
         const employeesData = await employeesResponse.json();
         if (employeesData.success && employeesData.data) {
-          const employeesArray = Array.isArray(employeesData.data) ? employeesData.data : [];
-          // Ordina alfabeticamente per cognome e poi per nome
-          const sortedEmployees = employeesArray.sort((a: Employee, b: Employee) => {
-            const cognomeComparison = a.cognome.localeCompare(b.cognome, 'it', { sensitivity: 'base' });
-            if (cognomeComparison !== 0) {
-              return cognomeComparison;
-            }
-            return a.nome.localeCompare(b.nome, 'it', { sensitivity: 'base' });
-          });
-          setEmployees(sortedEmployees);
+          setEmployees(Array.isArray(employeesData.data) ? employeesData.data : []);
         }
       }
 
@@ -441,16 +426,7 @@ function GestioneFerieContent() {
   const handleNewRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('🚀 INIZIO handleNewRequest');
-    console.log('📝 Dati newRequest:', newRequest);
-    
     if (!newRequest.employee_id || !newRequest.leave_type || !newRequest.start_date || !newRequest.end_date) {
-      console.error('❌ Campi obbligatori mancanti:', {
-        employee_id: newRequest.employee_id,
-        leave_type: newRequest.leave_type,
-        start_date: newRequest.start_date,
-        end_date: newRequest.end_date
-      });
       alert('Compila tutti i campi obbligatori');
       return;
     }
@@ -459,28 +435,15 @@ function GestioneFerieContent() {
     const startDate = new Date(newRequest.start_date);
     const endDate = new Date(newRequest.end_date);
     
-    console.log('📅 Validazione date:', {
-      start_date: newRequest.start_date,
-      end_date: newRequest.end_date,
-      startDate: startDate,
-      endDate: endDate,
-      isValidStart: !isNaN(startDate.getTime()),
-      isValidEnd: !isNaN(endDate.getTime())
-    });
-    
-    if (startDate > endDate) {
-      console.error('❌ Date non valide: data inizio > data fine');
-      alert('La data di fine deve essere successiva o uguale alla data di inizio');
+    if (startDate >= endDate) {
+      alert('La data di fine deve essere successiva alla data di inizio');
       return;
     }
 
     // Calcola i giorni richiesti
-    console.log('🔢 Calcolo giorni lavorativi...');
     const daysRequested = calculateWorkingDays(newRequest.start_date, newRequest.end_date);
-    console.log('📊 Giorni richiesti calcolati:', daysRequested);
     
     if (daysRequested <= 0) {
-      console.error('❌ Nessun giorno lavorativo nel periodo selezionato');
       alert('Il periodo selezionato non include giorni lavorativi validi');
       return;
     }
@@ -488,52 +451,25 @@ function GestioneFerieContent() {
     try {
       // Prepara i dati per l'API
       const requestData = {
-        user_id: newRequest.employee_id, // Mappa employee_id a user_id per l'API
-        start_date: newRequest.start_date,
-        end_date: newRequest.end_date,
-        leave_type: newRequest.leave_type,
-        reason: newRequest.reason,
+        ...newRequest,
         days_requested: daysRequested
       };
 
-      console.log('📤 Dati da inviare all\'API:', requestData);
-
-      console.log('🌐 Invio richiesta fetch...');
       const response = await fetch('/api/employees/leave', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include', // Include i cookie per l'autenticazione
         body: JSON.stringify(requestData)
       });
 
-      console.log('📥 Risposta ricevuta:', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok,
-        headers: Object.fromEntries(response.headers.entries())
-      });
-
       if (!response.ok) {
-        console.error('❌ Risposta non OK, tentativo di leggere errore...');
-        let errorData;
-        try {
-          errorData = await response.json();
-          console.error('📄 Dati errore dal server:', errorData);
-        } catch (parseError) {
-          console.error('❌ Errore nel parsing della risposta di errore:', parseError);
-          errorData = { error: `HTTP ${response.status}: ${response.statusText}` };
-        }
+        const errorData = await response.json();
         throw new Error(errorData.error || 'Errore durante la creazione della richiesta');
       }
 
-      console.log('✅ Risposta OK, tentativo di parsing JSON...');
       const result = await response.json();
-      console.log('📄 Risultato parsato:', result);
-      
       if (result.success) {
-        console.log('🎉 Richiesta creata con successo!');
         setNewRequest({
           employee_id: '',
           leave_type: '',
@@ -542,22 +478,15 @@ function GestioneFerieContent() {
           reason: ''
         });
         setShowNewRequestForm(false);
-        console.log('🔄 Ricaricamento dati...');
         await loadData();
         alert('Richiesta creata con successo!');
       } else {
-        console.error('❌ Risultato non success:', result);
         throw new Error(result.error || 'Errore durante la creazione');
       }
 
     } catch (err) {
-      console.error('💥 ERRORE CATTURATO in handleNewRequest:', err);
-      console.error('📊 Dettagli errore:', {
-        name: err instanceof Error ? err.name : 'Unknown',
-        message: err instanceof Error ? err.message : String(err),
-        stack: err instanceof Error ? err.stack : 'No stack trace'
-      });
-      alert(err instanceof Error ? err.message : 'Errore nella creazione della richiesta ferie');
+      console.error('Errore durante la creazione della richiesta:', err);
+      alert(err instanceof Error ? err.message : 'Errore durante la creazione della richiesta');
     }
   };
 
@@ -682,33 +611,6 @@ function GestioneFerieContent() {
     if (employeeFilter && balance.employee_id.toString() !== employeeFilter) return false;
     return true;
   });
-
-  // Controllo autenticazione
-  if (isLoading) {
-    return (
-      <div className="container-fluid">
-        <div className="text-center py-5">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Caricamento...</span>
-          </div>
-          <p className="mt-3 text-dark">Verifica autenticazione...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="container-fluid">
-        <div className="alert alert-warning d-flex align-items-center" role="alert">
-          <i className="fas fa-exclamation-triangle me-2"></i>
-          <div>
-            <strong>Accesso negato!</strong> Devi essere autenticato per accedere a questa pagina.
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   if (loading) {
     return (
@@ -1201,7 +1103,7 @@ function GestioneFerieContent() {
                                 {request.leave_type === 'permesso' ? (
                                   // Per i permessi: solo ore
                                   request.hours_requested ? (
-                                    <span className="badge" style={{ backgroundColor: '#6f42c1', color: 'white' }}>
+                                    <span className="badge bg-warning">
                                       {request.hours_requested} ore
                                     </span>
                                   ) : (
@@ -1212,12 +1114,12 @@ function GestioneFerieContent() {
                                 ) : (
                                   // Per ferie, malattia, congedo: giorni + ore opzionali
                                   <>
-                                    <span className="badge" style={{ backgroundColor: '#6f42c1', color: 'white' }}>
+                                    <span className="badge bg-info">
                                       {request.days_requested} giorni
                                     </span>
                                     {request.hours_requested && (
                                       <div className="mt-1">
-                                        <span className="badge" style={{ backgroundColor: '#6f42c1', color: 'white' }}>
+                                        <span className="badge bg-warning">
                                           {request.hours_requested} ore
                                         </span>
                                       </div>
@@ -1441,13 +1343,5 @@ function GestioneFerieContent() {
         </div>
       </div>
     </div>
-  );
-}
-
-export default function GestioneFerie() {
-  return (
-    <Suspense fallback={<div>Caricamento...</div>}>
-      <GestioneFerieContent />
-    </Suspense>
   );
 }

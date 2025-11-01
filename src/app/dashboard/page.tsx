@@ -13,8 +13,7 @@ import {
 import PodMancantiModal from '@/components/PodMancantiModal';
 import TravelsNotInTabModal from '@/components/TravelsNotInTabModal';
 import DocumentExpiryAlert from '@/components/DocumentExpiryAlert';
-import MaintenanceWarningSection from '@/components/MaintenanceWarningSection';
-import ScheduledExpirySection from '@/components/ScheduledExpirySection';
+
 import { useAuth } from '@/contexts/AuthContext';
 
 // Interfacce per i dati
@@ -45,6 +44,47 @@ export default function ModernDashboard() {
   const [notifications, setNotifications] = useState(3);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Funzione per convertire date italiane (dd/mm/yyyy) in oggetti Date validi
+  const parseItalianDate = (dateString: string): Date => {
+    if (!dateString) return new Date();
+    
+    // Se la data è già in formato ISO (yyyy-mm-dd), usala direttamente
+    if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      return new Date(dateString);
+    }
+    
+    // Se la data è in formato italiano (dd/mm/yyyy), convertila
+    if (dateString.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+      const [day, month, year] = dateString.split('/');
+      return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    }
+    
+    // Fallback: prova a parsare direttamente
+    const parsed = new Date(dateString);
+    return isNaN(parsed.getTime()) ? new Date() : parsed;
+  };
+
+  // Funzione per formattare una data in formato italiano
+  const formatItalianDate = (dateString: string): string => {
+    try {
+      const date = parseItalianDate(dateString);
+      return date.toLocaleDateString('it-IT');
+    } catch (error) {
+      console.error('Errore nella formattazione della data:', dateString, error);
+      return 'Data non valida';
+    }
+  };
+
+  // Funzione per ottenere il giorno della settimana in italiano
+  const getItalianWeekday = (dateString: string): string => {
+    try {
+      const date = parseItalianDate(dateString);
+      return date.toLocaleDateString('it-IT', { weekday: 'short' });
+    } catch (error) {
+      return '';
+    }
+  };
   
   // Stati toggle per ogni card
   const [toggleStates, setToggleStates] = useState({
@@ -58,11 +98,25 @@ export default function ModernDashboard() {
     sistema: false
   });
 
+  // Stati toggle per le sezioni principali
+  const [sectionToggleStates, setSectionToggleStates] = useState({
+    avvisi: true,
+    dashboard: true
+  });
+
   // Funzione per toggle delle statistiche
   const toggleStats = (cardName: keyof typeof toggleStates) => {
     setToggleStates(prev => ({
       ...prev,
       [cardName]: !prev[cardName]
+    }));
+  };
+
+  // Funzione per toggle delle sezioni principali
+  const toggleSection = (sectionName: keyof typeof sectionToggleStates) => {
+    setSectionToggleStates(prev => ({
+      ...prev,
+      [sectionName]: !prev[sectionName]
     }));
   };
 
@@ -94,6 +148,35 @@ export default function ModernDashboard() {
   const [isSyncingTerzisti, setIsSyncingTerzisti] = useState(false);
   const [isSyncingDipendenti, setIsSyncingDipendenti] = useState(false);
 
+  // Stato per le richieste ferie in attesa
+  const [pendingLeaveCount, setPendingLeaveCount] = useState<number>(0);
+  const [isLoadingLeaveCount, setIsLoadingLeaveCount] = useState(true);
+
+  // Stati per le manutenzioni
+  const [expiredMaintenanceCount, setExpiredMaintenanceCount] = useState<number>(0);
+  const [expiringMaintenanceCount, setExpiringMaintenanceCount] = useState<number>(0);
+  const [isLoadingMaintenanceData, setIsLoadingMaintenanceData] = useState(true);
+  const [maintenanceData, setMaintenanceData] = useState<any[]>([]);
+  
+  // Stati per i modal delle manutenzioni
+  const [isExpiredMaintenanceModalOpen, setIsExpiredMaintenanceModalOpen] = useState(false);
+  const [isExpiringMaintenanceModalOpen, setIsExpiringMaintenanceModalOpen] = useState(false);
+
+  // Stati per il modal delle richieste ferie
+  const [isLeaveRequestsModalOpen, setIsLeaveRequestsModalOpen] = useState(false);
+  const [leaveRequestsData, setLeaveRequestsData] = useState<any[]>([]);
+  const [isLoadingLeaveRequests, setIsLoadingLeaveRequests] = useState(false);
+
+  // Stati per le scadenze programmate
+  const [criticalSchedulesCount, setCriticalSchedulesCount] = useState<number>(0);
+  const [approachingSchedulesCount, setApproachingSchedulesCount] = useState<number>(0);
+  const [isLoadingSchedulesData, setIsLoadingSchedulesData] = useState(true);
+  const [schedulesData, setSchedulesData] = useState<any[]>([]);
+  
+  // Stati per i modal delle scadenze programmate
+  const [isCriticalSchedulesModalOpen, setIsCriticalSchedulesModalOpen] = useState(false);
+  const [isApproachingSchedulesModalOpen, setIsApproachingSchedulesModalOpen] = useState(false);
+
   // Aggiorna l'orologio ogni secondo
   useEffect(() => {
     const timer = setInterval(() => {
@@ -105,45 +188,194 @@ export default function ModernDashboard() {
 
   // Carica i dati reali dal database
   useEffect(() => {
+    const abortController = new AbortController();
+    const signal = abortController.signal;
+
     const fetchDashboardData = async () => {
       try {
         setIsLoading(true);
         setError(null);
         
-        const response = await fetch('/api/dashboard-stats');
+        const response = await fetch('/api/dashboard-stats', { signal });
         if (!response.ok) {
           throw new Error('Errore nel caricamento delle statistiche');
         }
         
         const data = await response.json();
-        setDashboardData(data);
+        if (!signal.aborted) {
+          setDashboardData(data);
+        }
       } catch (err) {
-        console.error('Errore nel fetch dei dati dashboard:', err);
-        setError('Errore nel caricamento dei dati. Riprova più tardi.');
+        if (!signal.aborted) {
+          console.error('Errore nel fetch dei dati dashboard:', err);
+          setError('Errore nel caricamento dei dati. Riprova più tardi.');
+        }
       } finally {
-        setIsLoading(false);
+        if (!signal.aborted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    const fetchPendingLeaveRequests = async () => {
+      try {
+        setIsLoadingLeaveCount(true);
+        
+        const response = await fetch('/api/employees/leave?status=pending', { signal });
+        
+        if (response.ok && !signal.aborted) {
+          const data = await response.json();
+          
+          // L'API restituisce un array in data.data, non un count
+          const pendingCount = data.data ? data.data.length : 0;
+          
+          setPendingLeaveCount(pendingCount);
+        }
+      } catch (err) {
+        if (!signal.aborted) {
+          console.error('Errore nel fetch delle richieste ferie:', err);
+        }
+      } finally {
+        if (!signal.aborted) {
+          setIsLoadingLeaveCount(false);
+        }
+      }
+    };
+
+
+
+    const fetchMaintenanceData = async () => {
+      try {
+        setIsLoadingMaintenanceData(true);
+        
+        const response = await fetch('/api/vehicles/maintenance-monitoring', { signal });
+        
+        if (response.ok && !signal.aborted) {
+          const data = await response.json();
+          
+          // L'API restituisce direttamente { vehicles: [], stats: {} }
+          if (data.vehicles && data.stats) {
+            setMaintenanceData(data.vehicles);
+            
+            // Usa le statistiche dall'API
+            setExpiredMaintenanceCount(data.stats.veicoli_scaduti || 0);
+            setExpiringMaintenanceCount(data.stats.veicoli_in_scadenza || 0);
+          }
+        }
+      } catch (err) {
+        if (!signal.aborted) {
+          console.error('Errore nel fetch dei dati manutenzione:', err);
+        }
+      } finally {
+        if (!signal.aborted) {
+          setIsLoadingMaintenanceData(false);
+        }
+      }
+    };
+
+    const fetchSchedulesData = async () => {
+      try {
+        setIsLoadingSchedulesData(true);
+        
+        const response = await fetch('/api/vehicles/schedules/expiring?days=30', { signal });
+        
+        if (response.ok && !signal.aborted) {
+          const data = await response.json();
+          
+          if (data.success && data.schedules) {
+            setSchedulesData(data.schedules);
+            
+            // Calcola i conteggi per scadenze critiche (≤7 giorni) e in avvicinamento (8-30 giorni)
+            const critical = data.schedules.filter((schedule: any) => schedule.days_until_expiry <= 7).length;
+            const approaching = data.schedules.filter((schedule: any) => schedule.days_until_expiry > 7 && schedule.days_until_expiry <= 30).length;
+            
+            setCriticalSchedulesCount(critical);
+            setApproachingSchedulesCount(approaching);
+          }
+        }
+      } catch (err) {
+        if (!signal.aborted) {
+          console.error('Errore nel fetch dei dati scadenze programmate:', err);
+        }
+      } finally {
+        if (!signal.aborted) {
+          setIsLoadingSchedulesData(false);
+        }
       }
     };
 
     fetchDashboardData();
+    fetchPendingLeaveRequests();
+    fetchMaintenanceData();
+    fetchSchedulesData();
+
+    // Cleanup function per cancellare le richieste quando il componente viene smontato
+    return () => {
+      abortController.abort();
+    };
   }, []);
 
   // Auto-refresh ogni 5 minuti
   useEffect(() => {
+    const abortController = new AbortController();
+    const signal = abortController.signal;
+
     const refreshTimer = setInterval(async () => {
+      if (signal.aborted) return;
+
       try {
-        const response = await fetch('/api/dashboard-stats');
-        if (response.ok) {
+        // Refresh dashboard stats
+        const response = await fetch('/api/dashboard-stats', { signal });
+        if (response.ok && !signal.aborted) {
           const data = await response.json();
           setDashboardData(data);
           console.log('Dashboard data refreshed');
         }
+
+        // Refresh pending leave requests
+        const leaveResponse = await fetch('/api/employees/leave?status=pending', { signal });
+        if (leaveResponse.ok && !signal.aborted) {
+          const leaveData = await leaveResponse.json();
+          const pendingCount = leaveData.data ? leaveData.data.length : 0;
+          setPendingLeaveCount(pendingCount);
+        }
+
+        // Refresh maintenance data
+        const maintenanceResponse = await fetch('/api/vehicles/maintenance-monitoring', { signal });
+        if (maintenanceResponse.ok && !signal.aborted) {
+          const maintenanceData = await maintenanceResponse.json();
+          if (maintenanceData.success && maintenanceData.data) {
+            setMaintenanceData(maintenanceData.data);
+            const expired = maintenanceData.data.filter((vehicle: any) => vehicle.stato_tagliando === 'Scaduto').length;
+            const expiring = maintenanceData.data.filter((vehicle: any) => vehicle.stato_tagliando === 'In Scadenza').length;
+            setExpiredMaintenanceCount(expired);
+            setExpiringMaintenanceCount(expiring);
+          }
+        }
+
+        // Refresh schedules data
+        const schedulesResponse = await fetch('/api/vehicles/schedules/expiring?days=30', { signal });
+        if (schedulesResponse.ok && !signal.aborted) {
+          const schedulesData = await schedulesResponse.json();
+          if (schedulesData.success && schedulesData.data) {
+            setSchedulesData(schedulesData.data);
+            const critical = schedulesData.data.filter((schedule: any) => schedule.days_until_expiry <= 7).length;
+            const approaching = schedulesData.data.filter((schedule: any) => schedule.days_until_expiry > 7 && schedule.days_until_expiry <= 30).length;
+            setCriticalSchedulesCount(critical);
+            setApproachingSchedulesCount(approaching);
+          }
+        }
       } catch (err) {
-        console.error('Errore nel refresh automatico:', err);
+        if (!signal.aborted) {
+          console.error('Errore nel refresh automatico:', err);
+        }
       }
     }, 300000); // 5 minuti
 
-    return () => clearInterval(refreshTimer);
+    return () => {
+      abortController.abort();
+      clearInterval(refreshTimer);
+    };
   }, []);
 
   // Funzione per sincronizzare i dati dei terzisti (copiata da pagina viaggi)
@@ -206,7 +438,28 @@ export default function ModernDashboard() {
     }
   };
 
-
+  // Funzione per aprire il modal delle richieste ferie
+  const handleOpenLeaveRequestsModal = async () => {
+    setIsLeaveRequestsModalOpen(true);
+    
+    // Fetch dei dati delle richieste ferie
+    try {
+      setIsLoadingLeaveRequests(true);
+      
+      const response = await fetch('/api/employees/leave?status=pending');
+      
+      if (response.ok) {
+        const data = await response.json();
+        setLeaveRequestsData(data.data || []);
+      } else {
+        console.error('Errore nel caricamento delle richieste ferie:', response.status, response.statusText);
+      }
+    } catch (err) {
+      console.error('Errore nel fetch dei dettagli richieste ferie:', err);
+    } finally {
+      setIsLoadingLeaveRequests(false);
+    }
+  };
 
   // Effetti parallax e animazioni
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -674,7 +927,690 @@ export default function ModernDashboard() {
         {/* Alert Scadenze Documenti */}
         <DocumentExpiryAlert className="mb-4" />
 
+        {/* Sezione Avvisi e Notifiche */}
+        {(pendingLeaveCount > 0 || expiredMaintenanceCount > 0 || expiringMaintenanceCount > 0 || criticalSchedulesCount > 0 || approachingSchedulesCount > 0) && (
+          <div className="container-fluid mb-4">
+            <div className="row">
+              <div className="col-12">
+                <h5 className="mb-3 d-flex align-items-center justify-content-between" style={{
+                  color: '#495057',
+                  fontWeight: '600',
+                  fontSize: '1.1rem'
+                }}>
+                  <div className="d-flex align-items-center">
+                    <Bell className="me-2" size={20} style={{ color: '#ff6b35' }} />
+                    Avvisi e Notifiche
+                  </div>
+                  <button
+                    className="btn btn-sm btn-outline-secondary d-flex align-items-center"
+                    onClick={() => toggleSection('avvisi')}
+                    title={sectionToggleStates.avvisi ? "Nascondi sezione" : "Mostra sezione"}
+                    style={{
+                      border: 'none',
+                      background: 'transparent',
+                      color: '#6c757d',
+                      fontSize: '0.8rem'
+                    }}
+                  >
+                    {sectionToggleStates.avvisi ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </button>
+                </h5>
+                
+                {sectionToggleStates.avvisi && (
+                <div className="row g-3">
+                  {/* Card Richieste Ferie - Design con Conteggio Prominente */}
+                  {pendingLeaveCount > 0 && (
+                  <div className="col-lg-4 col-md-6 col-sm-12">
+                      <div 
+                        className="card"
+                        style={{
+                          background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
+                          border: 'none',
+                          borderRadius: '16px',
+                          minHeight: '120px',
+                          boxShadow: '0 8px 32px rgba(255, 107, 53, 0.3)',
+                          transition: 'all 0.3s ease',
+                          cursor: 'pointer',
+                          position: 'relative',
+                          overflow: 'hidden'
+                        }}
+                        onClick={handleOpenLeaveRequestsModal}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'translateY(-4px)';
+                          e.currentTarget.style.boxShadow = '0 12px 40px rgba(255, 107, 53, 0.4)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = '0 8px 32px rgba(255, 107, 53, 0.3)';
+                        }}
+                      >
+                        {/* Effetto di sfondo animato */}
+                        <div style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          background: 'radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%)',
+                          pointerEvents: 'none'
+                        }}></div>
+                        
+                        <div className="card-body text-white p-4">
+                          <div className="d-flex align-items-center justify-content-between h-100">
+                            {/* Sezione sinistra con icona e testo */}
+                            <div className="d-flex align-items-center flex-grow-1">
+                              <div 
+                                className="me-3"
+                                style={{
+                                  background: 'rgba(255,255,255,0.2)',
+                                  borderRadius: '12px',
+                                  padding: '12px',
+                                  backdropFilter: 'blur(10px)'
+                                }}
+                              >
+                                <Calendar size={24} />
+                              </div>
+                              <div>
+                                <h6 className="mb-1" style={{ 
+                                  fontSize: '1rem', 
+                                  fontWeight: '700',
+                                  textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                                }}>
+                                  Richieste Ferie
+                                </h6>
+                                <p className="mb-0 opacity-90" style={{ 
+                                  fontSize: '0.85rem',
+                                  fontWeight: '500'
+                                }}>
+                                  In attesa di approvazione
+                                </p>
+                              </div>
+                            </div>
+                            
+                            {/* Conteggio prominente a destra */}
+                            <div className="text-end">
+                              <div 
+                                style={{
+                                  background: 'rgba(255,255,255,0.95)',
+                                  color: '#ff6b35',
+                                  borderRadius: '16px',
+                                  padding: '8px 16px',
+                                  fontSize: '1.8rem',
+                                  fontWeight: '900',
+                                  lineHeight: '1',
+                                  minWidth: '60px',
+                                  textAlign: 'center',
+                                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                  border: '2px solid rgba(255,255,255,0.3)'
+                                }}
+                              >
+                                {isLoadingLeaveCount ? (
+                                  <div 
+                                    className="spinner-border text-warning" 
+                                    role="status" 
+                                    style={{ 
+                                      width: '1.2rem', 
+                                      height: '1.2rem',
+                                      borderWidth: '2px'
+                                    }}
+                                  >
+                                    <span className="visually-hidden">Caricamento...</span>
+                                  </div>
+                                ) : (
+                                  pendingLeaveCount
+                                )}
+                              </div>
+                              <div 
+                                className="mt-2"
+                                style={{
+                                  background: 'rgba(255,255,255,0.2)',
+                                  borderRadius: '8px',
+                                  padding: '2px 8px',
+                                  fontSize: '0.7rem',
+                                  fontWeight: '600',
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.5px'
+                                }}
+                              >
+                                Nuovo!
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                  </div>
+                  )}
+
+                  {/* Card Manutenzioni Scadute */}
+                  {expiredMaintenanceCount > 0 && (
+                  <div className="col-lg-4 col-md-6 col-sm-12">
+                    <div 
+                      className="card"
+                      style={{
+                        background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+                        border: 'none',
+                        borderRadius: '16px',
+                        minHeight: '120px',
+                        boxShadow: '0 8px 32px rgba(220, 53, 69, 0.3)',
+                        transition: 'all 0.3s ease',
+                        cursor: 'pointer',
+                        position: 'relative',
+                        overflow: 'hidden'
+                      }}
+                      onClick={() => setIsExpiredMaintenanceModalOpen(true)}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-4px)';
+                        e.currentTarget.style.boxShadow = '0 12px 40px rgba(220, 53, 69, 0.4)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 8px 32px rgba(220, 53, 69, 0.3)';
+                      }}
+                    >
+                      {/* Effetto di sfondo animato */}
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%)',
+                        pointerEvents: 'none'
+                      }}></div>
+                      
+                      <div className="card-body text-white p-4">
+                        <div className="d-flex align-items-center justify-content-between h-100">
+                          {/* Sezione sinistra con icona e testo */}
+                          <div className="d-flex align-items-center flex-grow-1">
+                            <div 
+                              className="me-3"
+                              style={{
+                                background: 'rgba(255,255,255,0.2)',
+                                borderRadius: '12px',
+                                padding: '12px',
+                                backdropFilter: 'blur(10px)'
+                              }}
+                            >
+                              <Construction size={24} />
+                            </div>
+                            <div>
+                              <h6 className="mb-1" style={{ 
+                                fontSize: '1rem', 
+                                fontWeight: '700',
+                                textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                              }}>
+                                Manutenzioni Scadute
+                              </h6>
+                              <p className="mb-0 opacity-90" style={{ 
+                                fontSize: '0.85rem',
+                                fontWeight: '500'
+                              }}>
+                                Richiedono attenzione immediata
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {/* Conteggio prominente a destra */}
+                          <div className="text-end">
+                            <div 
+                              style={{
+                                background: 'rgba(255,255,255,0.95)',
+                                color: '#dc3545',
+                                borderRadius: '16px',
+                                padding: '8px 16px',
+                                fontSize: '1.8rem',
+                                fontWeight: '900',
+                                lineHeight: '1',
+                                minWidth: '60px',
+                                textAlign: 'center',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                border: '2px solid rgba(255,255,255,0.3)'
+                              }}
+                            >
+                              {isLoadingMaintenanceData ? (
+                                <div 
+                                  className="spinner-border text-danger" 
+                                  role="status" 
+                                  style={{ 
+                                    width: '1.2rem', 
+                                    height: '1.2rem',
+                                    borderWidth: '2px'
+                                  }}
+                                >
+                                  <span className="visually-hidden">Caricamento...</span>
+                                </div>
+                              ) : (
+                                expiredMaintenanceCount
+                              )}
+                            </div>
+                            <div 
+                              className="mt-2"
+                              style={{
+                                background: 'rgba(255,255,255,0.2)',
+                                borderRadius: '8px',
+                                padding: '2px 8px',
+                                fontSize: '0.7rem',
+                                fontWeight: '600',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.5px'
+                              }}
+                            >
+                              Urgente!
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  )}
+
+                  {/* Card Manutenzioni in Scadenza */}
+                  {expiringMaintenanceCount > 0 && (
+                  <div className="col-lg-4 col-md-6 col-sm-12">
+                    <div 
+                      className="card"
+                      style={{
+                        background: 'linear-gradient(135deg, #fd7e14 0%, #e55a00 100%)',
+                        border: 'none',
+                        borderRadius: '16px',
+                        minHeight: '120px',
+                        boxShadow: '0 8px 32px rgba(253, 126, 20, 0.3)',
+                        transition: 'all 0.3s ease',
+                        cursor: 'pointer',
+                        position: 'relative',
+                        overflow: 'hidden'
+                      }}
+                      onClick={() => setIsExpiringMaintenanceModalOpen(true)}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-4px)';
+                        e.currentTarget.style.boxShadow = '0 12px 40px rgba(253, 126, 20, 0.4)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 8px 32px rgba(253, 126, 20, 0.3)';
+                      }}
+                    >
+                      {/* Effetto di sfondo animato */}
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%)',
+                        pointerEvents: 'none'
+                      }}></div>
+                      
+                      <div className="card-body text-white p-4">
+                        <div className="d-flex align-items-center justify-content-between h-100">
+                          {/* Sezione sinistra con icona e testo */}
+                          <div className="d-flex align-items-center flex-grow-1">
+                            <div 
+                              className="me-3"
+                              style={{
+                                background: 'rgba(255,255,255,0.2)',
+                                borderRadius: '12px',
+                                padding: '12px',
+                                backdropFilter: 'blur(10px)'
+                              }}
+                            >
+                              <Construction size={24} />
+                            </div>
+                            <div>
+                              <h6 className="mb-1" style={{ 
+                                fontSize: '1rem', 
+                                fontWeight: '700',
+                                textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                              }}>
+                                Manutenzioni in Scadenza
+                              </h6>
+                              <p className="mb-0 opacity-90" style={{ 
+                                fontSize: '0.85rem',
+                                fontWeight: '500'
+                              }}>
+                                Da programmare a breve
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {/* Conteggio prominente a destra */}
+                          <div className="text-end">
+                            <div 
+                              style={{
+                                background: 'rgba(255,255,255,0.95)',
+                                color: '#fd7e14',
+                                borderRadius: '16px',
+                                padding: '8px 16px',
+                                fontSize: '1.8rem',
+                                fontWeight: '900',
+                                lineHeight: '1',
+                                minWidth: '60px',
+                                textAlign: 'center',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                border: '2px solid rgba(255,255,255,0.3)'
+                              }}
+                            >
+                              {isLoadingMaintenanceData ? (
+                                <div 
+                                  className="spinner-border text-warning" 
+                                  role="status" 
+                                  style={{ 
+                                    width: '1.2rem', 
+                                    height: '1.2rem',
+                                    borderWidth: '2px'
+                                  }}
+                                >
+                                  <span className="visually-hidden">Caricamento...</span>
+                                </div>
+                              ) : (
+                                expiringMaintenanceCount
+                              )}
+                            </div>
+                            <div 
+                              className="mt-2"
+                              style={{
+                                background: 'rgba(255,255,255,0.2)',
+                                borderRadius: '8px',
+                                padding: '2px 8px',
+                                fontSize: '0.7rem',
+                                fontWeight: '600',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.5px'
+                              }}
+                            >
+                              Attenzione!
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  )}
+
+                  {/* Card Scadenze Critiche */}
+                  {criticalSchedulesCount > 0 && (
+                  <div className="col-lg-4 col-md-6 col-sm-12">
+                    <div 
+                      className="card"
+                      style={{
+                        background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+                        border: 'none',
+                        borderRadius: '16px',
+                        minHeight: '120px',
+                        boxShadow: '0 8px 32px rgba(220, 53, 69, 0.3)',
+                        transition: 'all 0.3s ease',
+                        cursor: 'pointer',
+                        position: 'relative',
+                        overflow: 'hidden'
+                      }}
+                      onClick={() => setIsCriticalSchedulesModalOpen(true)}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-4px)';
+                        e.currentTarget.style.boxShadow = '0 12px 40px rgba(220, 53, 69, 0.4)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 8px 32px rgba(220, 53, 69, 0.3)';
+                      }}
+                    >
+                      {/* Effetto di sfondo animato */}
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%)',
+                        pointerEvents: 'none'
+                      }}></div>
+                      
+                      <div className="card-body text-white p-4">
+                        <div className="d-flex align-items-center justify-content-between h-100">
+                          {/* Sezione sinistra con icona e testo */}
+                          <div className="d-flex align-items-center flex-grow-1">
+                            <div 
+                              className="me-3"
+                              style={{
+                                background: 'rgba(255,255,255,0.2)',
+                                borderRadius: '12px',
+                                padding: '12px',
+                                backdropFilter: 'blur(10px)'
+                              }}
+                            >
+                              <Calendar size={24} />
+                            </div>
+                            <div>
+                              <h6 className="mb-1" style={{ 
+                                fontSize: '1rem', 
+                                fontWeight: '700',
+                                textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                              }}>
+                                Scadenze Critiche
+                              </h6>
+                              <p className="mb-0 opacity-90" style={{ 
+                                fontSize: '0.85rem',
+                                fontWeight: '500'
+                              }}>
+                                Scadute o entro 7 giorni
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {/* Conteggio prominente a destra */}
+                          <div className="text-end">
+                            <div 
+                              style={{
+                                background: 'rgba(255,255,255,0.95)',
+                                color: '#dc3545',
+                                borderRadius: '16px',
+                                padding: '8px 16px',
+                                fontSize: '1.8rem',
+                                fontWeight: '900',
+                                lineHeight: '1',
+                                minWidth: '60px',
+                                textAlign: 'center',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                border: '2px solid rgba(255,255,255,0.3)'
+                              }}
+                            >
+                              {isLoadingSchedulesData ? (
+                                <div 
+                                  className="spinner-border text-danger" 
+                                  role="status" 
+                                  style={{ 
+                                    width: '1.2rem', 
+                                    height: '1.2rem',
+                                    borderWidth: '2px'
+                                  }}
+                                >
+                                  <span className="visually-hidden">Caricamento...</span>
+                                </div>
+                              ) : (
+                                criticalSchedulesCount
+                              )}
+                            </div>
+                            <div 
+                              className="mt-2"
+                              style={{
+                                background: 'rgba(255,255,255,0.2)',
+                                borderRadius: '8px',
+                                padding: '2px 8px',
+                                fontSize: '0.7rem',
+                                fontWeight: '600',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.5px'
+                              }}
+                            >
+                              Urgente!
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  )}
+
+                  {/* Card Scadenze in Avvicinamento */}
+                  {approachingSchedulesCount > 0 && (
+                  <div className="col-lg-4 col-md-6 col-sm-12">
+                    <div 
+                      className="card"
+                      style={{
+                        background: 'linear-gradient(135deg, #fd7e14 0%, #e55a00 100%)',
+                        border: 'none',
+                        borderRadius: '16px',
+                        minHeight: '120px',
+                        boxShadow: '0 8px 32px rgba(253, 126, 20, 0.3)',
+                        transition: 'all 0.3s ease',
+                        cursor: 'pointer',
+                        position: 'relative',
+                        overflow: 'hidden'
+                      }}
+                      onClick={() => setIsApproachingSchedulesModalOpen(true)}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-4px)';
+                        e.currentTarget.style.boxShadow = '0 12px 40px rgba(253, 126, 20, 0.4)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 8px 32px rgba(253, 126, 20, 0.3)';
+                      }}
+                    >
+                      {/* Effetto di sfondo animato */}
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%)',
+                        pointerEvents: 'none'
+                      }}></div>
+                      
+                      <div className="card-body text-white p-4">
+                        <div className="d-flex align-items-center justify-content-between h-100">
+                          {/* Sezione sinistra con icona e testo */}
+                          <div className="d-flex align-items-center flex-grow-1">
+                            <div 
+                              className="me-3"
+                              style={{
+                                background: 'rgba(255,255,255,0.2)',
+                                borderRadius: '12px',
+                                padding: '12px',
+                                backdropFilter: 'blur(10px)'
+                              }}
+                            >
+                              <Calendar size={24} />
+                            </div>
+                            <div>
+                              <h6 className="mb-1" style={{ 
+                                fontSize: '1rem', 
+                                fontWeight: '700',
+                                textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                              }}>
+                                Scadenze in Avvicinamento
+                              </h6>
+                              <p className="mb-0 opacity-90" style={{ 
+                                fontSize: '0.85rem',
+                                fontWeight: '500'
+                              }}>
+                                Da programmare entro 30 giorni
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {/* Conteggio prominente a destra */}
+                          <div className="text-end">
+                            <div 
+                              style={{
+                                background: 'rgba(255,255,255,0.95)',
+                                color: '#fd7e14',
+                                borderRadius: '16px',
+                                padding: '8px 16px',
+                                fontSize: '1.8rem',
+                                fontWeight: '900',
+                                lineHeight: '1',
+                                minWidth: '60px',
+                                textAlign: 'center',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                border: '2px solid rgba(255,255,255,0.3)'
+                              }}
+                            >
+                              {isLoadingSchedulesData ? (
+                                <div 
+                                  className="spinner-border text-warning" 
+                                  role="status" 
+                                  style={{ 
+                                    width: '1.2rem', 
+                                    height: '1.2rem',
+                                    borderWidth: '2px'
+                                  }}
+                                >
+                                  <span className="visually-hidden">Caricamento...</span>
+                                </div>
+                              ) : (
+                                approachingSchedulesCount
+                              )}
+                            </div>
+                            <div 
+                              className="mt-2"
+                              style={{
+                                background: 'rgba(255,255,255,0.2)',
+                                borderRadius: '8px',
+                                padding: '2px 8px',
+                                fontSize: '0.7rem',
+                                fontWeight: '600',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.5px'
+                              }}
+                            >
+                              Attenzione!
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  )}
+                </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Cards Dashboard */}
+        <div className="container-fluid mb-4">
+          <div className="row">
+            <div className="col-12">
+              <h5 className="mb-3 d-flex align-items-center justify-content-between" style={{
+                color: '#495057',
+                fontWeight: '600',
+                fontSize: '1.1rem'
+              }}>
+                <div className="d-flex align-items-center">
+                  <BarChart3 className="me-2" size={20} style={{ color: '#0d6efd' }} />
+                  Dashboard e Statistiche
+                </div>
+                <button
+                  className="btn btn-sm btn-outline-secondary d-flex align-items-center"
+                  onClick={() => toggleSection('dashboard')}
+                  title={sectionToggleStates.dashboard ? "Nascondi sezione" : "Mostra sezione"}
+                  style={{
+                    border: 'none',
+                    background: 'transparent',
+                    color: '#6c757d',
+                    fontSize: '0.8rem'
+                  }}
+                >
+                  {sectionToggleStates.dashboard ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                </button>
+              </h5>
+            </div>
+          </div>
+        </div>
+
+        {sectionToggleStates.dashboard && (
         <div className="row g-4">
           {/* Anagrafiche */}
           <div className="col-lg-3 col-md-6">
@@ -1388,31 +2324,9 @@ export default function ModernDashboard() {
             </div>
           </div>
         </div>
+        )}
 
-        {/* Sezione Avvisi Manutenzione */}
-        <div className="row mt-5">
-          <div className="col-12">
-            <MaintenanceWarningSection 
-              className="mb-4"
-              maxAlerts={3}
-              showTitle={true}
-              compact={false}
-            />
-          </div>
-        </div>
 
-        {/* Sezione Scadenze Programmate */}
-        <div className="row mt-4">
-          <div className="col-12">
-            <ScheduledExpirySection 
-              className="mb-4"
-              maxAlerts={5}
-              showTitle={true}
-              compact={false}
-              daysAhead={30}
-            />
-          </div>
-        </div>
 
         {/* Footer */}
         <div className="text-center mt-5 pt-4 border-top">
@@ -1434,6 +2348,413 @@ export default function ModernDashboard() {
         isOpen={isTravelsNotInTabModalOpen}
         onClose={() => setIsTravelsNotInTabModalOpen(false)}
       />
+
+      {/* Modal per le richieste ferie */}
+      {isLeaveRequestsModalOpen && (
+        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => setIsLeaveRequestsModalOpen(false)}>
+          <div className="modal-dialog modal-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content">
+              <div className="modal-header" style={{ background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)', color: 'white' }}>
+                <h5 className="modal-title d-flex align-items-center">
+                  <Calendar className="me-2" size={24} />
+                  Richieste Ferie in Attesa ({pendingLeaveCount})
+                </h5>
+                <button type="button" className="btn-close btn-close-white" onClick={() => setIsLeaveRequestsModalOpen(false)}></button>
+              </div>
+              <div className="modal-body">
+                {isLoadingLeaveRequests ? (
+                  <div className="text-center py-4">
+                    <div className="spinner-border text-warning" role="status">
+                      <span className="visually-hidden">Caricamento...</span>
+                    </div>
+                    <p className="mt-2 text-muted">Caricamento richieste ferie...</p>
+                  </div>
+                ) : leaveRequestsData.length > 0 ? (
+                  <div className="table-responsive">
+                    <table className="table table-hover">
+                      <thead style={{ backgroundColor: '#fff3cd' }}>
+                        <tr>
+                          <th scope="col">
+                            <Users size={16} className="me-1" />
+                            Dipendente
+                          </th>
+                          <th scope="col">
+                            <Calendar size={16} className="me-1" />
+                            Periodo
+                          </th>
+                          <th scope="col">
+                            <Clock size={16} className="me-1" />
+                            Giorni
+                          </th>
+                          <th scope="col">
+                            <FileText size={16} className="me-1" />
+                            Richiesta
+                          </th>
+                          <th scope="col">
+                            <AlertTriangle size={16} className="me-1" />
+                            Stato
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {leaveRequestsData.map((request, index) => (
+                          <tr key={index}>
+                            <td>
+                              <div className="d-flex align-items-center">
+                                <div 
+                                  className="rounded-circle me-2 d-flex align-items-center justify-content-center"
+                                  style={{
+                                    width: '32px',
+                                    height: '32px',
+                                    backgroundColor: '#ff6b35',
+                                    color: 'white',
+                                    fontSize: '0.8rem',
+                                    fontWeight: 'bold'
+                                  }}
+                                >
+                                  {request.nome?.charAt(0)}{request.cognome?.charAt(0)}
+                                </div>
+                                <div>
+                                  <div className="fw-bold">{request.nome} {request.cognome}</div>
+                                  <small className="text-muted">{request.employee_id}</small>
+                                </div>
+                              </div>
+                            </td>
+                            <td>
+                              <div>
+                                <div className="fw-bold">
+                                  {formatItalianDate(request.start_date)} - {formatItalianDate(request.end_date)}
+                                </div>
+                                <small className="text-muted">
+                                  Dal {getItalianWeekday(request.start_date)} al {getItalianWeekday(request.end_date)}
+                                </small>
+                              </div>
+                            </td>
+                            <td>
+                              <span className="badge bg-warning text-dark">
+                                {request.days_requested} giorni
+                              </span>
+                            </td>
+                            <td>
+                              <div>
+                                <small className="text-muted">
+                                  Richiesta il {formatItalianDate(request.created_at)}
+                                </small>
+                                {request.reason && (
+                                  <div className="mt-1">
+                                    <small className="text-muted fst-italic">"{request.reason}"</small>
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                            <td>
+                              <span className="badge bg-warning">
+                                {request.status === 'pending' ? 'In attesa' : request.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <Calendar size={48} className="text-muted mb-3" />
+                    <h6 className="text-muted">Nessuna richiesta ferie in attesa</h6>
+                    <p className="text-muted mb-0">Tutte le richieste sono state elaborate.</p>
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setIsLeaveRequestsModalOpen(false)}>
+                  Chiudi
+                </button>
+                <Link href="/gestione/employees/ferie?status=pending" className="btn btn-primary" style={{ backgroundColor: '#ff6b35', borderColor: '#ff6b35' }}>
+                  <Users size={16} className="me-1" />
+                  Vai alla Gestione Ferie
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal per le manutenzioni scadute */}
+      {isExpiredMaintenanceModalOpen && (
+        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => setIsExpiredMaintenanceModalOpen(false)}>
+          <div className="modal-dialog modal-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content">
+              <div className="modal-header bg-danger text-white">
+                <h5 className="modal-title d-flex align-items-center">
+                  <Construction className="me-2" size={24} />
+                  Manutenzioni Scadute ({expiredMaintenanceCount})
+                </h5>
+                <button type="button" className="btn-close btn-close-white" onClick={() => setIsExpiredMaintenanceModalOpen(false)}></button>
+              </div>
+              <div className="modal-body">
+                {maintenanceData.filter(vehicle => vehicle.stato_tagliando === 'Scaduto').length > 0 ? (
+                  <div className="table-responsive">
+                    <table className="table table-hover">
+                      <thead className="table-danger">
+                        <tr>
+                          <th>Targa</th>
+                          <th>Marca/Modello</th>
+                          <th>Km Percorsi</th>
+                          <th>Giorni dall'ultimo tagliando</th>
+                          <th>Stato</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {maintenanceData.filter(vehicle => vehicle.stato_tagliando === 'Scaduto').map((vehicle, index) => (
+                          <tr key={index}>
+                            <td><strong>{vehicle.targa}</strong></td>
+                            <td>{vehicle.marca} {vehicle.modello}</td>
+                            <td>{vehicle.km_percorsi?.toLocaleString() || 'N/A'} km</td>
+                            <td>
+                              <span className="badge bg-danger">
+                                {vehicle.giorni_ultimo_tagliando || 'N/A'} giorni
+                              </span>
+                            </td>
+                            <td>
+                              <span className="badge bg-danger">
+                                {vehicle.stato_tagliando}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <Construction size={48} className="text-muted mb-3" />
+                    <p className="text-muted">Nessuna manutenzione scaduta trovata.</p>
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer">
+                <Link href="/vehicles/maintenance-monitoring?stato=Scaduto" className="btn btn-danger">
+                  <Construction className="me-2" size={16} />
+                  Vai al Monitoraggio Manutenzioni
+                </Link>
+                <button type="button" className="btn btn-secondary" onClick={() => setIsExpiredMaintenanceModalOpen(false)}>
+                  Chiudi
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal per le manutenzioni in scadenza */}
+      {isExpiringMaintenanceModalOpen && (
+        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => setIsExpiringMaintenanceModalOpen(false)}>
+          <div className="modal-dialog modal-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content">
+              <div className="modal-header bg-warning text-dark">
+                <h5 className="modal-title d-flex align-items-center">
+                  <Construction className="me-2" size={24} />
+                  Manutenzioni in Scadenza ({expiringMaintenanceCount})
+                </h5>
+                <button type="button" className="btn-close" onClick={() => setIsExpiringMaintenanceModalOpen(false)}></button>
+              </div>
+              <div className="modal-body">
+                {maintenanceData.filter(vehicle => vehicle.stato_tagliando === 'In Scadenza').length > 0 ? (
+                  <div className="table-responsive">
+                    <table className="table table-hover">
+                      <thead className="table-warning">
+                        <tr>
+                          <th>Targa</th>
+                          <th>Marca/Modello</th>
+                          <th>Km Percorsi</th>
+                          <th>Giorni dall'ultimo tagliando</th>
+                          <th>Stato</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {maintenanceData.filter(vehicle => vehicle.stato_tagliando === 'In Scadenza').map((vehicle, index) => (
+                          <tr key={index}>
+                            <td><strong>{vehicle.targa}</strong></td>
+                            <td>{vehicle.marca} {vehicle.modello}</td>
+                            <td>{vehicle.km_percorsi?.toLocaleString() || 'N/A'} km</td>
+                            <td>
+                              <span className="badge bg-warning text-dark">
+                                {vehicle.giorni_ultimo_tagliando || 'N/A'} giorni
+                              </span>
+                            </td>
+                            <td>
+                              <span className="badge bg-warning text-dark">
+                                {vehicle.stato_tagliando}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <Construction size={48} className="text-muted mb-3" />
+                    <p className="text-muted">Nessuna manutenzione in scadenza trovata.</p>
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer">
+                <Link href="/vehicles/maintenance-monitoring?stato=In+Scadenza" className="btn btn-warning">
+                  <Construction className="me-2" size={16} />
+                  Vai al Monitoraggio Manutenzioni
+                </Link>
+                <button type="button" className="btn btn-secondary" onClick={() => setIsExpiringMaintenanceModalOpen(false)}>
+                  Chiudi
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal per le scadenze critiche */}
+      {isCriticalSchedulesModalOpen && (
+        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => setIsCriticalSchedulesModalOpen(false)}>
+          <div className="modal-dialog modal-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content">
+              <div className="modal-header bg-danger text-white">
+                <h5 className="modal-title d-flex align-items-center">
+                  <Calendar className="me-2" size={24} />
+                  Scadenze Critiche ({criticalSchedulesCount})
+                </h5>
+                <button type="button" className="btn-close btn-close-white" onClick={() => setIsCriticalSchedulesModalOpen(false)}></button>
+              </div>
+              <div className="modal-body">
+                {schedulesData.filter(schedule => schedule.days_until_expiry <= 7).length > 0 ? (
+                  <div className="table-responsive">
+                    <table className="table table-hover">
+                      <thead className="table-danger">
+                        <tr>
+                          <th>Targa</th>
+                          <th>Tipo Scadenza</th>
+                          <th>Data Scadenza</th>
+                          <th>Giorni Rimanenti</th>
+                          <th>Priorità</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {schedulesData.filter(schedule => schedule.days_until_expiry <= 7).map((schedule, index) => (
+                          <tr key={index}>
+                            <td><strong>{schedule.vehicle_plate}</strong></td>
+                            <td>{schedule.schedule_type}</td>
+                            <td>{new Date(schedule.scheduled_date).toLocaleDateString('it-IT')}</td>
+                            <td>
+                              <span className={`badge ${schedule.days_until_expiry < 0 ? 'bg-danger' : 'bg-warning text-dark'}`}>
+                                {schedule.days_until_expiry < 0 ? 
+                                  `Scaduto da ${Math.abs(schedule.days_until_expiry)} giorni` : 
+                                  `${schedule.days_until_expiry} giorni`
+                                }
+                              </span>
+                            </td>
+                            <td>
+                              <span className={`badge ${
+                                schedule.priority === 'Alta' ? 'bg-danger' : 
+                                schedule.priority === 'Media' ? 'bg-warning text-dark' : 'bg-success'
+                              }`}>
+                                {schedule.priority || 'Media'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <Calendar size={48} className="text-muted mb-3" />
+                    <p className="text-muted">Nessuna scadenza critica trovata.</p>
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer">
+                <Link href="/vehicles/schedules?status=overdue" className="btn btn-danger">
+                  <Calendar className="me-2" size={16} />
+                  Vai alle Scadenze Programmate
+                </Link>
+                <button type="button" className="btn btn-secondary" onClick={() => setIsCriticalSchedulesModalOpen(false)}>
+                  Chiudi
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal per le scadenze in avvicinamento */}
+      {isApproachingSchedulesModalOpen && (
+        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => setIsApproachingSchedulesModalOpen(false)}>
+          <div className="modal-dialog modal-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content">
+              <div className="modal-header bg-warning text-dark">
+                <h5 className="modal-title d-flex align-items-center">
+                  <Calendar className="me-2" size={24} />
+                  Scadenze in Avvicinamento ({approachingSchedulesCount})
+                </h5>
+                <button type="button" className="btn-close" onClick={() => setIsApproachingSchedulesModalOpen(false)}></button>
+              </div>
+              <div className="modal-body">
+                {schedulesData.filter(schedule => schedule.days_until_expiry > 7 && schedule.days_until_expiry <= 30).length > 0 ? (
+                  <div className="table-responsive">
+                    <table className="table table-hover">
+                      <thead className="table-warning">
+                        <tr>
+                          <th>Targa</th>
+                          <th>Tipo Scadenza</th>
+                          <th>Data Scadenza</th>
+                          <th>Giorni Rimanenti</th>
+                          <th>Priorità</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {schedulesData.filter(schedule => schedule.days_until_expiry > 7 && schedule.days_until_expiry <= 30).map((schedule, index) => (
+                          <tr key={index}>
+                            <td><strong>{schedule.vehicle_plate}</strong></td>
+                            <td>{schedule.schedule_type}</td>
+                            <td>{new Date(schedule.scheduled_date).toLocaleDateString('it-IT')}</td>
+                            <td>
+                              <span className="badge bg-warning text-dark">
+                                {schedule.days_until_expiry} giorni
+                              </span>
+                            </td>
+                            <td>
+                              <span className={`badge ${
+                                schedule.priority === 'Alta' ? 'bg-danger' : 
+                                schedule.priority === 'Media' ? 'bg-warning text-dark' : 'bg-success'
+                              }`}>
+                                {schedule.priority || 'Media'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <Calendar size={48} className="text-muted mb-3" />
+                    <p className="text-muted">Nessuna scadenza in avvicinamento trovata.</p>
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer">
+                <Link href="/vehicles/schedules?status=pending" className="btn btn-warning">
+                  <Calendar className="me-2" size={16} />
+                  Vai alle Scadenze Programmate
+                </Link>
+                <button type="button" className="btn btn-secondary" onClick={() => setIsApproachingSchedulesModalOpen(false)}>
+                  Chiudi
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

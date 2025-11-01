@@ -18,6 +18,16 @@ const nextConfig = {
     // Ignora gli errori di build TypeScript in produzione (opzionale)
     ignoreBuildErrors: false,
   },
+  // Esclude cartelle specifiche dalla compilazione
+  webpack: (config, { isServer }) => {
+    // Esclude la cartella backup dalla compilazione
+    config.watchOptions = {
+      ...config.watchOptions,
+      ignored: ['**/backup-ferie-v2.35.0/**', '**/node_modules/**']
+    };
+    
+    return config;
+  },
 }
 
 module.exports = nextConfig

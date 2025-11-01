@@ -288,7 +288,18 @@ function VehicleSchedulesCalendarContent() {
     if (typeof window !== 'undefined') {
       const localizer = createMomentLocalizer(moment);
       setCurrentLocalizer(localizer);
-      setCalendarReady(true);
+      
+      // Carica dinamicamente il componente DragAndDropCalendar
+      import('react-big-calendar/lib/addons/dragAndDrop').then((mod) => {
+        const DragAndDropCalendarComponent = mod.default(Calendar);
+        setDragAndDropCalendar(() => DragAndDropCalendarComponent);
+        setCalendarReady(true);
+      }).catch((error) => {
+        console.error('Errore nel caricamento del DragAndDropCalendar:', error);
+        // Fallback al calendario normale se il drag and drop non si carica
+        setDragAndDropCalendar(() => Calendar);
+        setCalendarReady(true);
+      });
     }
   }, []);
 
@@ -404,7 +415,7 @@ function VehicleSchedulesCalendarContent() {
     if ('type' in event.resource && event.resource.type === 'leave') {
       const leaveEvent = event.resource as LeaveEvent;
       const startDate = moment(event.start).format('DD/MM/YYYY');
-      const endDate = moment(event.end).subtract(1, 'day').format('DD/MM/YYYY');
+      const endDate = moment(event.end).format('DD/MM/YYYY');
       return `${leaveEvent.employee_name} - ${leaveEvent.leave_type}\nDal ${startDate} al ${endDate}\nGiorni: ${leaveEvent.days_requested}`;
     } else {
       const vehicleEvent = event.resource as VehicleSchedule;
@@ -946,7 +957,7 @@ function VehicleSchedulesCalendarContent() {
                         <p><strong>Tipo:</strong> {(selectedEvent.resource as LeaveEvent).leave_type}</p>
                         <p><strong>Giorni Richiesti:</strong> {(selectedEvent.resource as LeaveEvent).days_requested}</p>
                         <p><strong>Data Inizio:</strong> {moment(selectedEvent.start).format('DD/MM/YYYY')}</p>
-                        <p><strong>Data Fine:</strong> {moment(selectedEvent.end).subtract(1, 'day').format('DD/MM/YYYY')}</p>
+                        <p><strong>Data Fine:</strong> {moment(selectedEvent.end).format('DD/MM/YYYY')}</p>
                       </div>
                     </div>
                     {(selectedEvent.resource as LeaveEvent).reason && (

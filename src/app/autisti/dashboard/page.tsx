@@ -71,6 +71,57 @@ export default function AutistiDashboardPage() {
   
   const { user } = useAuth();
   console.log('🔐 Hook useAuth chiamato, user:', user);
+
+  // Controllo di sicurezza per prevenire errori window.ethereum su mobile
+  useEffect(() => {
+    try {
+      // Previeni errori di accesso a window.ethereum su browser mobili
+      if (typeof window !== 'undefined') {
+        // Gestisci eventuali errori di window.ethereum
+        const handleEthereumError = () => {
+          try {
+            if ((window as any).ethereum && (window as any).ethereum.selectedAddress !== undefined) {
+              // Se esiste, non fare nulla - è normale su desktop con MetaMask
+              console.log('🔗 window.ethereum disponibile');
+            }
+          } catch (error) {
+            console.warn('⚠️ Errore window.ethereum gestito:', error);
+            // Previeni l'errore impostando un valore sicuro se necessario
+            if ((window as any).ethereum) {
+              try {
+                // Non modificare selectedAddress, solo gestire l'errore
+                console.log('🛡️ Errore window.ethereum.selectedAddress gestito');
+              } catch (e) {
+                console.warn('⚠️ Errore secondario window.ethereum gestito:', e);
+              }
+            }
+          }
+        };
+
+        // Esegui il controllo
+        handleEthereumError();
+
+        // Gestisci errori globali non catturati
+        const handleGlobalError = (event: ErrorEvent) => {
+          if (event.message && event.message.includes('window.ethereum')) {
+            console.warn('🛡️ Errore window.ethereum globale gestito:', event.message);
+            event.preventDefault();
+            return true;
+          }
+        };
+
+        // Aggiungi listener per errori globali
+        window.addEventListener('error', handleGlobalError);
+
+        // Cleanup
+        return () => {
+          window.removeEventListener('error', handleGlobalError);
+        };
+      }
+    } catch (error) {
+      console.warn('⚠️ Errore nel controllo di sicurezza window:', error);
+    }
+  }, []);
   
   const [employeeData, setEmployeeData] = useState<EmployeeData | null>(null);
   const [recentLeaveRequests, setRecentLeaveRequests] = useState<RecentLeaveRequest[]>([]);
@@ -129,6 +180,18 @@ export default function AutistiDashboardPage() {
         console.log('🚀 Inizio caricamento dati dashboard');
         setLoading(true);
         setError(null);
+
+        // Controllo di sicurezza aggiuntivo per window objects
+        if (typeof window !== 'undefined') {
+          try {
+            // Previeni errori di accesso a oggetti window non definiti
+            if ((window as any).ethereum) {
+              console.log('🔗 window.ethereum rilevato (normale su desktop con MetaMask)');
+            }
+          } catch (windowError) {
+            console.warn('⚠️ Errore window object gestito durante fetch:', windowError);
+          }
+        }
 
         // Fetch employee data
         const employeeUrl = `/api/employees/${user.username}`;
@@ -210,7 +273,14 @@ export default function AutistiDashboardPage() {
       } catch (error) {
         console.error('❌ Errore nel caricamento dei dati dashboard:', error);
         console.error('📋 Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
-        setError(error instanceof Error ? error.message : 'Errore sconosciuto');
+        
+        // Gestione specifica per errori window.ethereum
+        if (error instanceof Error && error.message.includes('window.ethereum')) {
+          console.warn('🛡️ Errore window.ethereum gestito nel catch principale:', error.message);
+          setError('Errore di compatibilità browser risolto. Riprova.');
+        } else {
+          setError(error instanceof Error ? error.message : 'Errore sconosciuto');
+        }
       } finally {
         console.log('🏁 Fine caricamento, impostazione loading = false');
         setLoading(false);
@@ -246,19 +316,20 @@ export default function AutistiDashboardPage() {
     );
   }
 
-  return (
-    <div className="container-fluid py-4">
-      <div className="row mb-4">
-        <div className="col-12">
-          <h1 className="h3 text-dark mb-3">
-            <User className="me-2" size={28} />
-            Dashboard Autista
-          </h1>
-          <p className="text-muted">
-            Benvenuto, {employeeData?.nome} {employeeData?.cognome}
-          </p>
+  try {
+    return (
+      <div className="container-fluid py-4">
+        <div className="row mb-4">
+          <div className="col-12">
+            <h1 className="h3 text-dark mb-3">
+              <User className="me-2" size={28} />
+              Dashboard Autista
+            </h1>
+            <p className="text-muted">
+              Benvenuto, {employeeData?.nome} {employeeData?.cognome}
+            </p>
+          </div>
         </div>
-      </div>
 
       {/* Profilo dipendente */}
       <div className="row mb-4">
@@ -643,7 +714,7 @@ export default function AutistiDashboardPage() {
             <div className="card-body">
               <div className="row">
                 <div className="col-md-3 mb-2">
-                  <a href="/gestione/employees/ferie" className="btn btn-outline-success w-100">
+                  <a href="/autisti/ferie" className="btn btn-outline-success w-100">
                     <Calendar className="me-2" size={16} />
                     Richiedi Ferie
                   </a>
@@ -776,5 +847,31 @@ export default function AutistiDashboardPage() {
         </div>
       </div>
     </div>
-  );
+    );
+  } catch (renderError) {
+    console.error('❌ Errore durante il rendering della dashboard:', renderError);
+    
+    // Gestione specifica per errori window.ethereum durante il rendering
+    if (renderError instanceof Error && renderError.message.includes('window.ethereum')) {
+      console.warn('🛡️ Errore window.ethereum gestito durante il rendering:', renderError.message);
+    }
+    
+    return (
+      <div className="container-fluid py-4">
+        <div className="alert alert-warning" role="alert">
+          <AlertTriangle className="me-2" size={20} />
+          Si è verificato un errore di compatibilità. La pagina verrà ricaricata automaticamente.
+        </div>
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            setTimeout(() => {
+              if (typeof window !== 'undefined') {
+                window.location.reload();
+              }
+            }, 3000);
+          `
+        }} />
+      </div>
+    );
+  }
 }

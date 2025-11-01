@@ -1,6 +1,122 @@
 # 🚚 Gestione Partesa - Funzionalità Aggiornate v2.36.0
 
-## 🚀 **VERSIONE 2.36.0** - Toggle Card Profilo Dipendente ⭐ **NUOVO**
+## 🚀 **VERSIONE 2.35.1** - Correzioni Modal Richieste Ferie Dashboard ⭐ **NUOVO**
+
+### 🔧 **CORREZIONI MODAL RICHIESTE FERIE DASHBOARD**
+- **Problema risolto**: Eliminati errori "Invalid Date" nel modal richieste ferie della dashboard
+- **Funzioni formattazione**: Implementate funzioni robuste per gestione date italiane
+- **Gestione formato API**: Supporto completo per date in formato `dd/mm/yyyy` restituite dall'API
+- **Correzione proprietà**: Allineati nomi proprietà modal con struttura dati API reale
+- **Visualizzazione migliorata**: Aggiunta visualizzazione giorni della settimana in italiano
+- **Link corretto**: Pulsante "Vai alla Gestione Ferie" ora punta alla pagina corretta con filtro
+- **Navigazione ottimizzata**: Filtro automatico "In attesa" applicato tramite parametro URL
+
+### 🛠️ **IMPLEMENTAZIONE TECNICA v2.35.1**
+
+#### Funzioni di formattazione date aggiunte
+```javascript
+// File: src/app/dashboard/page.tsx
+
+// Funzione per convertire date italiane in oggetti Date validi
+function parseItalianDate(dateStr) {
+  if (!dateStr || dateStr === 'Invalid Date') return null;
+  
+  // Se è già in formato ISO, usalo direttamente
+  if (dateStr.includes('-')) {
+    return new Date(dateStr);
+  }
+  
+  // Converti formato italiano dd/mm/yyyy
+  const parts = dateStr.split('/');
+  if (parts.length === 3) {
+    const [day, month, year] = parts;
+    return new Date(year, month - 1, day);
+  }
+  
+  // Fallback: prova parsing diretto
+  return new Date(dateStr);
+}
+
+// Funzione per formattare date in italiano
+function formatItalianDate(date) {
+  if (!date) return 'Data non disponibile';
+  const validDate = parseItalianDate(date);
+  if (!validDate || isNaN(validDate.getTime())) return 'Data non valida';
+  return validDate.toLocaleDateString('it-IT');
+}
+
+// Funzione per ottenere giorno della settimana in italiano
+function getItalianWeekday(date) {
+  if (!date) return '';
+  const validDate = parseItalianDate(date);
+  if (!validDate || isNaN(validDate.getTime())) return '';
+  return validDate.toLocaleDateString('it-IT', { weekday: 'long' });
+}
+```
+
+#### Correzione nomi proprietà nel modal
+```javascript
+// Prima (errato)
+{new Date(request.data_inizio).toLocaleDateString('it-IT')}
+{new Date(request.data_fine).toLocaleDateString('it-IT')}
+{new Date(request.data_richiesta).toLocaleDateString('it-IT')}
+
+// Dopo (corretto)
+{formatItalianDate(request.start_date)}
+{formatItalianDate(request.end_date)}
+{formatItalianDate(request.created_at)}
+```
+
+#### Aggiornamento link gestione ferie
+```javascript
+// File: src/app/dashboard/page.tsx
+// Prima
+<Link href="/gestione/dipendenti/dashboard">
+
+// Dopo
+<Link href="/gestione/employees/ferie?status=pending">
+```
+
+#### Supporto parametri URL nella pagina gestione ferie
+```javascript
+// File: src/app/gestione/employees/ferie/page.tsx
+// Import aggiunto
+import { useSearchParams } from 'next/navigation';
+
+// Inizializzazione filtro da URL
+const searchParams = useSearchParams();
+const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '');
+```
+
+### ✅ **CARATTERISTICHE IMPLEMENTATE v2.35.1**
+- ✅ **Date corrette**: Modal mostra date in formato italiano corretto senza errori
+- ✅ **Giorni settimana**: Visualizzazione giorni della settimana in italiano
+- ✅ **Proprietà allineate**: Nomi proprietà modal corrispondenti ai dati API reali
+- ✅ **Link funzionante**: Pulsante reindirizza alla pagina gestione ferie corretta
+- ✅ **Filtro automatico**: Parametro URL `status=pending` applicato automaticamente
+- ✅ **Navigazione fluida**: Transizione ottimizzata da dashboard a gestione ferie
+- ✅ **Gestione errori**: Fallback robusti per date non valide o malformate
+- ✅ **UX migliorata**: Eliminazione errori visivi e miglioramento usabilità
+
+### 📊 **TABELLE DATABASE COINVOLTE v2.35.1**
+- **viaggi_db.employee_leave_requests**: Tabella sorgente dati richieste ferie
+- **Campi utilizzati**: `start_date`, `end_date`, `created_at`, `days_requested`, `reason`, `status`, `employee_id`
+- **Formato date**: API restituisce date in formato italiano `dd/mm/yyyy` tramite `DATE_FORMAT('%d/%m/%Y')`
+
+### 📁 **FILE MODIFICATI v2.35.1**
+- `src/app/dashboard/page.tsx` - Correzione modal e funzioni formattazione date
+- `src/app/gestione/employees/ferie/page.tsx` - Aggiunto supporto parametri URL per filtri
+
+### 🎯 **BENEFICI UTENTE v2.35.1**
+- **Visualizzazione corretta**: Eliminazione errori "Invalid Date" nel modal
+- **Informazioni complete**: Date, giorni settimana e dettagli richieste sempre visibili
+- **Navigazione intuitiva**: Click su "Vai alla Gestione Ferie" porta direttamente alle richieste in attesa
+- **Efficienza operativa**: Filtro automatico riduce passaggi per gestione richieste
+- **Affidabilità**: Sistema robusto che gestisce correttamente tutti i formati date
+
+---
+
+## 🚀 **VERSIONE 2.36.0** - Toggle Card Profilo Dipendente ⭐ **PRECEDENTE**
 
 ### 🎛️ **TOGGLE CARD PROFILO DIPENDENTE - DASHBOARD AUTISTI**
 - **Funzionalità**: Toggle per ridurre/espandere la card "Profilo Dipendente" nella dashboard autisti

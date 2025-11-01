@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Calendar, Clock, CheckCircle, XCircle, AlertTriangle, Plus } from 'lucide-react';
+import DateInput from '../../../components/DateInput';
+import { convertItalianToISO, convertISOToItalian } from '../../../lib/date-utils';
 
 interface LeaveRequest {
   id: number;
@@ -65,25 +67,14 @@ export default function AutistiFeriePage() {
 
   // Funzione per calcolare i giorni lavorativi
   const calculateWorkingDays = (startDateStr: string, endDateStr: string): number => {
-    console.log('calculateWorkingDays - Input:', { startDateStr, endDateStr });
-    
     const startDate = parseItalianDate(startDateStr);
     const endDate = parseItalianDate(endDateStr);
     
-    console.log('calculateWorkingDays - Parsed dates:', { 
-      startDate: startDate?.toISOString(), 
-      endDate: endDate?.toISOString(),
-      startDay: startDate?.getDay(),
-      endDay: endDate?.getDay()
-    });
-    
     if (!startDate || !endDate) {
-      console.log('calculateWorkingDays - Invalid dates, returning 0');
       return 0;
     }
 
     if (endDate < startDate) {
-      console.log('calculateWorkingDays - End date before start date, returning 0');
       return 0;
     }
 
@@ -93,37 +84,22 @@ export default function AutistiFeriePage() {
     // Assicuriamoci che il ciclo funzioni correttamente anche per date uguali
     while (currentDate <= endDate) {
       const dayOfWeek = currentDate.getDay();
-      console.log('calculateWorkingDays - Checking date:', {
-        date: currentDate.toISOString().split('T')[0],
-        dayOfWeek,
-        isWeekend: dayOfWeek === 0 || dayOfWeek === 6
-      });
       
       // 0 = Domenica, 6 = Sabato - escludiamo weekend
       if (dayOfWeek !== 0 && dayOfWeek !== 6) {
         workingDays++;
-        console.log('calculateWorkingDays - Added working day, total:', workingDays);
       }
       
       // Importante: incrementa la data per evitare loop infiniti
       currentDate.setDate(currentDate.getDate() + 1);
     }
     
-    console.log('calculateWorkingDays - Final result:', workingDays);
     return workingDays;
   };
 
   useEffect(() => {
     // Calcola automaticamente i giorni lavorativi quando cambiano le date
     // ESCLUSO per i permessi che hanno sempre 1 giorno fisso
-    console.log('useEffect - Date changed:', { 
-      start_date: formData.start_date, 
-      end_date: formData.end_date,
-      leave_type: formData.leave_type,
-      start_length: formData.start_date?.length,
-      end_length: formData.end_date?.length,
-      current_days: formData.days_requested
-    });
     
     // Reset dell'errore quando cambiano le date
     if (error && error.includes('numero di giorni')) {
@@ -133,7 +109,6 @@ export default function AutistiFeriePage() {
     // Per i permessi, mantieni sempre 0 giorni fisso (permessi ad ore)
     if (formData.leave_type === 'permesso') {
       if (formData.days_requested !== 0) {
-        console.log('useEffect - Setting days to 0 for permesso');
         setFormData(prev => ({ ...prev, days_requested: 0 }));
       }
       return;
@@ -143,26 +118,19 @@ export default function AutistiFeriePage() {
     if (formData.start_date && formData.end_date) {
       // Verifica che le date abbiano la lunghezza corretta (gg/mm/aaaa = 10 caratteri)
       if (formData.start_date.length === 10 && formData.end_date.length === 10) {
-        console.log('useEffect - Both dates complete, calculating working days...');
         const workingDays = calculateWorkingDays(formData.start_date, formData.end_date);
-        console.log('useEffect - Calculated working days:', workingDays);
         
         // Aggiorna solo se il valore è diverso per evitare loop infiniti
         if (workingDays !== formData.days_requested) {
-          console.log('useEffect - Updating days_requested from', formData.days_requested, 'to', workingDays);
           setFormData(prev => ({ ...prev, days_requested: workingDays }));
-        } else {
-          console.log('useEffect - Days already correct, no update needed');
         }
       } else {
-        console.log('useEffect - Date incomplete, resetting days to 0');
         if (formData.days_requested !== 0) {
           setFormData(prev => ({ ...prev, days_requested: 0 }));
         }
       }
     } else {
       // Se le date non sono complete, resetta i giorni
-      console.log('useEffect - Missing dates, resetting days to 0');
       if (formData.days_requested !== 0) {
         setFormData(prev => ({ ...prev, days_requested: 0 }));
       }
@@ -361,26 +329,18 @@ export default function AutistiFeriePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validateForm()) return;
 
+    if (!validateForm()) {
+      return;
+    }
+    
     setError('');
     setSuccess('');
     setLoading(true);
 
     try {
-      // LOG 1: Date PRIMA di qualsiasi elaborazione
-      console.log('=== INIZIO HANDLESUBMIT ===');
-      console.log('1. formData.start_date ORIGINALE:', formData.start_date);
-      console.log('1. formData.end_date ORIGINALE:', formData.end_date);
-      console.log('1. formData completo:', formData);
-      
       // Prepara i dati per l'invio
       const submitData = { ...formData };
-      
-      // LOG 2: Date DOPO la copia di formData
-      console.log('2. submitData.start_date DOPO COPIA:', submitData.start_date);
-      console.log('2. submitData.end_date DOPO COPIA:', submitData.end_date);
       
       // Per i permessi ad ore, gestione speciale
       if (formData.leave_type === 'permesso') {
@@ -400,24 +360,14 @@ export default function AutistiFeriePage() {
           });
           submitData.start_date = todayString;
           submitData.end_date = todayString;
-          console.log('Entrambe le date vuote per permesso, usando data odierna:', todayString);
         } else if (!startDateEmpty && endDateEmpty) {
           // start_date fornita ma end_date vuota → copia start_date in end_date
           submitData.end_date = submitData.start_date;
-          console.log('Solo start_date fornita, copiando in end_date:', submitData.start_date);
         } else if (startDateEmpty && !endDateEmpty) {
           // end_date fornita ma start_date vuota → copia end_date in start_date
           submitData.start_date = submitData.end_date;
-          console.log('Solo end_date fornita, copiando in start_date:', submitData.end_date);
-        } else {
-          // Entrambe le date sono fornite → usale così come sono
-          console.log('Entrambe le date fornite dall\'utente:', submitData.start_date, submitData.end_date);
         }
       }
-
-      // LOG 3: Date DOPO il controllo per i permessi
-      console.log('3. submitData.start_date DOPO CONTROLLO PERMESSI:', submitData.start_date);
-      console.log('3. submitData.end_date DOPO CONTROLLO PERMESSI:', submitData.end_date);
 
       // Verifica che tutti i campi obbligatori siano presenti
       const dataToSend = {
@@ -430,12 +380,6 @@ export default function AutistiFeriePage() {
         reason: submitData.reason,
         notes: submitData.notes
       };
-
-      // LOG 4: Date prima dell'invio
-      console.log('4. dataToSend.start_date PRIMA INVIO:', dataToSend.start_date);
-      console.log('4. dataToSend.end_date PRIMA INVIO:', dataToSend.end_date);
-      console.log('4. dataToSend completo:', dataToSend);
-      console.log('=== FINE PREPARAZIONE DATI ===');
       
       const response = await fetch('/api/employees/leave', {
         method: 'POST',
@@ -717,66 +661,44 @@ export default function AutistiFeriePage() {
 
                   <div className="row">
                     <div className="col-md-6 mb-3">
-                      <label htmlFor="start_date" className="form-label text-light">
-                        Data Inizio
-                      </label>
-                      <input
+                      <DateInput
                         id="start_date"
                         name="start_date"
-                        type="text"
-                        className="form-control bg-dark text-light border-secondary"
-                        value={formData.start_date}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          setFormData(prev => ({ ...prev, start_date: value }));
+                        label="Data Inizio"
+                        value={convertItalianToISO(formData.start_date)}
+                        onChange={(isoValue) => {
+                          // Converte il valore ISO in formato italiano per il form state
+                          const italianDate = convertISOToItalian(isoValue);
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            start_date: italianDate 
+                          }));
                         }}
-                        onBlur={(e) => {
-                          let value = e.target.value.replace(/[^\d]/g, '');
-                          if (value.length >= 8) {
-                            const formatted = `${value.slice(0,2)}/${value.slice(2,4)}/${value.slice(4,8)}`;
-                            setFormData(prev => ({ ...prev, start_date: formatted }));
-                          }
-                        }}
+                        className="bg-dark text-light border-secondary"
                         required
-                        placeholder="gg/mm/aaaa"
-                        maxLength={10}
                       />
-                      <small className="text-muted">Formato: gg/mm/aaaa</small>
                     </div>
                     <div className="col-md-6 mb-3">
-                      <label htmlFor="end_date" className="form-label text-light">
-                        Data Fine
-                        {formData.leave_type === 'permesso' && (
-                          <small className="text-muted ms-2">(automatica per permessi)</small>
-                        )}
-                      </label>
-                      <input
+                      <DateInput
                         id="end_date"
                         name="end_date"
-                        type="text"
-                        className={`form-control bg-dark text-light border-secondary ${
+                        label={formData.leave_type === 'permesso' ? 'Data Fine (automatica per permessi)' : 'Data Fine'}
+                        value={convertItalianToISO(formData.end_date)}
+                        onChange={(isoValue) => {
+                          if (formData.leave_type !== 'permesso') {
+                            // Converte il valore ISO in formato italiano per il form state
+                            const italianDate = convertISOToItalian(isoValue);
+                            setFormData(prev => ({ 
+                              ...prev, 
+                              end_date: italianDate 
+                            }));
+                          }
+                        }}
+                        className={`bg-dark text-light border-secondary ${
                           formData.leave_type === 'permesso' ? 'bg-secondary bg-opacity-50' : ''
                         }`}
-                        value={formData.end_date}
-                        onChange={(e) => {
-                          if (formData.leave_type !== 'permesso') {
-                            const value = e.target.value;
-                            setFormData(prev => ({ ...prev, end_date: value }));
-                          }
-                        }}
-                        onBlur={(e) => {
-                          if (formData.leave_type !== 'permesso') {
-                            let value = e.target.value.replace(/[^\d]/g, '');
-                            if (value.length >= 8) {
-                              const formatted = `${value.slice(0,2)}/${value.slice(2,4)}/${value.slice(4,8)}`;
-                              setFormData(prev => ({ ...prev, end_date: formatted }));
-                            }
-                          }
-                        }}
-                        readOnly={formData.leave_type === 'permesso'}
+                        disabled={formData.leave_type === 'permesso'}
                         required
-                        placeholder="gg/mm/aaaa"
-                        maxLength={10}
                       />
                       <small className="text-muted">
                         {formData.leave_type === 'permesso' 

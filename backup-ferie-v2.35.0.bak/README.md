@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.35.1
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.35.0
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -97,19 +97,7 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Integrazione calendario**: Eventi ferie visualizzati nel calendario aziendale integrato
 - **Database esteso**: Tabelle `employee_leave_requests` e `employee_leave_balance` ottimizzate
 
-### 🔧 **Correzioni Modal Richieste Ferie Dashboard** ⭐ **NUOVO v2.35.1**
-- **Risoluzione "Invalid Date"**: Corretti errori di visualizzazione date nel modal richieste ferie dashboard
-- **Funzioni formattazione robuste**: Implementate funzioni `parseItalianDate()`, `formatItalianDate()` e `getItalianWeekday()`
-- **Gestione formato italiano**: Supporto completo per date in formato `dd/mm/yyyy` da API SQL
-- **Correzione nomi proprietà**: Allineati nomi proprietà modal con API (`start_date`, `end_date`, `created_at`)
-- **Visualizzazione giorni settimana**: Aggiunta visualizzazione giorni della settimana in italiano
-- **Link gestione ferie corretto**: Pulsante "Vai alla Gestione Ferie" ora punta a `/gestione/employees/ferie?status=pending`
-- **Filtro automatico**: Parametro URL `status=pending` applicato automaticamente per mostrare solo richieste in attesa
-- **Navigazione migliorata**: Integrazione `useSearchParams` per lettura parametri URL nella pagina gestione ferie
-- **UX ottimizzata**: Transizione fluida da dashboard a gestione ferie con filtro preimpostato
-- **Gestione errori robusta**: Fallback per date non valide e gestione stati edge case
-
-### 🎯 **Miglioramenti Sistema Gestione Ferie** ⭐ **PRECEDENTE v2.35.0**
+### 🎯 **Miglioramenti Sistema Gestione Ferie** ⭐ **NUOVO v2.35.0**
 - **Calcolo dinamico ore utilizzate**: Nuova colonna "Ore Utilizzate" nella tabella bilanci ferie
 - **Badge viola distintivo**: Visualizzazione ore permessi utilizzate con colore #6f42c1 per contrasto ottimale
 - **Calcolo automatico**: Ore calcolate dinamicamente dalle richieste approvate per dipendente/anno

@@ -45,6 +45,15 @@ const MaintenanceMonitoringPage: React.FC = () => {
   const [thresholds, setThresholds] = useState<MaintenanceThresholds | null>(null);
   const [isLoadingThresholds, setIsLoadingThresholds] = useState(true);
 
+  // Leggi il parametro URL all'avvio
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const statoParam = urlParams.get('stato');
+    if (statoParam) {
+      setSelectedStatus(statoParam);
+    }
+  }, []);
+
   const fetchThresholds = async () => {
     try {
       setIsLoadingThresholds(true);
