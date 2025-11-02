@@ -108,15 +108,7 @@ export default function AutistaDettaglio() {
   });
   const [submittingLeaveRequest, setSubmittingLeaveRequest] = useState(false);
 
-  // Stati per gestione credenziali
-  const [hasPassword, setHasPassword] = useState(false);
-  const [showPasswordForm, setShowPasswordForm] = useState(false);
-  const [passwordForm, setPasswordForm] = useState({
-    password: '',
-    confirmPassword: ''
-  });
-  const [passwordLoading, setPasswordLoading] = useState(false);
-  const [passwordMessage, setPasswordMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
+  // Stati per gestione credenziali rimossi - non più necessari
 
   // Stati per gestione username
   const [showUsernameForm, setShowUsernameForm] = useState(false);
@@ -135,59 +127,26 @@ export default function AutistaDettaglio() {
       setLoading(true);
       setError(null);
 
-      // Carica dati dipendente
-      const employeeResponse = await fetch(`/api/employees/${employeeId}`);
-      if (!employeeResponse.ok) {
-        if (employeeResponse.status === 404) {
+      // Chiamata API ottimizzata che recupera tutti i dati in una sola volta
+      const response = await fetch(`/api/employees/${employeeId}/details`);
+      if (!response.ok) {
+        if (response.status === 404) {
           setError('Dipendente non trovato');
           return;
         } else {
-          throw new Error(`Errore nel caricamento del dipendente (${employeeResponse.status})`);
+          throw new Error(`Errore nel caricamento del dipendente (${response.status})`);
         }
       }
       
-      const employeeData = await employeeResponse.json();
-      if (employeeData.success) {
-        setEmployee(employeeData.data);
+      const data = await response.json();
+      if (data.success) {
+        // Imposta tutti i dati ricevuti dalla chiamata ottimizzata
+        setEmployee(data.data.employee);
+        setDocuments(Array.isArray(data.data.documents) ? data.data.documents : []);
+        setLeaveBalance(data.data.leaveBalance);
+        setLeaveRequests(Array.isArray(data.data.leaveRequests) ? data.data.leaveRequests : []);
       } else {
-        throw new Error(employeeData.error || 'Errore nel recupero dei dati del dipendente');
-      }
-
-      // Carica documenti solo se il dipendente è stato trovato
-      const documentsResponse = await fetch(`/api/employees/${employeeId}/documents`);
-      if (documentsResponse.ok) {
-        const documentsData = await documentsResponse.json();
-        if (documentsData.success && documentsData.data) {
-          setDocuments(Array.isArray(documentsData.data) ? documentsData.data : []);
-        }
-      }
-
-      // Carica bilancio ferie per l'anno corrente
-      const currentYear = new Date().getFullYear();
-      const leaveResponse = await fetch(`/api/employees/leave/balance?employee_id=${employeeId}&year=${currentYear}`);
-      if (leaveResponse.ok) {
-        const leaveData = await leaveResponse.json();
-        if (leaveData.success && leaveData.data) {
-          setLeaveBalance(leaveData.data);
-        }
-      }
-
-      // Carica richieste ferie del dipendente
-      const leaveRequestsResponse = await fetch(`/api/employees/leave?employee_id=${employeeId}`);
-      if (leaveRequestsResponse.ok) {
-        const leaveRequestsData = await leaveRequestsResponse.json();
-        if (leaveRequestsData.success && leaveRequestsData.data) {
-          setLeaveRequests(Array.isArray(leaveRequestsData.data) ? leaveRequestsData.data : []);
-        }
-      }
-
-      // Carica stato credenziali per tutti i dipendenti
-      if (employeeData.data) {
-        const passwordResponse = await fetch(`/api/employees/${employeeId}/password`);
-        if (passwordResponse.ok) {
-          const passwordData = await passwordResponse.json();
-          setHasPassword(passwordData.has_password || false);
-        }
+        throw new Error(data.error || 'Errore nel recupero dei dati del dipendente');
       }
 
     } catch (err) {
@@ -236,58 +195,7 @@ export default function AutistaDettaglio() {
     }
   };
 
-  // Funzioni per gestione credenziali
-  const handlePasswordSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (passwordForm.password !== passwordForm.confirmPassword) {
-      setPasswordMessage({type: 'error', text: 'Le password non coincidono'});
-      return;
-    }
-    
-    if (passwordForm.password.length < 6) {
-      setPasswordMessage({type: 'error', text: 'La password deve essere di almeno 6 caratteri'});
-      return;
-    }
-    
-    try {
-      setPasswordLoading(true);
-      setPasswordMessage(null);
-      
-      const response = await fetch(`/api/employees/${employeeId}/password`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          password: passwordForm.password
-        }),
-      });
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        setPasswordMessage({type: 'success', text: 'Password impostata con successo!'});
-        setHasPassword(true);
-        setShowPasswordForm(false);
-        setPasswordForm({password: '', confirmPassword: ''});
-      } else {
-        setPasswordMessage({type: 'error', text: result.error || 'Errore nell\'impostazione della password'});
-      }
-      
-    } catch (error) {
-      console.error('Errore nell\'impostazione password:', error);
-      setPasswordMessage({type: 'error', text: 'Errore nell\'impostazione della password'});
-    } finally {
-      setPasswordLoading(false);
-    }
-  };
-
-  const resetPasswordForm = () => {
-    setShowPasswordForm(false);
-    setPasswordForm({password: '', confirmPassword: ''});
-    setPasswordMessage(null);
-  };
+  // Funzioni per gestione credenziali rimosse - non più necessarie
 
   // Funzione per aggiornare l'username
   const handleUsernameUpdate = async () => {

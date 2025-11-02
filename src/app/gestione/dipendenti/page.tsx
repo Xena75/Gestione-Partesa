@@ -211,7 +211,7 @@ export default function AutistiPage() {
               Gestione Autisti
             </h1>
             <div>
-              <Link href="/gestione/dipendenti/dashboard" className="btn btn-outline-info me-2">
+              <Link href="/gestione/dipendenti/dashboard" className="btn btn-outline-info me-2" prefetch={false}>
                 <i className="fas fa-tachometer-alt me-1"></i>
                 Dashboard
               </Link>

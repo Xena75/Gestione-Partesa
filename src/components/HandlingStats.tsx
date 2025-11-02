@@ -30,8 +30,13 @@ export default function HandlingStats({ filters, viewType }: HandlingStatsProps)
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
+    const signal = controller.signal;
+    
     const fetchStats = async () => {
       try {
+        if (signal.aborted) return;
+        
         setIsLoading(true);
         setError(null);
         
@@ -45,11 +50,14 @@ export default function HandlingStats({ filters, viewType }: HandlingStatsProps)
         // Aggiungi il parametro viewType
         params.set('viewType', viewType);
         
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        const timeoutId = setTimeout(() => {
+          if (!signal.aborted) {
+            controller.abort();
+          }
+        }, 30000);
         
         const response = await fetch(`/api/handling/stats?${params}`, {
-          signal: controller.signal
+          signal
         });
         
         clearTimeout(timeoutId);
@@ -59,21 +67,29 @@ export default function HandlingStats({ filters, viewType }: HandlingStatsProps)
         }
         
         const data = await response.json();
-        setStats(data);
+        if (!signal.aborted) {
+          setStats(data);
+        }
       } catch (error: any) {
-        console.error('Errore nel caricamento delle statistiche:', error);
-        if (error.name === 'AbortError') {
-          setError('Timeout: la richiesta ha impiegato troppo tempo');
-        } else {
+        if (!signal.aborted && error.name !== 'AbortError') {
+          console.error('Errore nel caricamento delle statistiche:', error);
           setError('Errore nel caricamento delle statistiche');
+        } else if (error.name === 'AbortError' && !signal.aborted) {
+          setError('Timeout: la richiesta ha impiegato troppo tempo');
         }
       } finally {
-        setIsLoading(false);
+        if (!signal.aborted) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchStats();
-  }, [filters]);
+    
+    return () => {
+      controller.abort();
+    };
+  }, [filters, viewType]);
 
   const formatNumber = (num: number): string => {
     return new Intl.NumberFormat('it-IT').format(num);

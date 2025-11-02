@@ -16,7 +16,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (_username: string, _password: string) => Promise<boolean>;
   logout: () => Promise<void>;
-  checkAuth: () => Promise<void>;
+  checkAuth: (signal?: AbortSignal) => Promise<void>;
   switchUser: (userId: number) => Promise<boolean>;
 }
 
@@ -42,22 +42,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const isAuthenticated = !!user;
 
-  const checkAuth = async () => {
+  const checkAuth = async (signal?: AbortSignal) => {
     try {
-      // Aggiungi timeout per evitare richieste che si bloccano
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 secondi timeout
+      // Usa il signal passato o crea un nuovo controller con timeout
+      const controller = signal ? null : new AbortController();
+      const requestSignal = signal || controller?.signal;
+      
+      let timeoutId: NodeJS.Timeout | null = null;
+      if (!signal && controller) {
+        timeoutId = setTimeout(() => {
+          if (!controller.signal.aborted) {
+            controller.abort();
+          }
+        }, 5000); // 5 secondi timeout
+      }
       
       const response = await fetch('/api/auth/verify', {
         credentials: 'include',
-        signal: controller.signal
+        signal: requestSignal
       });
       
-      clearTimeout(timeoutId);
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      
+      if (requestSignal?.aborted) return;
       
       if (response.ok) {
         const data = await response.json();
-        if (data.valid && data.user) {
+        if (data.valid && data.user && !requestSignal?.aborted) {
           setUser(data.user);
         } else {
           setUser(null);
@@ -65,16 +78,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
       } else {
         setUser(null);
       }
-    } catch (error) {
+    } catch (error: any) {
+      if (signal?.aborted || error.name === 'AbortError') {
+        console.log('Richiesta di verifica autenticazione interrotta');
+        return;
+      }
+      
       console.error('Errore verifica autenticazione:', error);
       setUser(null);
       
-      // Se l'errore è di rete o timeout, non riprovare automaticamente
-      if (error instanceof Error && (error.name === 'AbortError' || error.message.includes('fetch'))) {
-        console.log('Richiesta di verifica autenticazione interrotta o fallita');
+      // Se l'errore è di rete, non riprovare automaticamente
+      if (error.message.includes('fetch')) {
+        console.log('Errore di rete durante verifica autenticazione');
       }
     } finally {
-      setIsLoading(false);
+      if (!signal?.aborted) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -143,18 +163,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   useEffect(() => {
-    let isMounted = true;
+    const controller = new AbortController();
     
     const handleAuth = async () => {
-      if (isMounted) {
-        await checkAuth();
+      if (!controller.signal.aborted) {
+        await checkAuth(controller.signal);
       }
     };
 
     handleAuth();
     
     return () => {
-      isMounted = false;
+      controller.abort();
     };
   }, []);
 

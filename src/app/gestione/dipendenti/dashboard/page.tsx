@@ -101,11 +101,20 @@ export default function Dashboard() {
       setLoading(true);
       setError(null);
 
-      // Caricamento dati esistenti
+      // Caricamento dati esistenti con timeout e retry
+      const fetchWithTimeout = (url: string, timeout = 10000): Promise<Response> => {
+        return Promise.race([
+          fetch(url),
+          new Promise<Response>((_, reject) => 
+            setTimeout(() => reject(new Error('Timeout')), timeout)
+          )
+        ]);
+      };
+
       const [employeesRes, expiringRes, leavesRes] = await Promise.all([
-        fetch('/api/employees'),
-        fetch(`/api/employees/documents/expiring?days=${expiringFilter}`),
-        fetch('/api/employees/leave?status=pending')
+        fetchWithTimeout('/api/employees'),
+        fetchWithTimeout(`/api/employees/documents/expiring?days=${expiringFilter}`),
+        fetchWithTimeout('/api/employees/leave?status=pending')
       ]);
 
       if (!employeesRes.ok || !expiringRes.ok || !leavesRes.ok) {
@@ -139,10 +148,10 @@ export default function Dashboard() {
       const pendingLeavesData = leavesData.data || [];
       setPendingLeaves(pendingLeavesData);
 
-      // Caricamento nuovi dati per statistiche documenti
+      // Caricamento nuovi dati per statistiche documenti con timeout
       const [documentStatsRes, expiredDocsRes] = await Promise.all([
-        fetch('/api/employees/documents/stats'),
-        fetch('/api/employees/documents/expired?limit=10&sort=days_overdue')
+        fetchWithTimeout('/api/employees/documents/stats'),
+        fetchWithTimeout('/api/employees/documents/expired?limit=10&sort=days_overdue')
       ]);
 
       if (!documentStatsRes.ok || !expiredDocsRes.ok) {
@@ -379,23 +388,25 @@ export default function Dashboard() {
         {/* Statistiche principali dipendenti */}
         <div className="row mb-4">
           <div className="col-xl-3 col-md-6 mb-4">
-            <div className="card border-left-primary shadow h-100 py-2">
-              <div className="card-body">
-                <div className="row no-gutters align-items-center">
-                  <div className="col mr-2">
-                    <div className="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                      Dipendenti Totali
+            <Link href="/gestione/dipendenti" className="text-decoration-none">
+              <div className="card border-left-primary shadow h-100 py-2" style={{ cursor: 'pointer' }}>
+                <div className="card-body">
+                  <div className="row no-gutters align-items-center">
+                    <div className="col mr-2">
+                      <div className="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                        Dipendenti Totali
+                      </div>
+                      <div className="h5 mb-0 font-weight-bold text-light">
+                        {stats.total}
+                      </div>
                     </div>
-                    <div className="h5 mb-0 font-weight-bold text-light">
-                      {stats.total}
+                    <div className="col-auto">
+                      <i className="fas fa-users fa-2x text-gray-300"></i>
                     </div>
-                  </div>
-                  <div className="col-auto">
-                    <i className="fas fa-users fa-2x text-gray-300"></i>
                   </div>
                 </div>
               </div>
-            </div>
+            </Link>
           </div>
 
           <div className="col-xl-3 col-md-6 mb-4">
@@ -482,23 +493,25 @@ export default function Dashboard() {
           </div>
 
           <div className="col-xl-3 col-md-6 mb-4">
-            <div className="card border-left-success shadow h-100 py-2">
-              <div className="card-body">
-                <div className="row no-gutters align-items-center">
-                  <div className="col mr-2">
-                    <div className="text-xs font-weight-bold text-success text-uppercase mb-1">
-                      Documenti Validi
+            <Link href="/gestione/dipendenti/documenti" className="text-decoration-none">
+              <div className="card border-left-success shadow h-100 py-2" style={{ cursor: 'pointer' }}>
+                <div className="card-body">
+                  <div className="row no-gutters align-items-center">
+                    <div className="col mr-2">
+                      <div className="text-xs font-weight-bold text-success text-uppercase mb-1">
+                        Documenti Validi
+                      </div>
+                      <div className="h5 mb-0 font-weight-bold text-light">
+                        {documentStats.valid}
+                      </div>
                     </div>
-                    <div className="h5 mb-0 font-weight-bold text-light">
-                      {documentStats.valid}
+                    <div className="col-auto">
+                      <i className="fas fa-check-circle fa-2x text-gray-300"></i>
                     </div>
-                  </div>
-                  <div className="col-auto">
-                    <i className="fas fa-check-circle fa-2x text-gray-300"></i>
                   </div>
                 </div>
               </div>
-            </div>
+            </Link>
           </div>
 
           <div className="col-xl-3 col-md-6 mb-4">

@@ -1810,7 +1810,6 @@ CREATE TABLE employees (
     luogo_nascita VARCHAR(150),
     data_nascita DATE,
     livello VARCHAR(10),
-    password_hash VARCHAR(255),
     last_login DATETIME,
     is_driver TINYINT(1) DEFAULT 0,
     driver_license_number VARCHAR(50),

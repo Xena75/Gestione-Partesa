@@ -186,13 +186,14 @@ export default function ModernDashboard() {
     return () => clearInterval(timer);
   }, []);
 
-  // Carica i dati reali dal database
+  // Carica i dati reali dal database e gestisce auto-refresh
   useEffect(() => {
     const abortController = new AbortController();
     const signal = abortController.signal;
 
     const fetchDashboardData = async () => {
       try {
+        if (signal.aborted) return;
         setIsLoading(true);
         setError(null);
         
@@ -205,8 +206,8 @@ export default function ModernDashboard() {
         if (!signal.aborted) {
           setDashboardData(data);
         }
-      } catch (err) {
-        if (!signal.aborted) {
+      } catch (err: any) {
+        if (!signal.aborted && err.name !== 'AbortError') {
           console.error('Errore nel fetch dei dati dashboard:', err);
           setError('Errore nel caricamento dei dati. Riprova più tardi.');
         }
@@ -219,6 +220,7 @@ export default function ModernDashboard() {
 
     const fetchPendingLeaveRequests = async () => {
       try {
+        if (signal.aborted) return;
         setIsLoadingLeaveCount(true);
         
         const response = await fetch('/api/employees/leave?status=pending', { signal });
@@ -231,8 +233,8 @@ export default function ModernDashboard() {
           
           setPendingLeaveCount(pendingCount);
         }
-      } catch (err) {
-        if (!signal.aborted) {
+      } catch (err: any) {
+        if (!signal.aborted && err.name !== 'AbortError') {
           console.error('Errore nel fetch delle richieste ferie:', err);
         }
       } finally {
@@ -242,10 +244,9 @@ export default function ModernDashboard() {
       }
     };
 
-
-
     const fetchMaintenanceData = async () => {
       try {
+        if (signal.aborted) return;
         setIsLoadingMaintenanceData(true);
         
         const response = await fetch('/api/vehicles/maintenance-monitoring', { signal });
@@ -262,8 +263,8 @@ export default function ModernDashboard() {
             setExpiringMaintenanceCount(data.stats.veicoli_in_scadenza || 0);
           }
         }
-      } catch (err) {
-        if (!signal.aborted) {
+      } catch (err: any) {
+        if (!signal.aborted && err.name !== 'AbortError') {
           console.error('Errore nel fetch dei dati manutenzione:', err);
         }
       } finally {
@@ -275,6 +276,7 @@ export default function ModernDashboard() {
 
     const fetchSchedulesData = async () => {
       try {
+        if (signal.aborted) return;
         setIsLoadingSchedulesData(true);
         
         const response = await fetch('/api/vehicles/schedules/expiring?days=30', { signal });
@@ -293,8 +295,8 @@ export default function ModernDashboard() {
             setApproachingSchedulesCount(approaching);
           }
         }
-      } catch (err) {
-        if (!signal.aborted) {
+      } catch (err: any) {
+        if (!signal.aborted && err.name !== 'AbortError') {
           console.error('Errore nel fetch dei dati scadenze programmate:', err);
         }
       } finally {
@@ -304,74 +306,33 @@ export default function ModernDashboard() {
       }
     };
 
-    fetchDashboardData();
-    fetchPendingLeaveRequests();
-    fetchMaintenanceData();
-    fetchSchedulesData();
-
-    // Cleanup function per cancellare le richieste quando il componente viene smontato
-    return () => {
-      abortController.abort();
+    const fetchAllData = async () => {
+      await Promise.all([
+        fetchDashboardData(),
+        fetchPendingLeaveRequests(),
+        fetchMaintenanceData(),
+        fetchSchedulesData()
+      ]);
     };
-  }, []);
 
-  // Auto-refresh ogni 5 minuti
-  useEffect(() => {
-    const abortController = new AbortController();
-    const signal = abortController.signal;
+    // Caricamento iniziale
+    fetchAllData();
 
+    // Auto-refresh ogni 5 minuti
     const refreshTimer = setInterval(async () => {
       if (signal.aborted) return;
 
       try {
-        // Refresh dashboard stats
-        const response = await fetch('/api/dashboard-stats', { signal });
-        if (response.ok && !signal.aborted) {
-          const data = await response.json();
-          setDashboardData(data);
-          console.log('Dashboard data refreshed');
-        }
-
-        // Refresh pending leave requests
-        const leaveResponse = await fetch('/api/employees/leave?status=pending', { signal });
-        if (leaveResponse.ok && !signal.aborted) {
-          const leaveData = await leaveResponse.json();
-          const pendingCount = leaveData.data ? leaveData.data.length : 0;
-          setPendingLeaveCount(pendingCount);
-        }
-
-        // Refresh maintenance data
-        const maintenanceResponse = await fetch('/api/vehicles/maintenance-monitoring', { signal });
-        if (maintenanceResponse.ok && !signal.aborted) {
-          const maintenanceData = await maintenanceResponse.json();
-          if (maintenanceData.success && maintenanceData.data) {
-            setMaintenanceData(maintenanceData.data);
-            const expired = maintenanceData.data.filter((vehicle: any) => vehicle.stato_tagliando === 'Scaduto').length;
-            const expiring = maintenanceData.data.filter((vehicle: any) => vehicle.stato_tagliando === 'In Scadenza').length;
-            setExpiredMaintenanceCount(expired);
-            setExpiringMaintenanceCount(expiring);
-          }
-        }
-
-        // Refresh schedules data
-        const schedulesResponse = await fetch('/api/vehicles/schedules/expiring?days=30', { signal });
-        if (schedulesResponse.ok && !signal.aborted) {
-          const schedulesData = await schedulesResponse.json();
-          if (schedulesData.success && schedulesData.data) {
-            setSchedulesData(schedulesData.data);
-            const critical = schedulesData.data.filter((schedule: any) => schedule.days_until_expiry <= 7).length;
-            const approaching = schedulesData.data.filter((schedule: any) => schedule.days_until_expiry > 7 && schedule.days_until_expiry <= 30).length;
-            setCriticalSchedulesCount(critical);
-            setApproachingSchedulesCount(approaching);
-          }
-        }
-      } catch (err) {
-        if (!signal.aborted) {
+        await fetchAllData();
+        console.log('Dashboard data refreshed');
+      } catch (err: any) {
+        if (!signal.aborted && err.name !== 'AbortError') {
           console.error('Errore nel refresh automatico:', err);
         }
       }
     }, 300000); // 5 minuti
 
+    // Cleanup function per cancellare le richieste quando il componente viene smontato
     return () => {
       abortController.abort();
       clearInterval(refreshTimer);
