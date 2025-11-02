@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Calendar, FileText, Clock, AlertTriangle, User, MapPin, ChevronDown, ChevronUp, UserCircle, Briefcase, Phone, CreditCard, GraduationCap, Check, X } from 'lucide-react';
@@ -767,13 +768,15 @@ export default function AutistiDashboardPage() {
           </div>
         </div>
         <div className="col-6 col-md-3 mb-3">
-          <div className="card bg-dark border-info">
-            <div className="card-body text-center py-3">
-              <FileText className="text-info mb-2" size={28} />
-              <h6 className="text-info mb-1">{totalDocuments}</h6>
-              <p className="text-light mb-0 small">Documenti Totali</p>
+          <Link href="/autisti/documenti" className="text-decoration-none">
+            <div className="card bg-dark border-info" style={{ cursor: 'pointer' }}>
+              <div className="card-body text-center py-3">
+                <FileText className="text-info mb-2" size={28} />
+                <h6 className="text-info mb-1">{totalDocuments}</h6>
+                <p className="text-light mb-0 small">Documenti Totali</p>
+              </div>
             </div>
-          </div>
+          </Link>
         </div>
       </div>
 
