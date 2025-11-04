@@ -446,7 +446,7 @@ export interface ExpiredDocument extends EmployeeDocument {
 export async function getExpiringDocuments(days: number = 30): Promise<(EmployeeDocument & { nome: string; cognome: string; employee_name: string; days_until_expiry: number })[]> {
   const connection = await getConnection();
   try {
-    // MODIFICATO: Include anche i documenti già scaduti (rimuoviamo la condizione expiry_date >= CURDATE())
+    // Include solo i documenti che scadono nei prossimi giorni (non quelli già scaduti)
     const [rows] = await connection.execute(
       `SELECT ed.*, 
               e.nome, 
@@ -457,6 +457,7 @@ export async function getExpiringDocuments(days: number = 30): Promise<(Employee
        JOIN employees e ON ed.employee_id = e.id
        WHERE e.active = 1 
        AND ed.expiry_date IS NOT NULL 
+       AND ed.expiry_date >= CURDATE()
        AND ed.expiry_date <= DATE_ADD(CURDATE(), INTERVAL ? DAY)
        ORDER BY ed.expiry_date ASC`,
       [days]
@@ -473,44 +474,69 @@ export async function getDocumentStats(): Promise<DocumentStats> {
     // Aggiorna prima gli stati dei documenti
     await updateDocumentStatus();
     
-    // Statistiche generali
-    const [statsRows] = await connection.execute(`
+    // Recupera tutti i documenti per applicare il raggruppamento
+    const [documentsRows] = await connection.execute(`
       SELECT 
-        COUNT(*) as total,
-        COUNT(CASE WHEN status = 'valido' THEN 1 END) as valid,
-        COUNT(CASE WHEN status = 'in_scadenza' THEN 1 END) as expiring,
-        COUNT(CASE WHEN status = 'scaduto' THEN 1 END) as expired,
-        COUNT(CASE WHEN expiry_date IS NULL THEN 1 END) as no_expiry
+        ed.*
       FROM employee_documents ed
       JOIN employees e ON ed.employee_id = e.id
       WHERE e.active = 1
     `);
+    
+    const allDocuments = documentsRows as EmployeeDocument[];
+    
+    // Raggruppa i documenti multipli (fronte/retro) come un unico documento
+    // Solo i documenti con marcatori (Fronte/Retro/Parte X) vengono raggruppati
+    const documentGroups = new Map<string, typeof allDocuments>();
+    
+    allDocuments.forEach(doc => {
+      const hasFrontBackMarker = /\(Fronte\)|\(Retro\)|\(Parte \d+\)/gi.test(doc.document_name);
+      if (hasFrontBackMarker) {
+        // Raggruppa solo documenti con marcatori espliciti
+        const baseName = doc.document_name.replace(/ \(Fronte\)| \(Retro\)| \(Parte \d+\)/gi, '').trim();
+        const groupKey = `${doc.employee_id}_${doc.document_type}_${doc.expiry_date || 'no_expiry'}_${baseName}`;
+        
+        if (!documentGroups.has(groupKey)) {
+          documentGroups.set(groupKey, []);
+        }
+        documentGroups.get(groupKey)!.push(doc);
+      } else {
+        // Documenti senza marcatori sono trattati come documenti unici
+        const uniqueKey = `${doc.employee_id}_${doc.document_type}_${doc.expiry_date || 'no_expiry'}_${doc.id}`;
+        documentGroups.set(uniqueKey, [doc]);
+      }
+    });
+    
+    // Per ogni gruppo, prendi solo il documento principale
+    const uniqueDocuments = Array.from(documentGroups.values()).map(group => {
+      const sortedGroup = group.sort((a, b) => 
+        new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime()
+      );
+      return sortedGroup[0];
+    });
+    
+    // Calcola le statistiche sui documenti raggruppati
+    const total = uniqueDocuments.length;
+    const valid = uniqueDocuments.filter(doc => doc.status === 'valido').length;
+    const expiring = uniqueDocuments.filter(doc => doc.status === 'in_scadenza').length;
+    const expired = uniqueDocuments.filter(doc => doc.status === 'scaduto').length;
+    const noExpiry = uniqueDocuments.filter(doc => !doc.expiry_date).length;
     
     // Statistiche per tipo documento
-    const [typeRows] = await connection.execute(`
-      SELECT 
-        document_type,
-        COUNT(*) as count
-      FROM employee_documents ed
-      JOIN employees e ON ed.employee_id = e.id
-      WHERE e.active = 1
-      GROUP BY document_type
-      ORDER BY count DESC
-    `);
-    
-    const stats = (statsRows as any[])[0];
     const byType: Record<string, number> = {};
-    
-    (typeRows as any[]).forEach(row => {
-      byType[row.document_type] = row.count;
+    uniqueDocuments.forEach(doc => {
+      if (!byType[doc.document_type]) {
+        byType[doc.document_type] = 0;
+      }
+      byType[doc.document_type]++;
     });
     
     return {
-      total: stats.total || 0,
-      valid: stats.valid || 0,
-      expiring: stats.expiring || 0,
-      expired: stats.expired || 0,
-      no_expiry: stats.no_expiry || 0,
+      total: total,
+      valid: valid,
+      expiring: expiring,
+      expired: expired,
+      no_expiry: noExpiry,
       by_type: byType
     };
   } finally {

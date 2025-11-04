@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 interface Document {
@@ -32,18 +33,41 @@ interface DocumentStats {
   }>;
 }
 
-export default function DocumentiPage() {
+function DocumentiPageContent() {
+  const searchParams = useSearchParams();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [stats, setStats] = useState<DocumentStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'all' | 'valid' | 'expired' | 'expiring_soon'>('all');
+  const [filter, setFilter] = useState<'all' | 'valid' | 'expired' | 'expiring_soon'>(() => {
+    // Leggi il parametro URL all'inizializzazione
+    const statusParam = searchParams?.get('status');
+    if (statusParam === 'expired') return 'expired';
+    if (statusParam === 'valid') return 'valid';
+    if (statusParam === 'expiring_soon') return 'expiring_soon';
+    return 'all';
+  });
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     loadDocuments();
   }, []);
+
+  // Aggiorna il filtro quando cambia il parametro URL
+  useEffect(() => {
+    const statusParam = searchParams?.get('status');
+    if (statusParam === 'expired') {
+      setFilter('expired');
+    } else if (statusParam === 'valid') {
+      setFilter('valid');
+    } else if (statusParam === 'expiring_soon') {
+      setFilter('expiring_soon');
+    } else if (!statusParam) {
+      // Se non c'è parametro, mantieni il filtro corrente o usa 'all'
+      // Non resettiamo se l'utente ha cambiato manualmente il filtro
+    }
+  }, [searchParams]);
 
   const loadDocuments = async () => {
     try {
@@ -373,5 +397,24 @@ export default function DocumentiPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function DocumentiPage() {
+  return (
+    <Suspense fallback={
+      <div className="container-fluid">
+        <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
+          <div className="text-center">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Caricamento...</span>
+            </div>
+            <p className="mt-2 text-light">Caricamento...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <DocumentiPageContent />
+    </Suspense>
   );
 }

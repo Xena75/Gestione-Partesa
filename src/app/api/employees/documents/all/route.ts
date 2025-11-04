@@ -16,6 +16,21 @@ interface DocumentWithEmployee {
   days_until_expiry: number | null;
 }
 
+interface DocumentFromDB {
+  id: number;
+  employee_id: string;
+  employee_name: string;
+  nome: string;
+  cognome: string;
+  document_type: string;
+  file_name: string;
+  file_path: string;
+  expiry_date: string | null;
+  upload_date: string;
+  status: 'valido' | 'scaduto' | 'in_scadenza' | string;
+  days_until_expiry: number | null;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const connection = await getConnection();
@@ -35,7 +50,17 @@ export async function GET(request: NextRequest) {
       // Recupera tutti i documenti con informazioni sui dipendenti
       const [rows] = await connection.execute(`
         SELECT 
-          ed.*,
+          ed.id,
+          ed.employee_id,
+          ed.document_type,
+          ed.document_name,
+          ed.file_name,
+          ed.file_path,
+          ed.expiry_date,
+          ed.status,
+          ed.notes,
+          ed.created_at as upload_date,
+          ed.updated_at,
           e.nome,
           e.cognome,
           CONCAT(e.nome, ' ', e.cognome) as employee_name,
@@ -58,12 +83,20 @@ export async function GET(request: NextRequest) {
           e.cognome, e.nome
       `);
 
-      const documents = rows as DocumentWithEmployee[];
+      const documents = rows as DocumentFromDB[];
+      
+      // Converti lo status dal formato database al formato frontend
+      const mappedDocuments = documents.map(doc => ({
+        ...doc,
+        status: doc.status === 'valido' ? 'valid' : 
+                doc.status === 'scaduto' ? 'expired' : 
+                doc.status === 'in_scadenza' ? 'expiring_soon' : 'valid'
+      })) as DocumentWithEmployee[];
 
       return NextResponse.json({
         success: true,
-        data: documents,
-        count: documents.length
+        data: mappedDocuments,
+        count: mappedDocuments.length
       });
 
     } finally {

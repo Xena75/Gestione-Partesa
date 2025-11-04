@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Calendar, FileText, Clock, AlertTriangle, User, MapPin, ChevronDown, ChevronUp, UserCircle, Briefcase, Phone, CreditCard, GraduationCap, Check, X } from 'lucide-react';
+import { Calendar, FileText, Clock, AlertTriangle, User, MapPin, ChevronDown, ChevronUp, UserCircle, Briefcase, Phone, CreditCard, GraduationCap, Check, X, Truck } from 'lucide-react';
 import ProfileImageUpload from '@/components/ProfileImageUpload';
 
 interface EmployeeData {
@@ -727,8 +727,8 @@ export default function AutistiDashboardPage() {
           <div className="card bg-dark border-success">
             <div className="card-body text-center py-3">
               <Calendar className="text-success mb-2" size={28} />
-              <h6 className="text-success mb-1">{employeeData?.ferie_residue || 0}</h6>
-              <p className="text-light mb-0 small">Giorni di Ferie</p>
+              <h6 className="text-success mb-1">{leaveBalance?.vacation_days_used || 0}</h6>
+              <p className="text-light mb-0 small">Ferie & Permessi utilizzati</p>
             </div>
           </div>
         </div>
@@ -867,9 +867,9 @@ export default function AutistiDashboardPage() {
                   </a>
                 </div>
                 <div className="col-6 col-md-3 mb-2">
-                  <a href="/gestione/employees/timesheet" className="btn btn-outline-primary w-100 py-2" style={{ minHeight: '44px' }}>
-                    <Clock className="me-1 d-none d-md-inline" size={16} />
-                    <span className="small">Timesheet</span>
+                  <a href="https://gestione-viaggi.vercel.app/" target="_blank" rel="noopener noreferrer" className="btn btn-primary w-100 py-2" style={{ minHeight: '44px' }}>
+                    <Truck className="me-1 d-none d-md-inline" size={16} />
+                    <span className="small">Monitoraggio</span>
                   </a>
                 </div>
               </div>

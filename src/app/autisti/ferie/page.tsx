@@ -23,11 +23,24 @@ interface LeaveRequest {
 }
 
 interface LeaveBalance {
-  total_days: number;
-  used_days: number;
-  remaining_days: number;
-  carried_over: number;
+  id?: number;
+  employee_id: string;
   year: number;
+  month?: number;
+  vacation_days_total?: number;
+  vacation_days_used: number;
+  vacation_hours_remaining?: number;
+  ex_holiday_hours_remaining?: number;
+  rol_hours_remaining?: number;
+  sick_days_used?: number;
+  personal_days_used?: number;
+  last_updated?: string;
+  created_at?: string;
+  // Campi legacy per compatibilità
+  total_days?: number;
+  used_days?: number;
+  remaining_days?: number;
+  carried_over?: number;
 }
 
 interface LeaveFormData {
@@ -306,9 +319,23 @@ export default function AutistiFeriePage() {
     }
 
     // Validazione bilancio ferie solo per ferie (non per permessi)
-    if (formData.leave_type === 'ferie' && leaveBalance && formData.days_requested > leaveBalance.remaining_days) {
-      setError(`Non hai abbastanza giorni di ferie disponibili (${leaveBalance.remaining_days} rimanenti)`);
-      return false;
+    if (formData.leave_type === 'ferie' && leaveBalance) {
+      // Calcola i giorni rimanenti: se abbiamo vacation_hours_remaining, convertiamo in giorni (8 ore = 1 giorno)
+      // Altrimenti usiamo vacation_days_total - vacation_days_used
+      let remainingDays = 0;
+      if (leaveBalance.vacation_hours_remaining != null) {
+        remainingDays = leaveBalance.vacation_hours_remaining / 8;
+      } else if (leaveBalance.vacation_days_total != null) {
+        remainingDays = leaveBalance.vacation_days_total - (leaveBalance.vacation_days_used || 0);
+      } else if (leaveBalance.remaining_days != null) {
+        // Fallback per compatibilità con campi legacy
+        remainingDays = leaveBalance.remaining_days;
+      }
+      
+      if (formData.days_requested > remainingDays) {
+        setError(`Non hai abbastanza giorni di ferie disponibili (${remainingDays.toFixed(1)} rimanenti)`);
+        return false;
+      }
     }
 
     return true;
@@ -534,20 +561,32 @@ export default function AutistiFeriePage() {
               <div className="card-body">
                 <div className="row text-center">
                   <div className="col-md-3">
-                    <h5 className="text-info">{leaveBalance.total_days}</h5>
-                    <p className="text-light mb-0">Giorni Totali</p>
+                    <h5 className="text-warning">{leaveBalance.vacation_days_used || 0}</h5>
+                    <p className="text-light mb-0">Ferie e Permessi utilizzati (gg)</p>
                   </div>
                   <div className="col-md-3">
-                    <h5 className="text-warning">{leaveBalance.used_days}</h5>
-                    <p className="text-light mb-0">Giorni Utilizzati</p>
+                    <h5 className="text-success">
+                      {leaveBalance.vacation_hours_remaining != null ? 
+                        `${Number(leaveBalance.vacation_hours_remaining).toFixed(1)} ore` : 
+                        '0 ore'}
+                    </h5>
+                    <p className="text-light mb-0">Ferie Rimanenti</p>
                   </div>
                   <div className="col-md-3">
-                    <h5 className="text-success">{leaveBalance.remaining_days}</h5>
-                    <p className="text-light mb-0">Giorni Rimanenti</p>
+                    <h5 className="text-info">
+                      {leaveBalance.ex_holiday_hours_remaining != null ? 
+                        `${Number(leaveBalance.ex_holiday_hours_remaining).toFixed(1)} ore` : 
+                        '0 ore'}
+                    </h5>
+                    <p className="text-light mb-0">Ex-Festività Rimanenti</p>
                   </div>
                   <div className="col-md-3">
-                    <h5 className="text-secondary">{leaveBalance.carried_over}</h5>
-                    <p className="text-light mb-0">Riporto Anno Prec.</p>
+                    <h5 className="text-secondary">
+                      {leaveBalance.rol_hours_remaining != null ? 
+                        `${Number(leaveBalance.rol_hours_remaining).toFixed(1)} ore` : 
+                        '0 ore'}
+                    </h5>
+                    <p className="text-light mb-0">ROL Rimanenti</p>
                   </div>
                 </div>
               </div>

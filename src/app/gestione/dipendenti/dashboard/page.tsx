@@ -12,7 +12,7 @@ interface EmployeeStats {
   total: number;
   active: number;
   drivers: number;
-  driversWithExpiringLicense: number;
+  nonDrivers: number;
 }
 
 interface ExpiringDocument {
@@ -24,6 +24,8 @@ interface ExpiringDocument {
   document_type: string;
   expiry_date: string;
   days_until_expiry: number;
+  isMultiFile?: boolean;
+  fileCount?: number;
 }
 
 interface PendingLeave {
@@ -37,6 +39,7 @@ interface PendingLeave {
   days_requested: number;
   reason?: string;
   status: string;
+  attachment_url?: string;
 }
 
 // Nuove interfacce per le statistiche documenti
@@ -63,6 +66,8 @@ interface ExpiredDocument {
   expiry_date: string;
   days_overdue: number;
   priority_level: 'critico' | 'alto' | 'medio';
+  isMultiFile?: boolean;
+  fileCount?: number;
 }
 
 export default function Dashboard() {
@@ -70,7 +75,7 @@ export default function Dashboard() {
     total: 0,
     active: 0,
     drivers: 0,
-    driversWithExpiringLicense: 0
+    nonDrivers: 0
   });
   
   const [expiringDocs, setExpiringDocs] = useState<ExpiringDocument[]>([]);
@@ -131,15 +136,13 @@ export default function Dashboard() {
       const totalEmployees = employeesData.data.length;
       const activeEmployees = employeesData.data.filter((emp: any) => emp.active).length;
       const drivers = employeesData.data.filter((emp: any) => emp.is_driver === 1).length;
-      const driversWithExpiringLicense = expiringData.data.documents.filter((doc: any) => 
-        doc.document_type === 'Patente di guida' && doc.days_until_expiry <= 30
-      ).length;
+      const nonDrivers = totalEmployees - drivers;
 
       setStats({
         total: totalEmployees,
         active: activeEmployees,
         drivers: drivers,
-        driversWithExpiringLicense: driversWithExpiringLicense
+        nonDrivers: nonDrivers
       });
 
       setExpiringDocs(expiringData.data.documents);
@@ -151,7 +154,7 @@ export default function Dashboard() {
       // Caricamento nuovi dati per statistiche documenti con timeout
       const [documentStatsRes, expiredDocsRes] = await Promise.all([
         fetchWithTimeout('/api/employees/documents/stats'),
-        fetchWithTimeout('/api/employees/documents/expired?limit=10&sort=days_overdue')
+        fetchWithTimeout('/api/employees/documents/expired?limit=10&sort_by=days_overdue')
       ]);
 
       if (!documentStatsRes.ok || !expiredDocsRes.ok) {
@@ -430,43 +433,47 @@ export default function Dashboard() {
           </div>
 
           <div className="col-xl-3 col-md-6 mb-4">
-            <div className="card border-left-info shadow h-100 py-2">
-              <div className="card-body">
-                <div className="row no-gutters align-items-center">
-                  <div className="col mr-2">
-                    <div className="text-xs font-weight-bold text-info text-uppercase mb-1">
-                      Autisti
+            <Link href="/gestione/dipendenti?autisti=true" className="text-decoration-none">
+              <div className="card border-left-info shadow h-100 py-2" style={{ cursor: 'pointer' }}>
+                <div className="card-body">
+                  <div className="row no-gutters align-items-center">
+                    <div className="col mr-2">
+                      <div className="text-xs font-weight-bold text-info text-uppercase mb-1">
+                        Autisti
+                      </div>
+                      <div className="h5 mb-0 font-weight-bold text-light">
+                        {stats.drivers}
+                      </div>
                     </div>
-                    <div className="h5 mb-0 font-weight-bold text-light">
-                      {stats.drivers}
+                    <div className="col-auto">
+                      <i className="fas fa-truck fa-2x text-gray-300"></i>
                     </div>
-                  </div>
-                  <div className="col-auto">
-                    <i className="fas fa-truck fa-2x text-gray-300"></i>
                   </div>
                 </div>
               </div>
-            </div>
+            </Link>
           </div>
 
           <div className="col-xl-3 col-md-6 mb-4">
-            <div className="card border-left-warning shadow h-100 py-2">
-              <div className="card-body">
-                <div className="row no-gutters align-items-center">
-                  <div className="col mr-2">
-                    <div className="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                      Patenti in Scadenza
+            <Link href="/gestione/dipendenti?personale=true" className="text-decoration-none">
+              <div className="card border-left-info shadow h-100 py-2" style={{ cursor: 'pointer' }}>
+                <div className="card-body">
+                  <div className="row no-gutters align-items-center">
+                    <div className="col mr-2">
+                      <div className="text-xs font-weight-bold text-info text-uppercase mb-1">
+                        Personale
+                      </div>
+                      <div className="h5 mb-0 font-weight-bold text-light">
+                        {stats.nonDrivers}
+                      </div>
                     </div>
-                    <div className="h5 mb-0 font-weight-bold text-light">
-                      {stats.driversWithExpiringLicense}
+                    <div className="col-auto">
+                      <i className="fas fa-user-tie fa-2x text-gray-300"></i>
                     </div>
-                  </div>
-                  <div className="col-auto">
-                    <i className="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
                   </div>
                 </div>
               </div>
-            </div>
+            </Link>
           </div>
         </div>
 
@@ -515,43 +522,47 @@ export default function Dashboard() {
           </div>
 
           <div className="col-xl-3 col-md-6 mb-4">
-            <div className="card border-left-danger shadow h-100 py-2">
-              <div className="card-body">
-                <div className="row no-gutters align-items-center">
-                  <div className="col mr-2">
-                    <div className="text-xs font-weight-bold text-danger text-uppercase mb-1">
-                      Documenti Scaduti
+            <Link href="/gestione/dipendenti/documenti?status=expired" className="text-decoration-none">
+              <div className="card border-left-danger shadow h-100 py-2" style={{ cursor: 'pointer' }}>
+                <div className="card-body">
+                  <div className="row no-gutters align-items-center">
+                    <div className="col mr-2">
+                      <div className="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                        Documenti Scaduti
+                      </div>
+                      <div className="h5 mb-0 font-weight-bold text-light">
+                        {documentStats.expired}
+                      </div>
                     </div>
-                    <div className="h5 mb-0 font-weight-bold text-light">
-                      {documentStats.expired}
+                    <div className="col-auto">
+                      <i className="fas fa-times-circle fa-2x text-gray-300"></i>
                     </div>
-                  </div>
-                  <div className="col-auto">
-                    <i className="fas fa-times-circle fa-2x text-gray-300"></i>
                   </div>
                 </div>
               </div>
-            </div>
+            </Link>
           </div>
 
           <div className="col-xl-3 col-md-6 mb-4">
-            <div className="card border-left-warning shadow h-100 py-2">
-              <div className="card-body">
-                <div className="row no-gutters align-items-center">
-                  <div className="col mr-2">
-                    <div className="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                      In Scadenza
+            <Link href="/gestione/dipendenti/documenti?status=expiring_soon" className="text-decoration-none">
+              <div className="card border-left-warning shadow h-100 py-2" style={{ cursor: 'pointer' }}>
+                <div className="card-body">
+                  <div className="row no-gutters align-items-center">
+                    <div className="col mr-2">
+                      <div className="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                        In Scadenza
+                      </div>
+                      <div className="h5 mb-0 font-weight-bold text-light">
+                        {documentStats.expiring_soon}
+                      </div>
                     </div>
-                    <div className="h5 mb-0 font-weight-bold text-light">
-                      {documentStats.expiring_soon}
+                    <div className="col-auto">
+                      <i className="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
                     </div>
-                  </div>
-                  <div className="col-auto">
-                    <i className="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
                   </div>
                 </div>
               </div>
-            </div>
+            </Link>
           </div>
         </div>
 
@@ -638,6 +649,11 @@ export default function Dashboard() {
                               <span className="badge bg-secondary">
                                 {doc.document_type}
                               </span>
+                              {doc.isMultiFile && doc.fileCount && doc.fileCount > 1 && (
+                                <span className="badge bg-info ms-1">
+                                  {doc.fileCount} file
+                                </span>
+                              )}
                             </td>
                             <td>
                               <span className="text-danger">{doc.days_overdue} giorni</span>
@@ -722,9 +738,18 @@ export default function Dashboard() {
                               <span className="badge bg-secondary">
                                 {doc.document_type}
                               </span>
+                              {doc.isMultiFile && doc.fileCount && doc.fileCount > 1 && (
+                                <span className="badge bg-info ms-1">
+                                  {doc.fileCount} file
+                                </span>
+                              )}
                             </td>
                             <td>
-                              <span className="text-light">{new Date(doc.expiry_date).toLocaleDateString('it-IT')}</span>
+                              <span className="text-light">
+                                {doc.expiry_date && doc.expiry_date !== '' 
+                                  ? new Date(doc.expiry_date).toLocaleDateString('it-IT')
+                                  : 'N/A'}
+                              </span>
                             </td>
                             <td>
                               <span className={`badge ${doc.days_until_expiry <= 7 ? 'bg-danger' : doc.days_until_expiry <= 15 ? 'bg-warning' : 'bg-info'}`}>
@@ -792,6 +817,23 @@ export default function Dashboard() {
                                 <small className="text-muted">
                                   <i className="fas fa-comment me-1"></i>
                                   {leave.reason}
+                                </small>
+                              </>
+                            )}
+                            {leave.attachment_url && (
+                              <>
+                                <br />
+                                <small className="text-info">
+                                  <i className="fas fa-paperclip me-1"></i>
+                                  <a 
+                                    href={leave.attachment_url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-info text-decoration-none"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    Modulo allegato
+                                  </a>
                                 </small>
                               </>
                             )}

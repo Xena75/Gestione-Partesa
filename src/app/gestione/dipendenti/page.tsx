@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 interface Employee {
@@ -32,12 +33,23 @@ interface ApiResponse {
   message: string;
 }
 
-export default function AutistiPage() {
+function AutistiPageContent() {
+  const searchParams = useSearchParams();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showDriversOnly, setShowDriversOnly] = useState(true);
+  const [showDriversOnly, setShowDriversOnly] = useState(() => {
+    // Leggi il parametro URL all'inizializzazione
+    const autistiParam = searchParams?.get('autisti');
+    const personaleParam = searchParams?.get('personale');
+    if (autistiParam === 'true') return true;
+    if (personaleParam === 'true') return false; // personale = non autisti
+    return true; // default: mostra autisti
+  });
+  const [showPersonaleOnly, setShowPersonaleOnly] = useState(() => {
+    return searchParams?.get('personale') === 'true';
+  });
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCompany, setSelectedCompany] = useState<string>('');
   const [sortField, setSortField] = useState<keyof Employee>('cognome');
@@ -47,6 +59,19 @@ export default function AutistiPage() {
     fetchEmployees();
     fetchCompanies();
   }, []);
+
+  // Aggiorna il filtro quando cambia il parametro URL
+  useEffect(() => {
+    const autistiParam = searchParams?.get('autisti');
+    const personaleParam = searchParams?.get('personale');
+    if (autistiParam === 'true') {
+      setShowDriversOnly(true);
+      setShowPersonaleOnly(false);
+    } else if (personaleParam === 'true') {
+      setShowDriversOnly(false);
+      setShowPersonaleOnly(true);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     fetchEmployees();
@@ -109,7 +134,12 @@ export default function AutistiPage() {
 
   const filteredAndSortedEmployees = employees
     .filter(emp => {
-      const matchesDriverFilter = showDriversOnly ? emp.is_driver === 1 : true;
+      let matchesDriverFilter = true;
+      if (showDriversOnly) {
+        matchesDriverFilter = emp.is_driver === 1;
+      } else if (showPersonaleOnly) {
+        matchesDriverFilter = emp.is_driver !== 1; // Esclude autisti
+      }
       const matchesSearch = searchTerm === '' || 
         emp.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.cognome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -251,10 +281,28 @@ export default function AutistiPage() {
                           type="checkbox"
                           id="driversFilter"
                           checked={showDriversOnly}
-                          onChange={(e) => setShowDriversOnly(e.target.checked)}
+                          onChange={(e) => {
+                            setShowDriversOnly(e.target.checked);
+                            setShowPersonaleOnly(false);
+                          }}
                         />
                         <label className="form-check-label text-light" htmlFor="driversFilter">
                           Solo autisti
+                        </label>
+                      </div>
+                      <div className="form-check form-switch me-3">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          id="personaleFilter"
+                          checked={showPersonaleOnly}
+                          onChange={(e) => {
+                            setShowPersonaleOnly(e.target.checked);
+                            setShowDriversOnly(false);
+                          }}
+                        />
+                        <label className="form-check-label text-light" htmlFor="personaleFilter">
+                          Solo personale
                         </label>
                       </div>
                       <button 
@@ -275,6 +323,7 @@ export default function AutistiPage() {
                     <i className="fas fa-info-circle me-1"></i>
                     Visualizzati {filteredAndSortedEmployees.length} di {employees.length} dipendenti totali
                     {showDriversOnly && ` | Autisti: ${employees.filter(emp => emp.is_driver === 1).length}`}
+                    {showPersonaleOnly && ` | Personale: ${employees.filter(emp => emp.is_driver !== 1).length}`}
                   </p>
                 </div>
               </div>
@@ -286,7 +335,7 @@ export default function AutistiPage() {
             <div className="card-header">
               <h6 className="mb-0">
                 <i className="fas fa-table me-2"></i>
-                Lista {showDriversOnly ? 'Autisti' : 'Dipendenti'}
+                Lista {showDriversOnly ? 'Autisti' : showPersonaleOnly ? 'Personale' : 'Dipendenti'}
               </h6>
             </div>
             <div className="card-body p-0">
@@ -295,11 +344,14 @@ export default function AutistiPage() {
                   <i className="fas fa-users fa-3x text-secondary mb-3"></i>
                   <h5 className="text-light">
                     {searchTerm ? 'Nessun risultato trovato' : 
-                     showDriversOnly ? 'Nessun autista trovato' : 'Nessun dipendente trovato'}
+                     showDriversOnly ? 'Nessun autista trovato' : 
+                     showPersonaleOnly ? 'Nessun dipendente del personale trovato' :
+                     'Nessun dipendente trovato'}
                   </h5>
                   <p className="text-light">
                     {searchTerm ? 'Prova a modificare i criteri di ricerca' :
                      showDriversOnly ? 'Prova a disattivare il filtro per vedere tutti i dipendenti' : 
+                     showPersonaleOnly ? 'Prova a disattivare il filtro per vedere tutti i dipendenti' :
                      'Non ci sono dipendenti attivi nel sistema'}
                   </p>
                 </div>
@@ -438,5 +490,24 @@ export default function AutistiPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AutistiPage() {
+  return (
+    <Suspense fallback={
+      <div className="container-fluid">
+        <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
+          <div className="text-center">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Caricamento...</span>
+            </div>
+            <p className="mt-2 text-light">Caricamento...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <AutistiPageContent />
+    </Suspense>
   );
 }

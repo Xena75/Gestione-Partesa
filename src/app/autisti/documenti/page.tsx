@@ -28,6 +28,7 @@ interface Document {
     file_name: string;
     file_path: string;
     part: string;
+    created_at?: string;
   }>;
 }
 
@@ -62,7 +63,6 @@ export default function AutistiDocumentiPage() {
     'Carta d\'Identità',
     'Codice Fiscale',
     'CQC',
-    'Carta Tachigrafica',
     'Certificato Medico'
   ];
 
@@ -493,9 +493,10 @@ export default function AutistiDocumentiPage() {
     'ADR',
     'Altro',
     'Attestati',
+    'Attestato addetto antincendio',
+    'Attestato addetto Primo Soccorso',
     'Attestato Preposto Sicurezza',
     'Carta d\'Identità',
-    'Carta Tachigrafica',
     'Certificato di Formazione',
     'Certificato di Residenza',
     'Certificato Medico',
@@ -829,7 +830,7 @@ export default function AutistiDocumentiPage() {
                                   {getExpiryText(doc.giorni_alla_scadenza)}
                                 </span>
                               </td>
-                              <td>{formatDateItalian(doc.created_at)}</td>
+                              <td>{formatDateItalian(file.created_at || doc.created_at)}</td>
                               <td>
                                 <div className="btn-group btn-group-sm" role="group">
                                   <button

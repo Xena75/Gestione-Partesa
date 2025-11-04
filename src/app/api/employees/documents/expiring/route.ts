@@ -22,18 +22,25 @@ export async function GET(request: NextRequest) {
     const expiringDocuments = await getExpiringDocuments(days);
     
     // Raggruppa i documenti multipli (fronte/retro) come un unico documento
-    // Documenti con stesso tipo, stessa scadenza e stesso dipendente vengono raggruppati
+    // Solo i documenti con marcatori (Fronte/Retro/Parte X) vengono raggruppati
     const documentGroups = new Map<string, typeof expiringDocuments>();
     
     expiringDocuments.forEach(doc => {
-      // Crea una chiave univoca basata su tipo documento, scadenza e dipendente
-      const baseName = doc.document_name.replace(/ \(Fronte\)| \(Retro\)| \(Parte \d+\)/gi, '').trim();
-      const groupKey = `${doc.employee_id}_${doc.document_type}_${doc.expiry_date || 'no_expiry'}_${baseName}`;
-      
-      if (!documentGroups.has(groupKey)) {
-        documentGroups.set(groupKey, []);
+      const hasFrontBackMarker = /\(Fronte\)|\(Retro\)|\(Parte \d+\)/gi.test(doc.document_name);
+      if (hasFrontBackMarker) {
+        // Raggruppa solo documenti con marcatori espliciti
+        const baseName = doc.document_name.replace(/ \(Fronte\)| \(Retro\)| \(Parte \d+\)/gi, '').trim();
+        const groupKey = `${doc.employee_id}_${doc.document_type}_${doc.expiry_date || 'no_expiry'}_${baseName}`;
+        
+        if (!documentGroups.has(groupKey)) {
+          documentGroups.set(groupKey, []);
+        }
+        documentGroups.get(groupKey)!.push(doc);
+      } else {
+        // Documenti senza marcatori sono trattati come documenti unici
+        const uniqueKey = `${doc.employee_id}_${doc.document_type}_${doc.expiry_date || 'no_expiry'}_${doc.id}`;
+        documentGroups.set(uniqueKey, [doc]);
       }
-      documentGroups.get(groupKey)!.push(doc);
     });
     
     // Per ogni gruppo, prendi solo il primo documento (quello più recente o il primo in ordine)
@@ -45,9 +52,21 @@ export async function GET(request: NextRequest) {
       );
       const mainDoc = sortedGroup[0];
       
+      // Calcola days_until_expiry se non presente o se expiry_date è presente
+      let daysUntilExpiry = mainDoc.days_until_expiry;
+      if (mainDoc.expiry_date && (!daysUntilExpiry || daysUntilExpiry === 0)) {
+        const expiryDate = new Date(mainDoc.expiry_date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        expiryDate.setHours(0, 0, 0, 0);
+        const diffTime = expiryDate.getTime() - today.getTime();
+        daysUntilExpiry = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      }
+      
       // Se ci sono più file nel gruppo, aggiungi informazioni sui file multipli
       return {
         ...mainDoc,
+        days_until_expiry: daysUntilExpiry || 0,
         isMultiFile: group.length > 1,
         fileCount: group.length,
         allFiles: group.length > 1 ? group.map(d => ({
@@ -62,10 +81,16 @@ export async function GET(request: NextRequest) {
     // Trasforma i dati per il frontend della dashboard
     const transformedDocuments = uniqueDocuments.map(doc => ({
       id: doc.id,
-      tipo_documento: doc.document_type,
-      data_scadenza: doc.expiry_date || '',
-      giorni_alla_scadenza: doc.days_until_expiry || 0,
       employee_id: doc.employee_id,
+      employee_name: doc.employee_name || `${doc.nome || ''} ${doc.cognome || ''}`.trim(),
+      nome: doc.nome,
+      cognome: doc.cognome,
+      document_type: doc.document_type,
+      tipo_documento: doc.document_type, // Per compatibilità
+      expiry_date: doc.expiry_date || '',
+      data_scadenza: doc.expiry_date || '', // Per compatibilità
+      days_until_expiry: doc.days_until_expiry || 0,
+      giorni_alla_scadenza: doc.days_until_expiry || 0, // Per compatibilità
       document_name: doc.document_name.replace(/ \(Fronte\)| \(Retro\)| \(Parte \d+\)/gi, '').trim(),
       file_path: doc.file_path,
       file_name: doc.file_name,

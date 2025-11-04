@@ -1,6 +1,47 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-## 🔧 Aggiornamenti Database e Compatibilità Next.js 15 - v2.35.2 ⭐ **NUOVO**
+## 🎨 Ottimizzazioni Dashboard Autisti - v2.35.3 ⭐ **NUOVO**
+
+### 🎯 Miglioramenti Interfaccia Dashboard Personale
+**Data implementazione**: Gennaio 2025  
+**Stato**: ✅ Completato e testato
+
+### 🛠️ Modifiche Implementate
+
+#### 🚗 Pulsante Monitoraggio
+- **Aggiunta**: Nuovo pulsante "Monitoraggio" nella sezione "Azioni Rapide"
+- **Funzionalità**: Link esterno a `https://gestione-viaggi.vercel.app/`
+- **Design**: Pulsante con sfondo blu (`btn-primary`) e icona camion (`Truck`)
+- **File**: `src/app/autisti/dashboard/page.tsx`
+- **Posizionamento**: Aggiunto come quarto pulsante nella sezione "Azioni Rapide"
+
+#### 🗑️ Rimozione Pulsante Timesheet
+- **Rimozione**: Pulsante "Timesheet" eliminato dalla dashboard
+- **Motivazione**: Funzionalità non ancora implementata, rimosso per evitare link non funzionanti
+- **File**: `src/app/autisti/dashboard/page.tsx`
+- **Nota**: Icona `Clock` mantenuta nell'import per utilizzo in altre card della dashboard
+
+#### 📐 Ottimizzazione Layout Pulsanti
+- **Modifica**: Layout pulsanti "Azioni Rapide" ottimizzato
+- **Prima**: `col-md-2` (4 pulsanti occupavano 8 colonne su 12, lasciando spazio vuoto)
+- **Dopo**: `col-md-3` (4 pulsanti occupano 12 colonne su 12, utilizzando tutta la larghezza)
+- **Responsive**: Su mobile restano `col-6` (2 pulsanti per riga)
+- **Risultato**: Migliore utilizzo spazio disponibile su schermi desktop/tablet
+
+#### 📋 Pulsanti Sezione "Azioni Rapide"
+La sezione ora contiene:
+1. **Richiedi Ferie** - Link a `/autisti/ferie` (verde outline)
+2. **I Miei Documenti** - Link a `/autisti/documenti` (blu outline)
+3. **Modifica Profilo** - Link a `/gestione/employees/profile` (giallo outline)
+4. **Monitoraggio** - Link esterno a `https://gestione-viaggi.vercel.app/` (blu pieno)
+
+### ✅ Benefici Operativi
+- ✅ **Accesso rapido**: Collegamento diretto al sistema di monitoraggio viaggi
+- ✅ **Interfaccia pulita**: Rimozione link non funzionanti migliora UX
+- ✅ **Layout ottimizzato**: Migliore utilizzo spazio disponibile
+- ✅ **Responsive design**: Mantenimento funzionalità su tutti i dispositivi
+
+## 🔧 Aggiornamenti Database e Compatibilità Next.js 15 - v2.35.2 ⭐ **PRECEDENTE**
 
 ### 🎯 Correzioni Database e Compatibilità Framework
 **Data implementazione**: Gennaio 2025  

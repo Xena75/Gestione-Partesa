@@ -85,7 +85,8 @@ export async function GET(
           id: d.id,
           file_name: d.file_name,
           file_path: d.file_path,
-          part: d.document_name.match(/\(Fronte\)|\(Retro\)|\(Parte (\d+)\)/i)?.[0] || 'Parte 1'
+          part: d.document_name.match(/\(Fronte\)|\(Retro\)|\(Parte (\d+)\)/i)?.[0] || 'Parte 1',
+          created_at: d.created_at
         })) : undefined
       };
     });
