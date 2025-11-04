@@ -82,8 +82,6 @@ export async function POST(request: NextRequest) {
       ferie_annuali: body.ferie_annuali || 26,
       permessi_annuali: body.permessi_annuali || 32,
       is_driver: body.is_driver || false,
-      driver_license_number: body.driver_license_number || undefined,
-      driver_license_expiry: body.driver_license_expiry || undefined,
       active: body.active !== undefined ? body.active : true,
       company_id: body.company_id || 1 // Default alla prima società se non specificato
     };

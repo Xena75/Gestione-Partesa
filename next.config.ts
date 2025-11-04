@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // 🚀 AUMENTA LIMITI per export grandi dataset e import file
-  serverExternalPackages: ['mysql2'],
+  serverExternalPackages: ['mysql2', 'pdf-lib'],
   
   // ESLint configuration per Vercel deployment
   eslint: {

@@ -951,8 +951,6 @@ orario_lavoro            varchar(50)    YES        NULL
 data_assunzione          date           YES        NULL                 
 is_driver                tinyint(1)     NO        0                    
 patente                  varchar(20)    YES        NULL                 
-driver_license_number    varchar(50)    YES        NULL                 
-driver_license_expiry    date           YES        NULL                 
 email_aziendale          varchar(150)   YES        NULL                 
 profile_image            varchar(255)   YES        NULL                 
 password_hash            varchar(255)   YES        NULL                 
@@ -974,7 +972,7 @@ updated_at               timestamp      NO        current_timestamp()  on update
 - Import dipendenti tramite script `scripts/import-employees-from-excel.js`
 - Supporta gestione completa anagrafica e dati contrattuali
 - Campo `is_driver` per identificare autisti abilitati
-- Gestione scadenze patenti tramite `driver_license_expiry`
+- Gestione scadenze patenti tramite tabella `employee_documents` (document_type = 'Patente di Guida')
 
 #### employee_documents
 **Descrizione:** Gestione documenti e allegati per ogni dipendente con controllo scadenze.
@@ -1024,7 +1022,8 @@ status         enum('pending','approved','rejected')          NO    MUL  pending
 approved_by    varchar(191)                                   YES        NULL                 
 approved_at    timestamp                                      YES        NULL                 
 notes          text                                           YES        NULL                 
-check_modulo   tinyint(1)                                     YES       0                    
+attachment_url varchar(500)                                   YES        NULL                 
+check_modulo   tinyint(1)                                     YES       0                     
 created_at     timestamp                                      NO        current_timestamp()  
 updated_at     timestamp                                      NO        current_timestamp()  on update current_timestamp()
 ```
@@ -1035,13 +1034,16 @@ updated_at     timestamp                                      NO        current_
 - **Malattia/Congedo**: Richieste in giorni (days_requested)
 - **Check Modulo**: Campo `check_modulo` (BOOLEAN) indica se il modulo cartaceo è stato controllato
 - **Validazione**: Controllo saldi disponibili prima dell'approvazione
+- **Allegati Moduli**: Campo `attachment_url` per salvare URL moduli PDF/immagini caricati su Vercel Blob
 
 **Utilizzo nel progetto:**
 - **Pagine**: `/gestione/employees/ferie` - Gestione completa richieste
-- **API**: `/api/employees/leave` per gestione richieste e approvazioni
-- **Componenti**: Form richieste con selezione ore/giorni, workflow approvazione
-- **Funzionalità**: Richiesta ferie/permessi, approvazione manager, calcolo saldi
+- **Pagine**: `/autisti/ferie` - Richiesta ferie per dipendenti con upload moduli
+- **API**: `/api/employees/leave` per gestione richieste e approvazioni (supporta FormData per upload file)
+- **Componenti**: Form richieste con selezione ore/giorni, upload moduli, workflow approvazione
+- **Funzionalità**: Richiesta ferie/permessi, upload moduli PDF/immagini, approvazione manager, calcolo saldi
 - **Dashboard**: Statistiche richieste, saldi disponibili, storico
+- **Storage**: Vercel Blob Storage per moduli allegati (produzione)
 
 **Indici di performance:**
 - `idx_employee_leave_requests_employee_id` - Ricerca per dipendente
@@ -1098,6 +1100,13 @@ created_at                 timestamp    NO        current_timestamp()
 - Sistema completo workflow approvazione richieste
 - Integrazione con sistema notifiche scadenze documenti
 - Supporto multi-anno per storico ferie e permessi
+
+**Migrazione attachment_url (Gennaio 2025):**
+- Campo aggiunto per supportare upload moduli PDF/immagini alle richieste ferie
+- Script migrazione: `migrations/add_attachment_to_leave_requests.sql`
+- Storage: Vercel Blob Storage (produzione)
+- Formati supportati: PDF, JPG, PNG (max 10MB)
+- Campo opzionale: `attachment_url VARCHAR(500) NULL`
 
 #### import_mappings
 ```sql
@@ -1812,8 +1821,6 @@ CREATE TABLE employees (
     livello VARCHAR(10),
     last_login DATETIME,
     is_driver TINYINT(1) DEFAULT 0,
-    driver_license_number VARCHAR(50),
-    driver_license_expiry DATE,
     company_id INT NOT NULL,
     FOREIGN KEY (company_id) REFERENCES companies(id)
 );
@@ -2281,10 +2288,12 @@ SELECT * FROM backup_schedules WHERE enabled = TRUE;
 - **src/components/DocumentPreview.tsx** - Componente preview documenti
 
 #### Tabella: `employee_leave_requests`
-- **src/lib/db-employees.ts** - CRUD operazioni richieste ferie
-- **src/app/api/employees/leave/route.ts** - API gestione richieste ferie
+- **src/lib/db-employees.ts** - CRUD operazioni richieste ferie (include `attachment_url`)
+- **src/app/api/employees/leave/route.ts** - API gestione richieste ferie (supporta FormData per upload file)
 - **src/app/api/employees/leave/approve/route.ts** - API approvazione richieste
-- **src/app/gestione/employees/ferie/page.tsx** - Pagina gestione ferie
+- **src/app/gestione/employees/ferie/page.tsx** - Pagina gestione ferie (admin)
+- **src/app/autisti/ferie/page.tsx** - Pagina richiesta ferie per dipendenti (con upload moduli)
+- **migrations/add_attachment_to_leave_requests.sql** - Script migrazione campo `attachment_url`
 
 #### Tabella: `employee_leave_balance`
 - **src/lib/db-employees.ts** - CRUD operazioni bilanci ferie

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { FileText, Upload, AlertTriangle, Calendar, Download, Eye, Plus } from 'lucide-react';
+import { FileText, Upload, AlertTriangle, Calendar, Download, Eye, Plus, X } from 'lucide-react';
 import { formatDateItalian, formatDateInput, handleDateInputChange, convertItalianToISO, isValidItalianDate } from '@/lib/date-utils';
 
 interface Document {
@@ -21,13 +21,21 @@ interface Document {
   created_at: string;
   updated_at: string;
   giorni_alla_scadenza?: number;
+  isMultiFile?: boolean;
+  fileCount?: number;
+  allFiles?: Array<{
+    id: number;
+    file_name: string;
+    file_path: string;
+    part: string;
+  }>;
 }
 
 interface UploadFormData {
   document_type: string;
   expiry_date: string;
   notes: string;
-  file: File | null;
+  files: File[];
 }
 
 export default function AutistiDocumentiPage() {
@@ -45,15 +53,42 @@ export default function AutistiDocumentiPage() {
     document_type: '',
     expiry_date: '',
     notes: '',
-    file: null
+    files: []
   });
+
+  // Tipi di documento che richiedono fronte e retro
+  const documentsWithFrontBack = [
+    'Patente di Guida',
+    'Carta d\'Identità',
+    'Codice Fiscale',
+    'CQC',
+    'Carta Tachigrafica',
+    'Certificato Medico'
+  ];
+
+  // Calcola se il documento richiede più file
+  const requiresMultipleFiles = documentsWithFrontBack.includes(formData.document_type);
 
   // Funzione per trovare l'ID del dipendente basato sull'username
   const findEmployeeId = async (username: string): Promise<string | null> => {
     try {
       console.log('Cercando dipendente per username:', username);
       
-      // Chiama l'API per recuperare tutti i dipendenti
+      // Prova prima con l'endpoint dedicato per username
+      try {
+        const response = await fetch(`/api/employees/by-username?username=${encodeURIComponent(username)}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data) {
+            console.log('✅ Dipendente trovato tramite API by-username:', data.data.id);
+            return data.data.id?.toString() || data.data.id;
+          }
+        }
+      } catch (apiError) {
+        console.log('Endpoint by-username non disponibile, uso ricerca locale');
+      }
+      
+      // Fallback: Chiama l'API per recuperare tutti i dipendenti
       const response = await fetch('/api/employees');
       
       if (!response.ok) {
@@ -71,29 +106,49 @@ export default function AutistiDocumentiPage() {
       
       // Cerca il dipendente corrispondente
       const employee = data.data.find((emp: any) => {
-        // Cerca per email, username_login, ID o nome/cognome
-        const emailMatch = emp.email === `${username}@partesa.it`;
-        const usernameLoginMatch = emp.username_login === `${username}@partesa.it`;
-        const idMatch = emp.id === username;
-        const nameMatch = emp.id === username.replace('.', ' ').split(' ').map((word: string) => 
-          word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-        ).join(' ');
+        // Cerca per username_login (può essere username o username@partesa.it)
+        const usernameLoginMatch = emp.username_login === username || 
+                                   emp.username_login === `${username}@partesa.it` ||
+                                   emp.username_login?.toLowerCase() === username.toLowerCase();
         
-        console.log('Controllo dipendente:', emp.id, {
-          emailMatch,
+        // Cerca per email
+        const emailMatch = emp.email === username || 
+                          emp.email === `${username}@partesa.it` ||
+                          emp.email?.toLowerCase() === username.toLowerCase();
+        
+        // Cerca per ID (nel caso l'ID sia l'username)
+        const idMatch = emp.id === username || emp.id?.toString() === username;
+        
+        // Cerca per nome/cognome combinato (es: "alberto.racano" -> cerca "Alberto Racano")
+        const nameParts = username.split('.');
+        let nameMatch = false;
+        if (nameParts.length >= 2) {
+          const firstName = nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase();
+          const lastName = nameParts[1].charAt(0).toUpperCase() + nameParts[1].slice(1).toLowerCase();
+          const employeeFullName = `${emp.nome} ${emp.cognome}`.toLowerCase();
+          
+          // Cerca se il nome e cognome sono presenti nel nome completo (gestisce anche nomi composti)
+          nameMatch = employeeFullName.includes(firstName.toLowerCase()) && 
+                     employeeFullName.includes(lastName.toLowerCase());
+        }
+        
+        const matches = {
           usernameLoginMatch,
+          emailMatch,
           idMatch,
           nameMatch
-        });
+        };
         
-        return emailMatch || usernameLoginMatch || idMatch || nameMatch;
+        console.log('Controllo dipendente:', emp.id, `${emp.nome} ${emp.cognome}`, matches);
+        
+        return usernameLoginMatch || emailMatch || idMatch || nameMatch;
       });
       
       if (employee) {
-        console.log('Dipendente trovato:', employee.id);
-        return employee.id;
+        console.log('✅ Dipendente trovato:', employee.id, `${employee.nome} ${employee.cognome}`);
+        return employee.id?.toString() || employee.id;
       } else {
-        console.log('Nessun dipendente corrispondente trovato');
+        console.log('❌ Nessun dipendente corrispondente trovato per username:', username);
         return null;
       }
       
@@ -190,18 +245,91 @@ export default function AutistiDocumentiPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    // Se cambia il tipo documento, resetta i file
+    if (name === 'document_type') {
+      setFormData(prev => ({
+        ...prev,
+        document_type: value,
+        files: [] // Reset files quando cambia il tipo documento
+      }));
+      // Reset anche l'input file
+      const fileInput = document.getElementById('file') as HTMLInputElement;
+      if (fileInput) fileInput.value = '';
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    setFormData(prev => ({
-      ...prev,
-      file
-    }));
+    const selectedFiles = Array.from(e.target.files || []);
+    
+    console.log('File selezionati:', selectedFiles.length);
+    console.log('Tipo documento:', formData.document_type);
+    console.log('Richiede file multipli:', requiresMultipleFiles);
+    
+    // Se ci sono file già selezionati e l'utente ne seleziona altri, aggiungili
+    let allFiles = [...formData.files];
+    
+    // Aggiungi i nuovi file selezionati (evita duplicati)
+    selectedFiles.forEach(newFile => {
+      const isDuplicate = allFiles.some(existingFile => 
+        existingFile.name === newFile.name && existingFile.size === newFile.size
+      );
+      if (!isDuplicate) {
+        allFiles.push(newFile);
+      }
+    });
+    
+    // Rimuovi eventuali errori precedenti
+    setError('');
+    
+    if (requiresMultipleFiles) {
+      // Per documenti con fronte/retro, permettere più file (minimo 2)
+      if (allFiles.length < 2) {
+        setError('Per questo tipo di documento devi caricare almeno 2 file (fronte e retro)');
+        setFormData(prev => ({
+          ...prev,
+          files: allFiles
+        }));
+        return;
+      }
+      // Se ci sono almeno 2 file, salva e rimuovi l'errore
+      setError('');
+      setFormData(prev => ({
+        ...prev,
+        files: allFiles
+      }));
+      console.log('File salvati:', allFiles.length);
+    } else {
+      // Per altri documenti, solo un file (mantieni solo il primo se ce ne sono più)
+      if (allFiles.length > 0) {
+        setError('');
+        setFormData(prev => ({
+          ...prev,
+          files: [allFiles[0]]
+        }));
+      }
+    }
+    
+    // Reset dell'input file per permettere nuova selezione (solo dopo aver salvato i file nello stato)
+    // NON resettare se abbiamo già salvato i file
+    setTimeout(() => {
+      const fileInput = document.getElementById('file') as HTMLInputElement;
+      if (fileInput && !requiresMultipleFiles && allFiles.length >= 1) {
+        // Per documenti singoli, non resettare se abbiamo già un file
+        // Questo permette di sostituire il file se necessario
+        // Non resettare l'input per permettere la validazione HTML5
+      } else if (fileInput && requiresMultipleFiles && allFiles.length >= 2) {
+        // Per documenti multipli, non resettare se abbiamo già tutti i file necessari
+      } else if (fileInput && allFiles.length === 0) {
+        // Reset solo se non ci sono file selezionati
+        fileInput.value = '';
+      }
+    }, 100);
   };
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -227,22 +355,29 @@ export default function AutistiDocumentiPage() {
       return false;
     }
 
-    if (!formData.file) {
-      setError('Seleziona un file da caricare');
+    if (formData.files.length === 0) {
+      setError('Seleziona almeno un file da caricare');
+      return false;
+    }
+
+    if (requiresMultipleFiles && formData.files.length < 2) {
+      setError('Per questo tipo di documento devi caricare almeno 2 file (fronte e retro)');
       return false;
     }
 
     // Validazione file
     const maxSize = 10 * 1024 * 1024; // 10MB
-    if (formData.file.size > maxSize) {
-      setError('Il file non può superare i 10MB');
-      return false;
-    }
+    for (const file of formData.files) {
+      if (file.size > maxSize) {
+        setError('Uno o più file superano i 10MB');
+        return false;
+      }
 
-    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
-    if (!allowedTypes.includes(formData.file.type)) {
-      setError('Tipo di file non supportato. Sono accettati solo PDF e immagini (JPG, PNG)');
-      return false;
+      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+      if (!allowedTypes.includes(file.type)) {
+        setError('Tipo di file non supportato. Sono accettati solo PDF e immagini (JPG, PNG)');
+        return false;
+      }
     }
 
     // Validazione data scadenza (opzionale ma se presente deve essere valida)
@@ -257,7 +392,24 @@ export default function AutistiDocumentiPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm() || !employeeId) return;
+    console.log('=== SUBMIT FORM ===');
+    console.log('Form data:', formData);
+    console.log('Employee ID:', employeeId);
+    console.log('Requires multiple files:', requiresMultipleFiles);
+    
+    const isValid = validateForm();
+    console.log('Form is valid:', isValid);
+    
+    if (!isValid) {
+      console.log('Validazione fallita, error:', error);
+      return;
+    }
+    
+    if (!employeeId) {
+      console.error('Employee ID mancante!');
+      setError('Errore: ID dipendente non trovato. Ricarica la pagina.');
+      return;
+    }
 
     setError('');
     setSuccess('');
@@ -265,7 +417,7 @@ export default function AutistiDocumentiPage() {
 
     try {
       console.log('Uploading document for employee ID:', employeeId);
-      console.log('User object:', user);
+      console.log('Files to upload:', formData.files.length);
       
       const uploadFormData = new FormData();
       uploadFormData.append('document_type', formData.document_type);
@@ -279,16 +431,25 @@ export default function AutistiDocumentiPage() {
       
       uploadFormData.append('notes', formData.notes);
       uploadFormData.append('uploaded_by', user?.username || '');
-      uploadFormData.append('file', formData.file!);
+      
+      // Se ci sono più file, aggiungili tutti al FormData
+      // L'API li unirà automaticamente
+      formData.files.forEach((file, index) => {
+        console.log(`Aggiungo file ${index + 1}:`, file.name, file.size, file.type);
+        uploadFormData.append('files', file);
+      });
 
       const encodedEmployeeId = encodeURIComponent(employeeId);
       console.log('Calling API endpoint:', `/api/employees/${encodedEmployeeId}/documents`);
+      
       const response = await fetch(`/api/employees/${encodedEmployeeId}/documents`, {
         method: 'POST',
         body: uploadFormData,
       });
 
+      console.log('Response status:', response.status);
       const result = await response.json();
+      console.log('Response data:', result);
 
       if (result.success) {
         setSuccess('Documento caricato con successo!');
@@ -296,7 +457,7 @@ export default function AutistiDocumentiPage() {
           document_type: '',
           expiry_date: '',
           notes: '',
-          file: null
+          files: []
         });
         setShowUploadForm(false);
         fetchDocuments(); // Ricarica i documenti
@@ -305,7 +466,7 @@ export default function AutistiDocumentiPage() {
       }
     } catch (error) {
       console.error('Errore upload documento:', error);
-      setError('Errore di connessione');
+      setError(error instanceof Error ? error.message : 'Errore di connessione');
     } finally {
       setLoading(false);
     }
@@ -329,12 +490,21 @@ export default function AutistiDocumentiPage() {
   };
 
   const tipiDocumento = [
-    'Patente di Guida',
-    'CQC',
+    'ADR',
+    'Altro',
+    'Attestati',
+    'Attestato Preposto Sicurezza',
+    'Carta d\'Identità',
     'Carta Tachigrafica',
+    'Certificato di Formazione',
+    'Certificato di Residenza',
     'Certificato Medico',
-    'Assicurazione',
-    'Altro'
+    'Certificato Medico Idoneità alla Guida',
+    'Codice Fiscale',
+    'Contratto di Lavoro',
+    'CQC',
+    'Patente di Guida',
+    'Permesso di Soggiorno'
   ];
 
   if (loading) {
@@ -458,7 +628,7 @@ export default function AutistiDocumentiPage() {
 
                   <div className="mb-3">
                     <label htmlFor="file" className="form-label text-light">
-                      File Documento *
+                      File Documento * {requiresMultipleFiles && <span className="text-warning">(minimo 2 file - fronte e retro)</span>}
                     </label>
                     <input
                       id="file"
@@ -467,11 +637,74 @@ export default function AutistiDocumentiPage() {
                       className="form-control bg-dark text-light border-secondary"
                       onChange={handleFileChange}
                       accept=".pdf,.jpg,.jpeg,.png"
-                      required
+                      multiple={true}
                     />
                     <div className="form-text text-muted">
-                      Formati supportati: PDF, JPG, PNG. Dimensione massima: 10MB
+                      Formati supportati: PDF, JPG, PNG. Dimensione massima: 10MB per file
+                      {requiresMultipleFiles && (
+                        <>
+                          <br />
+                          <strong className="text-warning">⚠️ IMPORTANTE:</strong> Per documenti con fronte e retro:
+                          <br />
+                          📱 <strong>Da smartphone:</strong> Clicca "Scegli file" per ogni foto (prima il fronte, poi il retro)
+                          <br />
+                          💻 <strong>Da computer:</strong> Puoi selezionare più file insieme tenendo premuto Ctrl (Windows) o Cmd (Mac)
+                          <br />
+                          Il primo file sarà il <strong>fronte</strong>, il secondo il <strong>retro</strong>
+                        </>
+                      )}
                     </div>
+                    
+                    {/* Mostra i file selezionati */}
+                    {formData.files.length > 0 && (
+                      <div className="mt-2">
+                        <small className="text-light d-block mb-2">
+                          File selezionati: {formData.files.length} {requiresMultipleFiles && formData.files.length < 2 && <span className="text-warning">(ne servono almeno 2)</span>}
+                        </small>
+                        {formData.files.map((file, index) => (
+                          <div key={index} className="d-flex align-items-center justify-content-between bg-secondary rounded p-2 mb-2">
+                            <div className="d-flex align-items-center">
+                              <FileText size={16} className="me-2 text-info" />
+                              <span className="text-light">
+                                {index === 0 && requiresMultipleFiles ? 'Fronte: ' : index === 1 && requiresMultipleFiles ? 'Retro: ' : ''}
+                                {file.name}
+                              </span>
+                              <span className="text-muted ms-2">({(file.size / 1024).toFixed(2)} KB)</span>
+                            </div>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-danger"
+                              onClick={() => {
+                                const newFiles = formData.files.filter((_, i) => i !== index);
+                                setFormData(prev => ({ ...prev, files: newFiles }));
+                                // Reset input per permettere nuova selezione
+                                const fileInput = document.getElementById('file') as HTMLInputElement;
+                                if (fileInput) fileInput.value = '';
+                              }}
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ))}
+                        {requiresMultipleFiles && formData.files.length < 2 && (
+                          <div className="alert alert-warning mt-2 mb-0" role="alert">
+                            <small>
+                              <AlertTriangle size={14} className="me-1" />
+                              Seleziona almeno {2 - formData.files.length} altro file.
+                              {formData.files.length === 0 && ' Clicca di nuovo su "Scegli file" per aggiungere il primo file.'}
+                              {formData.files.length === 1 && ' Clicca di nuovo su "Scegli file" per aggiungere il secondo file.'}
+                            </small>
+                          </div>
+                        )}
+                        {requiresMultipleFiles && formData.files.length >= 2 && (
+                          <div className="alert alert-success mt-2 mb-0" role="alert">
+                            <small>
+                              ✅ Hai selezionato {formData.files.length} file. Puoi aggiungerne altri se necessario o procedere con il caricamento.
+                            </small>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div className="mb-4">
@@ -492,8 +725,19 @@ export default function AutistiDocumentiPage() {
                   <div className="d-flex gap-2">
                     <button
                       type="submit"
-                      disabled={loading}
+                      disabled={loading || !formData.document_type || formData.files.length === 0 || (requiresMultipleFiles && formData.files.length < 2)}
                       className="btn btn-primary"
+                      onClick={(e) => {
+                        console.log('Button clicked!');
+                        console.log('Form state:', {
+                          document_type: formData.document_type,
+                          files_count: formData.files.length,
+                          requiresMultipleFiles,
+                          employeeId,
+                          loading
+                        });
+                        // Il form submit verrà gestito dal form onSubmit
+                      }}
                     >
                       {loading ? (
                         <>
@@ -553,48 +797,110 @@ export default function AutistiDocumentiPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {documents.map((doc) => (
-                        <tr key={doc.id}>
-                          <td>
-                            <span className="badge bg-info">
-                              {doc.document_type}
-                            </span>
-                          </td>
-                          <td>{doc.file_name}</td>
-                          <td>
-                            {doc.expiry_date ? formatDateItalian(doc.expiry_date) : '-'}
-                          </td>
-                          <td>
-                            <span className={`badge ${getExpiryBadgeClass(doc.giorni_alla_scadenza)}`}>
-                              {getExpiryText(doc.giorni_alla_scadenza)}
-                            </span>
-                          </td>
-                          <td>{formatDateItalian(doc.created_at)}</td>
-                          <td>
-                            <div className="btn-group btn-group-sm" role="group">
-                              <button
-                                className="btn btn-outline-primary"
-                                onClick={() => window.open(doc.file_path, '_blank')}
-                                title="Visualizza"
-                              >
-                                <Eye size={14} />
-                              </button>
-                              <button
-                                className="btn btn-outline-success"
-                                onClick={() => {
-                                  const link = document.createElement('a');
-                                  link.href = doc.file_path;
-                                  link.download = doc.file_name;
-                                  link.click();
-                                }}
-                                title="Scarica"
-                              >
-                                <Download size={14} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                      {documents.flatMap((doc) => {
+                        // Se il documento ha più file, espandi tutti i file
+                        if (doc.isMultiFile && doc.allFiles && doc.allFiles.length > 0) {
+                          return doc.allFiles.map((file, index) => (
+                            <tr key={`${doc.id}-${file.id}`}>
+                              <td>
+                                <span className="badge bg-info">
+                                  {doc.document_type}
+                                </span>
+                                {index === 0 && (
+                                  <span className="badge bg-secondary ms-2">
+                                    {doc.fileCount} file
+                                  </span>
+                                )}
+                              </td>
+                              <td>
+                                <div className="d-flex align-items-center">
+                                  <FileText size={14} className="me-2 text-muted" />
+                                  <div>
+                                    <div className="fw-bold">{file.file_name}</div>
+                                    <small className="text-muted">{file.part}</small>
+                                  </div>
+                                </div>
+                              </td>
+                              <td>
+                                {doc.expiry_date ? formatDateItalian(doc.expiry_date) : '-'}
+                              </td>
+                              <td>
+                                <span className={`badge ${getExpiryBadgeClass(doc.giorni_alla_scadenza)}`}>
+                                  {getExpiryText(doc.giorni_alla_scadenza)}
+                                </span>
+                              </td>
+                              <td>{formatDateItalian(doc.created_at)}</td>
+                              <td>
+                                <div className="btn-group btn-group-sm" role="group">
+                                  <button
+                                    className="btn btn-outline-primary"
+                                    onClick={() => window.open(file.file_path, '_blank')}
+                                    title="Visualizza"
+                                  >
+                                    <Eye size={14} />
+                                  </button>
+                                  <button
+                                    className="btn btn-outline-success"
+                                    onClick={() => {
+                                      const link = document.createElement('a');
+                                      link.href = file.file_path;
+                                      link.download = file.file_name;
+                                      link.click();
+                                    }}
+                                    title="Scarica"
+                                  >
+                                    <Download size={14} />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ));
+                        } else {
+                          // Documento singolo
+                          return (
+                            <tr key={doc.id}>
+                              <td>
+                                <span className="badge bg-info">
+                                  {doc.document_type}
+                                </span>
+                              </td>
+                              <td>{doc.file_name}</td>
+                              <td>
+                                {doc.expiry_date ? formatDateItalian(doc.expiry_date) : '-'}
+                              </td>
+                              <td>
+                                <span className={`badge ${getExpiryBadgeClass(doc.giorni_alla_scadenza)}`}>
+                                  {getExpiryText(doc.giorni_alla_scadenza)}
+                                </span>
+                              </td>
+                              <td>{formatDateItalian(doc.created_at)}</td>
+                              <td>
+                                <div className="btn-group btn-group-sm" role="group">
+                                  <button
+                                    className="btn btn-outline-primary"
+                                    onClick={() => window.open(doc.file_path, '_blank')}
+                                    title="Visualizza"
+                                  >
+                                    <Eye size={14} />
+                                  </button>
+                                  <button
+                                    className="btn btn-outline-success"
+                                    onClick={() => {
+                                      const link = document.createElement('a');
+                                      link.href = doc.file_path;
+                                      link.download = doc.file_name;
+                                      link.click();
+                                    }}
+                                    title="Scarica"
+                                  >
+                                    <Download size={14} />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        }
+                      })}
                     </tbody>
                   </table>
                 </div>

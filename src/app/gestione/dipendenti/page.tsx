@@ -13,8 +13,6 @@ interface Employee {
   qualifica?: string;
   is_driver: number;
   active: number;
-  driver_license_number?: string;
-  driver_license_expiry?: string;
   cdc?: string;
   cod_fiscale?: string;
   indirizzo?: string;
@@ -145,22 +143,6 @@ export default function AutistiPage() {
         return <span className="badge bg-success">Preposto</span>;
       default:
         return <span className="badge bg-secondary">{qualifica}</span>;
-    }
-  };
-
-  const getLicenseStatusBadge = (expiryDate?: string) => {
-    if (!expiryDate) return <span className="badge bg-secondary">N/A</span>;
-    
-    const expiry = new Date(expiryDate);
-    const today = new Date();
-    const daysUntilExpiry = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (daysUntilExpiry < 0) {
-      return <span className="badge bg-danger">Scaduta</span>;
-    } else if (daysUntilExpiry <= 30) {
-      return <span className="badge bg-warning">In scadenza</span>;
-    } else {
-      return <span className="badge bg-success">Valida</span>;
     }
   };
 
@@ -361,8 +343,6 @@ export default function AutistiPage() {
                           )}
                         </th>
                         <th scope="col" className="text-light">Tipo</th>
-                        <th scope="col" className="text-light">Patente</th>
-                        <th scope="col" className="text-light">Stato Patente</th>
                         <th scope="col" className="text-light">Azioni</th>
                       </tr>
                     </thead>
@@ -410,21 +390,6 @@ export default function AutistiPage() {
                           </td>
                           <td>
                             {getEmployeeTypeBadge(employee.qualifica)}
-                          </td>
-                          <td>
-                            {employee.driver_license_number ? (
-                              <span className="badge bg-info">
-                                {employee.driver_license_number}
-                              </span>
-                            ) : (
-                              <span className="text-secondary">-</span>
-                            )}
-                          </td>
-                          <td>
-                            {employee.is_driver === 1 ? 
-                              getLicenseStatusBadge(employee.driver_license_expiry) :
-                              <span className="text-secondary">-</span>
-                            }
                           </td>
                           <td>
                             <div className="btn-group" role="group">

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyUserAccess } from '@/lib/auth';
+import { put } from '@vercel/blob';
 import { 
   getEmployeeLeaveRequests, 
   createLeaveRequest, 
@@ -216,8 +217,89 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('📥 Parsing body della richiesta...');
-    const body = await request.json();
+    console.log('📥 Parsing FormData della richiesta...');
+    
+    // Gestisci sia JSON che FormData (per upload file)
+    const contentType = request.headers.get('content-type') || '';
+    let body: any;
+    let attachmentFile: File | null = null;
+    let attachmentUrl: string | null = null;
+
+    if (contentType.includes('multipart/form-data')) {
+      // Richiesta con FormData (include file)
+      const formData = await request.formData();
+      
+      // Estrai i dati del form
+      body = {
+        user_id: formData.get('user_id') as string,
+        start_date: formData.get('start_date') as string,
+        end_date: formData.get('end_date') as string,
+        leave_type: formData.get('leave_type') as string,
+        reason: formData.get('reason') as string,
+        notes: formData.get('notes') as string,
+        days_requested: formData.get('days_requested') ? parseInt(formData.get('days_requested') as string) : 0,
+        hours_requested: formData.get('hours_requested') ? parseFloat(formData.get('hours_requested') as string) : 0
+      };
+      
+      // Estrai il file se presente
+      attachmentFile = formData.get('attachment') as File | null;
+      
+      // Se c'è un file, caricalo su Vercel Blob
+      if (attachmentFile && attachmentFile.size > 0) {
+        console.log('📎 File allegato trovato:', attachmentFile.name, attachmentFile.size, 'bytes');
+        
+        // Validazione tipo file
+        const allowedTypes = [
+          'application/pdf',
+          'image/jpeg',
+          'image/jpg',
+          'image/png',
+          'image/webp'
+        ];
+        
+        if (!allowedTypes.includes(attachmentFile.type)) {
+          return NextResponse.json({
+            success: false,
+            error: 'Tipo file non supportato. Formati accettati: PDF, JPG, PNG, WebP'
+          }, { status: 400 });
+        }
+        
+        // Validazione dimensione (max 10MB)
+        if (attachmentFile.size > 10 * 1024 * 1024) {
+          return NextResponse.json({
+            success: false,
+            error: 'File troppo grande. Dimensione massima: 10MB'
+          }, { status: 400 });
+        }
+        
+        try {
+          // Genera nome file univoco
+          const timestamp = Date.now();
+          const fileExtension = attachmentFile.name.split('.').pop();
+          const sanitizedFileName = attachmentFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+          const fileName = `leave_requests/${timestamp}_${sanitizedFileName}`;
+          
+          // Upload su Vercel Blob
+          const blob = await put(fileName, attachmentFile, {
+            access: 'public',
+            addRandomSuffix: false
+          });
+          
+          attachmentUrl = blob.url;
+          console.log('✅ File caricato su Vercel Blob:', attachmentUrl);
+        } catch (uploadError) {
+          console.error('❌ Errore upload file:', uploadError);
+          return NextResponse.json({
+            success: false,
+            error: 'Errore durante il caricamento del file'
+          }, { status: 500 });
+        }
+      }
+    } else {
+      // Richiesta JSON standard (senza file)
+      body = await request.json();
+    }
+    
     console.log('📄 Body ricevuto:', body);
     
     const { user_id, start_date, end_date, leave_type, reason, notes, days_requested, hours_requested } = body;
@@ -229,7 +311,8 @@ export async function POST(request: NextRequest) {
       reason,
       notes,
       days_requested,
-      hours_requested
+      hours_requested,
+      attachment_url: attachmentUrl
     });
     
     // Se l'utente è employee, può creare richieste solo per se stesso
@@ -327,7 +410,8 @@ export async function POST(request: NextRequest) {
       leave_type,
       reason,
       notes,
-      days_requested
+      days_requested,
+      attachment_url: attachmentUrl
     });
     
     // Non convertiamo le date in oggetti Date, lasciamole come stringhe
@@ -343,7 +427,8 @@ export async function POST(request: NextRequest) {
       notes: notes || null,
       status: 'pending',
       approved_by: undefined,
-      approved_at: undefined
+      approved_at: undefined,
+      attachment_url: attachmentUrl || undefined
     };
     
     console.log('POST - Dati preparati per createLeaveRequest:', leaveData);
@@ -355,7 +440,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: newLeaveRequest,
-      message: 'Richiesta ferie creata con successo'
+      message: attachmentUrl ? 'Richiesta ferie creata con successo con modulo allegato' : 'Richiesta ferie creata con successo'
     });
     
   } catch (error) {

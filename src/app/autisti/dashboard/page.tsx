@@ -1,8 +1,9 @@
 'use client';
 
-import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Calendar, FileText, Clock, AlertTriangle, User, MapPin, ChevronDown, ChevronUp, UserCircle, Briefcase, Phone, CreditCard, GraduationCap, Check, X } from 'lucide-react';
 import ProfileImageUpload from '@/components/ProfileImageUpload';
 
@@ -32,8 +33,6 @@ interface EmployeeData {
   cap?: string;
   citta?: string;
   patente?: string;
-  driver_license_number?: string;
-  driver_license_expiry?: string;
   titolo_studio?: string;
   permesso_soggiorno?: string;
   foto_url?: string;
@@ -74,6 +73,7 @@ export default function AutistiDashboardPage() {
   console.log('🎯 Componente AutistiDashboardPage caricato');
   
   const { user } = useAuth();
+  const router = useRouter();
   console.log('🔐 Hook useAuth chiamato, user:', user);
 
   // Controllo di sicurezza per prevenire errori window.ethereum su mobile
@@ -365,7 +365,7 @@ export default function AutistiDashboardPage() {
           <div className="col-12">
             <h1 className="h4 h3-md text-dark mb-2 mb-md-3">
               <User className="me-2" size={24} />
-              Dashboard Autista
+              Dashboard Personale
             </h1>
             <p className="text-muted small">
               Benvenuto, {employeeData?.nome} {employeeData?.cognome}
@@ -680,14 +680,6 @@ export default function AutistiDashboardPage() {
                           <small className="text-dark d-block fw-bold" style={{ fontSize: '0.75rem' }}>Categoria Patente</small>
                           <span className="text-light" style={{ fontSize: '0.8rem' }}>{employeeData?.patente || 'Non specificato'}</span>
                         </div>
-                        <div className="col-12">
-                          <small className="text-dark d-block fw-bold" style={{ fontSize: '0.75rem' }}>Numero Patente</small>
-                          <span className="text-light" style={{ fontSize: '0.8rem' }}>{employeeData?.driver_license_number || 'Non specificato'}</span>
-                        </div>
-                        <div className="col-12">
-                          <small className="text-dark d-block fw-bold" style={{ fontSize: '0.75rem' }}>Scadenza Patente</small>
-                          <span className="text-light" style={{ fontSize: '0.8rem' }}>{formatDateProfile(employeeData?.driver_license_expiry || null)}</span>
-                        </div>
                       </div>
                     </div>
                   )}
@@ -768,15 +760,33 @@ export default function AutistiDashboardPage() {
           </div>
         </div>
         <div className="col-6 col-md-3 mb-3">
-          <Link href="/autisti/documenti" className="text-decoration-none">
-            <div className="card bg-dark border-info" style={{ cursor: 'pointer' }}>
-              <div className="card-body text-center py-3">
-                <FileText className="text-info mb-2" size={28} />
-                <h6 className="text-info mb-1">{totalDocuments}</h6>
-                <p className="text-light mb-0 small">Documenti Totali</p>
-              </div>
+          <div 
+            className="card bg-dark border-info" 
+            style={{ 
+              transition: 'all 0.3s ease',
+              cursor: employeeData ? 'pointer' : 'default'
+            }}
+            onClick={() => {
+              console.log('Navigazione alla pagina documenti:', '/autisti/documenti');
+              router.push('/autisti/documenti');
+            }}
+            onMouseEnter={(e) => {
+              if (employeeData) {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 4px 8px rgba(0, 123, 255, 0.3)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          >
+            <div className="card-body text-center py-3">
+              <FileText className="text-info mb-2" size={28} />
+              <h6 className="text-info mb-1">{totalDocuments}</h6>
+              <p className="text-light mb-0 small">Documenti Totali</p>
             </div>
-          </Link>
+          </div>
         </div>
       </div>
 

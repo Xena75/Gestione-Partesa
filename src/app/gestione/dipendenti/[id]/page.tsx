@@ -18,8 +18,6 @@ interface Employee {
   citta?: string;
   is_driver: number;
   active: number;
-  driver_license_number?: string;
-  driver_license_expiry?: string;
   cdc?: string;
   cod_fiscale?: string;
   qualifica?: string;
@@ -167,22 +165,6 @@ export default function AutistaDettaglio() {
         return <span className="badge bg-warning">In scadenza</span>;
       default:
         return <span className="badge bg-secondary">Sconosciuto</span>;
-    }
-  };
-
-  const getLicenseStatusBadge = (expiryDate?: string) => {
-    if (!expiryDate) return <span className="badge bg-secondary">N/A</span>;
-    
-    const expiry = new Date(expiryDate);
-    const today = new Date();
-    const daysUntilExpiry = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (daysUntilExpiry < 0) {
-      return <span className="badge bg-danger">Scaduta</span>;
-    } else if (daysUntilExpiry <= 30) {
-      return <span className="badge bg-warning">In scadenza</span>;
-    } else {
-      return <span className="badge bg-success">Valida</span>;
     }
   };
 
@@ -550,27 +532,6 @@ export default function AutistaDettaglio() {
                               <label className="form-label text-light">Tipo Patente</label>
                               <p className="text-light">
                                 {employee.patente || <span className="text-secondary">Non disponibile</span>}
-                              </p>
-                            </div>
-                            <div className="col-md-6 mb-3">
-                              <label className="form-label text-light">Numero Patente</label>
-                              <p className="text-light">
-                                {employee.driver_license_number || <span className="text-secondary">Non disponibile</span>}
-                              </p>
-                            </div>
-                            <div className="col-md-6 mb-3">
-                              <label className="form-label text-light">Scadenza Patente</label>
-                              <p className="text-light">
-                                {employee.driver_license_expiry ? (
-                                  <div>
-                                    {formatDate(employee.driver_license_expiry)}
-                                    <div className="mt-1">
-                                      {getLicenseStatusBadge(employee.driver_license_expiry)}
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <span className="text-secondary">Non disponibile</span>
-                                )}
                               </p>
                             </div>
                           </div>

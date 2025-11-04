@@ -42,8 +42,6 @@ export interface Employee {
   permessi_annuali?: number;
   qualifica?: string;
   is_driver: boolean;
-  driver_license_number?: string;
-  driver_license_expiry?: string;
   foto_url?: string;
   active: boolean;
   company_id: number;
@@ -95,6 +93,8 @@ export interface LeaveRequest {
   approved_by?: string;
   approved_at?: string;
   notes?: string;
+  attachment_url?: string; // URL del modulo allegato su Vercel Blob
+  check_modulo?: boolean; // Campo per indicare se il modulo cartaceo è stato controllato
   created_at: string;
   updated_at: string;
 }
@@ -239,15 +239,15 @@ export async function createEmployee(employee: Omit<Employee, 'id' | 'createdAt'
         id, nome, cognome, email, username_login, cellulare, data_nascita, codice_fiscale,
         indirizzo, citta, cap, provincia, data_assunzione, contratto,
         stipendio, ore_settimanali, ferie_annuali, permessi_annuali,
-        is_driver, driver_license_number, driver_license_expiry, active
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        is_driver, active
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         employeeId, employee.nome, employee.cognome, employee.email,
         employee.username_login, employee.cellulare, employee.data_nascita, employee.codice_fiscale,
         employee.indirizzo, employee.citta, employee.cap, employee.provincia,
         employee.data_assunzione, employee.contratto, employee.stipendio,
         employee.ore_settimanali, employee.ferie_annuali, employee.permessi_annuali,
-        employee.is_driver, employee.driver_license_number, employee.driver_license_expiry, employee.active
+        employee.is_driver, employee.active
       ]
     );
     
@@ -446,6 +446,7 @@ export interface ExpiredDocument extends EmployeeDocument {
 export async function getExpiringDocuments(days: number = 30): Promise<(EmployeeDocument & { nome: string; cognome: string; employee_name: string; days_until_expiry: number })[]> {
   const connection = await getConnection();
   try {
+    // MODIFICATO: Include anche i documenti già scaduti (rimuoviamo la condizione expiry_date >= CURDATE())
     const [rows] = await connection.execute(
       `SELECT ed.*, 
               e.nome, 
@@ -457,7 +458,6 @@ export async function getExpiringDocuments(days: number = 30): Promise<(Employee
        WHERE e.active = 1 
        AND ed.expiry_date IS NOT NULL 
        AND ed.expiry_date <= DATE_ADD(CURDATE(), INTERVAL ? DAY)
-       AND ed.expiry_date >= CURDATE()
        ORDER BY ed.expiry_date ASC`,
       [days]
     );
@@ -644,6 +644,7 @@ export async function getEmployeeLeaveRequests(employeeId: string, status?: stri
       approved_at,
       notes,
       check_modulo,
+      attachment_url,
       CONCAT(
         LPAD(DAY(created_at), 2, '0'), '/',
         LPAD(MONTH(created_at), 2, '0'), '/',
@@ -732,11 +733,20 @@ export async function createLeaveRequest(request: Omit<LeaveRequest, 'id' | 'cre
       formatted_end: formattedEndDate
     });
 
+    // Se c'è un attachment_url, imposta automaticamente check_modulo = true
+    const checkModulo = request.attachment_url ? true : (request.check_modulo || false);
+    
+    console.log('createLeaveRequest - check_modulo:', {
+      hasAttachment: !!request.attachment_url,
+      checkModulo: checkModulo,
+      attachment_url: request.attachment_url
+    });
+
     const [result] = await connection.execute(
       `INSERT INTO employee_leave_requests (
         employee_id, leave_type, start_date, end_date, days_requested, hours_requested,
-        reason, status, approved_by, approved_at, notes
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        reason, status, approved_by, approved_at, notes, attachment_url, check_modulo
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         String(request.employee_id), // Assicurati che sia una stringa
         request.leave_type, 
@@ -748,7 +758,9 @@ export async function createLeaveRequest(request: Omit<LeaveRequest, 'id' | 'cre
         request.status, 
         request.approved_by || null, // Converti undefined in null
         request.approved_at || null, // Converti undefined in null
-        request.notes || null // Converti undefined in null
+        request.notes || null, // Converti undefined in null
+        request.attachment_url || null, // Converti undefined in null
+        checkModulo // Imposta automaticamente a true se c'è attachment_url
       ]
     );
     
@@ -951,17 +963,19 @@ export async function getPendingLeaveRequests(): Promise<LeaveRequest[]> {
               lr.status,
               lr.approved_by,
               lr.approved_at,
-              lr.notes,
-              CONCAT(
-                LPAD(DAY(lr.created_at), 2, '0'), '/',
-                LPAD(MONTH(lr.created_at), 2, '0'), '/',
-                YEAR(lr.created_at)
-              ) as created_at,
-              lr.updated_at,
-              COALESCE(e.nome, SUBSTRING_INDEX(lr.employee_id, ' ', 1)) as nome,
-              COALESCE(e.cognome, SUBSTRING_INDEX(lr.employee_id, ' ', -1)) as cognome,
-              lr.employee_id as employee_name
-       FROM employee_leave_requests lr 
+      lr.notes,
+      lr.check_modulo,
+      lr.attachment_url,
+      CONCAT(
+        LPAD(DAY(lr.created_at), 2, '0'), '/',
+        LPAD(MONTH(lr.created_at), 2, '0'), '/',
+        YEAR(lr.created_at)
+      ) as created_at,
+      lr.updated_at,
+      COALESCE(e.nome, SUBSTRING_INDEX(lr.employee_id, ' ', 1)) as nome,
+      COALESCE(e.cognome, SUBSTRING_INDEX(lr.employee_id, ' ', -1)) as cognome,
+      lr.employee_id as employee_name
+       FROM employee_leave_requests lr
        LEFT JOIN employees e ON TRIM(lr.employee_id) COLLATE utf8mb4_unicode_ci = TRIM(e.id) COLLATE utf8mb4_unicode_ci
        WHERE lr.status = 'pending' 
        ORDER BY lr.created_at ASC`;
@@ -998,17 +1012,18 @@ export async function getAllLeaveRequests(): Promise<LeaveRequest[]> {
               lr.status,
               lr.approved_by,
               lr.approved_at,
-              lr.notes,
-              lr.check_modulo,
-              CONCAT(
-                LPAD(DAY(lr.created_at), 2, '0'), '/',
-                LPAD(MONTH(lr.created_at), 2, '0'), '/',
-                YEAR(lr.created_at)
-              ) as created_at,
-              lr.updated_at,
-              COALESCE(e1.nome, e2.nome, SUBSTRING_INDEX(lr.employee_id, ' ', 1)) as nome,
-              COALESCE(e1.cognome, e2.cognome, SUBSTRING_INDEX(lr.employee_id, ' ', -1)) as cognome
-       FROM employee_leave_requests lr 
+      lr.notes,
+      lr.check_modulo,
+      lr.attachment_url,
+      CONCAT(
+        LPAD(DAY(lr.created_at), 2, '0'), '/',
+        LPAD(MONTH(lr.created_at), 2, '0'), '/',
+        YEAR(lr.created_at)
+      ) as created_at,
+      lr.updated_at,
+      COALESCE(e1.nome, e2.nome, SUBSTRING_INDEX(lr.employee_id, ' ', 1)) as nome,
+      COALESCE(e1.cognome, e2.cognome, SUBSTRING_INDEX(lr.employee_id, ' ', -1)) as cognome
+       FROM employee_leave_requests lr
        LEFT JOIN employees e1 ON lr.employee_id COLLATE utf8mb4_general_ci = e1.username_login COLLATE utf8mb4_general_ci
        LEFT JOIN employees e2 ON lr.employee_id COLLATE utf8mb4_general_ci = e2.id COLLATE utf8mb4_general_ci
        ORDER BY lr.created_at DESC`

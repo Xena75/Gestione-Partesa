@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Calendar, Clock, CheckCircle, XCircle, AlertTriangle, Plus } from 'lucide-react';
+import { Calendar, Clock, CheckCircle, XCircle, AlertTriangle, Plus, FileText } from 'lucide-react';
 import DateInput from '../../../components/DateInput';
 import { convertItalianToISO, convertISOToItalian } from '../../../lib/date-utils';
 
@@ -19,6 +19,7 @@ interface LeaveRequest {
   approved_by?: string;
   approved_at?: string;
   notes?: string;
+  attachment_url?: string;
 }
 
 interface LeaveBalance {
@@ -37,6 +38,7 @@ interface LeaveFormData {
   hours_requested?: number;
   reason: string;
   notes: string;
+  attachment?: File | null;
 }
 
 export default function AutistiFeriePage() {
@@ -56,7 +58,8 @@ export default function AutistiFeriePage() {
     days_requested: 0,
     hours_requested: 0,
     reason: '',
-    notes: ''
+    notes: '',
+    attachment: null
   });
 
   useEffect(() => {
@@ -269,14 +272,6 @@ export default function AutistiFeriePage() {
           return false;
         }
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        if (startDate < today) {
-          setError('La data di inizio non può essere nel passato');
-          return false;
-        }
-
         if (endDate < startDate) {
           setError('La data di fine non può essere precedente alla data di inizio');
           return false;
@@ -295,14 +290,6 @@ export default function AutistiFeriePage() {
       
       if (!startDate || !endDate) {
         setError('Formato date non valido. Usa il formato gg/mm/aaaa');
-        return false;
-      }
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      if (startDate < today) {
-        setError('La data di inizio non può essere nel passato');
         return false;
       }
 
@@ -325,6 +312,11 @@ export default function AutistiFeriePage() {
     }
 
     return true;
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setFormData(prev => ({ ...prev, attachment: file }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -369,31 +361,60 @@ export default function AutistiFeriePage() {
         }
       }
 
-      // Verifica che tutti i campi obbligatori siano presenti
-      const dataToSend = {
-        user_id: user?.username,
-        leave_type: submitData.leave_type,
-        start_date: submitData.start_date,
-        end_date: submitData.end_date,
-        days_requested: submitData.days_requested,
-        hours_requested: submitData.hours_requested || 0,
-        reason: submitData.reason,
-        notes: submitData.notes
-      };
+      // Prepara FormData se c'è un file, altrimenti JSON
+      let response: Response;
       
-      const response = await fetch('/api/employees/leave', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(dataToSend),
-      });
+      if (formData.attachment && formData.attachment.size > 0) {
+        // Invia con FormData se c'è un file
+        const formDataToSend = new FormData();
+        formDataToSend.append('user_id', user?.username || '');
+        formDataToSend.append('leave_type', submitData.leave_type);
+        formDataToSend.append('start_date', submitData.start_date);
+        formDataToSend.append('end_date', submitData.end_date);
+        formDataToSend.append('days_requested', submitData.days_requested.toString());
+        if (submitData.hours_requested) {
+          formDataToSend.append('hours_requested', submitData.hours_requested.toString());
+        }
+        if (submitData.reason) {
+          formDataToSend.append('reason', submitData.reason);
+        }
+        if (submitData.notes) {
+          formDataToSend.append('notes', submitData.notes);
+        }
+        formDataToSend.append('attachment', formData.attachment);
+        
+        response = await fetch('/api/employees/leave', {
+          method: 'POST',
+          credentials: 'include',
+          body: formDataToSend,
+        });
+      } else {
+        // Invia JSON se non c'è file
+        const dataToSend = {
+          user_id: user?.username,
+          leave_type: submitData.leave_type,
+          start_date: submitData.start_date,
+          end_date: submitData.end_date,
+          days_requested: submitData.days_requested,
+          hours_requested: submitData.hours_requested || 0,
+          reason: submitData.reason,
+          notes: submitData.notes
+        };
+        
+        response = await fetch('/api/employees/leave', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify(dataToSend),
+        });
+      }
 
       const result = await response.json();
 
       if (result.success) {
-        setSuccess('Richiesta ferie inviata con successo!');
+        setSuccess(formData.attachment ? 'Richiesta ferie inviata con successo con modulo allegato!' : 'Richiesta ferie inviata con successo!');
         setFormData({
           leave_type: 'ferie',
           start_date: '',
@@ -401,8 +422,12 @@ export default function AutistiFeriePage() {
           days_requested: 0,
           hours_requested: 0,
           reason: '',
-          notes: ''
+          notes: '',
+          attachment: null
         });
+        // Reset anche l'input file
+        const fileInput = document.getElementById('attachment') as HTMLInputElement;
+        if (fileInput) fileInput.value = '';
         fetchLeaveData(); // Ricarica i dati
       } else {
         setError(result.error || 'Errore nell\'invio della richiesta');
@@ -724,7 +749,7 @@ export default function AutistiFeriePage() {
                     />
                   </div>
 
-                  <div className="mb-4">
+                  <div className="mb-3">
                     <label htmlFor="notes" className="form-label text-light">
                       Note Aggiuntive
                     </label>
@@ -737,6 +762,41 @@ export default function AutistiFeriePage() {
                       onChange={handleInputChange}
                       placeholder="Note aggiuntive (opzionale)"
                     />
+                  </div>
+
+                  <div className="mb-4">
+                    <label htmlFor="attachment" className="form-label text-light">
+                      Modulo Allegato (Opzionale)
+                    </label>
+                    <input
+                      id="attachment"
+                      name="attachment"
+                      type="file"
+                      className="form-control bg-dark text-light border-secondary"
+                      onChange={handleFileChange}
+                      accept=".pdf,.jpg,.jpeg,.png"
+                    />
+                    <div className="form-text text-muted">
+                      Formati supportati: PDF, JPG, PNG. Dimensione massima: 10MB
+                    </div>
+                    {formData.attachment && (
+                      <div className="mt-2">
+                        <small className="text-light d-block mb-2">
+                          File selezionato: {formData.attachment.name} ({(formData.attachment.size / 1024).toFixed(2)} KB)
+                        </small>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-danger"
+                          onClick={() => {
+                            setFormData(prev => ({ ...prev, attachment: null }));
+                            const fileInput = document.getElementById('attachment') as HTMLInputElement;
+                            if (fileInput) fileInput.value = '';
+                          }}
+                        >
+                          Rimuovi File
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   <button
@@ -786,6 +846,7 @@ export default function AutistiFeriePage() {
                           <th>Giorni/Ore</th>
                           <th>Motivo</th>
                           <th>Stato</th>
+                          <th>Modulo</th>
                           <th>Data Richiesta</th>
                         </tr>
                       </thead>
@@ -818,6 +879,21 @@ export default function AutistiFeriePage() {
                                 {getStatusIcon(request.status)}
                                 <span className="ms-1">{getStatusText(request.status)}</span>
                               </span>
+                            </td>
+                            <td>
+                              {request.attachment_url ? (
+                                <a
+                                  href={request.attachment_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="btn btn-sm btn-outline-info"
+                                  title="Visualizza modulo"
+                                >
+                                  <FileText size={14} />
+                                </a>
+                              ) : (
+                                <span className="text-muted">-</span>
+                              )}
                             </td>
                             <td>{formatDate(request.created_at)}</td>
                           </tr>

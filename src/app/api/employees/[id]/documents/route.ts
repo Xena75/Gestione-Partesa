@@ -42,10 +42,77 @@ export async function GET(
     
     const documents = await getEmployeeDocuments(employee.id);
     
+    // Raggruppa i documenti multipli (fronte/retro) come un unico documento
+    // Raggruppa SOLO i documenti che hanno esplicitamente "(Fronte)" o "(Retro)" nel nome
+    // Documenti diversi dello stesso tipo con stessa scadenza NON vengono raggruppati
+    const documentGroups = new Map<string, typeof documents>();
+    
+    documents.forEach(doc => {
+      // Controlla se il documento ha "(Fronte)" o "(Retro)" nel nome
+      const hasFrontBackMarker = /\(Fronte\)|\(Retro\)|\(Parte \d+\)/gi.test(doc.document_name);
+      
+      if (hasFrontBackMarker) {
+        // Solo per documenti con marcatori fronte/retro: raggruppa per tipo, scadenza e nome base
+        const baseName = doc.document_name.replace(/ \(Fronte\)| \(Retro\)| \(Parte \d+\)/gi, '').trim();
+        const groupKey = `${doc.employee_id}_${doc.document_type}_${doc.expiry_date || 'no_expiry'}_${baseName}`;
+        
+        if (!documentGroups.has(groupKey)) {
+          documentGroups.set(groupKey, []);
+        }
+        documentGroups.get(groupKey)!.push(doc);
+      } else {
+        // Per documenti senza marcatori: crea una chiave univoca per ogni documento
+        // Usa l'ID del documento per garantire unicità
+        const uniqueKey = `${doc.employee_id}_${doc.document_type}_${doc.expiry_date || 'no_expiry'}_${doc.id}`;
+        documentGroups.set(uniqueKey, [doc]);
+      }
+    });
+    
+    // Per ogni gruppo, prendi solo il primo documento (quello più recente)
+    const uniqueDocuments = Array.from(documentGroups.values()).map(group => {
+      // Ordina per data di creazione (più recente prima) e prendi il primo
+      const sortedGroup = group.sort((a, b) => 
+        new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime()
+      );
+      const mainDoc = sortedGroup[0];
+      
+      // Se ci sono più file nel gruppo, aggiungi informazioni sui file multipli
+      return {
+        ...mainDoc,
+        isMultiFile: group.length > 1,
+        fileCount: group.length,
+        allFiles: group.length > 1 ? group.map(d => ({
+          id: d.id,
+          file_name: d.file_name,
+          file_path: d.file_path,
+          part: d.document_name.match(/\(Fronte\)|\(Retro\)|\(Parte (\d+)\)/i)?.[0] || 'Parte 1'
+        })) : undefined
+      };
+    });
+    
+    // Calcola giorni_alla_scadenza per ogni documento
+    const documentsWithDays = uniqueDocuments.map(doc => {
+      let giorni_alla_scadenza: number | undefined;
+      if (doc.expiry_date) {
+        const expiryDate = new Date(doc.expiry_date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        expiryDate.setHours(0, 0, 0, 0);
+        const diffTime = expiryDate.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        giorni_alla_scadenza = diffDays;
+      }
+      return {
+        ...doc,
+        giorni_alla_scadenza,
+        document_name: doc.document_name.replace(/ \(Fronte\)| \(Retro\)| \(Parte \d+\)/gi, '').trim()
+      };
+    });
+    
     return NextResponse.json({
       success: true,
-      data: documents,
-      count: documents.length
+      data: documentsWithDays,
+      count: documentsWithDays.length
     });
   } catch (error) {
     console.error('Errore nel recupero documenti:', error);
@@ -83,14 +150,19 @@ export async function POST(
     }
 
     const formData = await request.formData();
-    const file = formData.get('file') as File;
     const documentType = formData.get('document_type') as string;
     const documentName = formData.get('document_name') as string;
     const expiryDate = formData.get('expiry_date') as string;
     const notes = formData.get('notes') as string;
     const uploadedBy = formData.get('uploaded_by') as string;
+    
+    // Supporta sia 'file' (singolo) che 'files' (multipli)
+    const singleFile = formData.get('file') as File | null;
+    const multipleFiles = formData.getAll('files') as File[];
+    
+    const files = multipleFiles.length > 0 ? multipleFiles : (singleFile ? [singleFile] : []);
 
-    if (!file) {
+    if (files.length === 0) {
       return NextResponse.json(
         { error: 'Nessun file fornito' },
         { status: 400 }
@@ -104,66 +176,40 @@ export async function POST(
       );
     }
 
-    // Validazione tipi di documento comuni (ma accettiamo qualsiasi stringa)
-    const commonDocumentTypes = [
-      'patente_guida', 'carta_identita', 'codice_fiscale', 'contratto_lavoro',
-      'certificato_medico', 'attestato_formazione', 'assicurazione_personale', 
-      'permesso_soggiorno', 'altro'
-    ];
+    // Validazione dimensione file (max 10MB per file)
+    for (const file of files) {
+      if (file.size > 10 * 1024 * 1024) {
+        return NextResponse.json(
+          { error: `File ${file.name} troppo grande. Dimensione massima: 10MB per file` },
+          { status: 400 }
+        );
+      }
 
-    // Validazione dimensione file (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      return NextResponse.json(
-        { error: 'File troppo grande. Dimensione massima: 10MB' },
-        { status: 400 }
-      );
+      // Validazione tipo file
+      const allowedTypes = [
+        'application/pdf',
+        'image/jpeg',
+        'image/jpg', 
+        'image/png',
+        'image/webp'
+      ];
+      
+      if (!allowedTypes.includes(file.type)) {
+        return NextResponse.json(
+          { error: `File ${file.name}: tipo non supportato. Formati accettati: PDF, JPG, PNG, WebP` },
+          { status: 400 }
+        );
+      }
     }
 
-    // Validazione tipo file
-    const allowedTypes = [
-      'application/pdf',
-      'image/jpeg',
-      'image/jpg', 
-      'image/png',
-      'image/webp'
-    ];
-    
-    if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json(
-        { error: 'Tipo file non supportato. Formati accettati: PDF, JPG, PNG, WebP' },
-        { status: 400 }
-      );
-    }
-
-    // Genera nome file univoco
+    // SOLUZIONE SEMPLICE: salva i file separatamente con lo stesso nome documento e scadenza
+    // Nel frontend verranno raggruppati insieme quando visualizzati
     const timestamp = Date.now();
-    const fileExtension = file.name.split('.').pop();
     const sanitizedEmployeeId = employeeId.replace(/[^a-zA-Z0-9]/g, '_');
     const sanitizedDocType = documentType.replace(/[^a-zA-Z0-9]/g, '_');
-    const fileName = `${sanitizedEmployeeId}_${sanitizedDocType}_${timestamp}.${fileExtension}`;
     
     // Genera nome documento se non fornito
     const finalDocumentName = documentName || `${documentType.replace(/_/g, ' ').toUpperCase()} - ${employee.nome} ${employee.cognome}`;
-
-    // Upload su Vercel Blob
-    let blobUrl: string;
-    try {
-      const blob = await put(
-        `documents/employees/${fileName}`,
-        file,
-        {
-          access: 'public',
-          addRandomSuffix: false
-        }
-      );
-      blobUrl = blob.url;
-    } catch (uploadError) {
-      console.error('Errore upload Vercel Blob:', uploadError);
-      return NextResponse.json(
-        { error: 'Errore durante il caricamento del file' },
-        { status: 500 }
-      );
-    }
 
     // Determina status iniziale
     let status = 'valido';
@@ -176,36 +222,90 @@ export async function POST(
       }
     }
 
-    // Salva nel database
-    const documentId = await createEmployeeDocument({
-      employee_id: employee.id,
-      document_type: documentType,
-      document_name: finalDocumentName,
-      file_path: blobUrl,
-      file_name: fileName,
-      file_size: file.size,
-      file_type: file.type,
-      expiry_date: expiryDate || undefined,
-      status: status as any,
-      notes: notes || undefined,
-      uploaded_by: uploadedBy || undefined
-    });
+    // Carica tutti i file separatamente su Vercel Blob e salvali nel database
+    const uploadedDocuments: any[] = [];
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const fileExtension = file.name.split('.').pop();
+      
+      // Genera nome file univoco per ogni file
+      const fileName = files.length > 1 
+        ? `${sanitizedEmployeeId}_${sanitizedDocType}_${timestamp}_part${i + 1}.${fileExtension}`
+        : `${sanitizedEmployeeId}_${sanitizedDocType}_${timestamp}.${fileExtension}`;
+      
+      // Upload su Vercel Blob
+      let blobUrl: string;
+      try {
+        const blob = await put(
+          `documents/employees/${fileName}`,
+          file,
+          {
+            access: 'public',
+            addRandomSuffix: false
+          }
+        );
+        blobUrl = blob.url;
+      } catch (uploadError) {
+        console.error('Errore upload Vercel Blob:', uploadError);
+        return NextResponse.json(
+          { error: `Errore durante il caricamento del file ${i + 1}: ${file.name}` },
+          { status: 500 }
+        );
+      }
+
+      // Salva nel database con lo stesso nome documento e scadenza
+      const documentId = await createEmployeeDocument({
+        employee_id: employee.id,
+        document_type: documentType,
+        document_name: files.length > 1 
+          ? `${finalDocumentName} (${i === 0 ? 'Fronte' : i === 1 ? 'Retro' : `Parte ${i + 1}`})`
+          : finalDocumentName,
+        file_path: blobUrl,
+        file_name: fileName,
+        file_size: file.size,
+        file_type: file.type,
+        expiry_date: expiryDate || undefined,
+        status: status as any,
+        notes: notes || undefined,
+        uploaded_by: uploadedBy || undefined
+      });
+
+      uploadedDocuments.push({
+        id: documentId,
+        document_type: documentType,
+        document_name: files.length > 1 
+          ? `${finalDocumentName} (${i === 0 ? 'Fronte' : i === 1 ? 'Retro' : `Parte ${i + 1}`})`
+          : finalDocumentName,
+        file_path: blobUrl,
+        file_name: fileName,
+        file_size: file.size,
+        file_type: file.type,
+        expiry_date: expiryDate || undefined,
+        status: status,
+        notes: notes || undefined,
+        uploaded_by: uploadedBy || undefined
+      });
+    }
 
     return NextResponse.json({
       success: true,
-      message: 'Documento caricato con successo',
-      data: {
-        id: documentId,
-        file_url: blobUrl,
-        file_name: fileName,
-        status
-      }
+      message: files.length > 1 
+        ? `${files.length} file caricati con successo come documento multiplo` 
+        : 'Documento caricato con successo',
+      data: uploadedDocuments.length === 1 ? uploadedDocuments[0] : uploadedDocuments,
+      isMultiFile: files.length > 1
     });
 
   } catch (error) {
     console.error('Errore nel caricamento documento:', error);
+    console.error('Stack trace:', error instanceof Error ? error.stack : 'N/A');
     return NextResponse.json(
-      { error: 'Errore interno del server' },
+      { 
+        error: 'Errore interno del server',
+        details: error instanceof Error ? error.message : 'Errore sconosciuto',
+        stack: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : undefined) : undefined
+      },
       { status: 500 }
     );
   }

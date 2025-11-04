@@ -32,6 +32,7 @@ interface LeaveRequest {
   approved_by?: number;
   notes?: string;
   check_modulo?: boolean;
+  attachment_url?: string;
 }
 
 interface LeaveBalance {
@@ -1339,6 +1340,7 @@ function GestioneFerieContent() {
                           </th>
                           <th className="text-dark">Motivo</th>
                           <th className="text-dark">Modulo</th>
+                          <th className="text-dark">Allegato</th>
                           <th className="text-dark">Azioni</th>
                         </tr>
                       </thead>
@@ -1416,9 +1418,28 @@ function GestioneFerieContent() {
                                   type="checkbox"
                                   checked={request.check_modulo || false}
                                   onChange={(e) => handleCheckModuloChange(request.id, e.target.checked)}
-                                  title="Modulo consegnato"
+                                  title={
+                                    request.attachment_url 
+                                      ? "Modulo digitale allegato (automaticamente selezionato)" 
+                                      : "Modulo cartaceo consegnato"
+                                  }
                                 />
                               </div>
+                            </td>
+                            <td className="text-center">
+                              {request.attachment_url ? (
+                                <a 
+                                  href={request.attachment_url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="btn btn-sm btn-outline-info"
+                                  title="Visualizza modulo allegato"
+                                >
+                                  <i className="fas fa-file-pdf"></i>
+                                </a>
+                              ) : (
+                                <span className="text-secondary">-</span>
+                              )}
                             </td>
                             <td>
                               <div className="btn-group" role="group">

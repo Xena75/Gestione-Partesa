@@ -177,6 +177,16 @@ export default function ModernDashboard() {
   const [isCriticalSchedulesModalOpen, setIsCriticalSchedulesModalOpen] = useState(false);
   const [isApproachingSchedulesModalOpen, setIsApproachingSchedulesModalOpen] = useState(false);
 
+  // Stati per i documenti del personale
+  const [expiringDocumentsCount, setExpiringDocumentsCount] = useState<number>(0);
+  const [expiredDocumentsCount, setExpiredDocumentsCount] = useState<number>(0);
+  const [isLoadingDocumentsData, setIsLoadingDocumentsData] = useState(true);
+  const [documentsData, setDocumentsData] = useState<any[]>([]);
+
+  // Stati per il modal dei documenti
+  const [isDocumentsModalOpen, setIsDocumentsModalOpen] = useState(false);
+  const [isLoadingDocumentsModal, setIsLoadingDocumentsModal] = useState(false);
+
   // Aggiorna l'orologio ogni secondo
   useEffect(() => {
     const timer = setInterval(() => {
@@ -306,12 +316,43 @@ export default function ModernDashboard() {
       }
     };
 
+    const fetchDocumentsData = async () => {
+      try {
+        if (signal.aborted) return;
+        setIsLoadingDocumentsData(true);
+        
+        const response = await fetch('/api/employees/documents/expiring?days=30', { signal });
+        
+        if (response.ok && !signal.aborted) {
+          const data = await response.json();
+          
+          if (data.success && data.data && data.data.stats) {
+            const expired = data.data.stats.scaduto || 0;
+            const expiring = data.data.stats.in_scadenza || 0;
+            
+            setDocumentsData(data.data.documents || []);
+            setExpiredDocumentsCount(expired);
+            setExpiringDocumentsCount(expiring);
+          }
+        }
+      } catch (err: any) {
+        if (!signal.aborted && err.name !== 'AbortError') {
+          console.error('Errore nel fetch dei documenti del personale:', err);
+        }
+      } finally {
+        if (!signal.aborted) {
+          setIsLoadingDocumentsData(false);
+        }
+      }
+    };
+
     const fetchAllData = async () => {
       await Promise.all([
         fetchDashboardData(),
         fetchPendingLeaveRequests(),
         fetchMaintenanceData(),
-        fetchSchedulesData()
+        fetchSchedulesData(),
+        fetchDocumentsData()
       ]);
     };
 
@@ -419,6 +460,34 @@ export default function ModernDashboard() {
       console.error('Errore nel fetch dei dettagli richieste ferie:', err);
     } finally {
       setIsLoadingLeaveRequests(false);
+    }
+  };
+
+  // Funzione per aprire il modal dei documenti del personale
+  const handleOpenDocumentsModal = async () => {
+    setIsDocumentsModalOpen(true);
+    
+    // Se i dati non sono già stati caricati, li carichiamo
+    if (documentsData.length === 0) {
+      try {
+        setIsLoadingDocumentsModal(true);
+        
+        const response = await fetch('/api/employees/documents/expiring?days=30');
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (data.success && data.data && data.data.documents) {
+            setDocumentsData(data.data.documents || []);
+          }
+        } else {
+          console.error('Errore nel caricamento dei documenti:', response.status, response.statusText);
+        }
+      } catch (err) {
+        console.error('Errore nel fetch dei dettagli documenti:', err);
+      } finally {
+        setIsLoadingDocumentsModal(false);
+      }
     }
   };
 
@@ -889,7 +958,7 @@ export default function ModernDashboard() {
         <DocumentExpiryAlert className="mb-4" />
 
         {/* Sezione Avvisi e Notifiche */}
-        {(pendingLeaveCount > 0 || expiredMaintenanceCount > 0 || expiringMaintenanceCount > 0 || criticalSchedulesCount > 0 || approachingSchedulesCount > 0) && (
+        {(pendingLeaveCount > 0 || expiredMaintenanceCount > 0 || expiringMaintenanceCount > 0 || criticalSchedulesCount > 0 || approachingSchedulesCount > 0 || expiredDocumentsCount > 0 || expiringDocumentsCount > 0) && (
           <div className="container-fluid mb-4">
             <div className="row">
               <div className="col-12">
@@ -1699,6 +1768,196 @@ export default function ModernDashboard() {
                               }}
                             >
                               Attenzione!
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  )}
+
+                  {/* Card Documenti del Personale - Design Glassmorphism */}
+                  {(expiredDocumentsCount > 0 || expiringDocumentsCount > 0) && (
+                  <div>
+                    <div 
+                      className="card"
+                      style={{
+                        background: expiredDocumentsCount > 0 
+                          ? 'rgba(220, 53, 69, 0.15)' 
+                          : 'rgba(255, 193, 7, 0.15)',
+                        backdropFilter: 'blur(15px)',
+                        WebkitBackdropFilter: 'blur(15px)',
+                        border: expiredDocumentsCount > 0 
+                          ? '1px solid rgba(220, 53, 69, 0.3)' 
+                          : '1px solid rgba(255, 193, 7, 0.3)',
+                        borderRadius: '20px',
+                        minHeight: '120px',
+                        boxShadow: expiredDocumentsCount > 0 
+                          ? '0 8px 32px rgba(220, 53, 69, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)' 
+                          : '0 8px 32px rgba(255, 193, 7, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+                        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                        cursor: 'pointer',
+                        position: 'relative',
+                        overflow: 'hidden'
+                      }}
+                      onClick={handleOpenDocumentsModal}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-6px) scale(1.02)';
+                        if (expiredDocumentsCount > 0) {
+                          e.currentTarget.style.boxShadow = '0 16px 48px rgba(220, 53, 69, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
+                          e.currentTarget.style.backdropFilter = 'blur(20px)';
+                          e.currentTarget.style.background = 'rgba(220, 53, 69, 0.2)';
+                        } else {
+                          e.currentTarget.style.boxShadow = '0 16px 48px rgba(255, 193, 7, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
+                          e.currentTarget.style.backdropFilter = 'blur(20px)';
+                          e.currentTarget.style.background = 'rgba(255, 193, 7, 0.2)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                        if (expiredDocumentsCount > 0) {
+                          e.currentTarget.style.boxShadow = '0 8px 32px rgba(220, 53, 69, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
+                          e.currentTarget.style.backdropFilter = 'blur(15px)';
+                          e.currentTarget.style.background = 'rgba(220, 53, 69, 0.15)';
+                        } else {
+                          e.currentTarget.style.boxShadow = '0 8px 32px rgba(255, 193, 7, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
+                          e.currentTarget.style.backdropFilter = 'blur(15px)';
+                          e.currentTarget.style.background = 'rgba(255, 193, 7, 0.15)';
+                        }
+                      }}
+                    >
+                      {/* Effetto di sfondo glassmorphism */}
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: expiredDocumentsCount > 0 
+                          ? 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 50%, rgba(220,53,69,0.1) 100%)'
+                          : 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 50%, rgba(255,193,7,0.1) 100%)',
+                        borderRadius: '20px',
+                        pointerEvents: 'none'
+                      }}></div>
+                      
+                      {/* Riflesso glassmorphism */}
+                      <div style={{
+                        position: 'absolute',
+                        top: '0',
+                        left: '0',
+                        width: '100%',
+                        height: '50%',
+                        background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 100%)',
+                        borderRadius: '20px 20px 0 0',
+                        pointerEvents: 'none'
+                      }}></div>
+                      
+                      <div className="card-body p-4" style={{ position: 'relative', zIndex: 2 }}>
+                        <div className="d-flex align-items-center justify-content-between h-100">
+                          {/* Sezione sinistra con icona e testo */}
+                          <div className="d-flex align-items-center flex-grow-1">
+                            <div 
+                              className="me-3"
+                              style={{
+                                background: expiredDocumentsCount > 0 
+                                  ? 'rgba(220, 53, 69, 0.2)' 
+                                  : 'rgba(255, 193, 7, 0.2)',
+                                backdropFilter: 'blur(10px)',
+                                WebkitBackdropFilter: 'blur(10px)',
+                                border: expiredDocumentsCount > 0 
+                                  ? '1px solid rgba(220, 53, 69, 0.3)' 
+                                  : '1px solid rgba(255, 193, 7, 0.3)',
+                                borderRadius: '16px',
+                                padding: '14px',
+                                boxShadow: expiredDocumentsCount > 0 
+                                  ? '0 4px 16px rgba(220, 53, 69, 0.2)' 
+                                  : '0 4px 16px rgba(255, 193, 7, 0.2)'
+                              }}
+                            >
+                              <FileText size={24} style={{ color: expiredDocumentsCount > 0 ? '#dc3545' : '#ffc107' }} />
+                            </div>
+                            <div>
+                              <h6 className="mb-1" style={{ 
+                                fontSize: '1rem', 
+                                fontWeight: '700',
+                                color: '#2d3748',
+                                textShadow: 'none'
+                              }}>
+                                Documenti Personale
+                              </h6>
+                              <p className="mb-0" style={{ 
+                                fontSize: '0.85rem',
+                                fontWeight: '500',
+                                color: '#4a5568'
+                              }}>
+                                {expiredDocumentsCount > 0 
+                                  ? 'Scaduti o in scadenza' 
+                                  : 'In scadenza (30 giorni)'}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {/* Conteggio prominente a destra */}
+                          <div className="text-end">
+                            <div 
+                              style={{
+                                background: 'rgba(255, 255, 255, 0.9)',
+                                backdropFilter: 'blur(10px)',
+                                WebkitBackdropFilter: 'blur(10px)',
+                                color: expiredDocumentsCount > 0 ? '#dc3545' : '#ffc107',
+                                border: expiredDocumentsCount > 0 
+                                  ? '1px solid rgba(220, 53, 69, 0.2)' 
+                                  : '1px solid rgba(255, 193, 7, 0.2)',
+                                borderRadius: '18px',
+                                padding: '10px 18px',
+                                fontSize: '1.8rem',
+                                fontWeight: '900',
+                                lineHeight: '1',
+                                minWidth: '65px',
+                                textAlign: 'center',
+                                boxShadow: expiredDocumentsCount > 0 
+                                  ? '0 6px 20px rgba(220, 53, 69, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.5)' 
+                                  : '0 6px 20px rgba(255, 193, 7, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.5)'
+                              }}
+                            >
+                              {isLoadingDocumentsData ? (
+                                <div 
+                                  className="spinner-border" 
+                                  role="status" 
+                                  style={{ 
+                                    width: '1.2rem', 
+                                    height: '1.2rem',
+                                    borderWidth: '2px',
+                                    color: expiredDocumentsCount > 0 ? '#dc3545' : '#ffc107'
+                                  }}
+                                >
+                                  <span className="visually-hidden">Caricamento...</span>
+                                </div>
+                              ) : (
+                                expiredDocumentsCount + expiringDocumentsCount
+                              )}
+                            </div>
+                            <div 
+                              className="mt-2"
+                              style={{
+                                background: expiredDocumentsCount > 0 
+                                  ? 'rgba(220, 53, 69, 0.15)' 
+                                  : 'rgba(255, 193, 7, 0.15)',
+                                backdropFilter: 'blur(8px)',
+                                WebkitBackdropFilter: 'blur(8px)',
+                                border: expiredDocumentsCount > 0 
+                                  ? '1px solid rgba(220, 53, 69, 0.2)' 
+                                  : '1px solid rgba(255, 193, 7, 0.2)',
+                                borderRadius: '10px',
+                                padding: '4px 10px',
+                                fontSize: '0.7rem',
+                                fontWeight: '600',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.5px',
+                                color: expiredDocumentsCount > 0 ? '#dc3545' : '#ffc107'
+                              }}
+                            >
+                              {expiredDocumentsCount > 0 ? 'Urgente!' : 'Attenzione!'}
                             </div>
                           </div>
                         </div>
@@ -2881,9 +3140,165 @@ export default function ModernDashboard() {
                   <Calendar className="me-2" size={16} />
                   Vai alle Scadenze Programmate
                 </Link>
-                <button type="button" className="btn btn-secondary" onClick={() => setIsApproachingSchedulesModalOpen(false)}>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal per i documenti del personale */}
+      {isDocumentsModalOpen && (
+        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => setIsDocumentsModalOpen(false)}>
+          <div className="modal-dialog modal-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content">
+              <div className="modal-header" style={{ 
+                background: expiredDocumentsCount > 0 
+                  ? 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)' 
+                  : 'linear-gradient(135deg, #ffc107 0%, #ff9800 100%)', 
+                color: 'white' 
+              }}>
+                <h5 className="modal-title d-flex align-items-center">
+                  <FileText className="me-2" size={24} />
+                  Documenti del Personale ({expiredDocumentsCount + expiringDocumentsCount})
+                </h5>
+                <button type="button" className="btn-close btn-close-white" onClick={() => setIsDocumentsModalOpen(false)}></button>
+              </div>
+              <div className="modal-body">
+                {isLoadingDocumentsModal ? (
+                  <div className="text-center py-4">
+                    <div className="spinner-border text-warning" role="status">
+                      <span className="visually-hidden">Caricamento...</span>
+                    </div>
+                    <p className="mt-2 text-muted">Caricamento documenti...</p>
+                  </div>
+                ) : documentsData.length > 0 ? (
+                  <div className="table-responsive">
+                    <table className="table table-hover">
+                      <thead style={{ 
+                        backgroundColor: expiredDocumentsCount > 0 ? '#fff3cd' : '#fff3cd' 
+                      }}>
+                        <tr>
+                          <th scope="col">
+                            <Users size={16} className="me-1" />
+                            Dipendente
+                          </th>
+                          <th scope="col">
+                            <FileText size={16} className="me-1" />
+                            Tipo Documento
+                          </th>
+                          <th scope="col">
+                            <Calendar size={16} className="me-1" />
+                            Data Scadenza
+                          </th>
+                          <th scope="col">
+                            <Clock size={16} className="me-1" />
+                            Giorni alla Scadenza
+                          </th>
+                          <th scope="col">
+                            <AlertTriangle size={16} className="me-1" />
+                            Stato
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {documentsData
+                          .sort((a, b) => {
+                            // Ordina prima per stato (scaduti prima), poi per giorni alla scadenza
+                            if (a.status === 'scaduto' && b.status !== 'scaduto') return -1;
+                            if (a.status !== 'scaduto' && b.status === 'scaduto') return 1;
+                            return (a.giorni_alla_scadenza || 999) - (b.giorni_alla_scadenza || 999);
+                          })
+                          .map((document, index) => {
+                            // Trova il nome del dipendente dal documento
+                            const employeeName = document.employee_name || document.employee_id || 'N/A';
+                            
+                            return (
+                              <tr key={index}>
+                                <td>
+                                  <div className="d-flex align-items-center">
+                                    <div 
+                                      className="rounded-circle me-2 d-flex align-items-center justify-content-center"
+                                      style={{
+                                        width: '32px',
+                                        height: '32px',
+                                        backgroundColor: document.status === 'scaduto' ? '#dc3545' : '#ffc107',
+                                        color: 'white',
+                                        fontSize: '0.8rem',
+                                        fontWeight: 'bold'
+                                      }}
+                                    >
+                                      {employeeName.split(' ').map((n: string) => n.charAt(0)).slice(0, 2).join('')}
+                                    </div>
+                                    <div>
+                                      <div className="fw-bold">{employeeName}</div>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td>
+                                  <div className="fw-bold">{document.document_name || document.tipo_documento || 'N/A'}</div>
+                                  {document.isMultiFile && (
+                                    <small className="text-muted">({document.fileCount} file)</small>
+                                  )}
+                                </td>
+                                <td>
+                                  <div className="fw-bold">
+                                    {document.data_scadenza ? formatItalianDate(document.data_scadenza) : 'N/A'}
+                                  </div>
+                                </td>
+                                <td>
+                                  {document.giorni_alla_scadenza !== undefined ? (
+                                    <span className={`badge ${
+                                      document.giorni_alla_scadenza < 0 
+                                        ? 'bg-danger' 
+                                        : document.giorni_alla_scadenza <= 7 
+                                        ? 'bg-warning text-dark' 
+                                        : 'bg-info text-dark'
+                                    }`}>
+                                      {document.giorni_alla_scadenza < 0 
+                                        ? `Scaduto da ${Math.abs(document.giorni_alla_scadenza)} giorni` 
+                                        : `${document.giorni_alla_scadenza} giorni`}
+                                    </span>
+                                  ) : (
+                                    <span className="badge bg-secondary">N/A</span>
+                                  )}
+                                </td>
+                                <td>
+                                  <span className={`badge ${
+                                    document.status === 'scaduto' ? 'bg-danger' :
+                                    document.status === 'in_scadenza' ? 'bg-warning text-dark' :
+                                    'bg-success'
+                                  }`}>
+                                    {document.status === 'scaduto' ? 'Scaduto' :
+                                     document.status === 'in_scadenza' ? 'In Scadenza' :
+                                     document.status === 'valido' ? 'Valido' :
+                                     document.status || 'N/A'}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <FileText size={48} className="text-muted mb-3" />
+                    <h6 className="text-muted">Nessun documento in scadenza</h6>
+                    <p className="text-muted mb-0">Tutti i documenti sono validi.</p>
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setIsDocumentsModalOpen(false)}>
                   Chiudi
                 </button>
+                <Link href="/autisti/documenti" className="btn btn-primary" style={{ 
+                  backgroundColor: expiredDocumentsCount > 0 ? '#dc3545' : '#ffc107', 
+                  borderColor: expiredDocumentsCount > 0 ? '#dc3545' : '#ffc107' 
+                }}>
+                  <FileText size={16} className="me-1" />
+                  Vai alla Gestione Documenti
+                </Link>
               </div>
             </div>
           </div>

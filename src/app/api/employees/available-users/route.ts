@@ -22,27 +22,58 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Ottieni l'ID del dipendente corrente dalla query string (se presente)
+    const { searchParams } = new URL(request.url);
+    const currentEmployeeId = searchParams.get('employeeId');
+
     // Ottieni tutti gli utenti con ruolo 'employee' dalla tabella users
     const [userRows] = await poolAuth.execute(
-      'SELECT id, username, email FROM users WHERE role = ?',
+      'SELECT id, username, email, role FROM users WHERE role = ? ORDER BY username',
       ['employee']
     ) as any;
 
+    console.log('Utenti con role=employee trovati:', userRows.length);
+    console.log('Lista utenti:', userRows.map((u: any) => u.username));
+
     // Ottieni tutti gli username già collegati ai dipendenti
     const [linkedUsers] = await pool.execute(
-      'SELECT username_login FROM employees WHERE username_login IS NOT NULL'
+      'SELECT id, username_login FROM employees WHERE username_login IS NOT NULL'
     ) as any;
 
-    const linkedUsernames = linkedUsers.map((row: any) => row.username_login);
+    console.log('Dipendenti con username_login collegati:', linkedUsers.length);
+    console.log('Lista username collegati:', linkedUsers.map((u: any) => u.username_login));
 
-    // Filtra gli utenti disponibili (non ancora collegati)
+    // Se stiamo modificando un dipendente esistente, ottieni il suo username_login corrente
+    let currentEmployeeUsername: string | null = null;
+    if (currentEmployeeId) {
+      const [currentEmployee] = await pool.execute(
+        'SELECT username_login FROM employees WHERE id = ?',
+        [currentEmployeeId]
+      ) as any;
+      if (currentEmployee && currentEmployee.length > 0) {
+        currentEmployeeUsername = currentEmployee[0].username_login;
+        console.log('Username del dipendente corrente:', currentEmployeeUsername);
+      }
+    }
+
+    // Crea una lista di username collegati escludendo quello del dipendente corrente
+    const linkedUsernames = linkedUsers
+      .filter((row: any) => row.username_login !== currentEmployeeUsername && row.username_login !== null)
+      .map((row: any) => row.username_login);
+
+    console.log('Username da escludere (escluso quello corrente):', linkedUsernames);
+
+    // Filtra gli utenti disponibili (non ancora collegati, oppure già collegati al dipendente corrente)
     const availableUsers = userRows.filter((user: any) => 
       !linkedUsernames.includes(user.username)
     );
 
+    console.log('Utenti disponibili dopo filtro:', availableUsers.length);
+    console.log('Lista utenti disponibili:', availableUsers.map((u: any) => u.username));
+
     return NextResponse.json({
       success: true,
-      users: availableUsers
+      data: availableUsers
     });
 
   } catch (error) {

@@ -32,8 +32,6 @@ interface Employee {
   data_assunzione?: string;
   is_driver: number;
   patente?: string;
-  driver_license_number?: string;
-  driver_license_expiry?: string;
   profile_image?: string;
   foto_url?: string;
   company_id?: number;
@@ -89,8 +87,7 @@ export default function ModificaDipendente() {
           const formattedData = {
             ...employeeData,
             data_nascita: formatDateToItalian(employeeData.data_nascita),
-            data_assunzione: formatDateToItalian(employeeData.data_assunzione),
-            driver_license_expiry: formatDateToItalian(employeeData.driver_license_expiry)
+            data_assunzione: formatDateToItalian(employeeData.data_assunzione)
           };
           
           setFormData(formattedData);
@@ -132,13 +129,16 @@ export default function ModificaDipendente() {
     const fetchAvailableUsers = async () => {
       try {
         setLoadingUsers(true);
-        const response = await fetch('/api/employees/available-users');
+        const response = await fetch(`/api/employees/available-users?employeeId=${employeeId}`);
         if (!response.ok) {
           throw new Error('Errore nel caricamento degli utenti');
         }
         const data = await response.json();
+        console.log('Utenti disponibili ricevuti:', data);
         if (data.success) {
-          setAvailableUsers(data.data);
+          setAvailableUsers(data.users || data.data || []);
+        } else {
+          console.error('Errore nella risposta API:', data.error);
         }
       } catch (err) {
         console.error('Errore nel caricamento degli utenti:', err);
@@ -147,8 +147,10 @@ export default function ModificaDipendente() {
       }
     };
 
-    fetchAvailableUsers();
-  }, []);
+    if (employeeId) {
+      fetchAvailableUsers();
+    }
+  }, [employeeId]);
 
   // Gestisce i cambiamenti nei campi del form
   const handleInputChange = (field: keyof Employee, value: string) => {
@@ -209,9 +211,6 @@ export default function ModificaDipendente() {
       errors.data_assunzione = 'Formato data non valido (DD/MM/YYYY)';
     }
 
-    if (formData.driver_license_expiry && formData.driver_license_expiry !== '-' && !isValidItalianDate(formData.driver_license_expiry)) {
-      errors.driver_license_expiry = 'Formato data non valido (DD/MM/YYYY)';
-    }
 
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
@@ -236,8 +235,7 @@ export default function ModificaDipendente() {
       const dataToSave = {
         ...formDataWithoutCompanyName,
         data_nascita: (formData.data_nascita && formData.data_nascita !== '-') ? formatDateToDatabase(formData.data_nascita) : null,
-        data_assunzione: (formData.data_assunzione && formData.data_assunzione !== '-') ? formatDateToDatabase(formData.data_assunzione) : null,
-        driver_license_expiry: (formData.driver_license_expiry && formData.driver_license_expiry !== '-') ? formatDateToDatabase(formData.driver_license_expiry) : null
+        data_assunzione: (formData.data_assunzione && formData.data_assunzione !== '-') ? formatDateToDatabase(formData.data_assunzione) : null
       };
 
       // Log dei dati che vengono inviati per debug
@@ -659,7 +657,7 @@ export default function ModificaDipendente() {
                       onChange={(e) => handleInputChange('company_id', e.target.value)}
                     >
                       <option value="">Seleziona società</option>
-                      {companies.map((company) => (
+                      {companies && companies.map((company) => (
                         <option key={company.id} value={company.id}>
                           {company.name}
                         </option>
@@ -721,30 +719,6 @@ export default function ModificaDipendente() {
                         <option value="CQC">CQC</option>
                       </select>
                     </div>
-                    <div className="col-md-4 mb-3">
-                      <label className="form-label text-light">Numero Patente</label>
-                      <input
-                        type="text"
-                        className="form-control bg-dark text-light border-secondary"
-                        value={formData.driver_license_number || ''}
-                        onChange={(e) => handleInputChange('driver_license_number', e.target.value)}
-                        placeholder="Inserisci il numero patente"
-                      />
-                    </div>
-                    <div className="col-md-4">
-                      <DateInput
-                        id="driver_license_expiry"
-                        name="driver_license_expiry"
-                        label="Scadenza Patente"
-                        value={formData.driver_license_expiry ? formatDateToDatabase(formData.driver_license_expiry) : ''}
-                        onChange={(isoValue) => {
-                          const italianDate = isoValue ? formatDateToItalian(isoValue) : '';
-                          setFormData(prev => ({ ...prev, driver_license_expiry: italianDate }));
-                        }}
-                        className="bg-dark text-light border-secondary"
-                        error={validationErrors.driver_license_expiry}
-                      />
-                    </div>
                   </div>
                 </div>
               </div>
@@ -770,7 +744,7 @@ export default function ModificaDipendente() {
                         disabled={loadingUsers}
                       >
                         <option value="">Seleziona un utente...</option>
-                        {availableUsers.map(user => (
+                        {availableUsers && availableUsers.map(user => (
                           <option key={user.id} value={user.username}>
                             {user.username} - {user.email} ({user.role})
                           </option>
