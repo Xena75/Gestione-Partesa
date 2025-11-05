@@ -8,6 +8,7 @@ interface DocumentWithEmployee {
   nome: string;
   cognome: string;
   document_type: string;
+  document_name?: string;
   file_name: string;
   file_path: string;
   expiry_date: string | null;
@@ -23,6 +24,7 @@ interface DocumentFromDB {
   nome: string;
   cognome: string;
   document_type: string;
+  document_name?: string;
   file_name: string;
   file_path: string;
   expiry_date: string | null;

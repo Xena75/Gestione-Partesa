@@ -149,6 +149,7 @@ function GestioneFerieContent() {
     end_date: '',
     reason: ''
   });
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
 
   // Stati per import Excel
   const [showImportForm, setShowImportForm] = useState(false);
@@ -646,27 +647,65 @@ function GestioneFerieContent() {
     }
 
     try {
-      // Prepara i dati per l'API
-      const requestData = {
-        user_id: newRequest.employee_id, // Mappa employee_id a user_id per l'API
-        start_date: newRequest.start_date,
-        end_date: newRequest.end_date,
-        leave_type: newRequest.leave_type,
-        reason: newRequest.reason,
-        days_requested: daysRequested
-      };
-
-      console.log('📤 Dati da inviare all\'API:', requestData);
-
       console.log('🌐 Invio richiesta fetch...');
-      const response = await fetch('/api/employees/leave', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Include i cookie per l'autenticazione
-        body: JSON.stringify(requestData)
-      });
+      
+      let response: Response;
+      
+      // Se c'è un file allegato, invia FormData, altrimenti JSON
+      if (attachmentFile) {
+        // Validazione file
+        const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        if (!allowedTypes.includes(attachmentFile.type)) {
+          alert('Tipo file non supportato. Formati accettati: PDF, JPG, PNG, WebP');
+          return;
+        }
+        
+        if (attachmentFile.size > 10 * 1024 * 1024) {
+          alert('File troppo grande. Dimensione massima: 10MB');
+          return;
+        }
+        
+        // Prepara FormData con file e dati
+        const formData = new FormData();
+        formData.append('attachment', attachmentFile);
+        formData.append('user_id', newRequest.employee_id);
+        formData.append('start_date', newRequest.start_date);
+        formData.append('end_date', newRequest.end_date);
+        formData.append('leave_type', newRequest.leave_type);
+        formData.append('days_requested', daysRequested.toString());
+        if (newRequest.reason) {
+          formData.append('reason', newRequest.reason);
+        }
+        
+        console.log('📤 Invio FormData con file allegato:', attachmentFile.name);
+        
+        response = await fetch('/api/employees/leave', {
+          method: 'POST',
+          credentials: 'include',
+          body: formData // Non impostare Content-Type, il browser lo fa automaticamente
+        });
+      } else {
+        // Prepara i dati per l'API (senza file)
+        const requestData = {
+          user_id: newRequest.employee_id, // Mappa employee_id a user_id per l'API
+          start_date: newRequest.start_date,
+          end_date: newRequest.end_date,
+          leave_type: newRequest.leave_type,
+          reason: newRequest.reason,
+          days_requested: daysRequested
+        };
+
+        console.log('📤 Dati da inviare all\'API:', requestData);
+        
+        response = await fetch('/api/employees/leave', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include', // Include i cookie per l'autenticazione
+          body: JSON.stringify(requestData)
+        });
+      }
 
       console.log('📥 Risposta ricevuta:', {
         status: response.status,
@@ -701,10 +740,11 @@ function GestioneFerieContent() {
           end_date: '',
           reason: ''
         });
+        setAttachmentFile(null);
         setShowNewRequestForm(false);
         console.log('🔄 Ricaricamento dati...');
         await loadData();
-        alert('Richiesta creata con successo!');
+        alert('Richiesta creata con successo!' + (attachmentFile ? ' Con modulo allegato.' : ''));
       } else {
         console.error('❌ Risultato non success:', result);
         throw new Error(result.error || 'Errore durante la creazione');
@@ -1144,12 +1184,50 @@ function GestioneFerieContent() {
                         placeholder="Motivo della richiesta..."
                       />
                     </div>
+                    <div className="col-12 mb-3">
+                      <label htmlFor="attachment" className="form-label">
+                        <i className="fas fa-paperclip me-1"></i>
+                        Allegato
+                      </label>
+                      <input
+                        type="file"
+                        id="attachment"
+                        className="form-control"
+                        accept=".pdf,.jpg,.jpeg,.png,.webp"
+                        key={attachmentFile ? attachmentFile.name : 'no-file'}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] || null;
+                          setAttachmentFile(file);
+                        }}
+                      />
+                      <small className="form-text text-muted">
+                        Formati supportati: PDF, JPG, PNG, WebP (max 10MB)
+                      </small>
+                      {attachmentFile && (
+                        <div className="mt-2">
+                          <span className="badge bg-info">
+                            <i className="fas fa-file me-1"></i>
+                            {attachmentFile.name}
+                          </span>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-link text-danger ms-2"
+                            onClick={() => setAttachmentFile(null)}
+                          >
+                            <i className="fas fa-times"></i> Rimuovi
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="d-flex justify-content-end">
                     <button 
                       type="button"
                       className="btn btn-outline-secondary me-2"
-                      onClick={() => setShowNewRequestForm(false)}
+                      onClick={() => {
+                        setShowNewRequestForm(false);
+                        setAttachmentFile(null);
+                      }}
                     >
                       Annulla
                     </button>

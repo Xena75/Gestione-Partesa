@@ -220,7 +220,7 @@ function AutistiPageContent() {
           <div className="d-flex justify-content-between align-items-center mb-4">
             <h1 className="h3 mb-0">
               <i className="fas fa-users me-2"></i>
-              Gestione Autisti
+              Gestione Personale
             </h1>
             <div>
               <Link href="/gestione/dipendenti/dashboard" className="btn btn-outline-info me-2" prefetch={false}>

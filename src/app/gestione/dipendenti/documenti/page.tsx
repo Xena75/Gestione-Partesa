@@ -17,6 +17,7 @@ interface Document {
   upload_date: string;
   status: 'valid' | 'expired' | 'expiring_soon';
   days_until_expiry: number | null;
+  document_name?: string;
 }
 
 interface DocumentStats {
@@ -125,6 +126,31 @@ function DocumentiPageContent() {
     return true;
   });
 
+  const getDocumentPart = (fileName: string, documentName?: string): string => {
+    // Cerca prima nel document_name se disponibile (più preciso)
+    if (documentName) {
+      const partMatch = documentName.match(/\((Fronte|Retro|Parte \d+)\)/i);
+      if (partMatch) {
+        return partMatch[1];
+      }
+    }
+    
+    // Altrimenti cerca nel file_name
+    const partMatch = fileName.match(/part(\d+)/i);
+    if (partMatch) {
+      const partNum = parseInt(partMatch[1]);
+      if (partNum === 1) return 'Fronte';
+      if (partNum === 2) return 'Retro';
+      return `Parte ${partNum}`;
+    }
+    
+    return '-';
+  };
+
+  const isMultiPageDocument = (fileName: string): boolean => {
+    return /part\d+/i.test(fileName);
+  };
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('it-IT');
@@ -171,28 +197,15 @@ function DocumentiPageContent() {
           {/* Header */}
           <div className="d-flex justify-content-between align-items-center mb-4">
             <div>
-              <nav aria-label="breadcrumb">
-                <ol className="breadcrumb">
-                  <li className="breadcrumb-item">
-                    <Link href="/gestione" className="text-decoration-none">Gestione</Link>
-                  </li>
-                  <li className="breadcrumb-item">
-                    <Link href="/gestione/dipendenti" className="text-decoration-none">Dipendenti</Link>
-                  </li>
-                  <li className="breadcrumb-item active" aria-current="page">
-                    Documenti
-                  </li>
-                </ol>
-              </nav>
               <h1 className="h3 mb-0">
                 <i className="fas fa-file-alt me-2"></i>
-                Gestione Documenti Dipendenti
+                Gestione Documenti Personale
               </h1>
             </div>
             <div>
-              <Link href="/gestione/dipendenti" className="btn btn-outline-secondary">
+              <Link href="/gestione/dipendenti/dashboard" className="btn btn-outline-secondary">
                 <i className="fas fa-arrow-left me-1"></i>
-                Torna ai Dipendenti
+                Dashboard
               </Link>
             </div>
           </div>
@@ -342,52 +355,77 @@ function DocumentiPageContent() {
                         <th>Dipendente</th>
                         <th>Tipo Documento</th>
                         <th>Nome File</th>
+                        <th>Parte</th>
                         <th>Data Caricamento</th>
                         <th>Data Scadenza</th>
                         <th>Stato</th>
+                        <th>Allegato</th>
                         <th>Azioni</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredDocuments.map((doc) => (
-                        <tr key={doc.id}>
-                          <td>
-                            <Link 
-                              href={`/gestione/dipendenti/${doc.employee_id}`}
-                              className="text-decoration-none"
-                            >
-                              {doc.employee_name || `${doc.nome} ${doc.cognome}`}
-                            </Link>
-                          </td>
-                          <td>{doc.document_type}</td>
-                          <td>
-                            <span className="text-truncate d-inline-block" style={{ maxWidth: '200px' }}>
-                              {doc.file_name}
-                            </span>
-                          </td>
-                          <td>{formatDate(doc.upload_date)}</td>
-                          <td>{formatDate(doc.expiry_date)}</td>
-                          <td>{getStatusBadge(doc.status, doc.days_until_expiry)}</td>
-                          <td>
-                            <div className="btn-group btn-group-sm">
-                              <Link
-                                href={`/gestione/dipendenti/${doc.employee_id}/documenti`}
-                                className="btn btn-outline-primary"
-                                title="Gestisci documenti"
-                              >
-                                <i className="fas fa-edit"></i>
-                              </Link>
-                              <Link
+                      {filteredDocuments.map((doc) => {
+                        const part = getDocumentPart(doc.file_name, doc.document_name);
+                        const isMultiPage = isMultiPageDocument(doc.file_name);
+                        
+                        return (
+                          <tr key={doc.id}>
+                            <td>
+                              <Link 
                                 href={`/gestione/dipendenti/${doc.employee_id}`}
-                                className="btn btn-outline-info"
-                                title="Visualizza dipendente"
+                                className="text-decoration-none"
                               >
-                                <i className="fas fa-user"></i>
+                                {doc.employee_name || `${doc.nome} ${doc.cognome}`}
                               </Link>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+                            <td>{doc.document_type}</td>
+                            <td>
+                              <span className="text-truncate d-inline-block" style={{ maxWidth: '200px' }}>
+                                {doc.file_name}
+                              </span>
+                            </td>
+                            <td>
+                              {isMultiPage ? (
+                                <span className="badge" style={{ backgroundColor: '#6f42c1', color: '#fff' }}>{part}</span>
+                              ) : (
+                                <span className="text-secondary">-</span>
+                              )}
+                            </td>
+                            <td>{formatDate(doc.upload_date)}</td>
+                            <td>{formatDate(doc.expiry_date)}</td>
+                            <td>{getStatusBadge(doc.status, doc.days_until_expiry)}</td>
+                            <td>
+                              <a 
+                                href={doc.file_path} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="btn btn-sm btn-outline-primary"
+                                title="Visualizza documento"
+                              >
+                                <i className="fas fa-file-pdf"></i>
+                              </a>
+                            </td>
+                            <td>
+                              <div className="btn-group btn-group-sm">
+                                <Link
+                                  href={`/gestione/dipendenti/${doc.employee_id}/documenti`}
+                                  className="btn btn-outline-primary"
+                                  title="Gestisci documenti"
+                                >
+                                  <i className="fas fa-edit"></i>
+                                </Link>
+                                <Link
+                                  href={`/gestione/dipendenti/${doc.employee_id}`}
+                                  className="btn btn-outline-info"
+                                  title="Visualizza dipendente"
+                                >
+                                  <i className="fas fa-user"></i>
+                                </Link>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
