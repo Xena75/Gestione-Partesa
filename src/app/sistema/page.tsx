@@ -55,6 +55,9 @@ export default function SistemaPage() {
   const [deletingUser, setDeletingUser] = useState<any>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   
+  // Filtro per mostrare/nascondere utenti disattivati
+  const [showInactiveUsers, setShowInactiveUsers] = useState(false);
+  
   // Stati per accessi recenti
   const [recentLogins, setRecentLogins] = useState([]);
   const [recentLoginsLoading, setRecentLoginsLoading] = useState(false);
@@ -113,11 +116,17 @@ export default function SistemaPage() {
       });
 
       const result = await response.json();
+      console.log('Risultato caricamento utenti:', result);
       if (result.success) {
-        setUsersList(result.users);
+        console.log('Utenti caricati:', result.users?.length || 0);
+        setUsersList(result.users || []);
+      } else {
+        console.error('Errore nel caricamento utenti:', result.error);
+        setUsersList([]);
       }
     } catch (error) {
       console.error('Errore nel caricamento utenti:', error);
+      setUsersList([]);
     } finally {
       setUsersLoading(false);
     }
@@ -194,6 +203,7 @@ export default function SistemaPage() {
     setDeleteLoading(true);
 
     try {
+      // Chiama l'endpoint DELETE che ora disattiva invece di eliminare
       const response = await fetch('/api/admin/delete-user', {
         method: 'DELETE',
         headers: {
@@ -210,12 +220,41 @@ export default function SistemaPage() {
         setDeletingUser(null);
         loadUsersList();
       } else {
-        alert(result.error || 'Errore nell\'eliminazione utente');
+        alert(result.error || 'Errore nella disattivazione utente');
       }
     } catch (error) {
       alert('Errore di connessione');
     } finally {
       setDeleteLoading(false);
+    }
+  };
+
+  const handleToggleUserStatus = async (user: any) => {
+    const newStatus = !user.active;
+    
+    if (!confirm(`Sei sicuro di voler ${newStatus ? 'attivare' : 'disattivare'} l'utente ${user.username}?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/admin/toggle-user-status', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ id: user.id, active: newStatus }),
+        credentials: 'include'
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        loadUsersList();
+      } else {
+        alert(result.error || 'Errore nell\'aggiornamento dello stato utente');
+      }
+    } catch (error) {
+      alert('Errore di connessione');
     }
   };
 
@@ -494,7 +533,21 @@ export default function SistemaPage() {
               
               {/* Lista utenti registrati */}
               <div>
-                <h6>Utenti Registrati</h6>
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <h6 className="mb-0">Utenti Registrati</h6>
+                  <div className="form-check form-switch">
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      id="showInactiveUsers"
+                      checked={showInactiveUsers}
+                      onChange={(e) => setShowInactiveUsers(e.target.checked)}
+                    />
+                    <label className="form-check-label" htmlFor="showInactiveUsers">
+                      Mostra disattivati
+                    </label>
+                  </div>
+                </div>
                 {usersLoading ? (
                   <div className="text-center">
                     <div className="spinner-border" role="status">
@@ -510,44 +563,81 @@ export default function SistemaPage() {
                           <th>Email</th>
                           <th>Password</th>
                           <th>Ruolo</th>
+                          <th>Stato</th>
                           <th>Data Creazione</th>
                           <th>Azioni</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {usersList.map((user: any) => (
-                          <tr key={user.id}>
-                            <td>{user.username}</td>
-                            <td>{user.email}</td>
-                            <td>
-                              <span className="font-monospace text-muted small">
-                                {user.password || '••••••••'}
-                              </span>
-                            </td>
-                            <td>
-                              <span className={`badge bg-${user.role === 'admin' ? 'danger' : user.role === 'employee' ? 'success' : 'primary'}`}>
-                                {user.role === 'admin' ? 'Admin' : user.role === 'employee' ? 'Dipendente' : 'Utente'}
-                              </span>
-                            </td>
-                            <td>{new Date(user.created_at).toLocaleDateString('it-IT')}</td>
-                            <td>
-                              <button 
-                                className="btn btn-sm btn-outline-primary me-2"
-                                onClick={() => handleEditUser(user)}
-                              >
-                                <Edit className="me-1" size={14} />
-                                Modifica
-                              </button>
-                              <button 
-                                className="btn btn-sm btn-outline-danger"
-                                onClick={() => handleDeleteUser(user)}
-                              >
-                                <Trash2 className="me-1" size={14} />
-                                Elimina
-                              </button>
+                        {usersList.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="text-center text-muted py-4">
+                              Nessun utente trovato
                             </td>
                           </tr>
-                        ))}
+                        ) : (
+                          usersList
+                            .filter((user: any) => {
+                              // Se mostra disattivati, mostra tutti
+                              if (showInactiveUsers) return true;
+                              // Altrimenti mostra solo attivi (active = 1, undefined, null o non presente)
+                              const isActive = user.active === 1 || user.active === undefined || user.active === null;
+                              return isActive;
+                            })
+                            .map((user: any) => {
+                              const isActive = user.active === 1 || user.active === undefined || user.active === null;
+                              return (
+                                <tr key={user.id} className={!isActive ? 'opacity-50' : ''}>
+                                  <td>{user.username}</td>
+                                  <td>{user.email}</td>
+                                  <td>
+                                    <span className="font-monospace text-muted small">
+                                      {user.password || '••••••••'}
+                                    </span>
+                                  </td>
+                                  <td>
+                                    <span className={`badge bg-${user.role === 'admin' ? 'danger' : user.role === 'employee' ? 'success' : 'primary'}`}>
+                                      {user.role === 'admin' ? 'Admin' : user.role === 'employee' ? 'Dipendente' : 'Utente'}
+                                    </span>
+                                  </td>
+                                  <td>
+                                    <span className={`badge bg-${isActive ? 'success' : 'secondary'}`}>
+                                      {isActive ? 'Attivo' : 'Disattivato'}
+                                    </span>
+                                  </td>
+                                  <td>{new Date(user.created_at).toLocaleDateString('it-IT')}</td>
+                                  <td>
+                                    <button 
+                                      className="btn btn-sm btn-outline-primary me-2"
+                                      onClick={() => handleEditUser(user)}
+                                    >
+                                      <Edit className="me-1" size={14} />
+                                      Modifica
+                                    </button>
+                                    {isActive ? (
+                                      <button 
+                                        className="btn btn-sm btn-outline-warning"
+                                        onClick={() => handleDeleteUser(user)}
+                                        title="Disattiva utente"
+                                      >
+                                        <Trash2 className="me-1" size={14} />
+                                        Disattiva
+                                      </button>
+                                    ) : (
+                                      <button 
+                                        className="btn btn-sm btn-outline-success"
+                                        onClick={() => handleToggleUserStatus(user)}
+                                        title="Riattiva utente"
+                                      >
+                                        <Play className="me-1" size={14} />
+                                        Riattiva
+                                      </button>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -981,7 +1071,7 @@ export default function SistemaPage() {
           <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">Conferma Eliminazione</h5>
+                <h5 className="modal-title">Conferma Disattivazione</h5>
                 <button 
                   type="button" 
                   className="btn-close" 
@@ -989,8 +1079,14 @@ export default function SistemaPage() {
                 ></button>
               </div>
               <div className="modal-body">
-                <p>Sei sicuro di voler eliminare l'utente <strong>{deletingUser?.username}</strong>?</p>
-                <p className="text-danger">Questa azione non può essere annullata.</p>
+                <p>Sei sicuro di voler disattivare l'utente <strong>{deletingUser?.username}</strong>?</p>
+                <p className="text-warning">
+                  <i className="fas fa-info-circle me-1"></i>
+                  L'utente non verrà eliminato, ma solo disattivato. Potrai riattivarlo in qualsiasi momento.
+                </p>
+                <p className="text-muted small">
+                  Gli utenti disattivati non possono accedere al sistema, ma i loro dati vengono conservati.
+                </p>
               </div>
               <div className="modal-footer">
                 <button 
@@ -1002,11 +1098,11 @@ export default function SistemaPage() {
                 </button>
                 <button 
                   type="button" 
-                  className="btn btn-danger" 
+                  className="btn btn-warning" 
                   onClick={confirmDeleteUser}
                   disabled={deleteLoading}
                 >
-                  {deleteLoading ? 'Eliminando...' : 'Elimina'}
+                  {deleteLoading ? 'Disattivando...' : 'Disattiva'}
                 </button>
               </div>
             </div>

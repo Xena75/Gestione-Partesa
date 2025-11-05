@@ -1853,6 +1853,11 @@ gestisce correttamente questo aspetto fornendo un valore `new Date()` esplicito.
 - `titolo_studio`: Titolo di studio
 - `luogo_nascita`, `data_nascita`: Luogo e data di nascita
 
+**⚠️ NOTA v2.35.5 - Campi Rimossi:**
+- `driver_license_number` e `driver_license_expiry` sono stati rimossi nella versione 2.35.5
+- Le informazioni di patente sono gestite tramite la tabella `employee_documents` per maggiore flessibilità
+- Vedere `FUNZIONALITA_AGGIORNATE.md` per dettagli completi
+
 **Dati Contrattuali:**
 - `qualifica`: Qualifica (es: AUTISTA, IMPIEGATO)
 - `tipo_contratto`: Tipo contratto (Indeterminato/Determinato)
@@ -1878,6 +1883,7 @@ gestisce correttamente questo aspetto fornendo un valore `new Date()` esplicito.
 - Aggiornata il 2025-10-23 con import da Excel (30 dipendenti)
 - 13 nuove colonne aggiunte (migration: `add_employees_extended_fields.sql`)
 - Import tramite script: `scripts/import-employees-from-excel.js`
+- **v2.35.5**: Rimossi campi `driver_license_number` e `driver_license_expiry` (Gennaio 2025)
 
 #### Tabella: `travels`
 ```sql

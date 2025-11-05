@@ -25,7 +25,7 @@ async function verifyAdminToken(request: NextRequest) {
     }
     
     if (user.role !== 'admin') {
-      return { valid: false, error: 'Accesso negato: solo gli amministratori possono eliminare utenti' };
+      return { valid: false, error: 'Accesso negato: solo gli amministratori possono gestire lo stato degli utenti' };
     }
 
     return { valid: true, user };
@@ -34,7 +34,8 @@ async function verifyAdminToken(request: NextRequest) {
   }
 }
 
-export async function DELETE(request: NextRequest) {
+// Endpoint per attivare/disattivare un utente
+export async function PUT(request: NextRequest) {
   try {
     // Verifica autorizzazione admin
     const authResult = await verifyAdminToken(request);
@@ -47,12 +48,20 @@ export async function DELETE(request: NextRequest) {
 
     // Parse dei dati dalla richiesta
     const body = await request.json();
-    const { id } = body;
+    const { id, active } = body;
 
     // Verifica che l'ID sia presente
     if (!id) {
       return NextResponse.json(
         { success: false, error: 'ID utente richiesto' },
+        { status: 400 }
+      );
+    }
+
+    // Verifica che active sia un booleano
+    if (typeof active !== 'boolean') {
+      return NextResponse.json(
+        { success: false, error: 'Campo "active" deve essere true o false' },
         { status: 400 }
       );
     }
@@ -87,18 +96,18 @@ export async function DELETE(request: NextRequest) {
         );
       }
 
-      const userToDeactivate = existingUser[0] as any;
+      const userToUpdate = existingUser[0] as any;
 
       // Impedisci l'auto-disattivazione dell'admin corrente
-      if (authResult.user && String(authResult.user.id) === String(id)) {
+      if (authResult.user && String(authResult.user.id) === String(id) && !active) {
         return NextResponse.json(
           { success: false, error: 'Non puoi disattivare il tuo stesso account' },
           { status: 403 }
         );
       }
 
-      // Verifica se è l'ultimo admin attivo rimasto
-      if (userToDeactivate.role === 'admin' && userToDeactivate.active === 1) {
+      // Verifica se è l'ultimo admin attivo quando si tenta di disattivare
+      if (userToUpdate.role === 'admin' && !active) {
         const [adminCount] = await connection.execute(
           'SELECT COUNT(*) as count FROM users WHERE role = "admin" AND active = 1'
         );
@@ -112,28 +121,28 @@ export async function DELETE(request: NextRequest) {
         }
       }
 
-      // Disattiva l'utente invece di eliminarlo (soft delete)
+      // Aggiorna lo stato attivo/disattivo dell'utente
       const [updateResult] = await connection.execute(
-        'UPDATE users SET active = 0, updated_at = NOW() WHERE id = ?',
-        [id]
+        'UPDATE users SET active = ?, updated_at = NOW() WHERE id = ?',
+        [active ? 1 : 0, id]
       );
 
       const result = updateResult as mysql.ResultSetHeader;
       
       if (result.affectedRows === 0) {
         return NextResponse.json(
-          { success: false, error: 'Errore nella disattivazione dell\'utente' },
+          { success: false, error: 'Errore nell\'aggiornamento dello stato dell\'utente' },
           { status: 500 }
         );
       }
 
       return NextResponse.json({
         success: true,
-        message: `Utente ${userToDeactivate.username} disattivato con successo`,
-        deactivatedUser: {
-          id: userToDeactivate.id,
-          username: userToDeactivate.username,
-          active: false
+        message: `Utente ${userToUpdate.username} ${active ? 'attivato' : 'disattivato'} con successo`,
+        user: {
+          id: userToUpdate.id,
+          username: userToUpdate.username,
+          active: active
         }
       });
 
@@ -142,10 +151,11 @@ export async function DELETE(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('Errore nella disattivazione utente:', error);
+    console.error('Errore nell\'aggiornamento stato utente:', error);
     return NextResponse.json(
       { success: false, error: 'Errore interno del server' },
       { status: 500 }
     );
   }
 }
+

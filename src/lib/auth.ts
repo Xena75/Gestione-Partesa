@@ -62,9 +62,27 @@ export function verifyToken(token: string): User | null {
 // Autentica utente
 export async function authenticateUser(username: string, password: string): Promise<AuthResult> {
   try {
-    // Cerca nella tabella users (admin/user/employee)
+    // Verifica se la colonna 'active' esiste
+    try {
+      const [columns] = await pool.execute(
+        "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'active'"
+      );
+      
+      if ((columns as any[]).length === 0) {
+        // Se la colonna non esiste, aggiungila
+        await pool.execute(
+          'ALTER TABLE users ADD COLUMN active TINYINT(1) DEFAULT 1 NOT NULL'
+        );
+        console.log('Colonna "active" aggiunta alla tabella users');
+      }
+    } catch (alterError) {
+      // Ignora errori se la colonna esiste già o se non abbiamo permessi
+      console.log('Verifica colonna active:', alterError);
+    }
+
+    // Cerca nella tabella users (admin/user/employee) solo utenti attivi
     const [userRows] = await pool.execute(
-      'SELECT id, username, password_hash, email, role FROM users WHERE username = ?',
+      'SELECT id, username, password_hash, email, role, active FROM users WHERE username = ? AND (active IS NULL OR active = 1)',
       [username]
     );
 
@@ -74,6 +92,12 @@ export async function authenticateUser(username: string, password: string): Prom
     }
 
     const user = users[0];
+    
+    // Verifica che l'utente sia attivo (se il campo esiste)
+    if (user.active !== undefined && user.active !== 1) {
+      return { success: false, message: 'Account disattivato. Contatta l\'amministratore.' };
+    }
+
     const isValidPassword = await verifyPassword(password, user.password_hash);
 
     if (!isValidPassword) {
