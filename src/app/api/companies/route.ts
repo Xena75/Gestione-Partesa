@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllCompanies, createCompany } from '@/lib/db-employees';
+import { getAllCompanies, createCompany, getCompanyById } from '@/lib/db-employees';
 
 export async function GET() {
   try {
@@ -49,8 +49,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const newCompany = await createCompany(body);
-    return NextResponse.json(newCompany, { status: 201 });
+    const newCompanyId = await createCompany(body);
+    
+    // Recupera la società appena creata
+    const createdCompany = await getCompanyById(newCompanyId);
+    
+    if (!createdCompany) {
+      return NextResponse.json(
+        { error: 'Errore nel recupero della società creata' },
+        { status: 500 }
+      );
+    }
+    
+    return NextResponse.json(createdCompany, { status: 201 });
   } catch (error: any) {
     console.error('Errore nella creazione della società:', error);
     

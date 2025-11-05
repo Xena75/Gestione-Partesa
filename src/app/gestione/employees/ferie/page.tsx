@@ -169,12 +169,32 @@ function GestioneFerieContent() {
     hours: '',
     notes: ''
   });
+  const [editAttachmentFile, setEditAttachmentFile] = useState<File | null>(null);
+  const [deleteEditAttachment, setDeleteEditAttachment] = useState(false);
+  const [availableLeaveTypes, setAvailableLeaveTypes] = useState<string[]>([]);
+  const [showNewLeaveTypeInput, setShowNewLeaveTypeInput] = useState(false);
+  const [newLeaveType, setNewLeaveType] = useState('');
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
       loadData();
+      loadLeaveTypes();
     }
   }, [isLoading, isAuthenticated]);
+
+  const loadLeaveTypes = async () => {
+    try {
+      const response = await fetch('/api/employees/leave/types');
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          setAvailableLeaveTypes(result.data);
+        }
+      }
+    } catch (error) {
+      console.error('Errore nel caricamento dei tipi di richiesta:', error);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -329,6 +349,10 @@ function GestioneFerieContent() {
       hours: request.hours_requested?.toString() || '',
       notes: request.notes || ''
     });
+    setEditAttachmentFile(null);
+    setDeleteEditAttachment(false);
+    setShowNewLeaveTypeInput(false);
+    setNewLeaveType('');
     setShowEditModal(true);
   };
 
@@ -385,36 +409,89 @@ function GestioneFerieContent() {
         return;
       }
 
-      const updateData: any = {
-        start_date: editFormData.start_date,
-        end_date: editFormData.end_date,
-        leave_type: editFormData.leave_type,
-        notes: editFormData.notes
-      };
+      // Se c'è un file allegato o se deve eliminare l'allegato, usa FormData
+      if (editAttachmentFile || deleteEditAttachment) {
+        const formData = new FormData();
+        formData.append('start_date', editFormData.start_date);
+        formData.append('end_date', editFormData.end_date);
+        formData.append('leave_type', editFormData.leave_type);
+        formData.append('notes', editFormData.notes || '');
+        
+        if (editFormData.leave_type === 'permesso' && editFormData.hours) {
+          formData.append('hours', editFormData.hours);
+        }
+        
+        if (deleteEditAttachment) {
+          formData.append('delete_attachment', 'true');
+        } else if (editAttachmentFile) {
+          // Validazione file
+          const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+          if (!allowedTypes.includes(editAttachmentFile.type)) {
+            alert('Tipo file non supportato. Formati accettati: PDF, JPG, PNG, WebP');
+            return;
+          }
+          
+          if (editAttachmentFile.size > 10 * 1024 * 1024) {
+            alert('File troppo grande. Dimensione massima: 10MB');
+            return;
+          }
+          
+          formData.append('attachment', editAttachmentFile);
+        }
 
-      if (editFormData.leave_type === 'permesso' && editFormData.hours) {
-        updateData.hours = parseFloat(editFormData.hours);
-      }
+        const response = await fetch(`/api/employees/leave/${editingRequest.id}`, {
+          method: 'PUT',
+          credentials: 'include',
+          body: formData
+        });
 
-      const response = await fetch(`/api/employees/leave/${editingRequest.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updateData)
-      });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Errore durante l\'aggiornamento della richiesta');
+        }
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Errore durante l\'aggiornamento della richiesta');
-      }
+        const result = await response.json();
+        if (result.message) {
+          await loadData();
+          alert('Richiesta aggiornata con successo!');
+          setShowEditModal(false);
+          setEditingRequest(null);
+          setEditAttachmentFile(null);
+          setDeleteEditAttachment(false);
+        }
+      } else {
+        // Nessun file, usa JSON standard
+        const updateData: any = {
+          start_date: editFormData.start_date,
+          end_date: editFormData.end_date,
+          leave_type: editFormData.leave_type,
+          notes: editFormData.notes
+        };
 
-      const result = await response.json();
-      if (result.message) {
-        await loadData();
-        alert('Richiesta aggiornata con successo!');
-        setShowEditModal(false);
-        setEditingRequest(null);
+        if (editFormData.leave_type === 'permesso' && editFormData.hours) {
+          updateData.hours = parseFloat(editFormData.hours);
+        }
+
+        const response = await fetch(`/api/employees/leave/${editingRequest.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updateData)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Errore durante l\'aggiornamento della richiesta');
+        }
+
+        const result = await response.json();
+        if (result.message) {
+          await loadData();
+          alert('Richiesta aggiornata con successo!');
+          setShowEditModal(false);
+          setEditingRequest(null);
+        }
       }
 
     } catch (err) {
@@ -1739,24 +1816,24 @@ function GestioneFerieContent() {
                       <div className="row">
                         <div className="col-md-6">
                           <div className="mb-3">
-                            <label className="form-label text-light">Data Inizio</label>
-                            <input
-                              type="date"
-                              className="form-control bg-dark text-light border-secondary"
+                            <DateInput
+                              id="edit_start_date"
+                              name="start_date"
+                              label="Data Inizio"
                               value={editFormData.start_date}
-                              onChange={(e) => setEditFormData(prev => ({ ...prev, start_date: e.target.value }))}
+                              onChange={(isoValue) => setEditFormData(prev => ({ ...prev, start_date: isoValue }))}
                               required
                             />
                           </div>
                         </div>
                         <div className="col-md-6">
                           <div className="mb-3">
-                            <label className="form-label text-light">Data Fine</label>
-                            <input
-                              type="date"
-                              className="form-control bg-dark text-light border-secondary"
+                            <DateInput
+                              id="edit_end_date"
+                              name="end_date"
+                              label="Data Fine"
                               value={editFormData.end_date}
-                              onChange={(e) => setEditFormData(prev => ({ ...prev, end_date: e.target.value }))}
+                              onChange={(isoValue) => setEditFormData(prev => ({ ...prev, end_date: isoValue }))}
                               required
                             />
                           </div>
@@ -1769,13 +1846,51 @@ function GestioneFerieContent() {
                             <select
                               className="form-select bg-dark text-light border-secondary"
                               value={editFormData.leave_type}
-                              onChange={(e) => setEditFormData(prev => ({ ...prev, leave_type: e.target.value }))}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                if (value === '__add_new__') {
+                                  setShowNewLeaveTypeInput(true);
+                                  setEditFormData(prev => ({ ...prev, leave_type: '' }));
+                                } else {
+                                  setEditFormData(prev => ({ ...prev, leave_type: value }));
+                                  setShowNewLeaveTypeInput(false);
+                                  setNewLeaveType('');
+                                }
+                              }}
                               required
                             >
                               <option value="">Seleziona tipo</option>
-                              <option value="ferie">Ferie</option>
-                              <option value="permesso">Permesso</option>
+                              {availableLeaveTypes.map((type) => (
+                                <option key={type} value={type}>
+                                  {type}
+                                </option>
+                              ))}
+                              <option value="__add_new__">➕ Aggiungi nuovo tipo...</option>
                             </select>
+                            {showNewLeaveTypeInput && (
+                              <div className="mt-2">
+                                <input
+                                  type="text"
+                                  className="form-control bg-dark text-light border-secondary"
+                                  placeholder="Inserisci il nuovo tipo di richiesta"
+                                  value={newLeaveType}
+                                  onChange={(e) => {
+                                    setNewLeaveType(e.target.value);
+                                    setEditFormData(prev => ({ ...prev, leave_type: e.target.value }));
+                                  }}
+                                  onBlur={() => {
+                                    if (newLeaveType.trim()) {
+                                      if (!availableLeaveTypes.includes(newLeaveType.trim())) {
+                                        setAvailableLeaveTypes([...availableLeaveTypes, newLeaveType.trim()].sort());
+                                      }
+                                    }
+                                  }}
+                                />
+                                <small className="form-text text-muted">
+                                  Il nuovo tipo verrà aggiunto al database al salvataggio della richiesta
+                                </small>
+                              </div>
+                            )}
                           </div>
                         </div>
                         {editFormData.leave_type === 'permesso' && (
@@ -1806,12 +1921,102 @@ function GestioneFerieContent() {
                           placeholder="Note aggiuntive (opzionale)"
                         ></textarea>
                       </div>
+                      <div className="mb-3">
+                        <label className="form-label text-light">
+                          <i className="fas fa-paperclip me-1"></i>
+                          Allegato
+                        </label>
+                        {editingRequest.attachment_url && !deleteEditAttachment && !editAttachmentFile ? (
+                          <div className="border border-secondary rounded p-3 bg-dark">
+                            <div className="d-flex justify-content-between align-items-center">
+                              <div>
+                                <a 
+                                  href={editingRequest.attachment_url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-info text-decoration-none"
+                                >
+                                  <i className="fas fa-file-pdf me-2"></i>
+                                  Visualizza allegato corrente
+                                </a>
+                              </div>
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-danger"
+                                onClick={() => setDeleteEditAttachment(true)}
+                              >
+                                <i className="fas fa-trash me-1"></i>
+                                Elimina
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            {deleteEditAttachment && (
+                              <div className="alert alert-warning mb-2">
+                                <i className="fas fa-exclamation-triangle me-2"></i>
+                                L'allegato verrà eliminato al salvataggio
+                                <button
+                                  type="button"
+                                  className="btn btn-sm btn-outline-secondary ms-2"
+                                  onClick={() => setDeleteEditAttachment(false)}
+                                >
+                                  Annulla
+                                </button>
+                              </div>
+                            )}
+                            {!editingRequest.attachment_url || deleteEditAttachment ? (
+                              <input
+                                type="file"
+                                className="form-control bg-dark text-light border-secondary"
+                                accept=".pdf,.jpg,.jpeg,.png,.webp"
+                                key={editAttachmentFile ? editAttachmentFile.name : 'no-file'}
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0] || null;
+                                  setEditAttachmentFile(file);
+                                  if (file) {
+                                    setDeleteEditAttachment(false);
+                                  }
+                                }}
+                              />
+                            ) : null}
+                            {editAttachmentFile && (
+                              <div className="mt-2">
+                                <span className="badge bg-info">
+                                  <i className="fas fa-file me-1"></i>
+                                  {editAttachmentFile.name}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="btn btn-sm btn-link text-danger ms-2"
+                                  onClick={() => {
+                                    setEditAttachmentFile(null);
+                                    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+                                    if (input) input.value = '';
+                                  }}
+                                >
+                                  <i className="fas fa-times"></i> Rimuovi
+                                </button>
+                              </div>
+                            )}
+                            <small className="form-text text-muted">
+                              Formati supportati: PDF, JPG, PNG, WebP (max 10MB)
+                            </small>
+                          </>
+                        )}
+                      </div>
                     </div>
                     <div className="modal-footer border-secondary">
                       <button 
                         type="button" 
                         className="btn btn-secondary"
-                        onClick={() => setShowEditModal(false)}
+                        onClick={() => {
+                          setShowEditModal(false);
+                          setEditAttachmentFile(null);
+                          setDeleteEditAttachment(false);
+                          setShowNewLeaveTypeInput(false);
+                          setNewLeaveType('');
+                        }}
                       >
                         Annulla
                       </button>

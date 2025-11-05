@@ -1,6 +1,6 @@
 // src/app/api/employees/[id]/profile-image/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { updateEmployee } from '@/lib/db-employees';
+import { getConnection, updateEmployee } from '@/lib/db-employees';
 import { uploadProfileImage, deleteProfileImage, validateImageFile } from '@/lib/upload-utils';
 
 export async function POST(
@@ -93,13 +93,15 @@ export async function DELETE(
     }
     
     // Rimuovi il riferimento alla foto dal database
-    const success = await updateEmployee(decodedId, { foto_url: undefined });
-
-    if (!success) {
-      return NextResponse.json({
-        success: false,
-        error: 'Errore nell\'aggiornamento del database'
-      }, { status: 500 });
+    // Usa una query diretta per settare foto_url a NULL
+    const connection = await getConnection();
+    try {
+      await connection.execute(
+        'UPDATE employees SET foto_url = NULL, updatedAt = NOW() WHERE id = ?',
+        [decodedId]
+      );
+    } finally {
+      await connection.end();
     }
 
     console.log('Foto profilo rimossa con successo per:', decodedId);

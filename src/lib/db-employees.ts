@@ -26,21 +26,36 @@ export interface Employee {
   nome: string;
   cognome: string;
   email: string;
+  email_aziendale?: string;
   username_login?: string; // Campo per collegare con users.username
   cellulare?: string;
   data_nascita?: string;
-  codice_fiscale?: string;
+  luogo_nascita?: string;
+  codice_fiscale?: string; // Nel DB è cod_fiscale, ma manteniamo questo nome per compatibilità
+  cittadinanza?: string;
+  permesso_soggiorno?: string;
+  titolo_studio?: string;
   indirizzo?: string;
   citta?: string;
   cap?: string;
-  provincia?: string;
+  // Dati lavorativi
+  cdc?: string;
+  qualifica?: string;
+  tipo_contratto?: string;
+  ccnl?: string;
+  livello?: string;
+  orario_lavoro?: string;
   data_assunzione?: string;
+  data_dimissioni?: string;
+  patente?: string;
+  // Campi legacy (non più nella tabella ma mantenuti per compatibilità)
+  provincia?: string;
   contratto?: string;
   stipendio?: number;
   ore_settimanali?: number;
   ferie_annuali?: number;
   permessi_annuali?: number;
-  qualifica?: string;
+  // Sistema
   is_driver: boolean;
   foto_url?: string;
   active: boolean;
@@ -234,20 +249,50 @@ export async function createEmployee(employee: Omit<Employee, 'id' | 'createdAt'
     // Genera ID univoco
     const employeeId = `EMP${Date.now()}`;
     
+    // Calcola nominativo (nome + cognome)
+    const nominativo = `${employee.nome || ''} ${employee.cognome || ''}`.trim();
+    
+    // Prepara i valori per l'inserimento
     const [result] = await connection.execute(
       `INSERT INTO employees (
-        id, nome, cognome, email, username_login, cellulare, data_nascita, codice_fiscale,
-        indirizzo, citta, cap, provincia, data_assunzione, contratto,
-        stipendio, ore_settimanali, ferie_annuali, permessi_annuali,
-        is_driver, active
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        id, nominativo, nome, cognome, cod_fiscale, email, email_aziendale,
+        cellulare, data_nascita, luogo_nascita, cittadinanza, permesso_soggiorno,
+        titolo_studio, indirizzo, citta, cap, cdc, qualifica, tipo_contratto,
+        ccnl, livello, orario_lavoro, data_assunzione, data_dimissioni, patente,
+        foto_url, username_login,
+        is_driver, active, company_id, updatedAt, createdAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
       [
-        employeeId, employee.nome, employee.cognome, employee.email,
-        employee.username_login, employee.cellulare, employee.data_nascita, employee.codice_fiscale,
-        employee.indirizzo, employee.citta, employee.cap, employee.provincia,
-        employee.data_assunzione, employee.contratto, employee.stipendio,
-        employee.ore_settimanali, employee.ferie_annuali, employee.permessi_annuali,
-        employee.is_driver, employee.active
+        employeeId,
+        nominativo,
+        employee.nome || null,
+        employee.cognome || null,
+        employee.codice_fiscale || null, // mappato da codice_fiscale a cod_fiscale
+        employee.email || null,
+        (employee as any).email_aziendale || null,
+        employee.cellulare || null,
+        employee.data_nascita || null,
+        (employee as any).luogo_nascita || null,
+        (employee as any).cittadinanza || null,
+        (employee as any).permesso_soggiorno || null,
+        (employee as any).titolo_studio || null,
+        employee.indirizzo || null,
+        employee.citta || null,
+        employee.cap || null,
+        (employee as any).cdc || null,
+        employee.qualifica || null,
+        (employee as any).tipo_contratto || null,
+        (employee as any).ccnl || null,
+        (employee as any).livello || null,
+        (employee as any).orario_lavoro || null,
+        employee.data_assunzione || null,
+        (employee as any).data_dimissioni || null,
+        (employee as any).patente || null,
+        (employee as any).foto_url || null,
+        employee.username_login || null,
+        employee.is_driver || false,
+        employee.active !== undefined ? employee.active : true,
+        employee.company_id || 1
       ]
     );
     
@@ -257,14 +302,27 @@ export async function createEmployee(employee: Omit<Employee, 'id' | 'createdAt'
   }
 }
 
-export async function updateEmployee(id: string, employee: Partial<Employee>): Promise<boolean> {
+export async function updateEmployee(id: string, employee: Partial<Employee & { foto_url?: string | null }>): Promise<boolean> {
   const connection = await getConnection();
   try {
     console.log('updateEmployee chiamata con ID:', id);
     console.log('updateEmployee dati ricevuti:', employee);
     
-    const fields = Object.keys(employee).filter(key => key !== 'id' && key !== 'createdAt' && key !== 'updatedAt');
-    const values = fields.map(field => employee[field as keyof Employee]);
+    // Filtra i campi, escludendo undefined e i campi di sistema
+    // Gestisce esplicitamente null per permettere di settare campi a NULL nel database
+    const fields = Object.keys(employee).filter(key => {
+      const value = employee[key as keyof typeof employee];
+      return key !== 'id' && 
+             key !== 'createdAt' && 
+             key !== 'updatedAt' &&
+             (value !== undefined || value === null); // Include null, escludi solo undefined
+    });
+    
+    // Mappa i valori, mantenendo null per SQL NULL
+    const values = fields.map(field => {
+      const value = employee[field as keyof typeof employee];
+      return value === undefined ? null : value; // undefined diventa null per SQL
+    });
     
     console.log('Campi da aggiornare:', fields);
     console.log('Valori da aggiornare:', values);
@@ -1072,6 +1130,7 @@ export async function updateLeaveRequest(
     leave_type?: 'ferie' | 'permesso';
     hours?: number;
     notes?: string;
+    attachment_url?: string | null;
   }
 ): Promise<boolean> {
   const connection = await getConnection();
@@ -1118,6 +1177,11 @@ export async function updateLeaveRequest(
     if (updateData.notes !== undefined) {
       updateFields.push('notes = ?');
       updateValues.push(updateData.notes);
+    }
+    
+    if (updateData.attachment_url !== undefined) {
+      updateFields.push('attachment_url = ?');
+      updateValues.push(updateData.attachment_url);
     }
     
     if (updateFields.length === 0) {
@@ -1175,6 +1239,122 @@ export async function getAllCompanies(): Promise<Company[]> {
       'SELECT * FROM companies ORDER BY name ASC'
     );
     return rows as Company[];
+  } finally {
+    await connection.end();
+  }
+}
+
+// Ottiene i valori distinti di qualifica dalla tabella employees
+export async function getDistinctQualifiche(): Promise<string[]> {
+  const connection = await getConnection();
+  try {
+    const [rows] = await connection.execute(
+      'SELECT DISTINCT qualifica FROM employees WHERE qualifica IS NOT NULL AND qualifica != "" ORDER BY qualifica'
+    );
+    return (rows as any[]).map(row => row.qualifica).filter(Boolean);
+  } finally {
+    await connection.end();
+  }
+}
+
+// Ottiene i valori distinti di CDC dalla tabella employees
+export async function getDistinctCdc(): Promise<string[]> {
+  const connection = await getConnection();
+  try {
+    const [rows] = await connection.execute(
+      'SELECT DISTINCT cdc FROM employees WHERE cdc IS NOT NULL AND cdc != "" ORDER BY cdc'
+    );
+    return (rows as any[]).map(row => row.cdc).filter(Boolean);
+  } finally {
+    await connection.end();
+  }
+}
+
+// Ottiene i valori distinti di città dalla tabella employees
+export async function getDistinctCitta(): Promise<string[]> {
+  const connection = await getConnection();
+  try {
+    const [rows] = await connection.execute(
+      'SELECT DISTINCT citta FROM employees WHERE citta IS NOT NULL AND citta != "" ORDER BY citta'
+    );
+    return (rows as any[]).map(row => row.citta).filter(Boolean);
+  } finally {
+    await connection.end();
+  }
+}
+
+// Ottiene i valori distinti di tipo contratto dalla tabella employees
+export async function getDistinctTipoContratto(): Promise<string[]> {
+  const connection = await getConnection();
+  try {
+    const [rows] = await connection.execute(
+      'SELECT DISTINCT tipo_contratto FROM employees WHERE tipo_contratto IS NOT NULL AND tipo_contratto != "" ORDER BY tipo_contratto'
+    );
+    return (rows as any[]).map(row => row.tipo_contratto).filter(Boolean);
+  } finally {
+    await connection.end();
+  }
+}
+
+// Ottiene i valori distinti di CCNL dalla tabella employees
+export async function getDistinctCcnl(): Promise<string[]> {
+  const connection = await getConnection();
+  try {
+    const [rows] = await connection.execute(
+      'SELECT DISTINCT ccnl FROM employees WHERE ccnl IS NOT NULL AND ccnl != "" ORDER BY ccnl'
+    );
+    return (rows as any[]).map(row => row.ccnl).filter(Boolean);
+  } finally {
+    await connection.end();
+  }
+}
+
+// Ottiene i valori distinti di livello dalla tabella employees
+export async function getDistinctLivello(): Promise<string[]> {
+  const connection = await getConnection();
+  try {
+    const [rows] = await connection.execute(
+      'SELECT DISTINCT livello FROM employees WHERE livello IS NOT NULL AND livello != "" ORDER BY livello'
+    );
+    return (rows as any[]).map(row => row.livello).filter(Boolean);
+  } finally {
+    await connection.end();
+  }
+}
+
+// Ottiene i valori distinti di orario di lavoro dalla tabella employees
+export async function getDistinctOrarioLavoro(): Promise<string[]> {
+  const connection = await getConnection();
+  try {
+    const [rows] = await connection.execute(
+      'SELECT DISTINCT orario_lavoro FROM employees WHERE orario_lavoro IS NOT NULL AND orario_lavoro != "" ORDER BY orario_lavoro'
+    );
+    return (rows as any[]).map(row => row.orario_lavoro).filter(Boolean);
+  } finally {
+    await connection.end();
+  }
+}
+
+// Ottiene i valori distinti di cittadinanza dalla tabella employees
+export async function getDistinctCittadinanza(): Promise<string[]> {
+  const connection = await getConnection();
+  try {
+    const [rows] = await connection.execute(
+      'SELECT DISTINCT cittadinanza FROM employees WHERE cittadinanza IS NOT NULL AND cittadinanza != "" ORDER BY cittadinanza'
+    );
+    return (rows as any[]).map(row => row.cittadinanza).filter(Boolean);
+  } finally {
+    await connection.end();
+  }
+}
+
+export async function getDistinctLeaveTypes(): Promise<string[]> {
+  const connection = await getConnection();
+  try {
+    const [rows] = await connection.execute(
+      'SELECT DISTINCT leave_type FROM employee_leave_requests WHERE leave_type IS NOT NULL AND leave_type != "" ORDER BY leave_type'
+    );
+    return (rows as any[]).map(row => row.leave_type).filter(Boolean);
   } finally {
     await connection.end();
   }

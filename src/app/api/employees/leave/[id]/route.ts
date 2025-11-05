@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { updateLeaveRequest, deleteLeaveRequest } from '@/lib/db-employees';
+import { put } from '@vercel/blob';
 
 // PUT - Modifica una richiesta di ferie
 export async function PUT(
@@ -16,7 +17,91 @@ export async function PUT(
       );
     }
 
-    const body = await request.json();
+    // Gestisci sia JSON che FormData (per upload file)
+    const contentType = request.headers.get('content-type') || '';
+    let body: any;
+    let attachmentFile: File | null = null;
+    let attachmentUrl: string | null | undefined = undefined;
+    let deleteAttachment = false;
+
+    if (contentType.includes('multipart/form-data')) {
+      // Richiesta con FormData (include file)
+      const formData = await request.formData();
+      
+      // Estrai i dati del form
+      body = {
+        start_date: formData.get('start_date') as string,
+        end_date: formData.get('end_date') as string,
+        leave_type: formData.get('leave_type') as string,
+        hours: formData.get('hours') ? parseFloat(formData.get('hours') as string) : undefined,
+        notes: formData.get('notes') as string
+      };
+      
+      // Controlla se deve eliminare l'allegato
+      const deleteAttachmentFlag = formData.get('delete_attachment');
+      if (deleteAttachmentFlag === 'true') {
+        deleteAttachment = true;
+        attachmentUrl = null;
+      } else {
+        // Estrai il file se presente
+        attachmentFile = formData.get('attachment') as File | null;
+        
+        // Se c'è un file, caricalo su Vercel Blob
+        if (attachmentFile && attachmentFile.size > 0) {
+          // Validazione tipo file
+          const allowedTypes = [
+            'application/pdf',
+            'image/jpeg',
+            'image/jpg',
+            'image/png',
+            'image/webp'
+          ];
+          
+          if (!allowedTypes.includes(attachmentFile.type)) {
+            return NextResponse.json({
+              error: 'Tipo file non supportato. Formati accettati: PDF, JPG, PNG, WebP'
+            }, { status: 400 });
+          }
+          
+          // Validazione dimensione (max 10MB)
+          if (attachmentFile.size > 10 * 1024 * 1024) {
+            return NextResponse.json({
+              error: 'File troppo grande. Dimensione massima: 10MB'
+            }, { status: 400 });
+          }
+          
+          try {
+            // Genera nome file univoco
+            const timestamp = Date.now();
+            const sanitizedFileName = attachmentFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+            const fileName = `leave_requests/${timestamp}_${sanitizedFileName}`;
+            
+            // Upload su Vercel Blob
+            const blob = await put(fileName, attachmentFile, {
+              access: 'public',
+              addRandomSuffix: false
+            });
+            
+            attachmentUrl = blob.url;
+          } catch (uploadError) {
+            console.error('Errore upload file:', uploadError);
+            return NextResponse.json({
+              error: 'Errore durante il caricamento del file'
+            }, { status: 500 });
+          }
+        }
+      }
+    } else {
+      // Richiesta JSON standard (senza file)
+      body = await request.json();
+      
+      // Controlla se deve eliminare l'allegato
+      if (body.delete_attachment === true) {
+        deleteAttachment = true;
+        attachmentUrl = null;
+      }
+    }
+
     const { start_date, end_date, leave_type, hours, notes } = body;
 
     // Validazione dei dati
@@ -78,6 +163,13 @@ export async function PUT(
     if (leave_type !== undefined) updateData.leave_type = leave_type;
     if (hours !== undefined) updateData.hours = hours;
     if (notes !== undefined) updateData.notes = notes;
+    
+    // Gestisci attachment_url: se deleteAttachment è true, passa null; se c'è un nuovo file, passa l'URL; altrimenti non modificare
+    if (deleteAttachment) {
+      updateData.attachment_url = null;
+    } else if (attachmentUrl !== undefined) {
+      updateData.attachment_url = attachmentUrl;
+    }
 
     const success = await updateLeaveRequest(id, updateData);
 

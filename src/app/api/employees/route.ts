@@ -64,24 +64,33 @@ export async function POST(request: NextRequest) {
     }
     
     // Prepara i dati del dipendente
-    const employeeData: Omit<Employee, 'id' | 'created_at' | 'updated_at'> = {
+    const employeeData: any = {
       nome: body.nome,
       cognome: body.cognome,
       email: body.email,
+      email_aziendale: body.email_aziendale || undefined,
       cellulare: body.cellulare || undefined,
       data_nascita: body.data_nascita || undefined,
-      codice_fiscale: body.codice_fiscale || undefined,
+      luogo_nascita: body.luogo_nascita || undefined,
+      codice_fiscale: body.cod_fiscale || body.codice_fiscale || undefined, // Supporta entrambi i nomi
+      cittadinanza: body.cittadinanza || undefined,
+      permesso_soggiorno: body.permesso_soggiorno || undefined,
+      titolo_studio: body.titolo_studio || undefined,
       indirizzo: body.indirizzo || undefined,
       citta: body.citta || undefined,
       cap: body.cap || undefined,
-      provincia: body.provincia || undefined,
+      cdc: body.cdc || undefined,
+      qualifica: body.qualifica || undefined,
+      tipo_contratto: body.tipo_contratto || undefined,
+      ccnl: body.ccnl || undefined,
+      livello: body.livello || undefined,
+      orario_lavoro: body.orario_lavoro || undefined,
       data_assunzione: body.data_assunzione || undefined,
-      contratto: body.contratto || undefined,
-      stipendio: body.stipendio || undefined,
-      ore_settimanali: body.ore_settimanali || undefined,
-      ferie_annuali: body.ferie_annuali || 26,
-      permessi_annuali: body.permessi_annuali || 32,
-      is_driver: body.is_driver || false,
+      data_dimissioni: body.data_dimissioni || undefined,
+      patente: body.patente || undefined,
+      foto_url: body.foto_url || undefined,
+      username_login: body.username_login || undefined,
+      is_driver: body.is_driver !== undefined ? body.is_driver : (body.qualifica?.toUpperCase().trim() === 'AUTISTA'),
       active: body.active !== undefined ? body.active : true,
       company_id: body.company_id || 1 // Default alla prima società se non specificato
     };

@@ -1,6 +1,61 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-## 📎 Caricamento Allegati Richieste Ferie - v2.35.4 ⭐ **NUOVO**
+## 🗑️ Rimozione Campi Patente Redondanti - v2.35.5 ⭐ **NUOVO**
+
+### 🎯 Rimozione Campi Non Utilizzati
+**Data implementazione**: Gennaio 2025  
+**Stato**: ✅ Completato e testato
+
+### 🛠️ Modifiche Implementate
+
+#### 🗑️ Campi Rimossi dalla Tabella `employees`
+- **`driver_license_number`** - Numero patente (rimosso)
+- **`driver_license_expiry`** - Scadenza patente (rimosso)
+
+#### 📊 Motivazione
+- I campi erano ridondanti rispetto al campo `patente` già presente
+- Le informazioni di patente sono gestite tramite la tabella `employee_documents` per maggiore flessibilità
+- Semplificazione schema database e riduzione duplicazione dati
+
+#### 🔧 Modifiche Database
+- **Colonne rimosse**: `driver_license_number`, `driver_license_expiry` dalla tabella `employees`
+- **Script SQL**: Eseguito automaticamente tramite endpoint API temporaneo
+- **Risultato**: ✅ Colonne rimosse con successo dal database
+
+#### 📝 Modifiche Codice
+
+##### Interfaccia TypeScript (`src/lib/db-employees.ts`)
+- Rimossi `driver_license_number` e `driver_license_expiry` dall'interfaccia `Employee`
+- Rimossi dalla query INSERT nella funzione `createEmployee`
+
+##### Form Nuovo Dipendente (`src/app/gestione/dipendenti/nuovo/page.tsx`)
+- Rimossi dall'interfaccia `FormData`
+- Rimossi dall'inizializzazione dello stato `formData`
+- Rimossi dal submit del form
+- Rimossi i campi HTML del form (Numero Patente e Scadenza Patente)
+
+##### API Route (`src/app/api/employees/route.ts`)
+- Rimossi dall'endpoint POST che crea nuovi dipendenti
+
+#### ✅ Benefici Operativi
+- ✅ **Schema semplificato**: Meno campi ridondanti nel database
+- ✅ **Manutenibilità**: Codice più pulito e coerente
+- ✅ **Coerenza dati**: Informazioni patente gestite tramite sistema documenti
+- ✅ **Riduzione complessità**: Meno campi da gestire nel form e nelle API
+
+#### 📁 File Modificati
+- `src/lib/db-employees.ts` - Rimossi campi dall'interfaccia e query INSERT
+- `src/app/gestione/dipendenti/nuovo/page.tsx` - Rimossi campi dal form
+- `src/app/api/employees/route.ts` - Rimossi campi dall'API POST
+- Database `employees` - Colonne rimosse dalla tabella
+
+#### 🧪 Test Completati
+- ✅ Rimozione colonne dal database completata
+- ✅ Form nuovo dipendente funziona senza i campi rimossi
+- ✅ Creazione dipendente senza errori
+- ✅ Nessun riferimento residuo ai campi nel codice
+
+## 📎 Caricamento Allegati Richieste Ferie - v2.35.4 ⭐ **PRECEDENTE**
 
 ### 🎯 Implementazione Caricamento File Allegati
 **Data implementazione**: Gennaio 2025  

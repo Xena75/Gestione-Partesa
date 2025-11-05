@@ -86,9 +86,22 @@ export async function POST(request: NextRequest) {
     const connection = await mysql.createConnection(dbConfig);
 
     try {
-      // Verifica se l'username esiste già
+      // Verifica se la colonna 'active' esiste, altrimenti la crea
+      const [columns] = await connection.execute(
+        "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'active'"
+      );
+      
+      if ((columns as any[]).length === 0) {
+        // Aggiungi la colonna active se non esiste
+        await connection.execute(
+          'ALTER TABLE users ADD COLUMN active TINYINT(1) DEFAULT 1 NOT NULL'
+        );
+        console.log('Colonna "active" aggiunta alla tabella users');
+      }
+
+      // Verifica se l'username esiste già (solo utenti attivi)
       const [existingUsers] = await connection.execute(
-        'SELECT id FROM users WHERE username = ?',
+        'SELECT id FROM users WHERE username = ? AND active = 1',
         [username.trim()]
       );
 
@@ -99,9 +112,9 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Verifica se l'email esiste già
+      // Verifica se l'email esiste già (solo utenti attivi)
       const [existingEmails] = await connection.execute(
-        'SELECT id FROM users WHERE email = ?',
+        'SELECT id FROM users WHERE email = ? AND active = 1',
         [email.trim()]
       );
 
@@ -116,9 +129,9 @@ export async function POST(request: NextRequest) {
       const saltRounds = 12;
       const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-      // Inserimento nuovo utente
+      // Inserimento nuovo utente (con active = 1 di default)
       const [result] = await connection.execute(
-        'INSERT INTO users (username, password_hash, email, role, created_at) VALUES (?, ?, ?, ?, NOW())',
+        'INSERT INTO users (username, password_hash, email, role, active, created_at) VALUES (?, ?, ?, ?, 1, NOW())',
         [username.trim(), hashedPassword, email.trim(), role]
       );
 
@@ -166,14 +179,37 @@ export async function GET(request: NextRequest) {
     const connection = await mysql.createConnection(dbConfig);
 
     try {
-      // Recupera tutti gli utenti (senza password)
-      const [users] = await connection.execute(
-        'SELECT id, username, email, role, created_at FROM users ORDER BY created_at DESC'
+      // Verifica se la colonna 'active' esiste, altrimenti la crea
+      const [columns] = await connection.execute(
+        "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'active'"
       );
+      
+      let hasActiveColumn = (columns as any[]).length > 0;
+      
+      if (!hasActiveColumn) {
+        // Aggiungi la colonna active se non esiste
+        await connection.execute(
+          'ALTER TABLE users ADD COLUMN active TINYINT(1) DEFAULT 1 NOT NULL'
+        );
+        console.log('Colonna "active" aggiunta alla tabella users');
+        hasActiveColumn = true;
+      }
+
+      // Recupera tutti gli utenti (senza password), includendo anche quelli disattivati
+      const query = hasActiveColumn 
+        ? 'SELECT id, username, email, role, active, created_at FROM users ORDER BY active DESC, created_at DESC'
+        : 'SELECT id, username, email, role, created_at FROM users ORDER BY created_at DESC';
+      
+      const [users] = await connection.execute(query);
+      
+      // Se il campo active non esiste, aggiungilo agli oggetti restituiti con valore 1 (attivo)
+      const usersWithActive = hasActiveColumn 
+        ? users 
+        : (users as any[]).map((user: any) => ({ ...user, active: 1 }));
 
       return NextResponse.json({
         success: true,
-        users: users
+        users: usersWithActive
       });
 
     } finally {
