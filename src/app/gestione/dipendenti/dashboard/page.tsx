@@ -480,27 +480,29 @@ export default function Dashboard() {
         {/* Nuove statistiche documenti */}
         <div className="row mb-4">
           <div className="col-xl-3 col-md-6 mb-4">
-            <div className="card border-left-primary shadow h-100 py-2">
-              <div className="card-body">
-                <div className="row no-gutters align-items-center">
-                  <div className="col mr-2">
-                    <div className="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                      Documenti Totali
+            <Link href="/gestione/dipendenti/documenti" className="text-decoration-none">
+              <div className="card border-left-primary shadow h-100 py-2" style={{ cursor: 'pointer' }}>
+                <div className="card-body">
+                  <div className="row no-gutters align-items-center">
+                    <div className="col mr-2">
+                      <div className="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                        Documenti Totali
+                      </div>
+                      <div className="h5 mb-0 font-weight-bold text-light">
+                        {documentStats.total}
+                      </div>
                     </div>
-                    <div className="h5 mb-0 font-weight-bold text-light">
-                      {documentStats.total}
+                    <div className="col-auto">
+                      <i className="fas fa-file-alt fa-2x text-gray-300"></i>
                     </div>
-                  </div>
-                  <div className="col-auto">
-                    <i className="fas fa-file-alt fa-2x text-gray-300"></i>
                   </div>
                 </div>
               </div>
-            </div>
+            </Link>
           </div>
 
           <div className="col-xl-3 col-md-6 mb-4">
-            <Link href="/gestione/dipendenti/documenti" className="text-decoration-none">
+            <Link href="/gestione/dipendenti/documenti?status=valid" className="text-decoration-none">
               <div className="card border-left-success shadow h-100 py-2" style={{ cursor: 'pointer' }}>
                 <div className="card-body">
                   <div className="row no-gutters align-items-center">

@@ -46,6 +46,15 @@ interface EmployeeDocument {
   uploaded_by: number | null;
   created_at: string;
   updated_at: string;
+  isMultiFile?: boolean;
+  fileCount?: number;
+  allFiles?: Array<{
+    id: number;
+    file_name: string;
+    file_path: string;
+    part: string;
+    created_at?: string;
+  }>;
 }
 
 const DOCUMENT_TYPES = [
@@ -754,6 +763,7 @@ export default function DocumentiAutista() {
                         <th className="text-light">Nome Documento</th>
                         <th className="text-light">Tipo</th>
                         <th className="text-light">File</th>
+                        <th className="text-light">Parte</th>
                         <th className="text-light">Scadenza</th>
                         <th className="text-light">Stato</th>
                         <th className="text-light">Caricato il</th>
@@ -762,98 +772,221 @@ export default function DocumentiAutista() {
                       </tr>
                     </thead>
                     <tbody>
-                      {documents.map((doc) => (
-                        <tr key={doc.id}>
-                          <td>
-                            <strong className="text-light">{doc.document_name}</strong>
-                          </td>
-                          <td>
-                            <span className="badge bg-secondary">
-                              {DOCUMENT_TYPES.find(t => t.value === doc.document_type)?.label || doc.document_type}
-                            </span>
-                          </td>
-                          <td>
-                            <div>
-                              <strong className="text-light">{doc.file_name}</strong>
-                              <br />
-                              <small className="text-secondary">
-                                {formatFileSize(doc.file_size)} • {doc.file_type}
-                              </small>
-                            </div>
-                          </td>
-                          <td>
-                            {doc.expiry_date ? (
-                              <div>
-                                <span className="text-light">{new Date(doc.expiry_date).toLocaleDateString('it-IT')}</span>
-                                <br />
-                                <small className="text-light">
-                                  {Math.ceil((new Date(doc.expiry_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} giorni
-                                </small>
-                              </div>
-                            ) : (
-                              <span className="text-secondary">-</span>
-                            )}
-                          </td>
-                          <td>{getDocumentStatusBadge(doc.status)}</td>
-                          <td>
-                            <div>
-                              <span className="text-light">{new Date(doc.created_at).toLocaleDateString('it-IT')}</span>
-                              <br />
-                              <small className="text-light">
-                                {new Date(doc.created_at).toLocaleTimeString('it-IT', { 
-                                  hour: '2-digit', 
-                                  minute: '2-digit' 
-                                })}
-                              </small>
-                            </div>
-                          </td>
-                          <td>
-                            {doc.notes ? (
-                              <span 
-                                className="text-truncate d-inline-block text-light" 
-                                style={{ maxWidth: '150px' }}
-                                title={doc.notes}
-                              >
-                                {doc.notes}
-                              </span>
-                            ) : (
-                              <span className="text-secondary">-</span>
-                            )}
-                          </td>
-                          <td>
-                            <div className="btn-group" role="group">
-                              <button 
-                                className="btn btn-sm btn-outline-primary"
-                                title="Visualizza"
-                                onClick={() => setPreviewDocument(doc)}
-                              >
-                                <i className="fas fa-eye"></i>
-                              </button>
-                              <button
-                                className="btn btn-sm btn-outline-info"
-                                title="Download"
-                                onClick={() => handleDownloadDocument(doc.file_path, doc.file_name)}
-                              >
-                                <i className="fas fa-download"></i>
-                              </button>
-                              <button 
-                                className="btn btn-sm btn-outline-warning"
-                                title="Modifica"
-                                onClick={() => handleEditDocument(doc)}
-                              >
-                                <i className="fas fa-edit"></i>
-                              </button>
-                              <button 
-                                className="btn btn-sm btn-outline-danger"
-                                title="Elimina"
-                                onClick={() => handleDeleteDocument(doc.id)}
-                              >
-                                <i className="fas fa-trash"></i>
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                      {documents.flatMap((doc) => {
+                        // Se il documento ha più file, mostra ogni file separatamente
+                        if (doc.isMultiFile && doc.allFiles && doc.allFiles.length > 1) {
+                          return doc.allFiles.map((file, index) => (
+                            <tr key={`${doc.id}-${file.id}`}>
+                              <td>
+                                <strong className="text-light">{doc.document_name}</strong>
+                                {index === 0 && (
+                                  <span className="badge bg-info ms-2">{doc.fileCount} file</span>
+                                )}
+                              </td>
+                              <td>
+                                <span className="badge bg-secondary">
+                                  {DOCUMENT_TYPES.find(t => t.value === doc.document_type)?.label || doc.document_type}
+                                </span>
+                              </td>
+                              <td>
+                                <div>
+                                  <strong className="text-light">{file.file_name}</strong>
+                                </div>
+                              </td>
+                              <td>
+                                <span className="badge bg-secondary">{file.part}</span>
+                              </td>
+                              <td>
+                                {doc.expiry_date ? (
+                                  <div>
+                                    <span className="text-light">{new Date(doc.expiry_date).toLocaleDateString('it-IT')}</span>
+                                    <br />
+                                    <small className="text-light">
+                                      {Math.ceil((new Date(doc.expiry_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} giorni
+                                    </small>
+                                  </div>
+                                ) : (
+                                  <span className="text-secondary">-</span>
+                                )}
+                              </td>
+                              <td>{getDocumentStatusBadge(doc.status)}</td>
+                              <td>
+                                <div>
+                                  <span className="text-light">
+                                    {file.created_at 
+                                      ? new Date(file.created_at).toLocaleDateString('it-IT')
+                                      : new Date(doc.created_at).toLocaleDateString('it-IT')
+                                    }
+                                  </span>
+                                  <br />
+                                  <small className="text-light">
+                                    {file.created_at
+                                      ? new Date(file.created_at).toLocaleTimeString('it-IT', { 
+                                          hour: '2-digit', 
+                                          minute: '2-digit' 
+                                        })
+                                      : new Date(doc.created_at).toLocaleTimeString('it-IT', { 
+                                          hour: '2-digit', 
+                                          minute: '2-digit' 
+                                        })
+                                    }
+                                  </small>
+                                </div>
+                              </td>
+                              <td>
+                                {doc.notes ? (
+                                  <span 
+                                    className="text-truncate d-inline-block text-light" 
+                                    style={{ maxWidth: '150px' }}
+                                    title={doc.notes}
+                                  >
+                                    {doc.notes}
+                                  </span>
+                                ) : (
+                                  <span className="text-secondary">-</span>
+                                )}
+                              </td>
+                              <td>
+                                <div className="btn-group" role="group">
+                                  <button 
+                                    className="btn btn-sm btn-outline-primary"
+                                    title="Visualizza"
+                                    onClick={() => setPreviewDocument({
+                                      ...doc,
+                                      file_path: file.file_path,
+                                      file_name: file.file_name
+                                    })}
+                                  >
+                                    <i className="fas fa-eye"></i>
+                                  </button>
+                                  <button
+                                    className="btn btn-sm btn-outline-info"
+                                    title="Download"
+                                    onClick={() => handleDownloadDocument(file.file_path, file.file_name)}
+                                  >
+                                    <i className="fas fa-download"></i>
+                                  </button>
+                                  <button 
+                                    className="btn btn-sm btn-outline-warning"
+                                    title="Modifica"
+                                    onClick={() => handleEditDocument({
+                                      ...doc,
+                                      file_path: file.file_path,
+                                      file_name: file.file_name
+                                    })}
+                                  >
+                                    <i className="fas fa-edit"></i>
+                                  </button>
+                                  <button 
+                                    className="btn btn-sm btn-outline-danger"
+                                    title="Elimina"
+                                    onClick={() => handleDeleteDocument(file.id)}
+                                  >
+                                    <i className="fas fa-trash"></i>
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ));
+                        } else {
+                          // Documento singolo
+                          return (
+                            <tr key={doc.id}>
+                              <td>
+                                <strong className="text-light">{doc.document_name}</strong>
+                              </td>
+                              <td>
+                                <span className="badge bg-secondary">
+                                  {DOCUMENT_TYPES.find(t => t.value === doc.document_type)?.label || doc.document_type}
+                                </span>
+                              </td>
+                              <td>
+                                <div>
+                                  <strong className="text-light">{doc.file_name}</strong>
+                                  <br />
+                                  <small className="text-secondary">
+                                    {formatFileSize(doc.file_size)} • {doc.file_type}
+                                  </small>
+                                </div>
+                              </td>
+                              <td>
+                                <span className="text-secondary">-</span>
+                              </td>
+                              <td>
+                                {doc.expiry_date ? (
+                                  <div>
+                                    <span className="text-light">{new Date(doc.expiry_date).toLocaleDateString('it-IT')}</span>
+                                    <br />
+                                    <small className="text-light">
+                                      {Math.ceil((new Date(doc.expiry_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} giorni
+                                    </small>
+                                  </div>
+                                ) : (
+                                  <span className="text-secondary">-</span>
+                                )}
+                              </td>
+                              <td>{getDocumentStatusBadge(doc.status)}</td>
+                              <td>
+                                <div>
+                                  <span className="text-light">{new Date(doc.created_at).toLocaleDateString('it-IT')}</span>
+                                  <br />
+                                  <small className="text-light">
+                                    {new Date(doc.created_at).toLocaleTimeString('it-IT', { 
+                                      hour: '2-digit', 
+                                      minute: '2-digit' 
+                                    })}
+                                  </small>
+                                </div>
+                              </td>
+                              <td>
+                                {doc.notes ? (
+                                  <span 
+                                    className="text-truncate d-inline-block text-light" 
+                                    style={{ maxWidth: '150px' }}
+                                    title={doc.notes}
+                                  >
+                                    {doc.notes}
+                                  </span>
+                                ) : (
+                                  <span className="text-secondary">-</span>
+                                )}
+                              </td>
+                              <td>
+                                <div className="btn-group" role="group">
+                                  <button 
+                                    className="btn btn-sm btn-outline-primary"
+                                    title="Visualizza"
+                                    onClick={() => setPreviewDocument(doc)}
+                                  >
+                                    <i className="fas fa-eye"></i>
+                                  </button>
+                                  <button
+                                    className="btn btn-sm btn-outline-info"
+                                    title="Download"
+                                    onClick={() => handleDownloadDocument(doc.file_path, doc.file_name)}
+                                  >
+                                    <i className="fas fa-download"></i>
+                                  </button>
+                                  <button 
+                                    className="btn btn-sm btn-outline-warning"
+                                    title="Modifica"
+                                    onClick={() => handleEditDocument(doc)}
+                                  >
+                                    <i className="fas fa-edit"></i>
+                                  </button>
+                                  <button 
+                                    className="btn btn-sm btn-outline-danger"
+                                    title="Elimina"
+                                    onClick={() => handleDeleteDocument(doc.id)}
+                                  >
+                                    <i className="fas fa-trash"></i>
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        }
+                      })}
                     </tbody>
                   </table>
                 </div>

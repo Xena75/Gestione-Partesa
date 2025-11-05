@@ -1,6 +1,56 @@
 # 🚚 Gestione Partesa - Funzionalità Aggiornate v2.36.0
 
-## 🚀 **VERSIONE 2.35.1** - Correzioni Modal Richieste Ferie Dashboard ⭐ **NUOVO**
+## 📎 **VERSIONE 2.35.4** - Caricamento Allegati Richieste Ferie ⭐ **NUOVO**
+
+### 🎯 **IMPLEMENTAZIONE CARICAMENTO FILE ALLEGATI**
+
+#### 📎 Campo Allegato nel Form Richieste Ferie
+- **Pagina**: `/gestione/employees/ferie`
+- **Funzionalità**: Possibilità di caricare un file allegato quando si crea una nuova richiesta ferie
+- **Campo database**: `attachment_url` nella tabella `employee_leave_requests`
+- **File modificato**: `src/app/gestione/employees/ferie/page.tsx`
+
+#### 🎨 Caratteristiche Implementate
+- **Input file**: Campo con validazione tipo file e dimensione
+- **Formati supportati**: PDF, JPG, PNG, WebP
+- **Dimensione massima**: 10MB
+- **Preview file**: Badge che mostra il nome del file selezionato
+- **Rimozione file**: Pulsante per rimuovere il file prima dell'invio
+- **Validazione frontend**: Controllo tipo file e dimensione prima dell'invio
+
+#### 🔧 Implementazione Tecnica
+- **Stato React**: `attachmentFile` per gestire il file selezionato
+- **Invio FormData**: Se presente file allegato, invio FormData invece di JSON
+- **API compatibile**: L'API già gestisce l'upload su Vercel Blob Storage
+- **Reset form**: File resettato dopo creazione richiesta o annullamento
+
+#### 📤 Flusso Upload
+1. Utente seleziona file tramite input file
+2. Validazione frontend (tipo e dimensione)
+3. Se validato, file aggiunto al FormData
+4. Invio FormData all'API `/api/employees/leave`
+5. API carica file su Vercel Blob Storage
+6. URL file salvato nel campo `attachment_url`
+
+#### ✅ Benefici Operativi
+- ✅ **Documentazione completa**: Possibilità di allegare moduli o documenti alle richieste
+- ✅ **Tracciabilità**: Collegamento diretto tra richiesta e documento allegato
+- ✅ **User-friendly**: Validazione frontend per feedback immediato
+- ✅ **Compatibilità**: Supporto multipli formati documenti comuni
+
+### 📁 File Modificati
+- `src/app/gestione/employees/ferie/page.tsx` - Aggiunto campo file input e gestione upload
+
+### 🧪 Test Completati
+- ✅ Upload file PDF funzionante
+- ✅ Upload file immagine funzionante
+- ✅ Validazione tipo file non supportato
+- ✅ Validazione dimensione file troppo grande
+- ✅ Reset file dopo creazione richiesta
+- ✅ Reset file dopo annullamento form
+- ✅ Visualizzazione allegato nelle richieste pendenti
+
+## 🚀 **VERSIONE 2.35.1** - Correzioni Modal Richieste Ferie Dashboard ⭐ **PRECEDENTE**
 
 ### 🔧 **CORREZIONI MODAL RICHIESTE FERIE DASHBOARD**
 - **Problema risolto**: Eliminati errori "Invalid Date" nel modal richieste ferie della dashboard
