@@ -1135,7 +1135,7 @@ export async function updateLeaveRequest(
 ): Promise<boolean> {
   const connection = await getConnection();
   try {
-    // Verifica che la richiesta esista e sia in stato pending
+    // Verifica che la richiesta esista
     const [existingRows] = await connection.execute(
       'SELECT status FROM employee_leave_requests WHERE id = ?',
       [id]
@@ -1146,9 +1146,7 @@ export async function updateLeaveRequest(
       throw new Error('Richiesta di ferie non trovata');
     }
     
-    if (existing[0].status !== 'pending') {
-      throw new Error('È possibile modificare solo le richieste in stato pending');
-    }
+    // Permettiamo la modifica di tutte le richieste, indipendentemente dallo stato
 
     // Costruisci la query di aggiornamento dinamicamente
     const updateFields: string[] = [];

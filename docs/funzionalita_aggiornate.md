@@ -1,6 +1,86 @@
-# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.35.5
+# 🚚 Gestione Partesa - Funzionalità Aggiornate v2.35.6
 
-## 🗑️ **VERSIONE 2.35.5** - Rimozione Campi Patente Redondanti ⭐ **NUOVO**
+## ✏️ **VERSIONE 2.35.6** - Modifica Selettiva Richieste Ferie ⭐ **NUOVO**
+
+### 🎯 **MODIFICA PARZIALE DEI CAMPI**
+
+#### ✏️ Modal di Modifica Migliorato
+- **Pagina**: `/gestione/employees/ferie`
+- **Funzionalità**: Possibilità di modificare solo i campi necessari senza dover reinserire tutti i dati
+- **File**: `src/app/gestione/employees/ferie/page.tsx`, `src/app/api/employees/leave/[id]/route.ts`, `src/lib/db-employees.ts`
+
+#### 🎨 Caratteristiche Implementate
+- **Modifica selettiva**: Solo i campi modificati vengono inviati al backend
+- **Confronto intelligente**: Confronto automatico tra valori originali e modificati
+- **Modifica allegato**: Possibilità di aggiungere, modificare o eliminare solo l'allegato
+- **Modifica tipo**: Possibilità di modificare solo il tipo di richiesta
+- **Modifica date**: Possibilità di modificare solo le date senza toccare altri campi
+- **Modifica note**: Possibilità di modificare solo le note
+- **Validazione**: Validazione solo sui campi modificati
+- **Messaggio informativo**: Avviso se non ci sono modifiche da salvare
+
+#### 🔧 Implementazione Tecnica
+
+##### Frontend (`src/app/gestione/employees/ferie/page.tsx`)
+- **Stato `originalRequestData`**: Salva i valori originali della richiesta quando si apre il modal
+- **Confronto campi**: Confronta automaticamente i valori del form con quelli originali
+- **Invio selettivo**: Invia solo i campi che sono stati effettivamente modificati
+- **Gestione date**: Normalizzazione automatica delle date per il confronto (DD/MM/YYYY ↔ YYYY-MM-DD)
+- **Gestione ore**: Confronto numerico per le ore dei permessi
+
+##### Backend (`src/app/api/employees/leave/[id]/route.ts`)
+- **Gestione FormData**: Estrae solo i campi presenti nel FormData (non null)
+- **Gestione JSON**: Gestisce correttamente i campi opzionali nelle richieste JSON
+- **Validazione condizionale**: Valida solo i campi che vengono effettivamente inviati
+- **Prevenzione errori**: Evita errori "Column cannot be null" quando i campi non vengono inviati
+
+##### Database (`src/lib/db-employees.ts`)
+- **Rimozione vincolo stato**: Rimosso il vincolo che impediva la modifica delle richieste non in stato "pending"
+- **Aggiornamento parziale**: La funzione `updateLeaveRequest` aggiorna solo i campi forniti
+
+#### 📋 Esempi d'Uso
+
+##### Esempio 1: Modifica Solo Allegato
+1. Apri il modal di modifica di una richiesta
+2. Carica un nuovo allegato o elimina quello esistente
+3. Clicca "Salva Modifiche"
+4. **Risultato**: Solo l'allegato viene aggiornato, tutti gli altri campi restano invariati
+
+##### Esempio 2: Modifica Solo Tipo
+1. Apri il modal di modifica di una richiesta
+2. Cambia il tipo di richiesta (es. da "ferie" a "permesso")
+3. Clicca "Salva Modifiche"
+4. **Risultato**: Solo il tipo viene aggiornato, date, note e allegato restano invariati
+
+##### Esempio 3: Modifica Solo Date
+1. Apri il modal di modifica di una richiesta
+2. Modifica solo le date di inizio e fine
+3. Clicca "Salva Modifiche"
+4. **Risultato**: Solo le date vengono aggiornate, tipo, note e allegato restano invariati
+
+#### ✅ Benefici Operativi
+- ✅ **Efficienza**: Non serve reinserire tutti i dati per modifiche minori
+- ✅ **Velocità**: Operazioni più rapide per modifiche parziali
+- ✅ **Sicurezza**: Riduce il rischio di errori accidentali su campi non modificati
+- ✅ **Flessibilità**: Permette modifiche anche su richieste già approvate o rifiutate
+- ✅ **User-friendly**: Interfaccia più intuitiva e meno frustrante
+
+#### 📁 File Modificati
+- `src/app/gestione/employees/ferie/page.tsx` - Aggiunto confronto campi e invio selettivo
+- `src/app/api/employees/leave/[id]/route.ts` - Gestione corretta campi opzionali nel FormData
+- `src/lib/db-employees.ts` - Rimosso vincolo stato "pending" per le modifiche
+
+#### 🧪 Test Completati
+- ✅ Modifica solo allegato funzionante
+- ✅ Modifica solo tipo funzionante
+- ✅ Modifica solo date funzionante
+- ✅ Modifica solo note funzionante
+- ✅ Modifica combinata di più campi funzionante
+- ✅ Nessun errore "Column cannot be null"
+- ✅ Modifica richieste non pending funzionante
+- ✅ Validazione solo sui campi modificati
+
+## 🗑️ **VERSIONE 2.35.5** - Rimozione Campi Patente Redondanti
 
 ### 🎯 **RIMOZIONE CAMPI NON UTILIZZATI**
 

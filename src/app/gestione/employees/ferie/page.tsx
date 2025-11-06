@@ -160,6 +160,7 @@ function GestioneFerieContent() {
   // Stati per modifica e eliminazione richieste
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingRequest, setEditingRequest] = useState<LeaveRequest | null>(null);
+  const [originalRequestData, setOriginalRequestData] = useState<LeaveRequest | null>(null); // Valori originali per confronto
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingRequestId, setDeletingRequestId] = useState<number | null>(null);
   const [editFormData, setEditFormData] = useState({
@@ -342,9 +343,29 @@ function GestioneFerieContent() {
   // Funzioni per gestire modifica e eliminazione richieste
   const handleEditRequest = (request: LeaveRequest) => {
     setEditingRequest(request);
+    // Salva i valori originali per il confronto
+    setOriginalRequestData({ ...request });
+    
+    // Normalizza le date per il form (converti da DD/MM/YYYY a YYYY-MM-DD se necessario)
+    const normalizeDateForForm = (dateStr: string): string => {
+      if (!dateStr) return '';
+      // Se è già in formato YYYY-MM-DD, usalo direttamente
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        return dateStr;
+      }
+      // Se è in formato DD/MM/YYYY, convertilo
+      if (dateStr.includes('/')) {
+        const parts = dateStr.split('/');
+        if (parts.length === 3) {
+          return `${parts[2]}-${parts[1]}-${parts[0]}`; // DD/MM/YYYY -> YYYY-MM-DD
+        }
+      }
+      return dateStr;
+    };
+    
     setEditFormData({
-      start_date: request.start_date,
-      end_date: request.end_date,
+      start_date: normalizeDateForForm(request.start_date),
+      end_date: normalizeDateForForm(request.end_date),
       leave_type: request.leave_type,
       hours: request.hours_requested?.toString() || '',
       notes: request.notes || ''
@@ -390,52 +411,133 @@ function GestioneFerieContent() {
 
   const handleEditFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingRequest) return;
+    if (!editingRequest || !originalRequestData) return;
 
     try {
-      // Validazione frontend
-      if (!editFormData.start_date || !editFormData.end_date) {
-        alert('Le date di inizio e fine sono obbligatorie');
-        return;
+      // Confronta i valori del form con quelli originali per inviare solo i campi modificati
+      const updateData: any = {};
+      
+      // Normalizza le date originali per il confronto (converti da DD/MM/YYYY a YYYY-MM-DD se necessario)
+      const normalizeDate = (dateStr: string): string => {
+        if (!dateStr) return '';
+        if (dateStr.includes('/')) {
+          const parts = dateStr.split('/');
+          if (parts.length === 3) {
+            return `${parts[2]}-${parts[1]}-${parts[0]}`; // DD/MM/YYYY -> YYYY-MM-DD
+          }
+        }
+        return dateStr; // Già in formato YYYY-MM-DD
+      };
+      
+      const originalStartDate = normalizeDate(originalRequestData.start_date);
+      const originalEndDate = normalizeDate(originalRequestData.end_date);
+      const originalHours = originalRequestData.hours_requested?.toString() || '';
+      const originalNotes = originalRequestData.notes || '';
+      const originalLeaveType = originalRequestData.leave_type;
+
+      // Confronta e aggiungi solo i campi modificati
+      if (editFormData.start_date !== originalStartDate) {
+        updateData.start_date = editFormData.start_date;
       }
 
-      if (editFormData.leave_type === 'permesso' && (!editFormData.hours || parseFloat(editFormData.hours) <= 0)) {
+      if (editFormData.end_date !== originalEndDate) {
+        updateData.end_date = editFormData.end_date;
+      }
+
+      if (editFormData.leave_type !== originalLeaveType) {
+        updateData.leave_type = editFormData.leave_type;
+      }
+
+      // Per le ore, confronta come numero
+      const currentHours = editFormData.hours || '';
+      const originalHoursNum = originalRequestData.hours_requested || 0;
+      const currentHoursNum = currentHours ? parseFloat(currentHours) : 0;
+      
+      if (currentHoursNum !== originalHoursNum) {
+        // Se il tipo è permesso e ci sono ore, aggiungi le ore
+        if (editFormData.leave_type === 'permesso' && currentHours) {
+          updateData.hours = currentHoursNum;
+        } else if (originalRequestData.leave_type === 'permesso' && !currentHours) {
+          // Se era un permesso e ora non ci sono più ore, azzera
+          updateData.hours = 0;
+        }
+      }
+
+      if (editFormData.notes !== originalNotes) {
+        updateData.notes = editFormData.notes;
+      }
+
+      // Gestisci l'allegato: se è stato aggiunto, eliminato o modificato
+      if (deleteEditAttachment) {
+        updateData.attachment_url = null;
+      } else if (editAttachmentFile) {
+        // Validazione file
+        const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        if (!allowedTypes.includes(editAttachmentFile.type)) {
+          alert('Tipo file non supportato. Formati accettati: PDF, JPG, PNG, WebP');
+          return;
+        }
+        
+        if (editAttachmentFile.size > 10 * 1024 * 1024) {
+          alert('File troppo grande. Dimensione massima: 10MB');
+          return;
+        }
+        
+        // Il file verrà gestito nel FormData
+      }
+
+      // Validazione: se sono stati modificati start_date o end_date, validali
+      if (updateData.start_date || updateData.end_date) {
+        const startDate = updateData.start_date || editFormData.start_date;
+        const endDate = updateData.end_date || editFormData.end_date;
+        
+        if (!startDate || !endDate) {
+          alert('Le date di inizio e fine sono obbligatorie');
+          return;
+        }
+
+        if (new Date(startDate) > new Date(endDate)) {
+          alert('La data di inizio non può essere successiva alla data di fine');
+          return;
+        }
+      }
+
+      // Validazione: se è stato modificato il tipo a permesso, verifica le ore
+      if (updateData.leave_type === 'permesso' && (!updateData.hours && !editFormData.hours)) {
         alert('Per i permessi è necessario specificare le ore');
         return;
       }
 
-      if (new Date(editFormData.start_date) > new Date(editFormData.end_date)) {
-        alert('La data di inizio non può essere successiva alla data di fine');
+      // Se non ci sono modifiche e non c'è un nuovo file o eliminazione allegato
+      if (Object.keys(updateData).length === 0 && !editAttachmentFile && !deleteEditAttachment) {
+        alert('Nessuna modifica da salvare');
         return;
       }
 
       // Se c'è un file allegato o se deve eliminare l'allegato, usa FormData
       if (editAttachmentFile || deleteEditAttachment) {
         const formData = new FormData();
-        formData.append('start_date', editFormData.start_date);
-        formData.append('end_date', editFormData.end_date);
-        formData.append('leave_type', editFormData.leave_type);
-        formData.append('notes', editFormData.notes || '');
         
-        if (editFormData.leave_type === 'permesso' && editFormData.hours) {
-          formData.append('hours', editFormData.hours);
+        // Aggiungi solo i campi modificati
+        if (updateData.start_date !== undefined) {
+          formData.append('start_date', updateData.start_date);
+        }
+        if (updateData.end_date !== undefined) {
+          formData.append('end_date', updateData.end_date);
+        }
+        if (updateData.leave_type !== undefined) {
+          formData.append('leave_type', updateData.leave_type);
+        }
+        if (updateData.hours !== undefined) {
+          formData.append('hours', updateData.hours.toString());
+        }
+        if (updateData.notes !== undefined) {
+          formData.append('notes', updateData.notes);
         }
         
         if (deleteEditAttachment) {
           formData.append('delete_attachment', 'true');
         } else if (editAttachmentFile) {
-          // Validazione file
-          const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-          if (!allowedTypes.includes(editAttachmentFile.type)) {
-            alert('Tipo file non supportato. Formati accettati: PDF, JPG, PNG, WebP');
-            return;
-          }
-          
-          if (editAttachmentFile.size > 10 * 1024 * 1024) {
-            alert('File troppo grande. Dimensione massima: 10MB');
-            return;
-          }
-          
           formData.append('attachment', editAttachmentFile);
         }
 
@@ -456,22 +558,12 @@ function GestioneFerieContent() {
           alert('Richiesta aggiornata con successo!');
           setShowEditModal(false);
           setEditingRequest(null);
+          setOriginalRequestData(null);
           setEditAttachmentFile(null);
           setDeleteEditAttachment(false);
         }
       } else {
-        // Nessun file, usa JSON standard
-        const updateData: any = {
-          start_date: editFormData.start_date,
-          end_date: editFormData.end_date,
-          leave_type: editFormData.leave_type,
-          notes: editFormData.notes
-        };
-
-        if (editFormData.leave_type === 'permesso' && editFormData.hours) {
-          updateData.hours = parseFloat(editFormData.hours);
-        }
-
+        // Nessun file, usa JSON standard con solo i campi modificati
         const response = await fetch(`/api/employees/leave/${editingRequest.id}`, {
           method: 'PUT',
           headers: {
@@ -491,6 +583,7 @@ function GestioneFerieContent() {
           alert('Richiesta aggiornata con successo!');
           setShowEditModal(false);
           setEditingRequest(null);
+          setOriginalRequestData(null);
         }
       }
 
@@ -2012,6 +2105,8 @@ function GestioneFerieContent() {
                         className="btn btn-secondary"
                         onClick={() => {
                           setShowEditModal(false);
+                          setEditingRequest(null);
+                          setOriginalRequestData(null);
                           setEditAttachmentFile(null);
                           setDeleteEditAttachment(false);
                           setShowNewLeaveTypeInput(false);

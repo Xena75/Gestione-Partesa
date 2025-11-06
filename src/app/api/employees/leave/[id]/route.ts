@@ -28,14 +28,31 @@ export async function PUT(
       // Richiesta con FormData (include file)
       const formData = await request.formData();
       
-      // Estrai i dati del form
-      body = {
-        start_date: formData.get('start_date') as string,
-        end_date: formData.get('end_date') as string,
-        leave_type: formData.get('leave_type') as string,
-        hours: formData.get('hours') ? parseFloat(formData.get('hours') as string) : undefined,
-        notes: formData.get('notes') as string
-      };
+      // Estrai i dati del form - solo se presenti (non null)
+      body = {};
+      const startDateValue = formData.get('start_date');
+      const endDateValue = formData.get('end_date');
+      const leaveTypeValue = formData.get('leave_type');
+      const hoursValue = formData.get('hours');
+      const notesValue = formData.get('notes');
+      
+      // Per i campi obbligatori (date, tipo), aggiungili solo se presenti e non vuoti
+      if (startDateValue !== null && startDateValue !== '') {
+        body.start_date = startDateValue as string;
+      }
+      if (endDateValue !== null && endDateValue !== '') {
+        body.end_date = endDateValue as string;
+      }
+      if (leaveTypeValue !== null && leaveTypeValue !== '') {
+        body.leave_type = leaveTypeValue as string;
+      }
+      if (hoursValue !== null && hoursValue !== '') {
+        body.hours = parseFloat(hoursValue as string);
+      }
+      // Per le note, aggiungile anche se sono stringa vuota (per permettere di cancellarle)
+      if (notesValue !== null) {
+        body.notes = notesValue as string;
+      }
       
       // Controlla se deve eliminare l'allegato
       const deleteAttachmentFlag = formData.get('delete_attachment');
@@ -158,11 +175,12 @@ export async function PUT(
     }
 
     const updateData: any = {};
-    if (start_date !== undefined) updateData.start_date = start_date;
-    if (end_date !== undefined) updateData.end_date = end_date;
-    if (leave_type !== undefined) updateData.leave_type = leave_type;
-    if (hours !== undefined) updateData.hours = hours;
-    if (notes !== undefined) updateData.notes = notes;
+    // Aggiungi solo i campi che sono stati effettivamente inviati (non null/undefined)
+    if (start_date !== undefined && start_date !== null) updateData.start_date = start_date;
+    if (end_date !== undefined && end_date !== null) updateData.end_date = end_date;
+    if (leave_type !== undefined && leave_type !== null) updateData.leave_type = leave_type;
+    if (hours !== undefined && hours !== null) updateData.hours = hours;
+    if (notes !== undefined && notes !== null) updateData.notes = notes;
     
     // Gestisci attachment_url: se deleteAttachment è true, passa null; se c'è un nuovo file, passa l'URL; altrimenti non modificare
     if (deleteAttachment) {
