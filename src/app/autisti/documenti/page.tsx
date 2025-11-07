@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, CSSProperties } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { FileText, Upload, AlertTriangle, Calendar, Download, Eye, Plus, X } from 'lucide-react';
 import { formatDateItalian, formatDateInput, handleDateInputChange, convertItalianToISO, isValidItalianDate } from '@/lib/date-utils';
@@ -493,7 +493,7 @@ export default function AutistiDocumentiPage() {
     return '';
   };
 
-  const getDocumentTypeBadgeStyle = () => {
+  const getDocumentTypeBadgeStyle = (): CSSProperties => {
     return { 
       backgroundColor: '#ff9800', 
       color: '#000000',
@@ -501,11 +501,11 @@ export default function AutistiDocumentiPage() {
       fontSize: '0.875em',
       fontWeight: '700',
       lineHeight: '1',
-      textAlign: 'center',
-      whiteSpace: 'nowrap',
-      verticalAlign: 'baseline',
+      textAlign: 'center' as const,
+      whiteSpace: 'nowrap' as const,
+      verticalAlign: 'baseline' as const,
       borderRadius: '0.375rem',
-      display: 'inline-block'
+      display: 'inline-block' as const
     };
   };
 
