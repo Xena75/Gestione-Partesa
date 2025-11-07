@@ -24,13 +24,15 @@ interface Employee {
   luogo_nascita?: string;
   data_nascita?: string;
   cittadinanza?: string;
+  permesso_soggiorno?: string;
   titolo_studio?: string;
   tipo_contratto?: string;
   ccnl?: string;
   livello?: string;
   orario_lavoro?: string;
   data_assunzione?: string;
-  is_driver: number;
+  data_dimissioni?: string;
+  is_driver: number | boolean;
   patente?: string;
   profile_image?: string;
   foto_url?: string;
@@ -70,6 +72,37 @@ export default function ModificaDipendente() {
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
 
+  // Stati per dropdown dinamici
+  const [qualifiche, setQualifiche] = useState<string[]>([]);
+  const [showNewQualificaInput, setShowNewQualificaInput] = useState(false);
+  const [newQualifica, setNewQualifica] = useState('');
+  const [cdc, setCdc] = useState<string[]>([]);
+  const [showNewCdcInput, setShowNewCdcInput] = useState(false);
+  const [newCdc, setNewCdc] = useState('');
+  const [citta, setCitta] = useState<string[]>([]);
+  const [showNewCittaInput, setShowNewCittaInput] = useState(false);
+  const [newCitta, setNewCitta] = useState('');
+  const [tipoContratto, setTipoContratto] = useState<string[]>([]);
+  const [showNewTipoContrattoInput, setShowNewTipoContrattoInput] = useState(false);
+  const [newTipoContratto, setNewTipoContratto] = useState('');
+  const [ccnl, setCcnl] = useState<string[]>([]);
+  const [showNewCcnlInput, setShowNewCcnlInput] = useState(false);
+  const [newCcnl, setNewCcnl] = useState('');
+  const [livello, setLivello] = useState<string[]>([]);
+  const [showNewLivelloInput, setShowNewLivelloInput] = useState(false);
+  const [newLivello, setNewLivello] = useState('');
+  const [showNewCompanyInput, setShowNewCompanyInput] = useState(false);
+  const [newCompanyName, setNewCompanyName] = useState('');
+  const [orarioLavoro, setOrarioLavoro] = useState<string[]>([]);
+  const [showNewOrarioLavoroInput, setShowNewOrarioLavoroInput] = useState(false);
+  const [newOrarioLavoro, setNewOrarioLavoro] = useState('');
+  const [cittadinanza, setCittadinanza] = useState<string[]>([]);
+  const [showNewCittadinanzaInput, setShowNewCittadinanzaInput] = useState(false);
+  const [newCittadinanza, setNewCittadinanza] = useState('');
+  const [patente, setPatente] = useState<string[]>([]);
+  const [showNewPatenteInput, setShowNewPatenteInput] = useState(false);
+  const [newPatente, setNewPatente] = useState('');
+
   // Carica i dati del dipendente
   useEffect(() => {
     const fetchEmployee = async () => {
@@ -87,7 +120,9 @@ export default function ModificaDipendente() {
           const formattedData = {
             ...employeeData,
             data_nascita: formatDateToItalian(employeeData.data_nascita),
-            data_assunzione: formatDateToItalian(employeeData.data_assunzione)
+            data_assunzione: formatDateToItalian(employeeData.data_assunzione),
+            data_dimissioni: employeeData.data_dimissioni ? formatDateToItalian(employeeData.data_dimissioni) : '',
+            is_driver: employeeData.is_driver === 1 || employeeData.is_driver === true
           };
           
           setFormData(formattedData);
@@ -115,13 +150,130 @@ export default function ModificaDipendente() {
           throw new Error('Errore nel caricamento delle società');
         }
         const data = await response.json();
-        setCompanies(data);
+        setCompanies(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error('Errore nel caricamento delle società:', err);
       }
     };
 
+    const fetchQualifiche = async () => {
+      try {
+        const response = await fetch('/api/employees/qualifiche');
+        if (response.ok) {
+          const data = await response.json();
+          setQualifiche(data.success ? data.data : []);
+        }
+      } catch (error) {
+        console.error('Errore caricamento qualifiche:', error);
+      }
+    };
+
+    const fetchCdc = async () => {
+      try {
+        const response = await fetch('/api/employees/cdc');
+        if (response.ok) {
+          const data = await response.json();
+          setCdc(data.success ? data.data : []);
+        }
+      } catch (error) {
+        console.error('Errore caricamento CDC:', error);
+      }
+    };
+
+    const fetchCitta = async () => {
+      try {
+        const response = await fetch('/api/employees/citta');
+        if (response.ok) {
+          const data = await response.json();
+          setCitta(data.success ? data.data : []);
+        }
+      } catch (error) {
+        console.error('Errore caricamento città:', error);
+      }
+    };
+
+    const fetchTipoContratto = async () => {
+      try {
+        const response = await fetch('/api/employees/tipo-contratto');
+        if (response.ok) {
+          const data = await response.json();
+          setTipoContratto(data.success ? data.data : []);
+        }
+      } catch (error) {
+        console.error('Errore caricamento tipo contratto:', error);
+      }
+    };
+
+    const fetchCcnl = async () => {
+      try {
+        const response = await fetch('/api/employees/ccnl');
+        if (response.ok) {
+          const data = await response.json();
+          setCcnl(data.success ? data.data : []);
+        }
+      } catch (error) {
+        console.error('Errore caricamento CCNL:', error);
+      }
+    };
+
+    const fetchLivello = async () => {
+      try {
+        const response = await fetch('/api/employees/livello');
+        if (response.ok) {
+          const data = await response.json();
+          setLivello(data.success ? data.data : []);
+        }
+      } catch (error) {
+        console.error('Errore caricamento livello:', error);
+      }
+    };
+
+    const fetchOrarioLavoro = async () => {
+      try {
+        const response = await fetch('/api/employees/orario-lavoro');
+        if (response.ok) {
+          const data = await response.json();
+          setOrarioLavoro(data.success ? data.data : []);
+        }
+      } catch (error) {
+        console.error('Errore caricamento orario di lavoro:', error);
+      }
+    };
+
+    const fetchCittadinanza = async () => {
+      try {
+        const response = await fetch('/api/employees/cittadinanza');
+        if (response.ok) {
+          const data = await response.json();
+          setCittadinanza(data.success ? data.data : []);
+        }
+      } catch (error) {
+        console.error('Errore caricamento cittadinanza:', error);
+      }
+    };
+
+    const fetchPatente = async () => {
+      try {
+        const response = await fetch('/api/employees/patente');
+        if (response.ok) {
+          const data = await response.json();
+          setPatente(data.success ? data.data : []);
+        }
+      } catch (error) {
+        console.error('Errore caricamento tipi patente:', error);
+      }
+    };
+
     fetchCompanies();
+    fetchQualifiche();
+    fetchCdc();
+    fetchCitta();
+    fetchTipoContratto();
+    fetchCcnl();
+    fetchLivello();
+    fetchOrarioLavoro();
+    fetchCittadinanza();
+    fetchPatente();
   }, []);
 
   // Carica gli utenti disponibili
@@ -153,12 +305,26 @@ export default function ModificaDipendente() {
   }, [employeeId]);
 
   // Gestisce i cambiamenti nei campi del form
-  const handleInputChange = (field: keyof Employee, value: string) => {
+  const handleInputChange = (field: keyof Employee, value: string | number | boolean) => {
     let processedValue: any = value;
     
     // Converte company_id in numero
     if (field === 'company_id') {
-      processedValue = value ? parseInt(value, 10) : undefined;
+      processedValue = value ? parseInt(String(value), 10) : undefined;
+    }
+    
+    // Se cambia qualifica, aggiorna is_driver automaticamente
+    if (field === 'qualifica') {
+      const qualificaValue = String(value).toUpperCase().trim();
+      if (qualificaValue === 'AUTISTA') {
+        processedValue = value;
+        setFormData(prev => ({
+          ...prev,
+          [field]: processedValue,
+          is_driver: true
+        }));
+        return;
+      }
     }
     
     setFormData(prev => ({
@@ -235,7 +401,9 @@ export default function ModificaDipendente() {
       const dataToSave = {
         ...formDataWithoutCompanyName,
         data_nascita: (formData.data_nascita && formData.data_nascita !== '-') ? formatDateToDatabase(formData.data_nascita) : null,
-        data_assunzione: (formData.data_assunzione && formData.data_assunzione !== '-') ? formatDateToDatabase(formData.data_assunzione) : null
+        data_assunzione: (formData.data_assunzione && formData.data_assunzione !== '-') ? formatDateToDatabase(formData.data_assunzione) : null,
+        data_dimissioni: (formData.data_dimissioni && formData.data_dimissioni !== '-') ? formatDateToDatabase(formData.data_dimissioni) : null,
+        is_driver: formData.is_driver === true || formData.is_driver === 1 ? 1 : 0
       };
 
       // Log dei dati che vengono inviati per debug
@@ -471,12 +639,91 @@ export default function ModificaDipendente() {
                   </div>
                   <div className="col-md-6 mb-3">
                     <label className="form-label text-light">Cittadinanza</label>
+                    {!showNewCittadinanzaInput ? (
+                      <>
+                        <select
+                          className="form-select bg-dark text-light border-secondary"
+                          value={formData.cittadinanza || ''}
+                          onChange={(e) => {
+                            if (e.target.value === '__new__') {
+                              setShowNewCittadinanzaInput(true);
+                            } else {
+                              handleInputChange('cittadinanza', e.target.value);
+                            }
+                          }}
+                        >
+                          <option value="">Seleziona cittadinanza</option>
+                          {cittadinanza.map((citt) => (
+                            <option key={citt} value={citt}>
+                              {citt}
+                            </option>
+                          ))}
+                          <option value="__new__">➕ Aggiungi nuova cittadinanza...</option>
+                        </select>
+                      </>
+                    ) : (
+                      <div className="d-flex gap-2">
+                        <input
+                          type="text"
+                          className="form-control bg-dark text-light border-secondary"
+                          value={newCittadinanza}
+                          onChange={(e) => setNewCittadinanza(e.target.value)}
+                          placeholder="Inserisci la cittadinanza"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (newCittadinanza.trim()) {
+                                handleInputChange('cittadinanza', newCittadinanza.trim());
+                                setShowNewCittadinanzaInput(false);
+                                setNewCittadinanza('');
+                                if (!cittadinanza.includes(newCittadinanza.trim())) {
+                                  setCittadinanza([...cittadinanza, newCittadinanza.trim()].sort());
+                                }
+                              }
+                            } else if (e.key === 'Escape') {
+                              setShowNewCittadinanzaInput(false);
+                              setNewCittadinanza('');
+                            }
+                          }}
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-success"
+                          onClick={() => {
+                            if (newCittadinanza.trim()) {
+                              handleInputChange('cittadinanza', newCittadinanza.trim());
+                              setShowNewCittadinanzaInput(false);
+                              setNewCittadinanza('');
+                              if (!cittadinanza.includes(newCittadinanza.trim())) {
+                                setCittadinanza([...cittadinanza, newCittadinanza.trim()].sort());
+                              }
+                            }
+                          }}
+                        >
+                          <i className="fas fa-check"></i>
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          onClick={() => {
+                            setShowNewCittadinanzaInput(false);
+                            setNewCittadinanza('');
+                          }}
+                        >
+                          <i className="fas fa-times"></i>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label text-light">Permesso di Soggiorno</label>
                     <input
                       type="text"
                       className="form-control bg-dark text-light border-secondary"
-                      value={formData.cittadinanza || ''}
-                      onChange={(e) => handleInputChange('cittadinanza', e.target.value)}
-                      placeholder="Inserisci la cittadinanza"
+                      value={formData.permesso_soggiorno || ''}
+                      onChange={(e) => handleInputChange('permesso_soggiorno', e.target.value)}
+                      placeholder="Inserisci il permesso di soggiorno"
                     />
                   </div>
                   <div className="col-md-6 mb-3">
@@ -491,13 +738,94 @@ export default function ModificaDipendente() {
                   </div>
                   <div className="col-md-6 mb-3">
                     <label className="form-label text-light">Qualifica</label>
-                    <input
-                      type="text"
-                      className="form-control bg-dark text-light border-secondary"
-                      value={formData.qualifica || ''}
-                      onChange={(e) => handleInputChange('qualifica', e.target.value)}
-                      placeholder="Inserisci la qualifica"
-                    />
+                    {!showNewQualificaInput ? (
+                      <>
+                        <select
+                          className="form-select bg-dark text-light border-secondary"
+                          value={formData.qualifica || ''}
+                          onChange={(e) => {
+                            if (e.target.value === '__new__') {
+                              setShowNewQualificaInput(true);
+                            } else {
+                              handleInputChange('qualifica', e.target.value);
+                            }
+                          }}
+                        >
+                          <option value="">Seleziona qualifica</option>
+                          {qualifiche.map((qualifica) => (
+                            <option key={qualifica} value={qualifica}>
+                              {qualifica}
+                            </option>
+                          ))}
+                          <option value="__new__">➕ Aggiungi nuova qualifica...</option>
+                        </select>
+                        {formData.qualifica?.toUpperCase().trim() === 'AUTISTA' && (
+                          <small className="text-muted d-block mt-1">
+                            <i className="fas fa-info-circle me-1"></i>
+                            Il campo Autista verrà impostato automaticamente
+                          </small>
+                        )}
+                      </>
+                    ) : (
+                      <div className="d-flex gap-2">
+                        <input
+                          type="text"
+                          className="form-control bg-dark text-light border-secondary"
+                          value={newQualifica}
+                          onChange={(e) => setNewQualifica(e.target.value)}
+                          placeholder="Inserisci nuova qualifica"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (newQualifica.trim()) {
+                                handleInputChange('qualifica', newQualifica.trim());
+                                setShowNewQualificaInput(false);
+                                setNewQualifica('');
+                                if (!qualifiche.includes(newQualifica.trim())) {
+                                  setQualifiche([...qualifiche, newQualifica.trim()].sort());
+                                }
+                              }
+                            } else if (e.key === 'Escape') {
+                              setShowNewQualificaInput(false);
+                              setNewQualifica('');
+                            }
+                          }}
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-success"
+                          onClick={() => {
+                            if (newQualifica.trim()) {
+                              handleInputChange('qualifica', newQualifica.trim());
+                              setShowNewQualificaInput(false);
+                              setNewQualifica('');
+                              if (!qualifiche.includes(newQualifica.trim())) {
+                                setQualifiche([...qualifiche, newQualifica.trim()].sort());
+                              }
+                            }
+                          }}
+                        >
+                          <i className="fas fa-check"></i>
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          onClick={() => {
+                            setShowNewQualificaInput(false);
+                            setNewQualifica('');
+                          }}
+                        >
+                          <i className="fas fa-times"></i>
+                        </button>
+                      </div>
+                    )}
+                    {formData.qualifica?.toUpperCase().trim() === 'AUTISTA' && (
+                      <small className="text-muted d-block mt-1">
+                        <i className="fas fa-info-circle me-1"></i>
+                        Il campo Autista verrà impostato automaticamente
+                      </small>
+                    )}
                   </div>
                 </div>
               </div>
@@ -551,13 +879,82 @@ export default function ModificaDipendente() {
                   </div>
                   <div className="col-md-6 mb-3">
                     <label className="form-label text-light">CDC</label>
-                    <input
-                      type="text"
-                      className="form-control bg-dark text-light border-secondary"
-                      value={formData.cdc || ''}
-                      onChange={(e) => handleInputChange('cdc', e.target.value)}
-                      placeholder="Inserisci il CDC"
-                    />
+                    {!showNewCdcInput ? (
+                      <>
+                        <select
+                          className="form-select bg-dark text-light border-secondary"
+                          value={formData.cdc || ''}
+                          onChange={(e) => {
+                            if (e.target.value === '__new__') {
+                              setShowNewCdcInput(true);
+                            } else {
+                              handleInputChange('cdc', e.target.value);
+                            }
+                          }}
+                        >
+                          <option value="">Seleziona CDC</option>
+                          {cdc.map((cdcItem) => (
+                            <option key={cdcItem} value={cdcItem}>
+                              {cdcItem}
+                            </option>
+                          ))}
+                          <option value="__new__">➕ Aggiungi nuovo CDC...</option>
+                        </select>
+                      </>
+                    ) : (
+                      <div className="d-flex gap-2">
+                        <input
+                          type="text"
+                          className="form-control bg-dark text-light border-secondary"
+                          value={newCdc}
+                          onChange={(e) => setNewCdc(e.target.value)}
+                          placeholder="Inserisci nuovo CDC"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (newCdc.trim()) {
+                                handleInputChange('cdc', newCdc.trim());
+                                setShowNewCdcInput(false);
+                                setNewCdc('');
+                                if (!cdc.includes(newCdc.trim())) {
+                                  setCdc([...cdc, newCdc.trim()].sort());
+                                }
+                              }
+                            } else if (e.key === 'Escape') {
+                              setShowNewCdcInput(false);
+                              setNewCdc('');
+                            }
+                          }}
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-success"
+                          onClick={() => {
+                            if (newCdc.trim()) {
+                              handleInputChange('cdc', newCdc.trim());
+                              setShowNewCdcInput(false);
+                              setNewCdc('');
+                              if (!cdc.includes(newCdc.trim())) {
+                                setCdc([...cdc, newCdc.trim()].sort());
+                              }
+                            }
+                          }}
+                        >
+                          <i className="fas fa-check"></i>
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          onClick={() => {
+                            setShowNewCdcInput(false);
+                            setNewCdc('');
+                          }}
+                        >
+                          <i className="fas fa-times"></i>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -568,7 +965,7 @@ export default function ModificaDipendente() {
                   Indirizzo
                 </h6>
                 <div className="row">
-                  <div className="col-md-8 mb-3">
+                  <div className="col-md-6 mb-3">
                     <label className="form-label text-light">Via/Indirizzo</label>
                     <input
                       type="text"
@@ -589,15 +986,84 @@ export default function ModificaDipendente() {
                       maxLength={5}
                     />
                   </div>
-                  <div className="col-md-2 mb-3">
+                  <div className="col-md-4 mb-3">
                     <label className="form-label text-light">Città</label>
-                    <input
-                      type="text"
-                      className="form-control bg-dark text-light border-secondary"
-                      value={formData.citta || ''}
-                      onChange={(e) => handleInputChange('citta', e.target.value)}
-                      placeholder="Città"
-                    />
+                    {!showNewCittaInput ? (
+                      <>
+                        <select
+                          className="form-select bg-dark text-light border-secondary"
+                          value={formData.citta || ''}
+                          onChange={(e) => {
+                            if (e.target.value === '__new__') {
+                              setShowNewCittaInput(true);
+                            } else {
+                              handleInputChange('citta', e.target.value);
+                            }
+                          }}
+                        >
+                          <option value="">Seleziona città</option>
+                          {citta.map((cittaItem) => (
+                            <option key={cittaItem} value={cittaItem}>
+                              {cittaItem}
+                            </option>
+                          ))}
+                          <option value="__new__">➕ Aggiungi nuova città...</option>
+                        </select>
+                      </>
+                    ) : (
+                      <div className="d-flex gap-2">
+                        <input
+                          type="text"
+                          className="form-control bg-dark text-light border-secondary"
+                          value={newCitta}
+                          onChange={(e) => setNewCitta(e.target.value)}
+                          placeholder="Inserisci nuova città"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (newCitta.trim()) {
+                                handleInputChange('citta', newCitta.trim());
+                                setShowNewCittaInput(false);
+                                setNewCitta('');
+                                if (!citta.includes(newCitta.trim())) {
+                                  setCitta([...citta, newCitta.trim()].sort());
+                                }
+                              }
+                            } else if (e.key === 'Escape') {
+                              setShowNewCittaInput(false);
+                              setNewCitta('');
+                            }
+                          }}
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-success"
+                          onClick={() => {
+                            if (newCitta.trim()) {
+                              handleInputChange('citta', newCitta.trim());
+                              setShowNewCittaInput(false);
+                              setNewCitta('');
+                              if (!citta.includes(newCitta.trim())) {
+                                setCitta([...citta, newCitta.trim()].sort());
+                              }
+                            }
+                          }}
+                        >
+                          <i className="fas fa-check"></i>
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          onClick={() => {
+                            setShowNewCittaInput(false);
+                            setNewCitta('');
+                          }}
+                        >
+                          <i className="fas fa-times"></i>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -615,64 +1081,428 @@ export default function ModificaDipendente() {
                 <div className="row">
                   <div className="col-md-6 mb-3">
                     <label className="form-label text-light">Tipo Contratto</label>
-                    <select
-                      className="form-select bg-dark text-light border-secondary"
-                      value={formData.tipo_contratto || ''}
-                      onChange={(e) => handleInputChange('tipo_contratto', e.target.value)}
-                    >
-                      <option value="">Seleziona tipo contratto</option>
-                      <option value="Indeterminato">Indeterminato</option>
-                      <option value="Determinato">Determinato</option>
-                      <option value="Apprendistato">Apprendistato</option>
-                      <option value="Stagionale">Stagionale</option>
-                      <option value="Consulenza">Consulenza</option>
-                      <option value="Collaborazione">Collaborazione</option>
-                    </select>
+                    {!showNewTipoContrattoInput ? (
+                      <>
+                        <select
+                          className="form-select bg-dark text-light border-secondary"
+                          value={formData.tipo_contratto || ''}
+                          onChange={(e) => {
+                            if (e.target.value === '__new__') {
+                              setShowNewTipoContrattoInput(true);
+                            } else {
+                              handleInputChange('tipo_contratto', e.target.value);
+                            }
+                          }}
+                        >
+                          <option value="">Seleziona tipo contratto</option>
+                          {tipoContratto.map((tipo) => (
+                            <option key={tipo} value={tipo}>
+                              {tipo}
+                            </option>
+                          ))}
+                          <option value="__new__">➕ Aggiungi nuovo tipo contratto...</option>
+                        </select>
+                      </>
+                    ) : (
+                      <div className="d-flex gap-2">
+                        <input
+                          type="text"
+                          className="form-control bg-dark text-light border-secondary"
+                          value={newTipoContratto}
+                          onChange={(e) => setNewTipoContratto(e.target.value)}
+                          placeholder="Inserisci nuovo tipo contratto"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (newTipoContratto.trim()) {
+                                handleInputChange('tipo_contratto', newTipoContratto.trim());
+                                setShowNewTipoContrattoInput(false);
+                                setNewTipoContratto('');
+                                if (!tipoContratto.includes(newTipoContratto.trim())) {
+                                  setTipoContratto([...tipoContratto, newTipoContratto.trim()].sort());
+                                }
+                              }
+                            } else if (e.key === 'Escape') {
+                              setShowNewTipoContrattoInput(false);
+                              setNewTipoContratto('');
+                            }
+                          }}
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-success"
+                          onClick={() => {
+                            if (newTipoContratto.trim()) {
+                              handleInputChange('tipo_contratto', newTipoContratto.trim());
+                              setShowNewTipoContrattoInput(false);
+                              setNewTipoContratto('');
+                              if (!tipoContratto.includes(newTipoContratto.trim())) {
+                                setTipoContratto([...tipoContratto, newTipoContratto.trim()].sort());
+                              }
+                            }
+                          }}
+                        >
+                          <i className="fas fa-check"></i>
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          onClick={() => {
+                            setShowNewTipoContrattoInput(false);
+                            setNewTipoContratto('');
+                          }}
+                        >
+                          <i className="fas fa-times"></i>
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <div className="col-md-6 mb-3">
                     <label className="form-label text-light">CCNL</label>
-                    <input
-                      type="text"
-                      className="form-control bg-dark text-light border-secondary"
-                      value={formData.ccnl || ''}
-                      onChange={(e) => handleInputChange('ccnl', e.target.value)}
-                      placeholder="Inserisci il CCNL"
-                    />
+                    {!showNewCcnlInput ? (
+                      <>
+                        <select
+                          className="form-select bg-dark text-light border-secondary"
+                          value={formData.ccnl || ''}
+                          onChange={(e) => {
+                            if (e.target.value === '__new__') {
+                              setShowNewCcnlInput(true);
+                            } else {
+                              handleInputChange('ccnl', e.target.value);
+                            }
+                          }}
+                        >
+                          <option value="">Seleziona CCNL</option>
+                          {ccnl.map((ccnlItem) => (
+                            <option key={ccnlItem} value={ccnlItem}>
+                              {ccnlItem}
+                            </option>
+                          ))}
+                          <option value="__new__">➕ Aggiungi nuovo CCNL...</option>
+                        </select>
+                      </>
+                    ) : (
+                      <div className="d-flex gap-2">
+                        <input
+                          type="text"
+                          className="form-control bg-dark text-light border-secondary"
+                          value={newCcnl}
+                          onChange={(e) => setNewCcnl(e.target.value)}
+                          placeholder="Inserisci nuovo CCNL"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (newCcnl.trim()) {
+                                handleInputChange('ccnl', newCcnl.trim());
+                                setShowNewCcnlInput(false);
+                                setNewCcnl('');
+                                if (!ccnl.includes(newCcnl.trim())) {
+                                  setCcnl([...ccnl, newCcnl.trim()].sort());
+                                }
+                              }
+                            } else if (e.key === 'Escape') {
+                              setShowNewCcnlInput(false);
+                              setNewCcnl('');
+                            }
+                          }}
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-success"
+                          onClick={() => {
+                            if (newCcnl.trim()) {
+                              handleInputChange('ccnl', newCcnl.trim());
+                              setShowNewCcnlInput(false);
+                              setNewCcnl('');
+                              if (!ccnl.includes(newCcnl.trim())) {
+                                setCcnl([...ccnl, newCcnl.trim()].sort());
+                              }
+                            }
+                          }}
+                        >
+                          <i className="fas fa-check"></i>
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          onClick={() => {
+                            setShowNewCcnlInput(false);
+                            setNewCcnl('');
+                          }}
+                        >
+                          <i className="fas fa-times"></i>
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <div className="col-md-6 mb-3">
                     <label className="form-label text-light">Livello</label>
-                    <input
-                      type="text"
-                      className="form-control bg-dark text-light border-secondary"
-                      value={formData.livello || ''}
-                      onChange={(e) => handleInputChange('livello', e.target.value)}
-                      placeholder="Inserisci il livello"
-                    />
+                    {!showNewLivelloInput ? (
+                      <>
+                        <select
+                          className="form-select bg-dark text-light border-secondary"
+                          value={formData.livello || ''}
+                          onChange={(e) => {
+                            if (e.target.value === '__new__') {
+                              setShowNewLivelloInput(true);
+                            } else {
+                              handleInputChange('livello', e.target.value);
+                            }
+                          }}
+                        >
+                          <option value="">Seleziona livello</option>
+                          {livello.map((livelloItem) => (
+                            <option key={livelloItem} value={livelloItem}>
+                              {livelloItem}
+                            </option>
+                          ))}
+                          <option value="__new__">➕ Aggiungi nuovo livello...</option>
+                        </select>
+                      </>
+                    ) : (
+                      <div className="d-flex gap-2">
+                        <input
+                          type="text"
+                          className="form-control bg-dark text-light border-secondary"
+                          value={newLivello}
+                          onChange={(e) => setNewLivello(e.target.value)}
+                          placeholder="Inserisci nuovo livello"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (newLivello.trim()) {
+                                handleInputChange('livello', newLivello.trim());
+                                setShowNewLivelloInput(false);
+                                setNewLivello('');
+                                if (!livello.includes(newLivello.trim())) {
+                                  setLivello([...livello, newLivello.trim()].sort());
+                                }
+                              }
+                            } else if (e.key === 'Escape') {
+                              setShowNewLivelloInput(false);
+                              setNewLivello('');
+                            }
+                          }}
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-success"
+                          onClick={() => {
+                            if (newLivello.trim()) {
+                              handleInputChange('livello', newLivello.trim());
+                              setShowNewLivelloInput(false);
+                              setNewLivello('');
+                              if (!livello.includes(newLivello.trim())) {
+                                setLivello([...livello, newLivello.trim()].sort());
+                              }
+                            }
+                          }}
+                        >
+                          <i className="fas fa-check"></i>
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          onClick={() => {
+                            setShowNewLivelloInput(false);
+                            setNewLivello('');
+                          }}
+                        >
+                          <i className="fas fa-times"></i>
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <div className="col-md-6 mb-3">
                     <label className="form-label text-light">Società</label>
-                    <select
-                      className="form-select bg-dark text-light border-secondary"
-                      value={formData.company_id || ''}
-                      onChange={(e) => handleInputChange('company_id', e.target.value)}
-                    >
-                      <option value="">Seleziona società</option>
-                      {companies && companies.map((company) => (
-                        <option key={company.id} value={company.id}>
-                          {company.name}
-                        </option>
-                      ))}
-                    </select>
+                    {!showNewCompanyInput ? (
+                      <>
+                        <select
+                          className="form-select bg-dark text-light border-secondary"
+                          value={formData.company_id || ''}
+                          onChange={(e) => {
+                            if (e.target.value === '__new__') {
+                              setShowNewCompanyInput(true);
+                            } else {
+                              handleInputChange('company_id', e.target.value);
+                            }
+                          }}
+                        >
+                          <option value="">Seleziona società</option>
+                          {companies && companies.map((company) => (
+                            <option key={company.id} value={company.id}>
+                              {company.name}
+                            </option>
+                          ))}
+                          <option value="__new__">➕ Aggiungi nuova società...</option>
+                        </select>
+                      </>
+                    ) : (
+                      <div className="d-flex gap-2">
+                        <input
+                          type="text"
+                          className="form-control bg-dark text-light border-secondary"
+                          value={newCompanyName}
+                          onChange={(e) => setNewCompanyName(e.target.value)}
+                          placeholder="Inserisci nome società"
+                          onKeyDown={async (e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (newCompanyName.trim()) {
+                                try {
+                                  const code = newCompanyName.trim().toUpperCase().replace(/\s+/g, '_').substring(0, 50);
+                                  const response = await fetch('/api/companies', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ name: newCompanyName.trim(), code })
+                                  });
+                                  if (response.ok) {
+                                    const data = await response.json();
+                                    handleInputChange('company_id', data.id);
+                                    setCompanies([...companies, data].sort((a, b) => a.name.localeCompare(b.name)));
+                                    setShowNewCompanyInput(false);
+                                    setNewCompanyName('');
+                                  } else {
+                                    const errorData = await response.json();
+                                    alert(errorData.error || 'Errore nella creazione della società');
+                                  }
+                                } catch (error) {
+                                  console.error('Errore creazione società:', error);
+                                  alert('Errore nella creazione della società');
+                                }
+                              }
+                            } else if (e.key === 'Escape') {
+                              setShowNewCompanyInput(false);
+                              setNewCompanyName('');
+                            }
+                          }}
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-success"
+                          onClick={async () => {
+                            if (newCompanyName.trim()) {
+                              try {
+                                const code = newCompanyName.trim().toUpperCase().replace(/\s+/g, '_').substring(0, 50);
+                                const response = await fetch('/api/companies', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ name: newCompanyName.trim(), code })
+                                });
+                                if (response.ok) {
+                                  const data = await response.json();
+                                  handleInputChange('company_id', data.id);
+                                  setCompanies([...companies, data].sort((a, b) => a.name.localeCompare(b.name)));
+                                  setShowNewCompanyInput(false);
+                                  setNewCompanyName('');
+                                } else {
+                                  const errorData = await response.json();
+                                  alert(errorData.error || 'Errore nella creazione della società');
+                                }
+                              } catch (error) {
+                                console.error('Errore creazione società:', error);
+                                alert('Errore nella creazione della società');
+                              }
+                            }
+                          }}
+                        >
+                          <i className="fas fa-check"></i>
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          onClick={() => {
+                            setShowNewCompanyInput(false);
+                            setNewCompanyName('');
+                          }}
+                        >
+                          <i className="fas fa-times"></i>
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <div className="col-md-6 mb-3">
                     <label className="form-label text-light">Orario di Lavoro</label>
-                    <input
-                      type="text"
-                      className="form-control bg-dark text-light border-secondary"
-                      value={formData.orario_lavoro || ''}
-                      onChange={(e) => handleInputChange('orario_lavoro', e.target.value)}
-                      placeholder="es. 40 ore/settimana"
-                    />
+                    {!showNewOrarioLavoroInput ? (
+                      <>
+                        <select
+                          className="form-select bg-dark text-light border-secondary"
+                          value={formData.orario_lavoro || ''}
+                          onChange={(e) => {
+                            if (e.target.value === '__new__') {
+                              setShowNewOrarioLavoroInput(true);
+                            } else {
+                              handleInputChange('orario_lavoro', e.target.value);
+                            }
+                          }}
+                        >
+                          <option value="">Seleziona orario di lavoro</option>
+                          {orarioLavoro.map((orario) => (
+                            <option key={orario} value={orario}>
+                              {orario}
+                            </option>
+                          ))}
+                          <option value="__new__">➕ Aggiungi nuovo orario di lavoro...</option>
+                        </select>
+                      </>
+                    ) : (
+                      <div className="d-flex gap-2">
+                        <input
+                          type="text"
+                          className="form-control bg-dark text-light border-secondary"
+                          value={newOrarioLavoro}
+                          onChange={(e) => setNewOrarioLavoro(e.target.value)}
+                          placeholder="es. 40 ore/settimana"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (newOrarioLavoro.trim()) {
+                                handleInputChange('orario_lavoro', newOrarioLavoro.trim());
+                                setShowNewOrarioLavoroInput(false);
+                                setNewOrarioLavoro('');
+                                if (!orarioLavoro.includes(newOrarioLavoro.trim())) {
+                                  setOrarioLavoro([...orarioLavoro, newOrarioLavoro.trim()].sort());
+                                }
+                              }
+                            } else if (e.key === 'Escape') {
+                              setShowNewOrarioLavoroInput(false);
+                              setNewOrarioLavoro('');
+                            }
+                          }}
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-success"
+                          onClick={() => {
+                            if (newOrarioLavoro.trim()) {
+                              handleInputChange('orario_lavoro', newOrarioLavoro.trim());
+                              setShowNewOrarioLavoroInput(false);
+                              setNewOrarioLavoro('');
+                              if (!orarioLavoro.includes(newOrarioLavoro.trim())) {
+                                setOrarioLavoro([...orarioLavoro, newOrarioLavoro.trim()].sort());
+                              }
+                            }
+                          }}
+                        >
+                          <i className="fas fa-check"></i>
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          onClick={() => {
+                            setShowNewOrarioLavoroInput(false);
+                            setNewOrarioLavoro('');
+                          }}
+                        >
+                          <i className="fas fa-times"></i>
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <div className="col-md-6">
                     <DateInput
@@ -688,12 +1518,43 @@ export default function ModificaDipendente() {
                       error={validationErrors.data_assunzione}
                     />
                   </div>
+                  <div className="col-md-6">
+                    <DateInput
+                      id="data_dimissioni"
+                      name="data_dimissioni"
+                      label="Data Dimissioni"
+                      value={formData.data_dimissioni ? formatDateToDatabase(formData.data_dimissioni) : ''}
+                      onChange={(isoValue) => {
+                        const italianDate = isoValue ? formatDateToItalian(isoValue) : '';
+                        setFormData(prev => ({ ...prev, data_dimissioni: italianDate }));
+                      }}
+                      className="bg-dark text-light border-secondary"
+                    />
+                  </div>
+                  <div className="col-md-12 mb-3">
+                    <div className="form-check">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="is_driver"
+                        checked={formData.is_driver === true || formData.is_driver === 1}
+                        onChange={(e) => handleInputChange('is_driver', e.target.checked)}
+                      />
+                      <label className="form-check-label text-light" htmlFor="is_driver">
+                        Autista
+                      </label>
+                      <small className="text-muted d-block mt-1">
+                        <i className="fas fa-info-circle me-1"></i>
+                        Seleziona se il dipendente è un autista. Questo campo viene impostato automaticamente se la qualifica è "AUTISTA".
+                      </small>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Sezione Informazioni Autista (solo se è un autista) */}
-            {employee?.is_driver === 1 && (
+            {(formData.is_driver || formData.qualifica?.toUpperCase().trim() === 'AUTISTA') && (
               <div className="card bg-secondary mb-4">
                 <div className="card-header">
                   <h5 className="card-title mb-0 text-light">
@@ -705,19 +1566,82 @@ export default function ModificaDipendente() {
                   <div className="row">
                     <div className="col-md-4 mb-3">
                       <label className="form-label text-light">Tipo Patente</label>
-                      <select
-                        className="form-select bg-dark text-light border-secondary"
-                        value={formData.patente || ''}
-                        onChange={(e) => handleInputChange('patente', e.target.value)}
-                      >
-                        <option value="">Seleziona tipo patente</option>
-                        <option value="B">B</option>
-                        <option value="C">C</option>
-                        <option value="C+E">C+E</option>
-                        <option value="D">D</option>
-                        <option value="D+E">D+E</option>
-                        <option value="CQC">CQC</option>
-                      </select>
+                      {!showNewPatenteInput ? (
+                        <>
+                          <select
+                            className="form-select bg-dark text-light border-secondary"
+                            value={formData.patente || ''}
+                            onChange={(e) => {
+                              if (e.target.value === '__new__') {
+                                setShowNewPatenteInput(true);
+                              } else {
+                                handleInputChange('patente', e.target.value);
+                              }
+                            }}
+                          >
+                            <option value="">Seleziona tipo patente</option>
+                            {patente.map((patenteItem) => (
+                              <option key={patenteItem} value={patenteItem}>
+                                {patenteItem}
+                              </option>
+                            ))}
+                            <option value="__new__">➕ Aggiungi nuovo tipo patente...</option>
+                          </select>
+                        </>
+                      ) : (
+                        <div className="d-flex gap-2">
+                          <input
+                            type="text"
+                            className="form-control bg-dark text-light border-secondary"
+                            value={newPatente}
+                            onChange={(e) => setNewPatente(e.target.value)}
+                            placeholder="Inserisci nuovo tipo patente"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                if (newPatente.trim()) {
+                                  handleInputChange('patente', newPatente.trim());
+                                  setShowNewPatenteInput(false);
+                                  setNewPatente('');
+                                  if (!patente.includes(newPatente.trim())) {
+                                    setPatente([...patente, newPatente.trim()].sort());
+                                  }
+                                }
+                              } else if (e.key === 'Escape') {
+                                setShowNewPatenteInput(false);
+                                setNewPatente('');
+                              }
+                            }}
+                            autoFocus
+                          />
+                          <button
+                            type="button"
+                            className="btn btn-success"
+                            onClick={() => {
+                              if (newPatente.trim()) {
+                                handleInputChange('patente', newPatente.trim());
+                                setShowNewPatenteInput(false);
+                                setNewPatente('');
+                                if (!patente.includes(newPatente.trim())) {
+                                  setPatente([...patente, newPatente.trim()].sort());
+                                }
+                              }
+                            }}
+                          >
+                            <i className="fas fa-check"></i>
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={() => {
+                              setShowNewPatenteInput(false);
+                              setNewPatente('');
+                            }}
+                          >
+                            <i className="fas fa-times"></i>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

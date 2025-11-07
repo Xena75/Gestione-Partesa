@@ -1,6 +1,125 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-## ✏️ Modifica Selettiva Richieste Ferie - v2.35.6 ⭐ **NUOVO**
+## 🔧 Correzione Generazione ID Dipendenti - v2.35.7 ⭐ **NUOVO**
+
+### 🎯 Correzione Generazione ID e Nominativo
+**Data implementazione**: Gennaio 2025  
+**Stato**: ✅ Completato e testato
+
+### 🛠️ Problema Risolto
+
+#### ❌ Problema Precedente
+- Gli ID dei dipendenti venivano generati come `EMP{timestamp}` (es. `EMP1762511129473`)
+- Il campo `nominativo` veniva calcolato correttamente ma l'ID non corrispondeva
+- Alcuni record esistenti avevano ID errati nel database
+
+#### ✅ Soluzione Implementata
+
+##### Generazione ID Corretta (`src/lib/db-employees.ts`)
+- **ID basato su nome completo**: L'ID viene ora generato da `nome + cognome` invece di `EMP{timestamp}`
+- **Gestione duplicati**: Se esiste già un dipendente con lo stesso nome, viene aggiunto un numero progressivo (es. "Francesca Rutigliano 1", "Francesca Rutigliano 2")
+- **Fallback intelligente**: Se il nome è vuoto o ci sono troppi duplicati, usa un timestamp come fallback
+- **Coerenza ID/Nominativo**: Il campo `nominativo` è sempre uguale all'ID per garantire coerenza
+
+##### Correzione Record Esistenti
+- **Script di correzione**: Creato endpoint temporaneo per correggere record con ID errati
+- **Gestione conflitti**: Gestione corretta dei conflitti di unicità nella tabella `employee_leave_balance`
+- **Aggiornamento riferimenti**: Aggiornati tutti i riferimenti nelle tabelle correlate (`employee_documents`, `employee_leave_requests`, `employee_leave_balance`)
+
+#### 📋 Esempi
+
+##### Prima (Errato)
+```
+ID: EMP1762511129473
+Nominativo: EMP1762511129473
+Nome: Francesca
+Cognome: Rutigliano
+```
+
+##### Dopo (Corretto)
+```
+ID: Francesca Rutigliano
+Nominativo: Francesca Rutigliano
+Nome: Francesca
+Cognome: Rutigliano
+```
+
+#### ✅ Benefici
+- ✅ **Coerenza dati**: ID e nominativo corrispondono sempre al nome completo
+- ✅ **Leggibilità**: ID più leggibili e intuitivi
+- ✅ **Tracciabilità**: Più facile identificare i dipendenti dal loro ID
+- ✅ **Compatibilità**: Gestione corretta dei duplicati con numeri progressivi
+
+#### 📁 File Modificati
+- `src/lib/db-employees.ts` - Modificata funzione `createEmployee` per generare ID corretti
+
+---
+
+## 🎨 Riorganizzazione Dashboard Dipendenti - v2.35.7 ⭐ **NUOVO**
+
+### 🎯 Miglioramento Layout Dashboard
+**Data implementazione**: Gennaio 2025  
+**Stato**: ✅ Completato e testato
+
+### 🛠️ Modifiche Implementate
+
+#### 📊 Nuovo Ordine Sezioni Dashboard (`src/app/gestione/dipendenti/dashboard/page.tsx`)
+1. **Card statistiche** (Dipendenti Totali, Attivi, Autisti, Personale, Documenti Totali, Validi, Scaduti, In Scadenza)
+2. **Azioni Rapide** (Aggiungi Anagrafica, Carica Documenti, Gestisci Ferie, Report e Statistiche)
+3. **Documenti Scaduti - Priorità Alta**
+4. **Documenti in Scadenza**
+5. **Richieste Ferie Pendenti**
+6. **Grafici** (Stati Documenti, Distribuzione Documenti per Tipo)
+
+#### 🎯 Miglioramenti UX
+- **Azioni Rapide prominenti**: Posizionate dopo le statistiche per accesso rapido
+- **Informazioni critiche prima**: Documenti scaduti e ferie pendenti prima dei grafici
+- **Flusso logico**: Ordine che segue il flusso di lavoro naturale dell'utente
+
+#### 📁 File Modificati
+- `src/app/gestione/dipendenti/dashboard/page.tsx` - Riorganizzazione layout sezioni
+
+---
+
+## 🔗 Miglioramenti Navigazione - v2.35.7 ⭐ **NUOVO**
+
+### 🎯 Ottimizzazione Link e Pulsanti
+**Data implementazione**: Gennaio 2025  
+**Stato**: ✅ Completato e testato
+
+### 🛠️ Modifiche Implementate
+
+#### ➕ Aggiunta Pulsante Dashboard (`src/app/gestione/employees/page.tsx`)
+- **Nuovo pulsante**: Aggiunto pulsante "Dashboard" nella pagina `/gestione/employees`
+- **Posizionamento**: Prima del pulsante "Gestione Società"
+- **Link**: Porta a `/gestione/dipendenti/dashboard`
+- **Icona**: `fa-tachometer-alt`
+
+#### 🔄 Rinominazione Pulsante (`src/app/gestione/employees/ferie/page.tsx`)
+- **Vecchio testo**: "Torna alla Gestione"
+- **Nuovo testo**: "Elenco Personale"
+- **Link**: Porta a `/gestione/employees`
+- **Icona**: `fa-users`
+
+#### 🗑️ Rimozione Link Ridondanti
+- **Rimossi link**: Eliminati link "Gestione Dipendenti" che puntavano a `/gestione/employees` da:
+  - Breadcrumb pagina ferie
+  - Pulsante "Torna alla Gestione" (sostituito con "Elenco Personale")
+  - Pulsante pagina gestione società
+
+#### ✅ Benefici
+- ✅ **Navigazione migliorata**: Accesso più rapido alla dashboard
+- ✅ **Terminologia chiara**: "Elenco Personale" più descrittivo di "Torna alla Gestione"
+- ✅ **Riduzione ridondanze**: Meno link duplicati e confusione
+
+#### 📁 File Modificati
+- `src/app/gestione/employees/page.tsx` - Aggiunto pulsante Dashboard
+- `src/app/gestione/employees/ferie/page.tsx` - Rinominato pulsante e rimosso breadcrumb
+- `src/app/gestione/companies/page.tsx` - Rimosso link ridondante
+
+---
+
+## ✏️ Modifica Selettiva Richieste Ferie - v2.35.6
 
 ### 🎯 Modifica Parziale dei Campi
 **Data implementazione**: Gennaio 2025  

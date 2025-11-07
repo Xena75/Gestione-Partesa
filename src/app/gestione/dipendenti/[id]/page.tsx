@@ -41,6 +41,7 @@ interface Document {
   id: number;
   document_type: string;
   file_name: string;
+  file_path?: string;
   expiry_date?: string;
   status: string;
   uploaded_at: string;
@@ -105,6 +106,7 @@ export default function AutistaDettaglio() {
     reason: ''
   });
   const [submittingLeaveRequest, setSubmittingLeaveRequest] = useState(false);
+  const [deletingDocumentId, setDeletingDocumentId] = useState<number | null>(null);
 
   // Stati per gestione credenziali rimossi - non più necessari
 
@@ -174,6 +176,35 @@ export default function AutistaDettaglio() {
       return new Date(dateString).toLocaleDateString('it-IT');
     } catch {
       return null;
+    }
+  };
+
+  const handleDeleteDocument = async (documentId: number) => {
+    if (!confirm(`Sei sicuro di voler eliminare questo documento? L'operazione non può essere annullata.`)) {
+      return;
+    }
+
+    try {
+      setDeletingDocumentId(documentId);
+      const encodedEmployeeId = encodeURIComponent(employeeId);
+      const response = await fetch(`/api/employees/${encodedEmployeeId}/documents?document_id=${documentId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Ricarica i documenti dopo l'eliminazione
+        await loadEmployeeData();
+        alert('Documento eliminato con successo');
+      } else {
+        alert(`Errore nell'eliminazione del documento: ${data.error || 'Errore sconosciuto'}`);
+      }
+    } catch (error) {
+      console.error('Errore nell\'eliminazione del documento:', error);
+      alert('Errore durante l\'eliminazione del documento');
+    } finally {
+      setDeletingDocumentId(null);
     }
   };
 
@@ -777,13 +808,29 @@ export default function AutistaDettaglio() {
                               <th>Data Scadenza</th>
                               <th>Stato</th>
                               <th>Caricato il</th>
+                              <th>Azioni</th>
                             </tr>
                           </thead>
                           <tbody>
                             {documents.map((doc) => (
                               <tr key={doc.id}>
                                 <td>
-                                  <span className="badge bg-info">
+                                  <span 
+                                    className="badge" 
+                                    style={{
+                                      backgroundColor: '#ff9800',
+                                      color: '#000000',
+                                      padding: '0.35em 0.65em',
+                                      fontSize: '0.875em',
+                                      fontWeight: '700',
+                                      lineHeight: '1',
+                                      textAlign: 'center',
+                                      whiteSpace: 'nowrap',
+                                      verticalAlign: 'baseline',
+                                      borderRadius: '0.375rem',
+                                      display: 'inline-block'
+                                    }}
+                                  >
                                     {doc.document_type}
                                   </span>
                                 </td>
@@ -806,6 +853,42 @@ export default function AutistaDettaglio() {
                                   <small className="text-light">
                                     {formatDate(doc.uploaded_at)}
                                   </small>
+                                </td>
+                                <td>
+                                  <div className="btn-group btn-group-sm" role="group">
+                                    <button
+                                      className="btn btn-outline-primary"
+                                      onClick={() => {
+                                        if (doc.file_path) {
+                                          window.open(doc.file_path, '_blank');
+                                        } else {
+                                          alert('Percorso file non disponibile');
+                                        }
+                                      }}
+                                      title="Visualizza documento"
+                                    >
+                                      <i className="fas fa-eye me-1"></i>
+                                      Visualizza
+                                    </button>
+                                    <button
+                                      className="btn btn-danger"
+                                      onClick={() => handleDeleteDocument(doc.id)}
+                                      disabled={deletingDocumentId === doc.id}
+                                      title="Elimina documento"
+                                    >
+                                      {deletingDocumentId === doc.id ? (
+                                        <>
+                                          <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                          Eliminazione...
+                                        </>
+                                      ) : (
+                                        <>
+                                          <i className="fas fa-trash me-1"></i>
+                                          Elimina
+                                        </>
+                                      )}
+                                    </button>
+                                  </div>
                                 </td>
                               </tr>
                             ))}

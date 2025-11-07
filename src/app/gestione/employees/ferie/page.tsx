@@ -175,6 +175,8 @@ function GestioneFerieContent() {
   const [availableLeaveTypes, setAvailableLeaveTypes] = useState<string[]>([]);
   const [showNewLeaveTypeInput, setShowNewLeaveTypeInput] = useState(false);
   const [newLeaveType, setNewLeaveType] = useState('');
+  const [showNewLeaveTypeInputCreate, setShowNewLeaveTypeInputCreate] = useState(false);
+  const [newLeaveTypeCreate, setNewLeaveTypeCreate] = useState('');
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
@@ -910,6 +912,8 @@ function GestioneFerieContent() {
           end_date: '',
           reason: ''
         });
+        setShowNewLeaveTypeInputCreate(false);
+        setNewLeaveTypeCreate('');
         setAttachmentFile(null);
         setShowNewRequestForm(false);
         console.log('🔄 Ricaricamento dati...');
@@ -1122,9 +1126,6 @@ function GestioneFerieContent() {
             <div>
               <nav aria-label="breadcrumb">
                 <ol className="breadcrumb">
-                  <li className="breadcrumb-item">
-                    <Link href="/gestione/employees">Gestione Dipendenti</Link>
-                  </li>
                   <li className="breadcrumb-item active" aria-current="page">
                     Gestione Ferie
                   </li>
@@ -1145,14 +1146,21 @@ function GestioneFerieContent() {
               </button>
               <button 
                 className="btn btn-primary me-2"
-                onClick={() => setShowNewRequestForm(!showNewRequestForm)}
+                onClick={() => {
+                  setShowNewRequestForm(!showNewRequestForm);
+                  if (showNewRequestForm) {
+                    // Reset quando si chiude il form
+                    setShowNewLeaveTypeInputCreate(false);
+                    setNewLeaveTypeCreate('');
+                  }
+                }}
               >
                 <i className="fas fa-plus me-1"></i>
                 Nuova Richiesta
               </button>
               <Link href="/gestione/employees" className="btn btn-outline-secondary">
-                <i className="fas fa-arrow-left me-1"></i>
-                Torna alla Gestione
+                <i className="fas fa-users me-1"></i>
+                Elenco Personale
               </Link>
             </div>
           </div>
@@ -1306,20 +1314,87 @@ function GestioneFerieContent() {
                       <label htmlFor="leave_type" className="form-label">
                         Tipo <span className="text-danger">*</span>
                       </label>
-                      <select
-                        id="leave_type"
-                        className="form-select"
-                        value={newRequest.leave_type}
-                        onChange={(e) => setNewRequest(prev => ({ ...prev, leave_type: e.target.value }))}
-                        required
-                      >
-                        <option value="">Seleziona tipo</option>
-                        {LEAVE_TYPES.map((type) => (
-                          <option key={type.value} value={type.value}>
-                            {type.label}
-                          </option>
-                        ))}
-                      </select>
+                      {!showNewLeaveTypeInputCreate ? (
+                        <select
+                          id="leave_type"
+                          className="form-select"
+                          value={newRequest.leave_type}
+                          onChange={(e) => {
+                            if (e.target.value === '__new__') {
+                              setShowNewLeaveTypeInputCreate(true);
+                            } else {
+                              setNewRequest(prev => ({ ...prev, leave_type: e.target.value }));
+                            }
+                          }}
+                          required
+                        >
+                          <option value="">Seleziona tipo</option>
+                          {LEAVE_TYPES.map((type) => (
+                            <option key={type.value} value={type.value}>
+                              {type.label}
+                            </option>
+                          ))}
+                          {availableLeaveTypes.filter(type => !LEAVE_TYPES.find(t => t.value === type)).map((type) => (
+                            <option key={type} value={type}>
+                              {type}
+                            </option>
+                          ))}
+                          <option value="__new__">➕ Aggiungi nuovo tipo...</option>
+                        </select>
+                      ) : (
+                        <div className="d-flex gap-2">
+                          <input
+                            type="text"
+                            className="form-control"
+                            value={newLeaveTypeCreate}
+                            onChange={(e) => setNewLeaveTypeCreate(e.target.value)}
+                            placeholder="Inserisci nuovo tipo di richiesta"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                if (newLeaveTypeCreate.trim()) {
+                                  setNewRequest(prev => ({ ...prev, leave_type: newLeaveTypeCreate.trim() }));
+                                  setShowNewLeaveTypeInputCreate(false);
+                                  setNewLeaveTypeCreate('');
+                                  if (!availableLeaveTypes.includes(newLeaveTypeCreate.trim())) {
+                                    setAvailableLeaveTypes([...availableLeaveTypes, newLeaveTypeCreate.trim()]);
+                                  }
+                                }
+                              } else if (e.key === 'Escape') {
+                                setShowNewLeaveTypeInputCreate(false);
+                                setNewLeaveTypeCreate('');
+                              }
+                            }}
+                            autoFocus
+                          />
+                          <button
+                            type="button"
+                            className="btn btn-success"
+                            onClick={() => {
+                              if (newLeaveTypeCreate.trim()) {
+                                setNewRequest(prev => ({ ...prev, leave_type: newLeaveTypeCreate.trim() }));
+                                setShowNewLeaveTypeInputCreate(false);
+                                setNewLeaveTypeCreate('');
+                                if (!availableLeaveTypes.includes(newLeaveTypeCreate.trim())) {
+                                  setAvailableLeaveTypes([...availableLeaveTypes, newLeaveTypeCreate.trim()]);
+                                }
+                              }
+                            }}
+                          >
+                            <i className="fas fa-check"></i>
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={() => {
+                              setShowNewLeaveTypeInputCreate(false);
+                              setNewLeaveTypeCreate('');
+                            }}
+                          >
+                            <i className="fas fa-times"></i>
+                          </button>
+                        </div>
+                      )}
                     </div>
                     <div className="col-md-6 mb-3">
                       <DateInput
@@ -1396,6 +1471,8 @@ function GestioneFerieContent() {
                       className="btn btn-outline-secondary me-2"
                       onClick={() => {
                         setShowNewRequestForm(false);
+                        setShowNewLeaveTypeInputCreate(false);
+                        setNewLeaveTypeCreate('');
                         setAttachmentFile(null);
                       }}
                     >

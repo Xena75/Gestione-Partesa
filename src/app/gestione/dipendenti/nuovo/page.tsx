@@ -84,6 +84,9 @@ export default function NuovoDipendente() {
   const [cittadinanza, setCittadinanza] = useState<string[]>([]);
   const [showNewCittadinanzaInput, setShowNewCittadinanzaInput] = useState(false);
   const [newCittadinanza, setNewCittadinanza] = useState('');
+  const [patente, setPatente] = useState<string[]>([]);
+  const [showNewPatenteInput, setShowNewPatenteInput] = useState(false);
+  const [newPatente, setNewPatente] = useState('');
 
   const [formData, setFormData] = useState<FormData>({
     nome: '',
@@ -241,6 +244,18 @@ export default function NuovoDipendente() {
       }
     };
 
+    const fetchPatente = async () => {
+      try {
+        const response = await fetch('/api/employees/patente');
+        if (response.ok) {
+          const data = await response.json();
+          setPatente(data.success ? data.data : []);
+        }
+      } catch (error) {
+        console.error('Errore caricamento tipi patente:', error);
+      }
+    };
+
     fetchCompanies();
     fetchUsers();
     fetchQualifiche();
@@ -251,6 +266,7 @@ export default function NuovoDipendente() {
     fetchLivello();
     fetchOrarioLavoro();
     fetchCittadinanza();
+    fetchPatente();
   }, []);
 
   const handleInputChange = (field: string, value: any) => {
@@ -1428,19 +1444,82 @@ export default function NuovoDipendente() {
                   <div className="row">
                     <div className="col-md-4 mb-3">
                       <label className="form-label text-light">Tipo Patente</label>
-                      <select
-                        className="form-select bg-dark text-light border-secondary"
-                        value={formData.patente || ''}
-                        onChange={(e) => handleInputChange('patente', e.target.value)}
-                      >
-                        <option value="">Seleziona tipo patente</option>
-                        <option value="B">B</option>
-                        <option value="C">C</option>
-                        <option value="C+E">C+E</option>
-                        <option value="D">D</option>
-                        <option value="D+E">D+E</option>
-                        <option value="CQC">CQC</option>
-                      </select>
+                      {!showNewPatenteInput ? (
+                        <>
+                          <select
+                            className="form-select bg-dark text-light border-secondary"
+                            value={formData.patente || ''}
+                            onChange={(e) => {
+                              if (e.target.value === '__new__') {
+                                setShowNewPatenteInput(true);
+                              } else {
+                                handleInputChange('patente', e.target.value);
+                              }
+                            }}
+                          >
+                            <option value="">Seleziona tipo patente</option>
+                            {patente.map((patenteItem) => (
+                              <option key={patenteItem} value={patenteItem}>
+                                {patenteItem}
+                              </option>
+                            ))}
+                            <option value="__new__">➕ Aggiungi nuovo tipo patente...</option>
+                          </select>
+                        </>
+                      ) : (
+                        <div className="d-flex gap-2">
+                          <input
+                            type="text"
+                            className="form-control bg-dark text-light border-secondary"
+                            value={newPatente}
+                            onChange={(e) => setNewPatente(e.target.value)}
+                            placeholder="Inserisci nuovo tipo patente"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                if (newPatente.trim()) {
+                                  handleInputChange('patente', newPatente.trim());
+                                  setShowNewPatenteInput(false);
+                                  setNewPatente('');
+                                  if (!patente.includes(newPatente.trim())) {
+                                    setPatente([...patente, newPatente.trim()].sort());
+                                  }
+                                }
+                              } else if (e.key === 'Escape') {
+                                setShowNewPatenteInput(false);
+                                setNewPatente('');
+                              }
+                            }}
+                            autoFocus
+                          />
+                          <button
+                            type="button"
+                            className="btn btn-success"
+                            onClick={() => {
+                              if (newPatente.trim()) {
+                                handleInputChange('patente', newPatente.trim());
+                                setShowNewPatenteInput(false);
+                                setNewPatente('');
+                                if (!patente.includes(newPatente.trim())) {
+                                  setPatente([...patente, newPatente.trim()].sort());
+                                }
+                              }
+                            }}
+                          >
+                            <i className="fas fa-check"></i>
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={() => {
+                              setShowNewPatenteInput(false);
+                              setNewPatente('');
+                            }}
+                          >
+                            <i className="fas fa-times"></i>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

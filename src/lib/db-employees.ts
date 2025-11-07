@@ -23,6 +23,7 @@ export default pool;
 // Interfacce TypeScript
 export interface Employee {
   id: string;
+  nominativo?: string; // Campo nominativo dalla tabella employees
   nome: string;
   cognome: string;
   email: string;
@@ -172,7 +173,13 @@ export async function getEmployeeById(id: string): Promise<Employee | null> {
     const employees = rows as Employee[];
     console.log('getEmployeeById - Risultati trovati:', employees.length);
     if (employees.length > 0) {
-      console.log('getEmployeeById - Employee trovato:', employees[0].nome, employees[0].cognome);
+      const emp = employees[0];
+      console.log('getEmployeeById - Employee trovato:', {
+        id: emp.id,
+        nominativo: emp.nominativo,
+        nome: emp.nome,
+        cognome: emp.cognome
+      });
     }
     return employees.length > 0 ? employees[0] : null;
   } catch (error) {
@@ -246,11 +253,46 @@ export async function getEmployeeByUsername(username: string): Promise<Employee 
 export async function createEmployee(employee: Omit<Employee, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
   const connection = await getConnection();
   try {
-    // Genera ID univoco
-    const employeeId = `EMP${Date.now()}`;
-    
     // Calcola nominativo (nome + cognome)
     const nominativo = `${employee.nome || ''} ${employee.cognome || ''}`.trim();
+    
+    // Genera ID base dal nome completo
+    let baseId = nominativo;
+    
+    // Se il nominativo è vuoto, usa un fallback
+    if (!baseId || baseId.trim() === '') {
+      baseId = `EMP${Date.now()}`;
+    }
+    
+    // Verifica se esiste già un dipendente con lo stesso ID
+    let employeeId = baseId;
+    let counter = 1;
+    let exists = true;
+    
+    while (exists) {
+      const [existing] = await connection.execute(
+        'SELECT id FROM employees WHERE id = ?',
+        [employeeId]
+      );
+      
+      if (Array.isArray(existing) && existing.length === 0) {
+        // ID disponibile
+        exists = false;
+      } else {
+        // ID già esistente, aggiungi un numero progressivo
+        employeeId = `${baseId} ${counter}`;
+        counter++;
+        
+        // Se il contatore supera 1000, usa un timestamp come fallback
+        if (counter > 1000) {
+          employeeId = `${baseId}_${Date.now()}`;
+          exists = false;
+        }
+      }
+    }
+    
+    // Assicurati che il nominativo sia sempre uguale all'ID (o almeno coerente)
+    const finalNominativo = employeeId;
     
     // Prepara i valori per l'inserimento
     const [result] = await connection.execute(
@@ -264,7 +306,7 @@ export async function createEmployee(employee: Omit<Employee, 'id' | 'createdAt'
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
       [
         employeeId,
-        nominativo,
+        finalNominativo,
         employee.nome || null,
         employee.cognome || null,
         employee.codice_fiscale || null, // mappato da codice_fiscale a cod_fiscale
@@ -1353,6 +1395,30 @@ export async function getDistinctLeaveTypes(): Promise<string[]> {
       'SELECT DISTINCT leave_type FROM employee_leave_requests WHERE leave_type IS NOT NULL AND leave_type != "" ORDER BY leave_type'
     );
     return (rows as any[]).map(row => row.leave_type).filter(Boolean);
+  } finally {
+    await connection.end();
+  }
+}
+
+export async function getDistinctPatente(): Promise<string[]> {
+  const connection = await getConnection();
+  try {
+    const [rows] = await connection.execute(
+      'SELECT DISTINCT patente FROM employees WHERE patente IS NOT NULL AND patente != "" ORDER BY patente'
+    );
+    return (rows as any[]).map(row => row.patente).filter(Boolean);
+  } finally {
+    await connection.end();
+  }
+}
+
+export async function getDistinctDocumentTypes(): Promise<string[]> {
+  const connection = await getConnection();
+  try {
+    const [rows] = await connection.execute(
+      'SELECT DISTINCT document_type FROM employee_documents WHERE document_type IS NOT NULL AND document_type != "" ORDER BY document_type'
+    );
+    return (rows as any[]).map(row => row.document_type).filter(Boolean);
   } finally {
     await connection.end();
   }

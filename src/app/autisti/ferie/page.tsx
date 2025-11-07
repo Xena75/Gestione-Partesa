@@ -62,6 +62,9 @@ export default function AutistiFeriePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [availableLeaveTypes, setAvailableLeaveTypes] = useState<string[]>([]);
+  const [showNewLeaveTypeInput, setShowNewLeaveTypeInput] = useState(false);
+  const [newLeaveType, setNewLeaveType] = useState('');
 
   // Form state
   const [formData, setFormData] = useState<LeaveFormData>({
@@ -78,8 +81,23 @@ export default function AutistiFeriePage() {
   useEffect(() => {
     if (user?.username) {
       fetchLeaveData();
+      loadLeaveTypes();
     }
   }, [user]);
+
+  const loadLeaveTypes = async () => {
+    try {
+      const response = await fetch('/api/employees/leave/types');
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          setAvailableLeaveTypes(result.data);
+        }
+      }
+    } catch (error) {
+      console.error('Errore nel caricamento dei tipi di richiesta:', error);
+    }
+  };
 
   // Funzione per calcolare i giorni lavorativi
   const calculateWorkingDays = (startDateStr: string, endDateStr: string): number => {
@@ -452,6 +470,8 @@ export default function AutistiFeriePage() {
           notes: '',
           attachment: null
         });
+        setShowNewLeaveTypeInput(false);
+        setNewLeaveType('');
         // Reset anche l'input file
         const fileInput = document.getElementById('attachment') as HTMLInputElement;
         if (fileInput) fileInput.value = '';
@@ -653,19 +673,86 @@ export default function AutistiFeriePage() {
                       <label htmlFor="leave_type" className="form-label text-light">
                         Tipo di Richiesta
                       </label>
-                      <select
-                        id="leave_type"
-                        name="leave_type"
-                        className="form-select bg-dark text-light border-secondary"
-                        value={formData.leave_type}
-                        onChange={handleInputChange}
-                        required
-                      >
-                        <option value="ferie">Ferie</option>
-                        <option value="permesso">Permesso</option>
-                        <option value="malattia">Malattia</option>
-                        <option value="congedo">Congedo</option>
-                      </select>
+                      {!showNewLeaveTypeInput ? (
+                        <select
+                          id="leave_type"
+                          name="leave_type"
+                          className="form-select bg-dark text-light border-secondary"
+                          value={formData.leave_type}
+                          onChange={(e) => {
+                            if (e.target.value === '__new__') {
+                              setShowNewLeaveTypeInput(true);
+                            } else {
+                              handleInputChange(e);
+                            }
+                          }}
+                          required
+                        >
+                          <option value="ferie">Ferie</option>
+                          <option value="permesso">Permesso</option>
+                          <option value="malattia">Malattia</option>
+                          <option value="congedo">Congedo</option>
+                          {availableLeaveTypes.filter(type => !['ferie', 'permesso', 'malattia', 'congedo'].includes(type)).map((type) => (
+                            <option key={type} value={type}>
+                              {type}
+                            </option>
+                          ))}
+                          <option value="__new__">➕ Aggiungi nuovo tipo...</option>
+                        </select>
+                      ) : (
+                        <div className="d-flex gap-2">
+                          <input
+                            type="text"
+                            className="form-control bg-dark text-light border-secondary"
+                            value={newLeaveType}
+                            onChange={(e) => setNewLeaveType(e.target.value)}
+                            placeholder="Inserisci nuovo tipo di richiesta"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                if (newLeaveType.trim()) {
+                                  setFormData(prev => ({ ...prev, leave_type: newLeaveType.trim() }));
+                                  setShowNewLeaveTypeInput(false);
+                                  setNewLeaveType('');
+                                  if (!availableLeaveTypes.includes(newLeaveType.trim())) {
+                                    setAvailableLeaveTypes([...availableLeaveTypes, newLeaveType.trim()]);
+                                  }
+                                }
+                              } else if (e.key === 'Escape') {
+                                setShowNewLeaveTypeInput(false);
+                                setNewLeaveType('');
+                              }
+                            }}
+                            autoFocus
+                          />
+                          <button
+                            type="button"
+                            className="btn btn-success"
+                            onClick={() => {
+                              if (newLeaveType.trim()) {
+                                setFormData(prev => ({ ...prev, leave_type: newLeaveType.trim() }));
+                                setShowNewLeaveTypeInput(false);
+                                setNewLeaveType('');
+                                if (!availableLeaveTypes.includes(newLeaveType.trim())) {
+                                  setAvailableLeaveTypes([...availableLeaveTypes, newLeaveType.trim()]);
+                                }
+                              }
+                            }}
+                          >
+                            <i className="fas fa-check"></i>
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={() => {
+                              setShowNewLeaveTypeInput(false);
+                              setNewLeaveType('');
+                            }}
+                          >
+                            <i className="fas fa-times"></i>
+                          </button>
+                        </div>
+                      )}
                     </div>
                     <div className="col-md-6 mb-3">
                       <label htmlFor="days_requested" className="form-label text-light">

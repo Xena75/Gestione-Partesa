@@ -148,10 +148,6 @@ export default function CompaniesPage() {
           <div className="d-flex justify-content-between align-items-center mb-4">
             <h1 className="h3 mb-0">Gestione Società</h1>
             <div className="d-flex gap-2">
-              <Link href="/gestione/employees" className="btn btn-outline-primary">
-                <i className="fas fa-users me-2"></i>
-                Gestione Dipendenti
-              </Link>
               <Link href="/gestione/companies/nuovo" className="btn btn-primary">
                 <i className="fas fa-plus me-2"></i>
                 Nuova Società

@@ -568,44 +568,47 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Grafici affiancati */}
+        {/* Azioni rapide */}
         <div className="row mb-4">
-          {/* Grafico a ciambella stati documenti */}
-          <div className="col-lg-6 col-md-12 mb-4">
-            <div className="card shadow h-100">
+          <div className="col-12">
+            <div className="card shadow">
               <div className="card-header py-3">
                 <h6 className="m-0 font-weight-bold text-primary">
-                  <i className="fas fa-chart-pie me-2"></i>
-                  Stati Documenti
+                  <i className="fas fa-bolt me-2"></i>
+                  Azioni Rapide
                 </h6>
               </div>
               <div className="card-body">
-                <div style={{ height: '350px' }}>
-                  <Doughnut data={doughnutData} options={doughnutOptions} />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Grafico a barre per documenti per tipo */}
-          <div className="col-lg-6 col-md-12 mb-4">
-            <div className="card shadow h-100">
-              <div className="card-header py-3">
-                <h6 className="m-0 font-weight-bold text-primary">
-                  <i className="fas fa-chart-bar me-2"></i>
-                  Distribuzione Documenti per Tipo
-                </h6>
-              </div>
-              <div className="card-body">
-                <div style={{ height: '350px' }}>
-                  <Bar data={barData} options={barOptions} />
+                <div className="row">
+                  <div className="col-md-3 mb-3">
+                    <Link href="/gestione/dipendenti/nuovo" className="btn btn-outline-primary w-100">
+                      <i className="fas fa-user-plus fa-2x mb-2 d-block"></i>
+                      Aggiungi Anagrafica
+                    </Link>
+                  </div>
+                  <div className="col-md-3 mb-3">
+                    <Link href="/gestione/dipendenti/documenti" className="btn btn-outline-info w-100">
+                      <i className="fas fa-file-upload fa-2x mb-2 d-block"></i>
+                      Carica Documenti
+                    </Link>
+                  </div>
+                  <div className="col-md-3 mb-3">
+                    <Link href="/gestione/employees/ferie" className="btn btn-outline-success w-100">
+                      <i className="fas fa-calendar-check fa-2x mb-2 d-block"></i>
+                      Gestisci Ferie
+                    </Link>
+                  </div>
+                  <div className="col-md-3 mb-3">
+                    <Link href="/gestione/dipendenti/report" className="btn btn-outline-warning w-100">
+                      <i className="fas fa-chart-bar fa-2x mb-2 d-block"></i>
+                      Report e Statistiche
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-
-
 
         {/* Sezioni documenti affiancate */}
         <div className="row mb-4">
@@ -883,42 +886,37 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Azioni rapide */}
-        <div className="row">
-          <div className="col-12">
-            <div className="card shadow">
+        {/* Grafici affiancati */}
+        <div className="row mb-4">
+          {/* Grafico a ciambella stati documenti */}
+          <div className="col-lg-6 col-md-12 mb-4">
+            <div className="card shadow h-100">
               <div className="card-header py-3">
                 <h6 className="m-0 font-weight-bold text-primary">
-                  <i className="fas fa-bolt me-2"></i>
-                  Azioni Rapide
+                  <i className="fas fa-chart-pie me-2"></i>
+                  Stati Documenti
                 </h6>
               </div>
               <div className="card-body">
-                <div className="row">
-                  <div className="col-md-3 mb-3">
-                    <Link href="/gestione/dipendenti/nuovo" className="btn btn-outline-primary w-100">
-                      <i className="fas fa-user-plus fa-2x mb-2 d-block"></i>
-                      Aggiungi Autista
-                    </Link>
-                  </div>
-                  <div className="col-md-3 mb-3">
-                    <Link href="/gestione/dipendenti/documenti" className="btn btn-outline-info w-100">
-                      <i className="fas fa-file-upload fa-2x mb-2 d-block"></i>
-                      Carica Documenti
-                    </Link>
-                  </div>
-                  <div className="col-md-3 mb-3">
-                    <Link href="/gestione/employees/ferie" className="btn btn-outline-success w-100">
-                      <i className="fas fa-calendar-check fa-2x mb-2 d-block"></i>
-                      Gestisci Ferie
-                    </Link>
-                  </div>
-                  <div className="col-md-3 mb-3">
-                    <Link href="/gestione/dipendenti/report" className="btn btn-outline-warning w-100">
-                      <i className="fas fa-chart-bar fa-2x mb-2 d-block"></i>
-                      Report e Statistiche
-                    </Link>
-                  </div>
+                <div style={{ height: '350px' }}>
+                  <Doughnut data={doughnutData} options={doughnutOptions} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Grafico a barre per documenti per tipo */}
+          <div className="col-lg-6 col-md-12 mb-4">
+            <div className="card shadow h-100">
+              <div className="card-header py-3">
+                <h6 className="m-0 font-weight-bold text-primary">
+                  <i className="fas fa-chart-bar me-2"></i>
+                  Distribuzione Documenti per Tipo
+                </h6>
+              </div>
+              <div className="card-body">
+                <div style={{ height: '350px' }}>
+                  <Bar data={barData} options={barOptions} />
                 </div>
               </div>
             </div>

@@ -489,6 +489,26 @@ export default function AutistiDocumentiPage() {
     return `${giorni} giorni`;
   };
 
+  const getDocumentTypeBadgeClass = (documentType: string) => {
+    return '';
+  };
+
+  const getDocumentTypeBadgeStyle = () => {
+    return { 
+      backgroundColor: '#ff9800', 
+      color: '#000000',
+      padding: '0.35em 0.65em',
+      fontSize: '0.875em',
+      fontWeight: '700',
+      lineHeight: '1',
+      textAlign: 'center',
+      whiteSpace: 'nowrap',
+      verticalAlign: 'baseline',
+      borderRadius: '0.375rem',
+      display: 'inline-block'
+    };
+  };
+
   const tipiDocumento = [
     'ADR',
     'Altro',
@@ -804,7 +824,7 @@ export default function AutistiDocumentiPage() {
                           return doc.allFiles.map((file, index) => (
                             <tr key={`${doc.id}-${file.id}`}>
                               <td>
-                                <span className="badge bg-info">
+                                <span className={`badge ${getDocumentTypeBadgeClass(doc.document_type)}`} style={getDocumentTypeBadgeStyle()}>
                                   {doc.document_type}
                                 </span>
                                 {index === 0 && (
@@ -861,7 +881,7 @@ export default function AutistiDocumentiPage() {
                           return (
                             <tr key={doc.id}>
                               <td>
-                                <span className="badge bg-info">
+                                <span className={`badge ${getDocumentTypeBadgeClass(doc.document_type)}`} style={getDocumentTypeBadgeStyle()}>
                                   {doc.document_type}
                                 </span>
                               </td>

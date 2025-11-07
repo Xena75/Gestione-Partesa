@@ -50,9 +50,13 @@ function DocumentiPageContent() {
   });
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [availableDocumentTypes, setAvailableDocumentTypes] = useState<string[]>([]);
+  const [showNewDocumentTypeInput, setShowNewDocumentTypeInput] = useState(false);
+  const [newDocumentType, setNewDocumentType] = useState('');
 
   useEffect(() => {
     loadDocuments();
+    loadDocumentTypes();
   }, []);
 
   // Aggiorna il filtro quando cambia il parametro URL
@@ -69,6 +73,20 @@ function DocumentiPageContent() {
       // Non resettiamo se l'utente ha cambiato manualmente il filtro
     }
   }, [searchParams]);
+
+  const loadDocumentTypes = async () => {
+    try {
+      const response = await fetch('/api/employees/document-types');
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          setAvailableDocumentTypes(result.data);
+        }
+      }
+    } catch (error) {
+      console.error('Errore nel caricamento dei tipi di documento:', error);
+    }
+  };
 
   const loadDocuments = async () => {
     try {
@@ -173,7 +191,7 @@ function DocumentiPageContent() {
     }
   };
 
-  const uniqueTypes = [...new Set(documents.map(doc => doc.document_type))].filter(Boolean);
+  const uniqueTypes = [...new Set([...availableDocumentTypes, ...documents.map(doc => doc.document_type)])].filter(Boolean);
 
   if (loading) {
     return (
@@ -302,16 +320,78 @@ function DocumentiPageContent() {
                 </div>
                 <div className="col-md-3">
                   <label className="form-label text-light">Tipo Documento</label>
-                  <select 
-                    className="form-select"
-                    value={typeFilter}
-                    onChange={(e) => setTypeFilter(e.target.value)}
-                  >
-                    <option value="all">Tutti i tipi</option>
-                    {uniqueTypes.map(type => (
-                      <option key={type} value={type}>{type}</option>
-                    ))}
-                  </select>
+                  {!showNewDocumentTypeInput ? (
+                    <select 
+                      className="form-select"
+                      value={typeFilter}
+                      onChange={(e) => {
+                        if (e.target.value === '__new__') {
+                          setShowNewDocumentTypeInput(true);
+                        } else {
+                          setTypeFilter(e.target.value);
+                        }
+                      }}
+                    >
+                      <option value="all">Tutti i tipi</option>
+                      {uniqueTypes.map(type => (
+                        <option key={type} value={type}>{type}</option>
+                      ))}
+                      <option value="__new__">➕ Aggiungi nuovo tipo...</option>
+                    </select>
+                  ) : (
+                    <div className="d-flex gap-2">
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={newDocumentType}
+                        onChange={(e) => setNewDocumentType(e.target.value)}
+                        placeholder="Inserisci nuovo tipo documento"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (newDocumentType.trim()) {
+                              setTypeFilter(newDocumentType.trim());
+                              setShowNewDocumentTypeInput(false);
+                              setNewDocumentType('');
+                              if (!availableDocumentTypes.includes(newDocumentType.trim())) {
+                                setAvailableDocumentTypes([...availableDocumentTypes, newDocumentType.trim()]);
+                              }
+                            }
+                          } else if (e.key === 'Escape') {
+                            setShowNewDocumentTypeInput(false);
+                            setNewDocumentType('');
+                          }
+                        }}
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-success"
+                        onClick={() => {
+                          if (newDocumentType.trim()) {
+                            setTypeFilter(newDocumentType.trim());
+                            setShowNewDocumentTypeInput(false);
+                            setNewDocumentType('');
+                            if (!availableDocumentTypes.includes(newDocumentType.trim())) {
+                              setAvailableDocumentTypes([...availableDocumentTypes, newDocumentType.trim()]);
+                            }
+                          }
+                        }}
+                      >
+                        <i className="fas fa-check"></i>
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={() => {
+                          setShowNewDocumentTypeInput(false);
+                          setNewDocumentType('');
+                        }}
+                      >
+                        <i className="fas fa-times"></i>
+                      </button>
+                    </div>
+                  )}
                 </div>
                 <div className="col-md-6">
                   <label className="form-label text-light">Cerca</label>

@@ -158,6 +158,10 @@ export default function EmployeesPage() {
           <div className="d-flex justify-content-between align-items-center mb-4">
             <h1 className="h3 mb-0">Gestione Dipendenti</h1>
             <div className="d-flex gap-2">
+              <Link href="/gestione/dipendenti/dashboard" className="btn btn-outline-secondary">
+                <i className="fas fa-tachometer-alt me-2"></i>
+                Dashboard
+              </Link>
               <Link href="/gestione/companies" className="btn btn-outline-primary">
                 <i className="fas fa-building me-2"></i>
                 Gestione Società

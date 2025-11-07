@@ -149,13 +149,23 @@ export async function POST(
         { status: 404 }
       );
     }
+    
+    console.log('API POST documents - Dati employee:', {
+      id: employee.id,
+      nome: employee.nome,
+      cognome: employee.cognome,
+      nominativo: employee.nominativo
+    });
 
     const formData = await request.formData();
     const documentType = formData.get('document_type') as string;
     const documentName = formData.get('document_name') as string;
-    const expiryDate = formData.get('expiry_date') as string;
+    const expiryDateRaw = formData.get('expiry_date') as string | null;
+    const expiryDate = expiryDateRaw && expiryDateRaw.trim() !== '' ? expiryDateRaw.trim() : undefined;
     const notes = formData.get('notes') as string;
     const uploadedBy = formData.get('uploaded_by') as string;
+    
+    console.log('📅 Data scadenza ricevuta:', expiryDateRaw, '→ elaborata:', expiryDate);
     
     // Supporta sia 'file' (singolo) che 'files' (multipli)
     const singleFile = formData.get('file') as File | null;
@@ -206,8 +216,15 @@ export async function POST(
     // SOLUZIONE SEMPLICE: salva i file separatamente con lo stesso nome documento e scadenza
     // Nel frontend verranno raggruppati insieme quando visualizzati
     const timestamp = Date.now();
-    const sanitizedEmployeeId = employeeId.replace(/[^a-zA-Z0-9]/g, '_');
+    const sanitizedEmployeeId = String(employee.id).replace(/[^a-zA-Z0-9]/g, '_');
     const sanitizedDocType = documentType.replace(/[^a-zA-Z0-9]/g, '_');
+    
+    // Genera prefisso file usando nome e cognome invece dell'ID
+    const nomeSanitized = (employee.nome || '').replace(/[^a-zA-Z0-9]/g, '_');
+    const cognomeSanitized = (employee.cognome || '').replace(/[^a-zA-Z0-9]/g, '_');
+    const filePrefix = nomeSanitized && cognomeSanitized 
+      ? `${nomeSanitized}_${cognomeSanitized}` 
+      : sanitizedEmployeeId; // Fallback all'ID se nome/cognome non disponibili
     
     // Genera nome documento se non fornito
     const finalDocumentName = documentName || `${documentType.replace(/_/g, ' ').toUpperCase()} - ${employee.nome} ${employee.cognome}`;
@@ -232,8 +249,8 @@ export async function POST(
       
       // Genera nome file univoco per ogni file
       const fileName = files.length > 1 
-        ? `${sanitizedEmployeeId}_${sanitizedDocType}_${timestamp}_part${i + 1}.${fileExtension}`
-        : `${sanitizedEmployeeId}_${sanitizedDocType}_${timestamp}.${fileExtension}`;
+        ? `${filePrefix}_${sanitizedDocType}_${timestamp}_part${i + 1}.${fileExtension}`
+        : `${filePrefix}_${sanitizedDocType}_${timestamp}.${fileExtension}`;
       
       // Upload su Vercel Blob
       let blobUrl: string;
@@ -256,8 +273,14 @@ export async function POST(
       }
 
       // Salva nel database con lo stesso nome documento e scadenza
+      // Usa il nome completo (nominativo) se disponibile, altrimenti costruiscilo da nome e cognome
+      const nominativo = employee.nominativo || `${employee.nome || ''} ${employee.cognome || ''}`.trim();
+      const employeeIdForDocument = nominativo || employee.id;
+      
+      console.log('API POST documents - employee_id da salvare:', employeeIdForDocument, '(da nominativo:', employee.nominativo, ', nome:', employee.nome, ', cognome:', employee.cognome, ', id:', employee.id, ')');
+      
       const documentId = await createEmployeeDocument({
-        employee_id: employee.id,
+        employee_id: employeeIdForDocument,
         document_type: documentType,
         document_name: files.length > 1 
           ? `${finalDocumentName} (${i === 0 ? 'Fronte' : i === 1 ? 'Retro' : `Parte ${i + 1}`})`

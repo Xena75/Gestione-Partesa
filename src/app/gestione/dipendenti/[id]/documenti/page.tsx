@@ -88,6 +88,21 @@ export default function DocumentiAutista() {
   const [expiryDate, setExpiryDate] = useState('');
   const [notes, setNotes] = useState('');
   const [previewDocument, setPreviewDocument] = useState<EmployeeDocument | null>(null);
+  const [showNewDocumentTypeInput, setShowNewDocumentTypeInput] = useState(false);
+  const [newDocumentType, setNewDocumentType] = useState('');
+  const [customDocumentTypes, setCustomDocumentTypes] = useState<{value: string, label: string}[]>([]);
+  const [availableDocumentTypes, setAvailableDocumentTypes] = useState<string[]>([]);
+  const [documentTypesFromDb, setDocumentTypesFromDb] = useState<{value: string, label: string}[]>([]);
+
+  // Funzione helper per ottenere tutti i tipi di documento dal database
+  const getAllDocumentTypes = () => {
+    // Mostra SOLO i tipi dal database
+    if (documentTypesFromDb.length > 0) {
+      return documentTypesFromDb;
+    }
+    // Fallback ai tipi standard solo se il database è vuoto
+    return DOCUMENT_TYPES;
+  };
 
   // Stati per modifica
   const [editingDocument, setEditingDocument] = useState<EmployeeDocument | null>(null);
@@ -100,9 +115,38 @@ export default function DocumentiAutista() {
 
   useEffect(() => {
     if (employeeId) {
-      loadData();
+      // Carica prima i tipi di documento, poi i dati
+      loadDocumentTypes().then(() => {
+        loadData();
+      });
     }
   }, [employeeId]);
+
+  const loadDocumentTypes = async () => {
+    try {
+      const response = await fetch('/api/employees/document-types');
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data && Array.isArray(result.data)) {
+          setAvailableDocumentTypes(result.data);
+          
+          // Converti tutti i tipi dal database in formato {value, label}
+          const dbTypesFormatted = result.data.map((type: string) => ({
+            value: type,
+            label: type
+              .split('_')
+              .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(' ')
+          }));
+          
+          // Imposta SOLO i tipi dal database
+          setDocumentTypesFromDb(dbTypesFormatted);
+        }
+      }
+    } catch (error) {
+      console.error('Errore nel caricamento dei tipi di documento:', error);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -134,6 +178,47 @@ export default function DocumentiAutista() {
         const documentsData = await documentsResponse.json();
         if (documentsData.success && documentsData.data) {
           setDocuments(Array.isArray(documentsData.data) ? documentsData.data : []);
+          
+          // Estrai i tipi di documento personalizzati dai documenti caricati che non sono già nel database
+          const customTypes = new Map<string, string>();
+          documentsData.data.forEach((doc: EmployeeDocument) => {
+            if (!doc.document_type) return;
+            
+            // Controlla che il tipo non sia già nel database
+            const isInDb = availableDocumentTypes.some(t => 
+              t.toLowerCase() === doc.document_type.toLowerCase()
+            );
+            
+            // Se non è nel database, aggiungilo ai tipi personalizzati
+            if (!isInDb) {
+              const label = doc.document_type
+                .split('_')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+              customTypes.set(doc.document_type.toLowerCase(), label);
+            }
+          });
+          
+          // Se ci sono tipi personalizzati dai documenti, aggiungili alla lista dal database
+          if (customTypes.size > 0) {
+            const newCustomTypes = Array.from(customTypes.entries()).map(([value, label]) => ({ 
+              value: value, 
+              label: label 
+            }));
+            
+            setDocumentTypesFromDb(prev => {
+              const combined = [...prev];
+              newCustomTypes.forEach(newType => {
+                const exists = combined.some(t => 
+                  t.value.toLowerCase() === newType.value.toLowerCase()
+                );
+                if (!exists) {
+                  combined.push(newType);
+                }
+              });
+              return combined;
+            });
+          }
         }
       }
 
@@ -180,10 +265,11 @@ export default function DocumentiAutista() {
       const formData = new FormData();
       formData.append('file', selectedFile);
       formData.append('document_type', documentType);
+      console.log('📄 Tipo documento da salvare:', documentType);
       if (documentName) {
         formData.append('document_name', documentName);
       }
-      if (expiryDate) {
+      if (expiryDate && expiryDate.trim() !== '') {
         formData.append('expiry_date', expiryDate);
       }
       if (notes) {
@@ -208,6 +294,8 @@ export default function DocumentiAutista() {
         setDocumentName('');
         setExpiryDate('');
         setNotes('');
+        setShowNewDocumentTypeInput(false);
+        setNewDocumentType('');
         setShowUploadForm(false);
         alert('Documento caricato con successo!');
       } else {
@@ -503,20 +591,93 @@ export default function DocumentiAutista() {
                       <label htmlFor="documentType" className="form-label">
                         Tipo Documento <span className="text-danger">*</span>
                       </label>
-                      <select
-                        id="documentType"
-                        className="form-select"
-                        value={documentType}
-                        onChange={(e) => setDocumentType(e.target.value)}
-                        required
-                      >
-                        <option value="">Seleziona tipo documento</option>
-                        {DOCUMENT_TYPES.map((type) => (
-                          <option key={type.value} value={type.value}>
-                            {type.label}
-                          </option>
-                        ))}
-                      </select>
+                      {!showNewDocumentTypeInput ? (
+                        <select
+                          id="documentType"
+                          className="form-select"
+                          value={documentType}
+                          onChange={(e) => {
+                            if (e.target.value === '__new__') {
+                              setShowNewDocumentTypeInput(true);
+                            } else {
+                              setDocumentType(e.target.value);
+                            }
+                          }}
+                          required
+                        >
+                          <option value="">Seleziona tipo documento</option>
+                          {getAllDocumentTypes().map((type) => (
+                            <option key={type.value} value={type.value}>
+                              {type.label}
+                            </option>
+                          ))}
+                          <option value="__new__">➕ Aggiungi nuovo tipo documento...</option>
+                        </select>
+                      ) : (
+                        <div className="d-flex gap-2">
+                          <input
+                            type="text"
+                            className="form-control"
+                            value={newDocumentType}
+                            onChange={(e) => setNewDocumentType(e.target.value)}
+                            placeholder="Inserisci nuovo tipo documento"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                if (newDocumentType.trim()) {
+                                  const newTypeValue = newDocumentType.trim().toLowerCase().replace(/\s+/g, '_');
+                                  const newTypeLabel = newDocumentType.trim();
+                                  setDocumentType(newTypeValue);
+                                  // Aggiungi alla lista dei tipi personalizzati
+                                  if (!customDocumentTypes.find(t => t.value === newTypeValue)) {
+                                    setCustomDocumentTypes([...customDocumentTypes, { value: newTypeValue, label: newTypeLabel }]);
+                                  }
+                                  setShowNewDocumentTypeInput(false);
+                                  setNewDocumentType('');
+                                }
+                              } else if (e.key === 'Escape') {
+                                setShowNewDocumentTypeInput(false);
+                                setNewDocumentType('');
+                              }
+                            }}
+                            autoFocus
+                          />
+                          <button
+                            type="button"
+                            className="btn btn-success"
+                            onClick={() => {
+                              if (newDocumentType.trim()) {
+                                const newTypeValue = newDocumentType.trim().toLowerCase().replace(/\s+/g, '_');
+                                const newTypeLabel = newDocumentType.trim();
+                                setDocumentType(newTypeValue);
+                                // Aggiungi alla lista dei tipi personalizzati
+                                if (!customDocumentTypes.find(t => t.value === newTypeValue)) {
+                                  setCustomDocumentTypes([...customDocumentTypes, { value: newTypeValue, label: newTypeLabel }]);
+                                }
+                                setShowNewDocumentTypeInput(false);
+                                setNewDocumentType('');
+                              }
+                            }}
+                          >
+                            <i className="fas fa-check"></i>
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={() => {
+                              setShowNewDocumentTypeInput(false);
+                              setNewDocumentType('');
+                            }}
+                          >
+                            <i className="fas fa-times"></i>
+                          </button>
+                        </div>
+                      )}
+                      {documentType && !showNewDocumentTypeInput && (
+                        <div className="form-text text-light mt-1">
+                          Tipo selezionato: {getAllDocumentTypes().find(t => t.value === documentType)?.label || documentType}
+                        </div>
+                      )}
                     </div>
                     <div className="col-md-6 mb-3">
                       <label htmlFor="documentName" className="form-label">
@@ -585,7 +746,11 @@ export default function DocumentiAutista() {
                     <button 
                       type="button"
                       className="btn btn-outline-secondary me-2"
-                      onClick={() => setShowUploadForm(false)}
+                      onClick={() => {
+                        setShowUploadForm(false);
+                        setShowNewDocumentTypeInput(false);
+                        setNewDocumentType('');
+                      }}
                     >
                       Annulla
                     </button>
@@ -785,7 +950,7 @@ export default function DocumentiAutista() {
                               </td>
                               <td>
                                 <span className="badge bg-secondary">
-                                  {DOCUMENT_TYPES.find(t => t.value === doc.document_type)?.label || doc.document_type}
+                                  {[...DOCUMENT_TYPES, ...customDocumentTypes].find(t => t.value === doc.document_type)?.label || doc.document_type}
                                 </span>
                               </td>
                               <td>
@@ -897,7 +1062,7 @@ export default function DocumentiAutista() {
                               </td>
                               <td>
                                 <span className="badge bg-secondary">
-                                  {DOCUMENT_TYPES.find(t => t.value === doc.document_type)?.label || doc.document_type}
+                                  {[...DOCUMENT_TYPES, ...customDocumentTypes].find(t => t.value === doc.document_type)?.label || doc.document_type}
                                 </span>
                               </td>
                               <td>
