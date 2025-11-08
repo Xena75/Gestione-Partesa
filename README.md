@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.35.3
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.35.7
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -55,8 +55,10 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Filtri scadenze corretti**: Identificazione precisa di tutte le scadenze passate e in scadenza ⭐ **AGGIORNATO v2.30.10**
 - **Database pulito**: Eliminazione automatica duplicati per performance ottimali ⭐ **AGGIORNATO v2.30.10**
 
-### 👥 **Gestione Dipendenti** ⭐ **AGGIORNATO v2.32.2**
+### 👥 **Gestione Dipendenti** ⭐ **AGGIORNATO v2.35.7**
 - **Database esteso**: Tabella employees con 29 campi completi (dati personali, contrattuali, contatti)
+- **ID intelligente**: Generazione ID basata su nome completo invece di `EMP{timestamp}` ⭐ **NUOVO v2.35.7**
+- **Gestione duplicati**: Sistema automatico per gestire dipendenti con stesso nome (numeri progressivi) ⭐ **NUOVO v2.35.7**
 - **Import automatico**: Sistema di import da Excel con aggiornamento/inserimento intelligente
 - **Dati personali**: Nome, cognome, CF, patente, cittadinanza, permesso soggiorno, titolo studio
 - **Dati contrattuali**: Qualifica, tipo contratto, CCNL, livello, orario lavoro, date assunzione/dimissioni
@@ -70,35 +72,42 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Timestamp automatici**: Gestione automatica `updatedAt` per tracciamento modifiche ⭐ **NUOVO v2.32.1**
 - **Interfaccia corretta**: Allineamento perfetto tra database (camelCase) e TypeScript ⭐ **NUOVO v2.32.1**
 - **Fix company_name**: Risolto errore "Unknown column 'company_name'" separando dati visualizzazione/aggiornamento ⭐ **NUOVO v2.32.2**
+- **Rimozione campi ridondanti**: Eliminati campi `driver_license_number` e `driver_license_expiry` (gestiti tramite documenti) ⭐ **NUOVO v2.35.5**
 
-### 📄 **Sistema Gestione Documenti Dipendenti** ⭐ **NUOVO v2.32.2**
+### 📄 **Sistema Gestione Documenti Dipendenti** ⭐ **AGGIORNATO v2.35.4**
 - **Upload documenti**: Sistema completo per caricamento documenti autisti (patente, CQC, ADR, contratti)
 - **Storage Vercel Blob**: Upload sicuro su cloud storage con gestione multi-ambiente
 - **Preview documenti**: Anteprima PDF e immagini direttamente nel browser
 - **Gestione scadenze**: Monitoraggio automatico scadenze con stati (valido, scaduto, in_scadenza, da_rinnovare)
 - **Validazione file**: Controllo tipo, dimensione (max 10MB) e formato supportato
+- **Tipi personalizzati**: Possibilità di aggiungere nuovi tipi di documento direttamente dal form ⭐ **NUOVO v2.35.4**
 - **API complete**: Endpoint RESTful per CRUD documenti e ricerca documenti in scadenza
 - **Interfaccia intuitiva**: Pagina dedicata `/gestione/autisti/[id]/documenti` con drag&drop
 - **Tipi documento**: Supporto patente, CQC, ADR, contratto lavoro, certificato medico, corsi formazione
 - **Database ottimizzato**: Tabella `employee_documents` con indici per performance e foreign key
 - **Aggiornamento automatico**: Sistema automatico di aggiornamento stato documenti basato su scadenze
 
-### 🏖️ **Sistema Gestione Ferie Dipendenti** ⭐ **NUOVO v2.34.0**
+### 🏖️ **Sistema Gestione Ferie Dipendenti** ⭐ **AGGIORNATO v2.35.7**
 - **Gestione completa ferie**: Sistema integrato per gestione ferie, permessi e congedi dipendenti
 - **Import Excel mensile**: Caricamento automatico saldi ferie da file Excel con mapping dipendenti
 - **Logica ore/giorni**: Ferie in giorni (conversione automatica 1 giorno = 8 ore), permessi in ore
 - **Tipologie supportate**: Ferie, Ex Festività, ROL, Malattia, Congedi con gestione separata
+- **Tipi personalizzati**: Possibilità di aggiungere nuovi tipi di richiesta ferie direttamente dal form ⭐ **NUOVO v2.35.5**
 - **Dashboard saldi**: Visualizzazione saldi disponibili per ogni dipendente (ferie, ex festività, ROL)
 - **Workflow approvazione**: Sistema completo richiesta → approvazione → aggiornamento saldi
+- **Modifica selettiva**: Possibilità di modificare solo i campi necessari senza reinserire tutti i dati ⭐ **NUOVO v2.35.6**
+- **Allegati richieste**: Caricamento file allegati (PDF, immagini) per documentazione richieste ⭐ **NUOVO v2.35.4**
 - **Pagina centralizzata**: `/gestione/employees/ferie` per gestione completa sistema ferie
 - **API dedicate**: Endpoint per richieste, approvazioni, saldi e import Excel
 - **Validazione saldi**: Controllo automatico disponibilità prima dell'approvazione richieste
 - **Storico completo**: Tracciamento tutte le richieste con stati e cronologia approvazioni
 - **Integrazione calendario**: Eventi ferie visualizzati nel calendario aziendale integrato
 - **Database esteso**: Tabelle `employee_leave_requests` e `employee_leave_balance` ottimizzate
+- **Campo leave_type**: Convertito da ENUM a VARCHAR per supportare tipi personalizzati ⭐ **NUOVO v2.35.5**
 
-### 🔧 **Aggiornamenti Database e Compatibilità Next.js 15** ⭐ **NUOVO v2.35.2**
+### 🔧 **Aggiornamenti Database e Compatibilità Next.js 15** ⭐ **AGGIORNATO v2.35.7**
 - **Correzione ID dipendente**: Aggiornato ID "Alberto Racano" → "Alberto Vincenzo Racano" con transazione atomica
+- **Generazione ID corretta**: ID dipendenti ora generati da nome completo invece di `EMP{timestamp}` ⭐ **NUOVO v2.35.7**
 - **Integrità referenziale**: Mantenuta coerenza tra tutte le tabelle collegate (employees, travels, leave_requests, leave_balance)
 - **Aggiornamento massivo**: 105 record aggiornati in travels, 1 in employee_leave_balance, 1 in employees
 - **Compatibilità Next.js 15**: Risolti errori TypeScript per parametri asincroni nelle API routes
@@ -106,6 +115,7 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Correzione proprietà**: Risolto errore `request.hours` → `request.hours_requested` in gestione ferie
 - **Build testata**: Compilazione completata con successo senza errori TypeScript
 - **Gestione ferie estesa**: Funzionalità modifica/eliminazione richieste per tutti gli stati (non solo pending)
+- **Modifica selettiva**: Possibilità di modificare solo i campi necessari nelle richieste ferie ⭐ **NUOVO v2.35.6**
 - **Foreign key gestite**: Script con disabilitazione temporanea vincoli per aggiornamenti complessi
 - **Transazione sicura**: Operazioni atomiche con rollback automatico in caso di errore
 
@@ -155,6 +165,8 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Dashboard Autisti ottimizzata**: Aggiunto pulsante "Monitoraggio" con link esterno a sistema monitoraggio viaggi ⭐ **NUOVO v2.35.3**
 - **Layout pulsanti migliorato**: Sezione "Azioni Rapide" ottimizzata con layout `col-md-3` per utilizzo completo spazio disponibile ⭐ **NUOVO v2.35.3**
 - **Pulizia interfaccia**: Rimosso pulsante "Timesheet" non funzionante per migliorare UX ⭐ **NUOVO v2.35.3**
+- **Dashboard dipendenti riorganizzata**: Nuovo ordine sezioni con "Azioni Rapide" dopo statistiche ⭐ **NUOVO v2.35.7**
+- **Navigazione migliorata**: Aggiunto pulsante "Dashboard" in `/gestione/employees` e rinominato "Torna alla Gestione" in "Elenco Personale" ⭐ **NUOVO v2.35.7**
 
 ### 📅 **Calendario Integrato Ferie e Veicoli** ⭐ **PRECEDENTE v2.33.0**
 - **Visualizzazione unificata**: Calendario che mostra sia scadenze veicoli che eventi ferie dipendenti
@@ -1351,7 +1363,7 @@ WHERE status = 'completed' AND created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)
 
 #### 📚 **Documentazione Aggiornata**
 - **README.md**: Documentazione aggiornata con le nuove statistiche e funzionalità
-- **FUNZIONALITA_AGGIORNATE.md**: Dettagli tecnici delle modifiche implementate
+- **docs/funzionalita_aggiornate.md**: Dettagli tecnici delle modifiche implementate
 - **Tracciabilità**: Documentazione completa delle modifiche alle query e ai conteggi
 - **Standard professionali**: Mantenimento della qualità della documentazione
 
@@ -2155,19 +2167,42 @@ DB_GESTIONE_NAME=gestionelogistica
 
 ---
 
-**Versione**: 2.19.3  
+**Versione**: 2.35.7  
 **Ultimo Aggiornamento**: Gennaio 2025  
 **Stato**: ✅ **PRODUZIONE STABILE**  
 **Compatibilità**: Next.js 15+, Node.js 18+, MySQL 8.0+
 
 ## 🆕 **CHANGELOG RECENTE**
 
-### v2.19.3 (Gennaio 2025)
-- ✅ Pulizia completa pagina viaggi: rimossi tutti i test e debug
-- ✅ Eliminati pulsanti "Test Frontend", "Test Batch", "Debug Prod"
-- ✅ Rimossi console.log e alert di debug non necessari
-- ✅ Preservate funzionalità produzione: tabella viaggi, filtri, paginazione, modal immagini
-- ✅ Interfaccia pulita e professionale per ambiente produzione
+### v2.35.7 (Gennaio 2025) ⭐ **NUOVO**
+- ✅ **Correzione ID dipendenti**: Generazione ID basata su nome completo invece di `EMP{timestamp}`
+- ✅ **Gestione duplicati**: Sistema automatico per gestire dipendenti con stesso nome
+- ✅ **Riorganizzazione dashboard**: Nuovo ordine sezioni con "Azioni Rapide" dopo statistiche
+- ✅ **Navigazione migliorata**: Aggiunto pulsante "Dashboard" e rinominato "Elenco Personale"
+- ✅ **Rimozione link ridondanti**: Pulizia navigazione per migliore UX
+
+### v2.35.6 (Gennaio 2025) ⭐ **NUOVO**
+- ✅ **Modifica selettiva richieste ferie**: Possibilità di modificare solo i campi necessari
+- ✅ **Confronto intelligente**: Sistema automatico per identificare campi modificati
+- ✅ **Modifica allegati**: Possibilità di aggiungere/modificare/eliminare solo l'allegato
+- ✅ **Validazione condizionale**: Validazione solo sui campi modificati
+
+### v2.35.5 (Gennaio 2025) ⭐ **NUOVO**
+- ✅ **Tipi ferie personalizzati**: Possibilità di aggiungere nuovi tipi direttamente dal form
+- ✅ **Campo leave_type**: Convertito da ENUM a VARCHAR per supportare tipi personalizzati
+- ✅ **Rimozione campi patente**: Eliminati campi ridondanti `driver_license_number` e `driver_license_expiry`
+- ✅ **Semplificazione schema**: Informazioni patente gestite tramite sistema documenti
+
+### v2.35.4 (Gennaio 2025) ⭐ **NUOVO**
+- ✅ **Caricamento allegati richieste ferie**: Possibilità di allegare file (PDF, immagini) alle richieste
+- ✅ **Tipi documento personalizzati**: Possibilità di aggiungere nuovi tipi direttamente dal form
+- ✅ **Validazione file**: Controllo tipo e dimensione (max 10MB) prima dell'invio
+- ✅ **Preview file**: Badge che mostra il nome del file selezionato
+
+### v2.35.3 (Gennaio 2025) ⭐ **NUOVO**
+- ✅ **Dashboard Autisti ottimizzata**: Aggiunto pulsante "Monitoraggio" con link esterno
+- ✅ **Layout pulsanti migliorato**: Sezione "Azioni Rapide" ottimizzata con layout `col-md-3`
+- ✅ **Pulizia interfaccia**: Rimosso pulsante "Timesheet" non funzionante
 
 ### v2.30.3 (Gennaio 2025) ⭐ **NUOVO**
 - ✅ **Pulsante Modifica Preventivi**: Aggiunto pulsante "Modifica" nella pagina `/vehicles/quotes` per accesso diretto alla pagina di edit
@@ -2179,7 +2214,7 @@ DB_GESTIONE_NAME=gestionelogistica
 ### v2.18.5 (Gennaio 2025)
 - ✅ Aggiornamento statistiche dashboard con nuove etichette e query ottimizzate
 - ✅ Conteggi accurati per monitoraggi pending, viaggi completati e viaggi PoD mancanti
-- ✅ Documentazione README.md e FUNZIONALITA_AGGIORNATE.md aggiornata
+- ✅ Documentazione README.md e docs/funzionalita_aggiornate.md aggiornata
 - ✅ Coerenza dati tra database multipli e performance migliorate
 
 ### v2.18.4 (Gennaio 2025)
