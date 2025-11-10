@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import * as XLSX from 'xlsx';
-import { Eye, Calendar, Search, Filter, Download, ArrowUpDown, ChevronLeft, ChevronRight, X, RotateCcw, Plus } from 'lucide-react';
+import { Eye, Calendar, Search, Filter, Download, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, X, RotateCcw, Plus } from 'lucide-react';
 
 interface Vehicle {
   id: number;
@@ -135,6 +135,15 @@ export default function VehicleListPage() {
   }, [sortedVehicles, currentPage]);
 
   const totalPages = Math.ceil(sortedVehicles.length / ITEMS_PER_PAGE);
+
+  const getSortIcon = (field: keyof Vehicle) => {
+    if (sortConfig?.key !== field) {
+      return <ArrowUpDown size={14} className="ms-1 text-muted" />;
+    }
+    return sortConfig.direction === 'asc' 
+      ? <ArrowUp size={14} className="ms-1" />
+      : <ArrowDown size={14} className="ms-1" />;
+  };
 
   const handleSort = (key: keyof Vehicle) => {
     setSortConfig(current => {
@@ -462,7 +471,7 @@ export default function VehicleListPage() {
                   >
                     <div className="d-flex align-items-center">
                       Targa
-                      <ArrowUpDown size={14} className="ms-1" />
+                      {getSortIcon('targa')}
                     </div>
                   </th>
                   <th 
@@ -472,7 +481,7 @@ export default function VehicleListPage() {
                   >
                     <div className="d-flex align-items-center">
                       Marca
-                      <ArrowUpDown size={14} className="ms-1" />
+                      {getSortIcon('marca')}
                     </div>
                   </th>
                   <th 
@@ -482,7 +491,7 @@ export default function VehicleListPage() {
                   >
                     <div className="d-flex align-items-center">
                       Modello
-                      <ArrowUpDown size={14} className="ms-1" />
+                      {getSortIcon('modello')}
                     </div>
                   </th>
                   <th 
@@ -492,7 +501,7 @@ export default function VehicleListPage() {
                   >
                     <div className="d-flex align-items-center">
                       Proprietà
-                      <ArrowUpDown size={14} className="ms-1" />
+                      {getSortIcon('proprieta')}
                     </div>
                   </th>
                   <th 
@@ -502,7 +511,7 @@ export default function VehicleListPage() {
                   >
                     <div className="d-flex align-items-center">
                       Portata (kg)
-                      <ArrowUpDown size={14} className="ms-1" />
+                      {getSortIcon('portata')}
                     </div>
                   </th>
                   <th scope="col">N. Pallet</th>
@@ -519,7 +528,7 @@ export default function VehicleListPage() {
                   >
                     <div className="d-flex align-items-center">
                       Stato
-                      <ArrowUpDown size={14} className="ms-1" />
+                      {getSortIcon('active')}
                     </div>
                   </th>
                   <th scope="col">Note</th>

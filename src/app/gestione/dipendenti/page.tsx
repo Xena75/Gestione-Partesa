@@ -368,8 +368,10 @@ function AutistiPageContent() {
                           style={{ cursor: 'pointer' }}
                         >
                           Nome Completo
-                          {sortField === 'cognome' && (
+                          {sortField === 'cognome' ? (
                             <i className={`fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'} ms-1`}></i>
+                          ) : (
+                            <i className="fas fa-sort ms-1 text-secondary"></i>
                           )}
                         </th>
                         <th 
@@ -379,8 +381,10 @@ function AutistiPageContent() {
                           style={{ cursor: 'pointer' }}
                         >
                           Contatti
-                          {sortField === 'email' && (
+                          {sortField === 'email' ? (
                             <i className={`fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'} ms-1`}></i>
+                          ) : (
+                            <i className="fas fa-sort ms-1 text-secondary"></i>
                           )}
                         </th>
                         <th 
@@ -390,8 +394,10 @@ function AutistiPageContent() {
                           style={{ cursor: 'pointer' }}
                         >
                           Società
-                          {sortField === 'company_name' && (
+                          {sortField === 'company_name' ? (
                             <i className={`fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'} ms-1`}></i>
+                          ) : (
+                            <i className="fas fa-sort ms-1 text-secondary"></i>
                           )}
                         </th>
                         <th scope="col" className="text-light">Tipo</th>

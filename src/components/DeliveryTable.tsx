@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import type { FatturaDelivery } from '@/lib/data-gestione';
 
 interface DeliveryTableProps {
@@ -176,8 +177,10 @@ export default function DeliveryTable({ viewType }: DeliveryTableProps) {
 
   // Funzione per renderizzare l'icona di ordinamento
   const renderSortIcon = (field: string) => {
-    if (sortBy !== field) return '↕️';
-    return sortOrder === 'ASC' ? '↑' : '↓';
+    if (sortBy !== field) {
+      return <ArrowUpDown size={16} className="text-muted ms-1" />;
+    }
+    return sortOrder === 'ASC' ? <ArrowUp size={16} className="ms-1" /> : <ArrowDown size={16} className="ms-1" />;
   };
 
   if (isLoading) {

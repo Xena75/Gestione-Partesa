@@ -6,6 +6,7 @@ import { TerzistiData, TerzistiStats, TerzistiFilters, TerzistiFilterOptions } f
 import { formatDateEuropean, formatDateISO } from '@/lib/date-utils';
 import SortableHeader from '@/components/SortableHeader';
 import ExportTerzistiButton from '@/components/ExportTerzistiButton';
+import DateInput from '@/components/DateInput';
 
 function FatturazioneTerzistiContent() {
   const router = useRouter();
@@ -48,17 +49,14 @@ function FatturazioneTerzistiContent() {
   const [showFilters, setShowFilters] = useState(false);
   
   // State per ordinamento
-  const [sortBy] = useState('data_mov_merce');
-  const [sortOrder] = useState<'ASC' | 'DESC'>('DESC');
+  const sortBy = searchParams?.get('sortBy') || 'data_mov_merce';
+  const sortOrder = (searchParams?.get('sortOrder') as 'ASC' | 'DESC') || 'DESC';
   
   // State per vista
   const [viewType, setViewType] = useState<'detailed' | 'grouped'>('grouped');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [rowDetails, setRowDetails] = useState<Record<string, any[]>>({});
   
-  // Stati locali per i campi data durante la digitazione
-  const [localDataDa, setLocalDataDa] = useState('');
-  const [localDataA, setLocalDataA] = useState('');
 
   // Carica i dati
   const loadData = useCallback(async () => {
@@ -350,12 +348,6 @@ function FatturazioneTerzistiContent() {
   useEffect(() => {
     loadFilterOptions();
   }, [loadFilterOptions]);
-
-  // Sincronizza stati locali con i filtri
-  useEffect(() => {
-    setLocalDataDa(filters.dataDa ? formatDateEuropean(filters.dataDa) : '');
-    setLocalDataA(filters.dataA ? formatDateEuropean(filters.dataA) : '');
-  }, [filters.dataDa, filters.dataA]);
 
   // Carica dati all'avvio e quando cambiano i filtri
   useEffect(() => {
@@ -701,50 +693,20 @@ function FatturazioneTerzistiContent() {
                 <div className="row mt-3">
                   <div className="col-md-2">
                     <label className="form-label">Data Da</label>
-                    <input
-                      type="text"
+                    <DateInput
+                      value={filters.dataDa || ''}
+                      onChange={(isoValue) => handleFilterChange('dataDa', isoValue)}
+                      placeholder="gg/mm/aaaa"
                       className="form-control"
-                      value={localDataDa}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        setLocalDataDa(value);
-                        
-                        if (value === '') {
-                          handleFilterChange('dataDa', '');
-                        } else if (value.match(/^\d{2}-\d{2}-\d{4}$/)) {
-                          // Converte da formato europeo (dd-mm-yyyy) a ISO (yyyy-mm-dd)
-                          const [day, month, year] = value.split('-');
-                          const isoDate = `${year}-${month}-${day}`;
-                          handleFilterChange('dataDa', isoDate);
-                        }
-                      }}
-                      placeholder="gg-mm-aaaa"
-                      pattern="\d{2}-\d{2}-\d{4}"
-                      title="Formato: gg-mm-aaaa (es: 01-08-2025)"
                     />
                   </div>
                   <div className="col-md-2">
                     <label className="form-label">Data A</label>
-                    <input
-                      type="text"
+                    <DateInput
+                      value={filters.dataA || ''}
+                      onChange={(isoValue) => handleFilterChange('dataA', isoValue)}
+                      placeholder="gg/mm/aaaa"
                       className="form-control"
-                      value={localDataA}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        setLocalDataA(value);
-                        
-                        if (value === '') {
-                          handleFilterChange('dataA', '');
-                        } else if (value.match(/^\d{2}-\d{2}-\d{4}$/)) {
-                          // Converte da formato europeo (dd-mm-yyyy) a ISO (yyyy-mm-dd)
-                          const [day, month, year] = value.split('-');
-                          const isoDate = `${year}-${month}-${day}`;
-                          handleFilterChange('dataA', isoDate);
-                        }
-                      }}
-                      placeholder="gg-mm-aaaa"
-                      pattern="\d{2}-\d{2}-\d{4}"
-                      title="Formato: gg-mm-aaaa (es: 30-09-2025)"
                     />
                   </div>
                   <div className="col-md-2">

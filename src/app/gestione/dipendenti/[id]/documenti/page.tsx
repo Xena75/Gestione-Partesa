@@ -96,12 +96,23 @@ export default function DocumentiAutista() {
 
   // Funzione helper per ottenere tutti i tipi di documento dal database
   const getAllDocumentTypes = () => {
-    // Mostra SOLO i tipi dal database
-    if (documentTypesFromDb.length > 0) {
-      return documentTypesFromDb;
+    // Combina i tipi dal database con i tipi personalizzati aggiunti durante la sessione
+    const allTypes = [...documentTypesFromDb];
+    
+    // Aggiungi i tipi personalizzati che non sono già presenti
+    customDocumentTypes.forEach(customType => {
+      const exists = allTypes.some(t => t.value.toLowerCase() === customType.value.toLowerCase());
+      if (!exists) {
+        allTypes.push(customType);
+      }
+    });
+    
+    // Se non ci sono tipi dal database né personalizzati, usa i tipi standard
+    if (allTypes.length === 0) {
+      return DOCUMENT_TYPES;
     }
-    // Fallback ai tipi standard solo se il database è vuoto
-    return DOCUMENT_TYPES;
+    
+    return allTypes;
   };
 
   // Stati per modifica
@@ -288,6 +299,7 @@ export default function DocumentiAutista() {
       const result = await response.json();
       if (result.success) {
         await loadData();
+        await loadDocumentTypes(); // Ricarica i tipi di documento dal database
         // Reset form
         setSelectedFile(null);
         setDocumentType('');
@@ -388,6 +400,7 @@ export default function DocumentiAutista() {
       const result = await response.json();
       if (result.success) {
         await loadData();
+        await loadDocumentTypes(); // Ricarica i tipi di documento dal database
         handleCancelEdit();
         alert('Documento aggiornato con successo!');
       } else {

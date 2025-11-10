@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
+import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 
 type SortableHeaderProps = {
   field: string;
@@ -35,9 +36,9 @@ export default function SortableHeader({ field, label, currentSortBy, currentSor
 
   const getSortIcon = () => {
     if (currentSortBy !== field) {
-      return '↕️'; // Icona neutra per colonne non ordinate
+      return <ArrowUpDown size={16} className="text-muted" />; // Icona neutra per colonne non ordinate
     }
-    return currentSortOrder === 'ASC' ? '▲' : '▼';
+    return currentSortOrder === 'ASC' ? <ArrowUp size={16} /> : <ArrowDown size={16} />;
   };
 
   return (

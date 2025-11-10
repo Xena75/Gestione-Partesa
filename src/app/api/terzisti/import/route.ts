@@ -102,8 +102,8 @@ export async function POST(request: NextRequest) {
         tv.Tipo_Vettore,
         tv.Azienda_Vettore,
         tv.Id_Tariffa,
-        -- Campo da tab_viaggi (tabella viaggi corretta)
-        tvi.data as data_viaggio,
+        -- Campo da tab_viaggi (tabella viaggi corretta) - usa data_mov_merce come fallback se il viaggio non esiste
+        COALESCE(tvi.data, fd.data_mov_merce) as data_viaggio,
         -- Calcolo tariffa dinamica basata su Id_Tariffa
         CASE 
           WHEN tv.Id_Tariffa = '2' THEN tt.Tariffa_2
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
         CONCAT(fd.\`div\`, '-', fd.classe_tariffa, '-', fd.classe_prod) as ID_fatt
       FROM fatt_delivery fd
       INNER JOIN tab_vettori tv ON fd.descr_vettore = tv.Descr_Vettore
-      INNER JOIN tab_viaggi tvi ON fd.viaggio = tvi.viaggio
+      LEFT JOIN tab_viaggi tvi ON fd.viaggio = tvi.viaggio
       LEFT JOIN tab_tariffe tt ON CONCAT(fd.\`div\`, '-', fd.classe_tariffa, '-', fd.classe_prod) = tt.ID_Fatt
       WHERE fd.\`div\` IN ('W007', 'W009')
       AND tv.Tipo_Vettore = 'Terzista'
@@ -126,6 +126,16 @@ export async function POST(request: NextRequest) {
 
     const [sourceData] = await connection.execute(extractQuery, [mese, anno]);
     console.log(`📈 Record estratti da fatt_delivery per ${mese}/${anno}: ${(sourceData as any[]).length}`);
+
+    // Conta record con viaggi mancanti in tab_viaggi
+    const recordsWithMissingViaggi = (sourceData as any[]).filter(record => {
+      // Se data_viaggio è uguale a data_mov_merce, significa che il viaggio non esisteva in tab_viaggi
+      return record.data_viaggio === record.data_mov_merce;
+    }).length;
+    
+    if (recordsWithMissingViaggi > 0) {
+      console.log(`⚠️ Record con viaggi mancanti in tab_viaggi (usato data_mov_merce come fallback): ${recordsWithMissingViaggi}`);
+    }
 
     if ((sourceData as any[]).length === 0) {
       return NextResponse.json({
@@ -149,6 +159,7 @@ export async function POST(request: NextRequest) {
       try {
         // Prepara i valori per l'inserimento batch (AGGIORNATI con tariffa dinamica)
         const values = batch.map(record => [
+          record.id, // ID da fatt_delivery per controllo duplicati
           record.div,
           record.bu,
           record.dep,
@@ -182,7 +193,7 @@ export async function POST(request: NextRequest) {
 
         const insertQuery = `
           INSERT IGNORE INTO tab_delivery_terzisti (
-            \`div\`, bu, dep, data_mov_merce, viaggio, ordine, consegna_num,
+            id, \`div\`, bu, dep, data_mov_merce, viaggio, ordine, consegna_num,
             Cod_Vettore, descr_vettore, tipologia, cod_articolo, descr_articolo,
             colli, peso, volume, compenso, extra_cons, tot_compenso,
             cod_cliente, ragione_sociale, classe_prod, classe_tariffa,
@@ -191,10 +202,18 @@ export async function POST(request: NextRequest) {
           ) VALUES ?
         `;
 
-        await connection.query(insertQuery, [values]);
-        insertedCount += batch.length;
+        const [result] = await connection.query(insertQuery, [values]) as [any, any];
         
-        console.log(`📊 Processati ${i + batch.length} / ${(sourceData as any[]).length} record`);
+        // Verifica quanti record sono stati effettivamente inseriti (non duplicati)
+        const actuallyInserted = result.affectedRows || 0;
+        insertedCount += actuallyInserted;
+        
+        if (actuallyInserted < batch.length) {
+          const skipped = batch.length - actuallyInserted;
+          console.log(`📊 Processati ${i + batch.length} / ${(sourceData as any[]).length} record (${actuallyInserted} inseriti, ${skipped} duplicati ignorati)`);
+        } else {
+          console.log(`📊 Processati ${i + batch.length} / ${(sourceData as any[]).length} record`);
+        }
 
       } catch (error) {
         console.log(`❌ Errore batch ${i}-${i + batch.length}: ${(error as Error).message}`);
@@ -238,9 +257,11 @@ export async function POST(request: NextRequest) {
       success: true,
       message: `Import dati completato con successo per ${mese}/${anno}`,
       insertedCount,
+      skippedDuplicates: (sourceData as any[]).length - insertedCount,
       errorCount,
       totalRecords: (finalCount as any[])[0].count,
       statsByDivision: statsByDiv,
+      recordsWithMissingViaggi: recordsWithMissingViaggi || 0,
       mese,
       anno
     });
