@@ -771,6 +771,73 @@ function GestioneFerieContent() {
     return total;
   };
 
+  // Funzione per calcolare i giorni PNR utilizzati da un dipendente in un anno specifico
+  const calculateUsedPNRDays = (employeeId: string, year: number): number => {
+    if (!leaveRequests) {
+      return 0;
+    }
+    
+    const filteredRequests = leaveRequests.filter(request => {
+      // Funzione per estrarre l'anno da diversi formati di data
+      const extractYear = (dateString: string): number => {
+        if (!dateString) return NaN;
+        
+        // Formato DD/MM/YYYY
+        if (dateString.includes('/')) {
+          const parts = dateString.split('/');
+          if (parts.length === 3) {
+            return parseInt(parts[2]);
+          }
+        }
+        
+        // Formato YYYY-MM-DD
+        if (dateString.includes('-')) {
+          const parts = dateString.split('-');
+          if (parts.length === 3) {
+            return parseInt(parts[0]);
+          }
+        }
+        
+        // Fallback: prova con new Date()
+        return new Date(dateString).getFullYear();
+      };
+      
+      const requestYear = extractYear(request.start_date);
+      
+      // Costruisci il nome completo dalla richiesta (come nelle altre funzioni)
+      const requestEmployeeName = `${request.nome} ${request.cognome}`;
+      
+      // Normalizza il leave_type per confronto case-insensitive
+      const normalizedLeaveType = request.leave_type?.toUpperCase().trim();
+      
+      // Debug per verificare il matching (solo per PNR approvati)
+      if (normalizedLeaveType === 'PNR' && request.status === 'approved') {
+        console.log(`🔍 PNR DEBUG: employeeId="${employeeId}" vs requestEmployeeName="${requestEmployeeName}", year=${year} vs requestYear=${requestYear}, leave_type="${request.leave_type}" (normalized: "${normalizedLeaveType}"), status="${request.status}", days_requested=${request.days_requested}`);
+      }
+      
+      // Filtra per PNR approvati nell'anno specifico
+      // Confronta con employeeId che è nel formato "nome cognome"
+      // Usa confronto case-insensitive per leave_type
+      const match = requestEmployeeName === employeeId &&
+             normalizedLeaveType === 'PNR' &&
+             request.status === 'approved' &&
+             requestYear === year;
+      
+      if (match) {
+        console.log(`✅ PNR MATCH FOUND: ${requestEmployeeName}, days=${request.days_requested}`);
+      }
+      
+      return match;
+    });
+    
+    // Somma i giorni richiesti
+    const total = filteredRequests.reduce((total, request) => total + (request.days_requested || 0), 0);
+    
+    console.log(`📊 PNR TOTAL for ${employeeId} in ${year}: ${total} giorni (from ${filteredRequests.length} requests)`);
+    
+    return total;
+  };
+
   const handleNewRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -945,6 +1012,15 @@ function GestioneFerieContent() {
   };
 
   const getTypeBadge = (type: string) => {
+    // Gestione speciale per PNR con colore navy
+    if (type.toUpperCase() === 'PNR') {
+      return (
+        <span className="badge" style={{ backgroundColor: '#001f3f', color: 'white' }}>
+          {type}
+        </span>
+      );
+    }
+    
     const leaveType = LEAVE_TYPES.find(t => t.value === type);
     return (
       <span className={`badge bg-${leaveType?.color || 'secondary'}`}>
@@ -1849,7 +1925,7 @@ function GestioneFerieContent() {
                           <th className="text-light">Ex Festività Residue</th>
                           <th className="text-light">ROL Residui</th>
                           <th className="text-light">Giorni Malattia</th>
-                          <th className="text-light">Permessi</th>
+                          <th className="text-light">PNR</th>
                           <th className="text-light">Ultimo Aggiornamento</th>
                         </tr>
                       </thead>
@@ -1919,8 +1995,8 @@ function GestioneFerieContent() {
                               </span>
                             </td>
                             <td>
-                              <span className="badge bg-info">
-                                {balance.personal_days_used} giorni
+                              <span className="badge" style={{ backgroundColor: '#001f3f', color: 'white' }}>
+                                {calculateUsedPNRDays(`${balance.nome} ${balance.cognome}`, balance.year)} giorni
                               </span>
                             </td>
                             <td>
