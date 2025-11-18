@@ -35,8 +35,13 @@ export default function ExportHandlingButton({ filters, disabled = false }: Expo
       const response = await fetch(`/api/handling/export?${queryParams}`);
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.error || `Errore ${response.status}: ${response.statusText}`;
+        let errorMessage = `Errore ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // Se la risposta non è JSON, usa il messaggio di default
+        }
         throw new Error(errorMessage);
       }
 
@@ -51,7 +56,8 @@ export default function ExportHandlingButton({ filters, disabled = false }: Expo
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Errore durante l\'export:', error);
-      alert('Errore durante la generazione del file Excel.');
+      const errorMessage = error instanceof Error ? error.message : 'Errore durante la generazione del file Excel.';
+      alert(`Errore durante la generazione del file Excel:\n${errorMessage}`);
     } finally {
       setIsExporting(false);
     }

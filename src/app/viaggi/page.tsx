@@ -161,13 +161,13 @@ function ViaggiPageContent() {
 
   // Funzione per sincronizzare i dati
   const handleSync = async () => {
-    if (!confirm('Questa operazione sincronizzerà i dati degli ultimi 5 giorni e richiederà pochi secondi. Continuare?')) {
+    if (!confirm('Questa operazione sincronizzerà i dati degli ultimi 7 giorni e richiederà pochi secondi. Continuare?')) {
       return;
     }
     
     setIsSyncing(true);
     try {
-      const response = await fetch('/api/viaggi/sync-tab-viaggi?days=5', {
+      const response = await fetch('/api/viaggi/sync-tab-viaggi?days=7', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

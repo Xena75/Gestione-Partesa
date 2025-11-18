@@ -50,6 +50,7 @@ function AutistiPageContent() {
   const [showPersonaleOnly, setShowPersonaleOnly] = useState(() => {
     return searchParams?.get('personale') === 'true';
   });
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active'); // default: solo attivi
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCompany, setSelectedCompany] = useState<string>('');
   const [sortField, setSortField] = useState<keyof Employee>('cognome');
@@ -140,12 +141,22 @@ function AutistiPageContent() {
       } else if (showPersonaleOnly) {
         matchesDriverFilter = emp.is_driver !== 1; // Esclude autisti
       }
+      
+      // Filtro per stato (attivo/inattivo)
+      let matchesStatusFilter = true;
+      if (statusFilter === 'active') {
+        matchesStatusFilter = emp.active === 1;
+      } else if (statusFilter === 'inactive') {
+        matchesStatusFilter = emp.active === 0;
+      }
+      // Se statusFilter === 'all', mostra tutti (matchesStatusFilter rimane true)
+      
       const matchesSearch = searchTerm === '' || 
         emp.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.cognome.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.nominativo.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (emp.email && emp.email.toLowerCase().includes(searchTerm.toLowerCase()));
-      return matchesDriverFilter && matchesSearch;
+      return matchesDriverFilter && matchesStatusFilter && matchesSearch;
     })
     .sort((a, b) => {
       const aValue = a[sortField] || '';
@@ -260,7 +271,7 @@ function AutistiPageContent() {
                         />
                       </div>
                     </div>
-                    <div className="col-md-4">
+                    <div className="col-md-3">
                       <select
                         className="form-select"
                         value={selectedCompany}
@@ -274,7 +285,19 @@ function AutistiPageContent() {
                         ))}
                       </select>
                     </div>
-                    <div className="col-md-4 d-flex align-items-center">
+                    <div className="col-md-2">
+                      <select
+                        className="form-select"
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
+                        title="Filtra per stato dipendente"
+                      >
+                        <option value="all">Tutti</option>
+                        <option value="active">Attivi</option>
+                        <option value="inactive">Inattivi</option>
+                      </select>
+                    </div>
+                    <div className="col-md-3 d-flex align-items-center">
                       <div className="form-check form-switch me-3">
                         <input
                           className="form-check-input"
@@ -324,6 +347,7 @@ function AutistiPageContent() {
                     Visualizzati {filteredAndSortedEmployees.length} di {employees.length} dipendenti totali
                     {showDriversOnly && ` | Autisti: ${employees.filter(emp => emp.is_driver === 1).length}`}
                     {showPersonaleOnly && ` | Personale: ${employees.filter(emp => emp.is_driver !== 1).length}`}
+                    {statusFilter === 'all' && ` | Attivi: ${employees.filter(emp => emp.active === 1).length} - Inattivi: ${employees.filter(emp => emp.active === 0).length}`}
                   </p>
                 </div>
               </div>
@@ -401,6 +425,7 @@ function AutistiPageContent() {
                           )}
                         </th>
                         <th scope="col" className="text-light">Tipo</th>
+                        <th scope="col" className="text-light">Stato</th>
                         <th scope="col" className="text-light">Azioni</th>
                       </tr>
                     </thead>
@@ -448,6 +473,13 @@ function AutistiPageContent() {
                           </td>
                           <td>
                             {getEmployeeTypeBadge(employee.qualifica)}
+                          </td>
+                          <td>
+                            {employee.active === 1 ? (
+                              <span className="badge bg-success">Attivo</span>
+                            ) : (
+                              <span className="badge bg-danger">Inattivo</span>
+                            )}
                           </td>
                           <td>
                             <div className="btn-group" role="group">

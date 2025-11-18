@@ -51,6 +51,12 @@ export async function GET(
         mq.invoice_amount,
         mq.invoice_status,
         mq.invoice_notes,
+        mq.vehicle_km,
+        mq.intervention_location,
+        mq.intervention_date,
+        mq.taxable_amount,
+        mq.tax_amount,
+        mq.tax_rate,
         s.name as supplier_name,
         v.targa as vehicle_targa,
         it.name as intervention_type_name,
@@ -80,9 +86,32 @@ export async function GET(
     
     const quote = quotes[0];
     
+    // Recupera anche le righe del preventivo (se esistono)
+    const [itemsRows] = await connection.execute(
+      `SELECT 
+        id,
+        part_code,
+        part_name,
+        part_description,
+        quantity,
+        unit,
+        unit_price,
+        discount_percent,
+        total_price,
+        vat_rate,
+        item_category
+      FROM maintenance_quote_items 
+      WHERE quote_id = ? 
+      ORDER BY id`,
+      [quoteId]
+    );
+    
+    const items = itemsRows as any[];
+    
     return NextResponse.json({
       success: true,
-      quote: quote
+      quote: quote,
+      items: items || []
     });
     
   } catch (error) {

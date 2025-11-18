@@ -1,88 +1,91 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
-
-const dbConfig = {
-  host: process.env.DB_GESTIONE_HOST || 'localhost',
-  port: parseInt(process.env.DB_GESTIONE_PORT || '3306'),
-  user: process.env.DB_GESTIONE_USER || 'root',
-  password: process.env.DB_GESTIONE_PASS || '',
-  database: process.env.DB_GESTIONE_NAME || 'gestionelogistica'
-};
+import pool from '@/lib/db-gestione';
 
 export async function GET(request: NextRequest) {
-  let connection;
-  
   try {
     const { searchParams } = new URL(request.url);
     
     // Ottieni il tipo di vista (raggruppata o dettagliata)
     const viewType = searchParams.get('viewType') || 'grouped';
     
-    connection = await mysql.createConnection(dbConfig);
+    // Query per ottenere i valori distinti per ogni filtro - eseguite in parallelo usando il pool
+    const queryPromises = [
+      // BU
+      pool.execute('SELECT DISTINCT bu FROM fatt_handling WHERE bu IS NOT NULL AND bu != "" ORDER BY bu')
+        .then(([rows]) => ({ key: 'bu', data: (rows as any[]).map(row => row.bu) }))
+        .catch(err => { console.error('Errore query bu:', err); return { key: 'bu', data: [] }; }),
+      
+      // Divisioni
+      pool.execute('SELECT DISTINCT `div` FROM fatt_handling WHERE `div` IS NOT NULL AND `div` != "" ORDER BY `div`')
+        .then(([rows]) => ({ key: 'divisioni', data: (rows as any[]).map(row => row.div) }))
+        .catch(err => { console.error('Errore query divisioni:', err); return { key: 'divisioni', data: [] }; }),
+      
+      // Depositi
+      pool.execute('SELECT DISTINCT dep FROM fatt_handling WHERE dep IS NOT NULL AND dep != "" ORDER BY dep')
+        .then(([rows]) => ({ key: 'depositi', data: (rows as any[]).map(row => row.dep) }))
+        .catch(err => { console.error('Errore query depositi:', err); return { key: 'depositi', data: [] }; }),
+      
+      // Tipi Movimento
+      pool.execute('SELECT DISTINCT tipo_movimento FROM fatt_handling WHERE tipo_movimento IS NOT NULL AND tipo_movimento != "" ORDER BY tipo_movimento')
+        .then(([rows]) => ({ key: 'tipiMovimento', data: (rows as any[]).map(row => row.tipo_movimento) }))
+        .catch(err => { console.error('Errore query tipiMovimento:', err); return { key: 'tipiMovimento', data: [] }; }),
+      
+      // Doc Acq
+      pool.execute('SELECT DISTINCT doc_acq FROM fatt_handling WHERE doc_acq IS NOT NULL AND doc_acq != "" ORDER BY doc_acq LIMIT 100')
+        .then(([rows]) => ({ key: 'docAcq', data: (rows as any[]).map(row => row.doc_acq) }))
+        .catch(err => { console.error('Errore query docAcq:', err); return { key: 'docAcq', data: [] }; }),
+      
+      // Doc Mat
+      pool.execute('SELECT DISTINCT doc_mat FROM fatt_handling WHERE doc_mat IS NOT NULL AND doc_mat != "" ORDER BY doc_mat LIMIT 100')
+        .then(([rows]) => ({ key: 'docMat', data: (rows as any[]).map(row => row.doc_mat) }))
+        .catch(err => { console.error('Errore query docMat:', err); return { key: 'docMat', data: [] }; }),
+      
+      // Tipi Imballo
+      pool.execute('SELECT DISTINCT tipo_imb FROM fatt_handling WHERE tipo_imb IS NOT NULL AND tipo_imb != "" ORDER BY tipo_imb')
+        .then(([rows]) => ({ key: 'tipiImb', data: (rows as any[]).map(row => row.tipo_imb) }))
+        .catch(err => { console.error('Errore query tipiImb:', err); return { key: 'tipiImb', data: [] }; }),
+      
+      // Mesi
+      pool.execute('SELECT DISTINCT mese FROM fatt_handling WHERE mese IS NOT NULL AND mese != "" ORDER BY mese')
+        .then(([rows]) => {
+          const mesiNomi = [
+            '01-Gennaio', '02-Febbraio', '03-Marzo', '04-Aprile',
+            '05-Maggio', '06-Giugno', '07-Luglio', '08-Agosto',
+            '09-Settembre', '10-Ottobre', '11-Novembre', '12-Dicembre'
+          ];
+          return {
+            key: 'mesi',
+            data: (rows as any[]).map(row => {
+              const mese = row.mese;
+              if (/^\d{1,2}$/.test(mese)) {
+                const meseNum = parseInt(mese);
+                return mesiNomi[meseNum - 1] || mese;
+              }
+              return mese;
+            })
+          };
+        })
+        .catch(err => { console.error('Errore query mesi:', err); return { key: 'mesi', data: [] }; })
+    ];
     
-    // Query per ottenere i valori distinti per ogni filtro
-    const queries = {
-      bu: 'SELECT DISTINCT bu FROM fatt_handling WHERE bu IS NOT NULL AND bu != "" ORDER BY bu',
-      divisioni: 'SELECT DISTINCT `div` FROM fatt_handling WHERE `div` IS NOT NULL AND `div` != "" ORDER BY `div`',
-      depositi: 'SELECT DISTINCT dep FROM fatt_handling WHERE dep IS NOT NULL AND dep != "" ORDER BY dep',
-      tipiMovimento: 'SELECT DISTINCT tipo_movimento FROM fatt_handling WHERE tipo_movimento IS NOT NULL AND tipo_movimento != "" ORDER BY tipo_movimento',
-      docAcq: 'SELECT DISTINCT doc_acq FROM fatt_handling WHERE doc_acq IS NOT NULL AND doc_acq != "" ORDER BY doc_acq LIMIT 100',
-      docMat: 'SELECT DISTINCT doc_mat FROM fatt_handling WHERE doc_mat IS NOT NULL AND doc_mat != "" ORDER BY doc_mat LIMIT 100',
-      tipiImb: 'SELECT DISTINCT tipo_imb FROM fatt_handling WHERE tipo_imb IS NOT NULL AND tipo_imb != "" ORDER BY tipo_imb',
-      mesi: 'SELECT DISTINCT mese FROM fatt_handling WHERE mese IS NOT NULL AND mese != "" ORDER BY mese'
+    // Esegui tutte le query in parallelo usando il pool di connessioni
+    const queryResults = await Promise.all(queryPromises);
+    
+    // Costruisci l'oggetto results
+    const results: any = {
+      bu: [],
+      divisioni: [],
+      depositi: [],
+      tipiMovimento: [],
+      docAcq: [],
+      docMat: [],
+      tipiImb: [],
+      mesi: []
     };
     
-    const results: any = {};
-    
-    // Esegui tutte le query
-    for (const [key, query] of Object.entries(queries)) {
-      try {
-        const [rows] = await connection.execute(query);
-        
-        if (key === 'bu') {
-          results.bu = (rows as any[]).map(row => row.bu);
-        } else if (key === 'divisioni') {
-          results.divisioni = (rows as any[]).map(row => row.div);
-        } else if (key === 'depositi') {
-          results.depositi = (rows as any[]).map(row => row.dep);
-        } else if (key === 'tipiMovimento') {
-          results.tipiMovimento = (rows as any[]).map(row => row.tipo_movimento);
-        } else if (key === 'docAcq') {
-          results.docAcq = (rows as any[]).map(row => row.doc_acq);
-        } else if (key === 'docMat') {
-          results.docMat = (rows as any[]).map(row => row.doc_mat);
-        } else if (key === 'tipiImb') {
-          results.tipiImb = (rows as any[]).map(row => row.tipo_imb);
-        } else if (key === 'mesi') {
-          // Formatta i mesi per una migliore visualizzazione
-          results.mesi = (rows as any[]).map(row => {
-            const mese = row.mese;
-            // Se il mese è in formato numerico, convertilo in nome
-            if (/^\d{1,2}$/.test(mese)) {
-              const mesiNomi = [
-                '01-Gennaio', '02-Febbraio', '03-Marzo', '04-Aprile',
-                '05-Maggio', '06-Giugno', '07-Luglio', '08-Agosto',
-                '09-Settembre', '10-Ottobre', '11-Novembre', '12-Dicembre'
-              ];
-              const meseNum = parseInt(mese);
-              return mesiNomi[meseNum - 1] || mese;
-            }
-            return mese;
-          });
-        }
-      } catch (queryError) {
-        console.error(`Errore nella query ${key}:`, queryError);
-        // Imposta un array vuoto in caso di errore
-        if (key === 'bu') results.bu = [];
-        else if (key === 'divisioni') results.divisioni = [];
-        else if (key === 'depositi') results.depositi = [];
-        else if (key === 'tipiMovimento') results.tipiMovimento = [];
-        else if (key === 'docAcq') results.docAcq = [];
-        else if (key === 'docMat') results.docMat = [];
-        else if (key === 'tipiImb') results.tipiImb = [];
-        else if (key === 'mesi') results.mesi = [];
-      }
-    }
+    queryResults.forEach(result => {
+      results[result.key] = result.data;
+    });
     
     return NextResponse.json(results);
     
@@ -102,9 +105,5 @@ export async function GET(request: NextRequest) {
       },
       { status: 500 }
     );
-  } finally {
-    if (connection) {
-      await connection.end();
-    }
   }
 }

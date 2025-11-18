@@ -1,16 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
+import pool from '@/lib/db-gestione';
 import * as XLSX from 'xlsx';
-
-const dbConfig = {
-  host: 'localhost',
-  user: 'root',
-  password: '',
-  database: 'gestionelogistica',
-  port: 3306
-};
+import { convertItalianToISO } from '@/lib/date-utils';
 
 export async function GET(request: NextRequest) {
+  let connection;
+  
   try {
     const { searchParams } = new URL(request.url);
     const filters: any = {};
@@ -18,55 +13,120 @@ export async function GET(request: NextRequest) {
       filters[key] = value;
     }
 
-    const pool = await mysql.createPool(dbConfig);
-    const connection = await pool.getConnection();
+    connection = await pool.getConnection();
 
-    let query = 'SELECT * FROM fatt_handling WHERE 1=1';
+    let query = 'SELECT * FROM `fatt_handling` WHERE 1=1';
     const queryParams: (string | number)[] = [];
 
     if (filters.bu && filters.bu !== 'Tutti') {
-      query += ' AND bu = ?';
+      query += ' AND `bu` = ?';
       queryParams.push(filters.bu);
     }
-    if (filters.div && filters.div !== 'Tutti') {
-      query += ' AND div = ?';
+    if (filters.div && filters.div !== 'Tutte') {
+      query += ' AND `div` = ?';
       queryParams.push(filters.div);
     }
     if (filters.dep && filters.dep !== 'Tutti') {
-      query += ' AND dep = ?';
+      query += ' AND `dep` = ?';
       queryParams.push(filters.dep);
     }
     if (filters.tipo_movimento && filters.tipo_movimento !== 'Tutti') {
-      query += ' AND tipo_movimento = ?';
+      query += ' AND `tipo_movimento` = ?';
       queryParams.push(filters.tipo_movimento);
     }
     if (filters.doc_acq) {
-      query += ' AND doc_acq = ?';
-      queryParams.push(filters.doc_acq);
+      query += ' AND `doc_acq` LIKE ?';
+      queryParams.push(`%${filters.doc_acq}%`);
     }
     if (filters.data_mov_m) {
-      query += ' AND data_mov_m = ?';
-      queryParams.push(filters.data_mov_m);
+      // Converti la data da formato italiano (gg/mm/aaaa) a formato ISO (yyyy-mm-dd) se necessario
+      let dateValue = filters.data_mov_m;
+      if (dateValue.includes('/')) {
+        dateValue = convertItalianToISO(dateValue);
+      }
+      query += ' AND DATE(`data_mov_m`) = ?';
+      queryParams.push(dateValue);
     }
     if (filters.tipo_imb && filters.tipo_imb !== 'Tutti') {
-      query += ' AND tipo_imb = ?';
+      query += ' AND `tipo_imb` = ?';
       queryParams.push(filters.tipo_imb);
     }
-    if (filters.mese) {
-      query += ' AND mese = ?';
+    if (filters.mese && filters.mese !== 'Tutti') {
+      query += ' AND `mese` = ?';
       queryParams.push(filters.mese);
     }
 
     const [rows] = await connection.execute(query, queryParams);
-    connection.release();
-
+    
     const data = rows as any[];
 
+    // Funzione per formattare le date in formato europeo
+    const formatDateEuropean = (dateString: string | null | undefined) => {
+      if (!dateString) return '';
+      try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return dateString;
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+      } catch {
+        return dateString;
+      }
+    };
+
+    // Prepara i dati per l'export con formattazione delle date
+    const formattedData = data.map(record => ({
+      'ID': record.id,
+      'BU': record.bu || '',
+      'Divisione': record.div || '',
+      'Deposito': record.dep || '',
+      'Tipo Movimento': record.tipo_movimento || '',
+      'Doc. Acquisto': record.doc_acq || '',
+      'Data Movimento': formatDateEuropean(record.data_mov_m),
+      'Tipo Imballo': record.tipo_imb || '',
+      'Mese': record.mese || '',
+      'Doc. Materiale': record.doc_mat || '',
+      'Qta UMA': Number(record.qta_uma) || 0,
+      'Tot Handling': Number(record.tot_hand) || 0,
+      'Ragione Sociale': record.rag_soc || '',
+      'T HF UMV': Number(record.t_hf_umv) || 0,
+      'Imp HF UM': Number(record.imp_hf_um) || 0,
+      'Imp Resi V': Number(record.imp_resi_v) || 0,
+      'Imp Doc': Number(record.imp_doc) || 0
+    }));
+
     const workbook = XLSX.utils.book_new();
-    const worksheet = XLSX.utils.json_to_sheet(data);
+    const worksheet = XLSX.utils.json_to_sheet(formattedData);
+    
+    // Imposta larghezza colonne
+    worksheet['!cols'] = [
+      { wch: 8 },  // ID
+      { wch: 10 }, // BU
+      { wch: 15 }, // Divisione
+      { wch: 15 }, // Deposito
+      { wch: 15 }, // Tipo Movimento
+      { wch: 15 }, // Doc. Acquisto
+      { wch: 12 }, // Data Movimento
+      { wch: 12 }, // Tipo Imballo
+      { wch: 8 },  // Mese
+      { wch: 15 }, // Doc. Materiale
+      { wch: 10 }, // Qta UMA
+      { wch: 12 }, // Tot Handling
+      { wch: 25 }, // Ragione Sociale
+      { wch: 10 }, // T HF UMV
+      { wch: 12 }, // Imp HF UM
+      { wch: 12 }, // Imp Resi V
+      { wch: 12 }  // Imp Doc
+    ];
+    
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Handling Data');
 
-    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    const excelBuffer = XLSX.write(workbook, { 
+      type: 'buffer', 
+      bookType: 'xlsx',
+      compression: true
+    });
 
     const filename = `handling_${new Date().toISOString().slice(0, 10)}.xlsx`;
 
@@ -80,8 +140,12 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Errore durante l\'export:', error);
     return NextResponse.json(
-      { error: 'Errore durante la generazione del file Excel' },
+      { error: error instanceof Error ? error.message : 'Errore durante la generazione del file Excel' },
       { status: 500 }
     );
+  } finally {
+    if (connection) {
+      connection.release();
+    }
   }
 }

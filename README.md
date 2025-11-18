@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.35.7
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.37.0
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -9,7 +9,7 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Filtri data funzionanti**: Risolti problemi filtri data con formato italiano gg/mm/aaaa ⭐ **NUOVO v2.31.1**
 - **Monitoraggio avanzato**: Tracciamento in tempo reale di tutti i viaggi
 - **Import Excel**: Importazione automatica dati da file Excel con mappatura intelligente
-- **Sincronizzazione database**: Allineamento automatico tra database multipli con controllo corrispondenze
+- **Sincronizzazione database**: Allineamento automatico tra database multipli con periodo esteso a 7 giorni ⭐ **AGGIORNATO v2.36.1**
 - **Filtri avanzati**: Sistema di filtri per ricerca e analisi dati
 
 ### 💰 **Fatturazione e Gestione Terzisti**
@@ -48,6 +48,8 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Sistema preventivi**: Gestione completa preventivi con workflow approvazione
 - **Gestione fornitori**: Integrazione fornitori e servizi per preventivi
 - **Upload documenti**: Sistema drag-and-drop per allegati preventivi
+- **Gestione righe preventivo**: Inserimento manuale righe dettaglio preventivo con formattazione italiana ⭐ **NUOVO v2.37.0**
+- **Luoghi intervento**: Select editabile con possibilità di aggiungere nuovi luoghi dal database ⭐ **NUOVO v2.37.0**
 - **Auto-formattazione date**: Input automatico formato gg/mm/aaaa con validazione ⭐ **NUOVO v2.31.0**
 - **Performance ottimizzate**: Pagina preventivi con caricamento 60% più veloce ⭐ **NUOVO v2.31.0**
 - **Filtri lato client**: Ricerca e filtri istantanei senza ricaricamento ⭐ **NUOVO v2.31.0**
@@ -87,7 +89,7 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Database ottimizzato**: Tabella `employee_documents` con indici per performance e foreign key
 - **Aggiornamento automatico**: Sistema automatico di aggiornamento stato documenti basato su scadenze
 
-### 🏖️ **Sistema Gestione Ferie Dipendenti** ⭐ **AGGIORNATO v2.35.7**
+### 🏖️ **Sistema Gestione Ferie Dipendenti** ⭐ **AGGIORNATO v2.35.8**
 - **Gestione completa ferie**: Sistema integrato per gestione ferie, permessi e congedi dipendenti
 - **Import Excel mensile**: Caricamento automatico saldi ferie da file Excel con mapping dipendenti
 - **Logica ore/giorni**: Ferie in giorni (conversione automatica 1 giorno = 8 ore), permessi in ore
@@ -104,8 +106,9 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Integrazione calendario**: Eventi ferie visualizzati nel calendario aziendale integrato
 - **Database esteso**: Tabelle `employee_leave_requests` e `employee_leave_balance` ottimizzate
 - **Campo leave_type**: Convertito da ENUM a VARCHAR per supportare tipi personalizzati ⭐ **NUOVO v2.35.5**
+ - **Conteggio giorni corretto in dashboard**: Allineata la card "Ferie e Permessi utilizzati" ai giorni approvati dell'anno corrente (2025). Calcolo aggiornato via `scripts/recalculate-leave-balances.js` con filtro `status='approved'` e `YEAR(start_date)=2025` ⭐ **NUOVO v2.35.8**
 
-### 🔧 **Aggiornamenti Database e Compatibilità Next.js 15** ⭐ **AGGIORNATO v2.35.7**
+### 🔧 **Aggiornamenti Database e Compatibilità Next.js 15** ⭐ **AGGIORNATO v2.35.8**
 - **Correzione ID dipendente**: Aggiornato ID "Alberto Racano" → "Alberto Vincenzo Racano" con transazione atomica
 - **Generazione ID corretta**: ID dipendenti ora generati da nome completo invece di `EMP{timestamp}` ⭐ **NUOVO v2.35.7**
 - **Integrità referenziale**: Mantenuta coerenza tra tutte le tabelle collegate (employees, travels, leave_requests, leave_balance)
@@ -118,6 +121,7 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Modifica selettiva**: Possibilità di modificare solo i campi necessari nelle richieste ferie ⭐ **NUOVO v2.35.6**
 - **Foreign key gestite**: Script con disabilitazione temporanea vincoli per aggiornamenti complessi
 - **Transazione sicura**: Operazioni atomiche con rollback automatico in caso di errore
+ - **Ricalcolo saldi ferie 2025**: Script aggiornato per conteggiare solo richieste approvate dell'anno 2025; aggiunto dry-run di verifica e aggiornati i bilanci (`vacation_days_used`) per coerenza con UI
 
 ### 🔧 **Correzioni Modal Richieste Ferie Dashboard** ⭐ **PRECEDENTE v2.35.1**
 - **Risoluzione "Invalid Date"**: Corretti errori di visualizzazione date nel modal richieste ferie dashboard
@@ -219,6 +223,72 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Caricamento veloce**: Eliminazione query separate per dati veicolo
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
+
+### 👥 **Gestione Stato Dipendenti (Attivo/Inattivo) - v2.36.0** ⭐ **NUOVO**
+
+#### 🎯 **Sistema Completo Gestione Stato Dipendenti**
+- **Funzionalità**: Sistema per gestire lo stato dei dipendenti (Attivo/Inattivo)
+- **Pagina Modifica**: `/gestione/dipendenti/[id]/modifica` - Campo "Stato Dipendente" per cambiare lo stato
+- **Pagina Lista**: `/gestione/dipendenti` - Filtro e colonna per visualizzare lo stato
+- **Dashboard**: Conteggio accurato dipendenti attivi nella card "DIPENDENTI ATTIVI"
+- **Campo Database**: `employees.active` (1 = Attivo, 0 = Inattivo)
+
+#### 🎨 **Caratteristiche Implementate**
+- **Campo modifica stato**: Dropdown "Attivo"/"Inattivo" nella sezione "Dati Contrattuali"
+- **Filtro stato**: Dropdown con opzioni "Tutti"/"Attivi"/"Inattivi" (default: Attivi)
+- **Colonna stato**: Badge visivi verde (Attivo) e rosso (Inattivo) nella tabella
+- **Dashboard corretta**: Card "DIPENDENTI ATTIVI" conta solo dipendenti con `active = 1`
+- **Statistiche accurate**: Conteggio separato di attivi/inattivi quando si seleziona "Tutti"
+- **Vista pulita**: Di default mostra solo dipendenti attivi per focalizzare su personale corrente
+
+#### 🔧 **Casi d'Uso**
+- **Dipendente che lascia l'azienda**: Impostare su "Inattivo" per mantenere lo storico
+- **Dipendente in aspettativa**: Temporaneamente "Inattivo", ripristinare ad "Attivo" al rientro
+- **Report e statistiche**: Conteggi accurati di personale attualmente operativo
+- **Audit trail**: Nessuna perdita di dati storici, solo gestione visibilità
+
+#### ✅ **Benefici Operativi**
+- ✅ Gestione storico completa senza eliminare dati
+- ✅ Lista dipendenti più pulita e focalizzata
+- ✅ Flessibilità nel visualizzare tutti i dipendenti quando necessario
+- ✅ Statistiche dashboard sempre accurate
+
+---
+
+### 📥 **Importazione Dati Handling da Excel - v2.35.9** ⭐ **NUOVO**
+
+#### 🎯 **Sistema Completo Importazione Handling**
+- **Pagina**: `/handling` con pulsante "Importa Excel"
+- **Funzionalità**: Importazione dati handling da file Excel (.xlsx, .xls) nella tabella `fatt_handling`
+- **API**: Endpoint `/api/handling/import` per gestione upload e inserimento dati
+- **Precisione decimali**: Supporto fino a 4 decimali (`DECIMAL(12,4)`) per valori finanziari
+
+#### 🎨 **Caratteristiche Implementate**
+- **Upload file Excel**: Pulsante dedicato nella pagina handling con selezione file
+- **Validazione file**: Controllo formato file (.xlsx, .xls) e presenza dati
+- **Controllo duplicati**: Verifica preventiva se il file è già stato importato per lo stesso mese (`source_name` + `mese`)
+- **Mapping automatico**: Lettura automatica colonne Excel e mapping ai campi database
+- **Calcolo deposito**: Ricerca automatica `dep` dalla tabella `tab_deposito` basata su `div`
+- **Batch insertion**: Inserimento dati in batch per ottimizzare le performance
+- **Feedback dettagliato**: Messaggi completi su righe importate, errori e totale righe
+
+#### 🔧 **Implementazione Tecnica**
+- **Frontend**: Componente React con file input, loading state e messaggi successo/errore
+- **Backend**: API route con parsing Excel tramite libreria `xlsx`, conversione dati e inserimento batch
+- **Database**: Precisione aumentata colonne decimali (`tot_hand`, `imp_hf_um`, `imp_resi_v`, `imp_doc`)
+- **Tracciabilità**: Campo `source_name` per identificare origine dati importati
+
+#### ⚠️ **Limitazioni Attuali**
+- **Controllo duplicati**: Basato su `source_name` + `mese`, non su contenuto dati
+- **Indice unico**: Non ancora implementato (previsto: `doc_mat + materiale + mese + div + pos`)
+- **Prevenzione manuale**: L'utente deve evitare di importare lo stesso file due volte
+
+#### ✅ **Benefici Operativi**
+- ✅ **Automazione**: Importazione rapida dati handling senza inserimento manuale
+- ✅ **Precisione**: Mantenimento precisione decimali fino a 4 cifre
+- ✅ **Tracciabilità**: Campo `source_name` per identificare origine dati
+- ✅ **Performance**: Batch insertion per importazioni veloci
+- ✅ **Feedback**: Messaggi chiari su esito importazione
 
 ### 📅 **Calendario Integrato Ferie e Veicoli - v2.33.0** ⭐ **NUOVO**
 

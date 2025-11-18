@@ -33,6 +33,7 @@ interface Employee {
   data_assunzione?: string;
   data_dimissioni?: string;
   is_driver: number | boolean;
+  active: number | boolean;
   patente?: string;
   profile_image?: string;
   foto_url?: string;
@@ -122,7 +123,8 @@ export default function ModificaDipendente() {
             data_nascita: formatDateToItalian(employeeData.data_nascita),
             data_assunzione: formatDateToItalian(employeeData.data_assunzione),
             data_dimissioni: employeeData.data_dimissioni ? formatDateToItalian(employeeData.data_dimissioni) : '',
-            is_driver: employeeData.is_driver === 1 || employeeData.is_driver === true
+            is_driver: employeeData.is_driver === 1 || employeeData.is_driver === true,
+            active: employeeData.active === 1 || employeeData.active === true
           };
           
           setFormData(formattedData);
@@ -403,7 +405,8 @@ export default function ModificaDipendente() {
         data_nascita: (formData.data_nascita && formData.data_nascita !== '-') ? formatDateToDatabase(formData.data_nascita) : null,
         data_assunzione: (formData.data_assunzione && formData.data_assunzione !== '-') ? formatDateToDatabase(formData.data_assunzione) : null,
         data_dimissioni: (formData.data_dimissioni && formData.data_dimissioni !== '-') ? formatDateToDatabase(formData.data_dimissioni) : null,
-        is_driver: formData.is_driver === true || formData.is_driver === 1 ? 1 : 0
+        is_driver: formData.is_driver === true || formData.is_driver === 1 ? 1 : 0,
+        active: formData.active === true || formData.active === 1 ? 1 : 0
       };
 
       // Log dei dati che vengono inviati per debug
@@ -1503,6 +1506,21 @@ export default function ModificaDipendente() {
                         </button>
                       </div>
                     )}
+                  </div>
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label text-light">Stato Dipendente</label>
+                    <select
+                      className="form-select bg-dark text-light border-secondary"
+                      value={formData.active === true || formData.active === 1 ? '1' : '0'}
+                      onChange={(e) => handleInputChange('active', e.target.value === '1')}
+                    >
+                      <option value="1">Attivo</option>
+                      <option value="0">Inattivo</option>
+                    </select>
+                    <small className="text-muted d-block mt-1">
+                      <i className="fas fa-info-circle me-1"></i>
+                      I dipendenti inattivi non appariranno nelle ricerche principali
+                    </small>
                   </div>
                   <div className="col-md-6">
                     <DateInput

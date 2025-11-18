@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Calendar, Clock, CheckCircle, XCircle, AlertTriangle, Plus, FileText } from 'lucide-react';
 import DateInput from '../../../components/DateInput';
@@ -56,6 +57,7 @@ interface LeaveFormData {
 
 export default function AutistiFeriePage() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<'richiesta' | 'storico' | 'bilancio'>('richiesta');
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [leaveBalance, setLeaveBalance] = useState<LeaveBalance | null>(null);
@@ -84,6 +86,16 @@ export default function AutistiFeriePage() {
       loadLeaveTypes();
     }
   }, [user]);
+
+  // Imposta il tab attivo da query string (?tab=storico | richiesta | bilancio)
+  useEffect(() => {
+    if (searchParams) {
+      const tab = searchParams.get('tab');
+      if (tab === 'storico' || tab === 'richiesta' || tab === 'bilancio') {
+        setActiveTab(tab as 'richiesta' | 'storico' | 'bilancio');
+      }
+    }
+  }, [searchParams]);
 
   const loadLeaveTypes = async () => {
     try {

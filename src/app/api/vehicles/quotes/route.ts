@@ -87,7 +87,19 @@ export async function GET(request: NextRequest) {
             SEPARATOR ','
           ), ']')
           ELSE '[]'
-        END as documents
+        END as documents,
+        -- Conta righe dettaglio preventivo
+        COALESCE((
+          SELECT COUNT(*) 
+          FROM maintenance_quote_items mqi 
+          WHERE mqi.quote_id = mq.id
+        ), 0) as items_count,
+        -- Flag per indicare se ha righe dettagliate
+        CASE 
+          WHEN EXISTS(SELECT 1 FROM maintenance_quote_items mqi WHERE mqi.quote_id = mq.id)
+          THEN 1
+          ELSE 0
+        END as has_items
       FROM maintenance_quotes mq
       JOIN vehicles v ON mq.vehicle_id = v.id
       LEFT JOIN vehicle_schedules vs ON mq.schedule_id = vs.id

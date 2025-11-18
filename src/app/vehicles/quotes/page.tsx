@@ -5,6 +5,7 @@ import { Suspense, useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTheme } from '@/contexts/ThemeContext';
+import ManualQuoteEntryModal from '@/components/ManualQuoteEntryModal';
 
 interface MaintenanceQuote {
   id: number;
@@ -51,6 +52,9 @@ interface MaintenanceQuote {
     file_size: number;
     uploaded_at: string;
   }>;
+  // Campi per righe dettaglio
+  items_count?: number;
+  has_items?: number; // 1 se ha righe, 0 se non ha righe
 }
 
 interface QuoteStats {
@@ -123,6 +127,10 @@ function VehicleQuotesContent() {
   const [filterDiscrepancies, setFilterDiscrepancies] = useState<string>(searchParams?.get('filterDiscrepancies') || 'all');
   const [searchTarga, setSearchTarga] = useState<string>(searchParams?.get('searchTarga') || '');
   const [searchTargaInput, setSearchTargaInput] = useState<string>(searchParams?.get('searchTarga') || ''); // Stato locale per l'input
+  
+  // Stati per modale inserimento manuale
+  const [showManualModal, setShowManualModal] = useState(false);
+  const [selectedQuoteForManual, setSelectedQuoteForManual] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState<string>(searchParams?.get('sortBy') || 'created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>((searchParams?.get('sortOrder') as 'asc' | 'desc') || 'desc');
 
@@ -151,8 +159,21 @@ function VehicleQuotesContent() {
     }
   }, [searchParams]);
 
+  // Sincronizza sortBy e sortOrder con i parametri URL (per ordinamento cliccabile)
+  useEffect(() => {
+    const urlSortBy = searchParams?.get('sortBy') || 'created_at';
+    const urlSortOrder = (searchParams?.get('sortOrder') as 'asc' | 'desc') || 'desc';
+    
+    if (urlSortBy !== sortBy) {
+      setSortBy(urlSortBy);
+    }
+    if (urlSortOrder !== sortOrder) {
+      setSortOrder(urlSortOrder);
+    }
+  }, [searchParams, sortBy, sortOrder]);
+
   // Funzione per aggiornare i parametri URL con tutti i filtri
-  const updateURLParams = (updates: {
+  const updateURLParams = useCallback((updates: {
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
     filterStatus?: string;
@@ -197,7 +218,7 @@ function VehicleQuotesContent() {
     
     const newURL = params.toString() ? `?${params.toString()}` : '';
     router.push(`/vehicles/quotes${newURL}`, { scroll: false });
-  };
+  }, [sortBy, sortOrder, filterStatus, filterSupplier, filterInvoiceStatus, filterDiscrepancies, searchTarga, router]);
 
   // Funzioni per gestire i cambiamenti dei filtri (ottimizzate con useCallback)
   const handleSortByChange = useCallback((value: string) => {
@@ -209,6 +230,51 @@ function VehicleQuotesContent() {
     setSortOrder(value);
     updateURLParams({ sortOrder: value });
   }, []);
+
+  // Funzione per gestire l'ordinamento completo (campo + ordine insieme)
+  const handleSort = useCallback((field: string) => {
+    let newSortBy: string;
+    let newSortOrder: 'asc' | 'desc';
+    
+    if (sortBy === field) {
+      // Se è già la colonna ordinata, inverte l'ordine
+      newSortBy = field;
+      newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+    } else {
+      // Se è una nuova colonna, imposta campo e ordine default
+      newSortBy = field;
+      newSortOrder = 'asc';
+    }
+    
+    // Aggiorna lo stato
+    setSortBy(newSortBy);
+    setSortOrder(newSortOrder);
+    
+    // Aggiorna URL con i valori nuovi (non quelli dello stato corrente)
+    const params = new URLSearchParams(searchParams?.toString() || '');
+    
+    if (newSortBy !== 'created_at') {
+      params.set('sortBy', newSortBy);
+    } else {
+      params.delete('sortBy');
+    }
+    
+    if (newSortOrder !== 'desc') {
+      params.set('sortOrder', newSortOrder);
+    } else {
+      params.delete('sortOrder');
+    }
+    
+    // Mantieni gli altri parametri
+    if (filterStatus !== 'all') params.set('filterStatus', filterStatus);
+    if (filterSupplier !== 'all') params.set('filterSupplier', filterSupplier);
+    if (filterInvoiceStatus !== 'all') params.set('filterInvoiceStatus', filterInvoiceStatus);
+    if (filterDiscrepancies !== 'all') params.set('filterDiscrepancies', filterDiscrepancies);
+    if (searchTarga !== '') params.set('searchTarga', searchTarga);
+    
+    const newURL = params.toString() ? `?${params.toString()}` : '';
+    router.push(`/vehicles/quotes${newURL}`, { scroll: false });
+  }, [sortBy, sortOrder, filterStatus, filterSupplier, filterInvoiceStatus, filterDiscrepancies, searchTarga, router, searchParams]);
 
   const handleFilterStatusChange = useCallback((value: string) => {
     setFilterStatus(value);
@@ -314,10 +380,14 @@ function VehicleQuotesContent() {
       'supplier': (quote) => quote.supplier_name,
       'amount': (quote) => quote.amount,
       'invoice_amount': (quote) => quote.invoice_amount || 0,
-      'quote_number': (quote) => quote.quote_number,
+      'quote_number': (quote) => quote.quote_number || '',
       'invoice_number': (quote) => quote.invoice_number || '',
       'valid_until': (quote) => new Date(quote.valid_until),
-      'targa': (quote) => quote.targa
+      'targa': (quote) => quote.targa,
+      'status': (quote) => quote.status,
+      'invoice_status': (quote) => quote.invoice_status || '',
+      'intervention_type_name': (quote) => quote.intervention_type_name || '',
+      'documents': (quote) => quote.documents ? quote.documents.length : 0
     };
     
     const sortFunction = sortFieldMap[sortBy] || sortFieldMap['created_at'];
@@ -955,19 +1025,118 @@ function VehicleQuotesContent() {
                   <table className="table table-hover">
                     <thead>
                         <tr>
-                          <th className={textClass}>N. Offerta</th>
-                          <th className={textClass}>Data Offerta</th>
-                          <th className={textClass}>Fornitore</th>
-                          <th className={textClass}>Veicolo</th>
-                          <th className={textClass}>Tipo Intervento</th>
+                          <th 
+                            onClick={() => handleSort('quote_number')}
+                            className={`cursor-pointer user-select-none ${textClass}`}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <div className="d-flex align-items-center justify-content-between">
+                              <span>N. Offerta</span>
+                              <span className="ms-1">
+                                {sortBy === 'quote_number' ? (sortOrder === 'asc' ? '↑' : '↓') : '⇅'}
+                              </span>
+                            </div>
+                          </th>
+                          <th 
+                            onClick={() => handleSort('quote_date')}
+                            className={`cursor-pointer user-select-none ${textClass}`}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <div className="d-flex align-items-center justify-content-between">
+                              <span>Data Offerta</span>
+                              <span className="ms-1">
+                                {sortBy === 'quote_date' ? (sortOrder === 'asc' ? '↑' : '↓') : '⇅'}
+                              </span>
+                            </div>
+                          </th>
+                          <th 
+                            onClick={() => handleSort('supplier')}
+                            className={`cursor-pointer user-select-none ${textClass}`}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <div className="d-flex align-items-center justify-content-between">
+                              <span>Fornitore</span>
+                              <span className="ms-1">
+                                {sortBy === 'supplier' ? (sortOrder === 'asc' ? '↑' : '↓') : '⇅'}
+                              </span>
+                            </div>
+                          </th>
+                          <th 
+                            onClick={() => handleSort('targa')}
+                            className={`cursor-pointer user-select-none ${textClass}`}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <div className="d-flex align-items-center justify-content-between">
+                              <span>Veicolo</span>
+                              <span className="ms-1">
+                                {sortBy === 'targa' ? (sortOrder === 'asc' ? '↑' : '↓') : '⇅'}
+                              </span>
+                            </div>
+                          </th>
+                          <th 
+                            onClick={() => handleSort('intervention_type_name')}
+                            className={`cursor-pointer user-select-none ${textClass}`}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <div className="d-flex align-items-center justify-content-between">
+                              <span>Tipo Intervento</span>
+                              <span className="ms-1">
+                                {sortBy === 'intervention_type_name' ? (sortOrder === 'asc' ? '↑' : '↓') : '⇅'}
+                              </span>
+                            </div>
+                          </th>
                           <th className={textClass}>Importo Preventivo</th>
                           <th className={textClass}>Valido fino</th>
-                          <th className={textClass}>Stato</th>
-                          <th className={textClass}>Numero Fattura</th>
+                          <th 
+                            onClick={() => handleSort('status')}
+                            className={`cursor-pointer user-select-none ${textClass}`}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <div className="d-flex align-items-center justify-content-between">
+                              <span>Stato</span>
+                              <span className="ms-1">
+                                {sortBy === 'status' ? (sortOrder === 'asc' ? '↑' : '↓') : '⇅'}
+                              </span>
+                            </div>
+                          </th>
+                          <th 
+                            onClick={() => handleSort('invoice_number')}
+                            className={`cursor-pointer user-select-none ${textClass}`}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <div className="d-flex align-items-center justify-content-between">
+                              <span>Numero Fattura</span>
+                              <span className="ms-1">
+                                {sortBy === 'invoice_number' ? (sortOrder === 'asc' ? '↑' : '↓') : '⇅'}
+                              </span>
+                            </div>
+                          </th>
                           <th className={textClass}>Importo Fattura</th>
-                          <th className={textClass}>Stato Fatturazione</th>
+                          <th 
+                            onClick={() => handleSort('invoice_status')}
+                            className={`cursor-pointer user-select-none ${textClass}`}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <div className="d-flex align-items-center justify-content-between">
+                              <span>Stato Fatturazione</span>
+                              <span className="ms-1">
+                                {sortBy === 'invoice_status' ? (sortOrder === 'asc' ? '↑' : '↓') : '⇅'}
+                              </span>
+                            </div>
+                          </th>
                           <th className={textClass}>Differenza</th>
-                          <th className={textClass}>Documenti</th>
+                          <th 
+                            onClick={() => handleSort('documents')}
+                            className={`cursor-pointer user-select-none ${textClass}`}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <div className="d-flex align-items-center justify-content-between">
+                              <span>Documenti</span>
+                              <span className="ms-1">
+                                {sortBy === 'documents' ? (sortOrder === 'asc' ? '↑' : '↓') : '⇅'}
+                              </span>
+                            </div>
+                          </th>
                           <th className={textClass}>Azioni</th>
                         </tr>
                       </thead>
@@ -1080,15 +1249,32 @@ function VehicleQuotesContent() {
                               '-'
                             )}
                           </td>
-                          {/* 13. Documenti */}
+                          {/* 13. Documenti e Dettaglio */}
                           <td>
-                            {quote.documents && quote.documents.length > 0 ? (
-                              <span className={`badge ${theme === 'dark' ? 'bg-dark text-white' : 'bg-secondary text-white'}`}>
-                                {quote.documents.length} file
-                              </span>
-                            ) : (
-                              <span className={textClass}>-</span>
-                            )}
+                            <div className="d-flex flex-column gap-1">
+                              {quote.documents && quote.documents.length > 0 ? (
+                                <span className={`badge ${theme === 'dark' ? 'bg-dark text-white' : 'bg-secondary text-white'}`}>
+                                  <i className="fas fa-file me-1"></i>
+                                  {quote.documents.length} file
+                                </span>
+                              ) : (
+                                <span className={textClass}>-</span>
+                              )}
+                              {quote.has_items === 1 && (
+                                <span 
+                                  className="badge bg-success text-white" 
+                                  title={`${quote.items_count || 0} righe dettaglio - Clicca per visualizzare/modificare`}
+                                  style={{ cursor: 'pointer' }}
+                                  onClick={() => {
+                                    setSelectedQuoteForManual(quote.id);
+                                    setShowManualModal(true);
+                                  }}
+                                >
+                                  <i className="fas fa-list me-1"></i>
+                                  Dettaglio
+                                </span>
+                              )}
+                            </div>
                           </td>
                           {/* 14. Azioni */}
                           <td>
@@ -1106,6 +1292,17 @@ function VehicleQuotesContent() {
                               >
                                 <i className="fas fa-edit"></i>
                               </Link>
+                              {/* Pulsante Inserimento Manuale */}
+                              <button 
+                                className="btn btn-outline-secondary"
+                                onClick={() => {
+                                  setSelectedQuoteForManual(quote.id);
+                                  setShowManualModal(true);
+                                }}
+                                title="Inserisci righe manualmente"
+                              >
+                                <i className="fas fa-keyboard"></i>
+                              </button>
                               {quote.status === 'pending' && new Date(quote.valid_until) >= new Date() && (
                                 <>
                                   <button 
@@ -1136,6 +1333,33 @@ function VehicleQuotesContent() {
           </div>
         </div>
       </div>
+
+      {/* Modale Inserimento Manuale */}
+      {selectedQuoteForManual && (() => {
+        const quote = quotes.find(q => q.id === selectedQuoteForManual);
+        return (
+          <ManualQuoteEntryModal
+            show={showManualModal}
+            quoteId={selectedQuoteForManual}
+            quoteData={quote ? {
+              quote_number: quote.quote_number,
+              quote_date: quote.quote_date || undefined,
+              vehicle_plate: quote.targa,
+              vehicle_km: undefined, // Caricato dal DB se presente
+              intervention_location: undefined,
+              intervention_date: undefined, // Caricato dal DB se presente
+              supplier_name: quote.supplier_name
+            } : undefined}
+            onClose={() => {
+              setShowManualModal(false);
+              setSelectedQuoteForManual(null);
+            }}
+            onSaveSuccess={() => {
+              fetchQuotes(); // Ricarica preventivi dopo il salvataggio
+            }}
+          />
+        );
+      })()}
     </div>
   );
 }

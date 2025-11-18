@@ -18,20 +18,25 @@ export default function SortableHeader({ field, label, currentSortBy, currentSor
   const handleSort = () => {
     const params = new URLSearchParams(searchParams?.toString() || '');
     
+    // Normalizza l'ordine corrente (accetta sia uppercase che lowercase)
+    const normalizedOrder = currentSortOrder.toUpperCase();
+    
     // Se clicchiamo sulla stessa colonna, invertiamo l'ordine
     if (currentSortBy === field) {
-      const newOrder = currentSortOrder === 'ASC' ? 'DESC' : 'ASC';
+      const newOrder = normalizedOrder === 'ASC' ? 'desc' : 'asc';
       params.set('sortOrder', newOrder);
     } else {
-      // Se clicchiamo su una nuova colonna, impostiamo l'ordine di default (ASC)
+      // Se clicchiamo su una nuova colonna, impostiamo l'ordine di default (asc)
       params.set('sortBy', field);
-      params.set('sortOrder', 'ASC');
+      params.set('sortOrder', 'asc');
     }
     
-    // Reset alla prima pagina quando cambiamo ordinamento
-    params.set('page', '1');
+    // Reset alla prima pagina quando cambiamo ordinamento (solo se esiste il parametro page)
+    if (params.has('page')) {
+      params.set('page', '1');
+    }
     
-    router.push(`${basePath}?${params.toString()}`);
+    router.replace(`${basePath}?${params.toString()}`, { scroll: false });
   };
 
   const getSortIcon = () => {

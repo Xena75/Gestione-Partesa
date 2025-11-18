@@ -554,12 +554,24 @@ umo                     varchar(20)    YES        NULL
 qta_uma                 decimal(13,3)  YES        NULL     
 tipo_imb                varchar(50)    YES        NULL     
 t_hf_umv                int(11)        YES        NULL     
-imp_hf_um               decimal(12,2)  YES        NULL     
-imp_resi_v              decimal(12,2)  YES        NULL     
-imp_doc                 decimal(12,2)  YES        NULL     
-tot_hand                decimal(12,2)  YES        NULL     
+imp_hf_um               decimal(12,4)  YES        NULL     
+imp_resi_v              decimal(12,4)  YES        NULL     
+imp_doc                 decimal(12,4)  YES        NULL     
+tot_hand                decimal(12,4)  YES        NULL     
 mese                    tinyint(4)     YES        NULL     
 ```
+
+**Note sulla struttura:**
+- **Precisione decimali**: I campi `imp_hf_um`, `imp_resi_v`, `imp_doc`, `tot_hand` sono stati aggiornati a `DECIMAL(12,4)` per supportare fino a 4 decimali (migration: `migrations/increase_handling_decimal_precision.sql`)
+- **Campo source_name**: Utilizzato per tracciare il nome del file Excel di origine durante l'importazione
+- **Campo mese**: Utilizzato per filtrare i dati per mese e per il controllo duplicati durante l'importazione
+- **Calcolo dep**: Il campo `dep` viene popolato automaticamente durante l'importazione tramite JOIN con `tab_deposito` usando il campo `div`
+
+**Utilizzo nel progetto:**
+- **Pagine**: `/handling` - Visualizzazione e gestione dati handling
+- **API**: `/api/handling/import` - Endpoint per importazione dati da Excel
+- **Funzionalità**: Importazione Excel, esportazione Excel, filtri avanzati
+- **Componenti**: `HandlingFilters.tsx`, `ExportHandlingButton.tsx`
 
 #### import_mappings
 ```sql
@@ -955,13 +967,18 @@ email_aziendale          varchar(150)   YES        NULL
 profile_image            varchar(255)   YES        NULL                 
 password_hash            varchar(255)   YES        NULL                 
 last_login               timestamp      YES        NULL                 
-is_active                tinyint(1)     NO        1                    
+active                   tinyint(1)     NO        1                    
 created_at               timestamp      NO        current_timestamp()  
 updated_at               timestamp      NO        current_timestamp()  on update current_timestamp()
+company_id               int(11)        YES   MUL  NULL                 
+data_dimissioni          date           YES        NULL                 
+permesso_soggiorno       varchar(100)   YES        NULL                 
+username_login           varchar(50)    YES   UNI  NULL                 
+nominativo               varchar(255)   YES        NULL                 
 ```
 
 **Utilizzo nel progetto:**
-- **Pagine**: `/gestione/autisti` - Sistema gestione dipendenti e autisti
+- **Pagine**: `/gestione/dipendenti` - Sistema gestione dipendenti e autisti
 - **API**: `/api/employees` per CRUD dipendenti
 - **Componenti**: Gestione anagrafica completa dipendenti
 - **Funzionalità**: Gestione personale, assegnazione viaggi, gestione patenti
@@ -972,6 +989,11 @@ updated_at               timestamp      NO        current_timestamp()  on update
 - Import dipendenti tramite script `scripts/import-employees-from-excel.js`
 - Supporta gestione completa anagrafica e dati contrattuali
 - Campo `is_driver` per identificare autisti abilitati
+- **Campo `active`**: Stato dipendente (1 = Attivo, 0 = Inattivo) - **v2.36.0**
+  - Modificabile tramite `/gestione/dipendenti/[id]/modifica` nella sezione "Dati Contrattuali"
+  - Filtro nella lista dipendenti (`/gestione/dipendenti`) con default su "Attivi"
+  - Dashboard mostra solo dipendenti con `active = 1` nella card "DIPENDENTI ATTIVI"
+  - Permette di nascondere dipendenti non più operativi mantenendo lo storico
 - Gestione scadenze patenti tramite tabella `employee_documents` (document_type = 'Patente di Guida')
 
 #### employee_documents
@@ -1050,6 +1072,13 @@ updated_at     timestamp                                      NO        current_
 - `idx_employee_leave_requests_dates` - Filtro per periodo
 - `idx_employee_leave_requests_status` - Filtro per stato richiesta
 
+**Note operative ricalcolo saldi (Gennaio 2025):**
+- Il conteggio dei giorni utilizzati in dashboard deriva da `employee_leave_balance.vacation_days_used`
+- Il valore viene aggiornato tramite lo script `scripts/recalculate-leave-balances.js`
+- Logica aggiornata: considera solo richieste con `status = 'approved'` e dell'anno corrente (`YEAR(start_date) = 2025`)
+- Dry-run disponibile nello script per stampare i dettagli delle richieste approvate/non cancellate per verifica
+- In assenza di `deleted`, non viene applicato filtro di soft-delete (campo non presente in tabella)
+
 #### employee_leave_balance
 **Descrizione:** Bilancio annuale ferie e permessi per ogni dipendente con gestione ore e giorni.
 
@@ -1076,6 +1105,7 @@ created_at                 timestamp    NO        current_timestamp()
 - **ROL**: Gestiti solo in ore (rol_hours_remaining)
 - **Import Excel**: Aggiornamento mensile dei saldi residui tramite file Excel
 - **Conversione**: 1 giorno = 8 ore per calcoli automatici
+- **Ricalcolo script (Gennaio 2025)**: `vacation_days_used`, `sick_days_used`, `personal_days_used` ricalcolati aggregando `employee_leave_requests` filtrate per `status='approved'` e anno (2025)
 
 **Import Excel Mensile:**
 - File: `Saldi ferie.xlsx` con colonne: Anno, Mese, Cognome, Nome, Centri di costo, Ferie-Residue, EX FEST-F-Residue, ROL-R-Residue
@@ -1231,6 +1261,37 @@ uploaded_at   timestamp    NO        current_timestamp()
 - **API**: `/api/vehicles/quotes/[id]/documents` per gestione documenti preventivi
 - **Funzionalità**: Upload file PDF, DOC, DOCX, JPG, PNG, TXT (max 10MB)
 - **Storage**: Vercel Blob Storage (produzione) / Filesystem locale (sviluppo)
+
+#### intervention_locations
+**Tabella per gestione luoghi di intervento manutenzione** ⭐ **NUOVO v2.37.0**
+
+```sql
+CREATE TABLE IF NOT EXISTS intervention_locations (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL UNIQUE,
+  description TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+**Campi:**
+```sql
+Field         Type         Null  Key  Default              Extra
+id            int(11)      NO    PRI  NULL                 auto_increment
+name          varchar(255) NO    UNI  NULL                 
+description   text         YES        NULL                 
+created_at    timestamp    NO        current_timestamp()  
+updated_at    timestamp    NO        current_timestamp()  on update current_timestamp()
+```
+
+**Utilizzo nel progetto:**
+- **API**: `/api/intervention-locations` per CRUD luoghi intervento
+- **Componente**: `ManualQuoteEntryModal` - Select editabile con possibilità di aggiungere nuovi luoghi
+- **Funzionalità**: Standardizzazione luoghi intervento, select dropdown con form inline per nuovi record
+- **Validazione**: Nome obbligatorio, controllo duplicati tramite UNIQUE constraint
+- **Integrazione**: Campo `intervention_location` in `maintenance_quotes` può fare riferimento a questa tabella
 - **Integrazione**: Collegamento automatico con preventivi tramite `quote_id`
 
 **Tipi file supportati:**
@@ -2350,6 +2411,10 @@ SELECT * FROM backup_schedules WHERE enabled = TRUE;
 
 #### Tabella: `quote_documents`
 - **src/lib/data-viaggi.ts** - Gestione documenti preventivi
+
+#### Tabella: `intervention_locations` ⭐ **NUOVO v2.37.0**
+- **src/app/api/intervention-locations/route.ts** - API gestione luoghi intervento
+- **src/components/ManualQuoteEntryModal.tsx** - Select editabile luoghi nel modal inserimento righe
 
 #### Tabella: `automation_logs`
 - **src/lib/data-viaggi.ts** - Log automazione

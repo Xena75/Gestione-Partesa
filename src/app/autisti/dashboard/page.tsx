@@ -724,7 +724,25 @@ export default function AutistiDashboardPage() {
       {/* Cards di riepilogo */}
       <div className="row mb-3 mb-md-4">
         <div className="col-6 col-md-3 mb-3">
-          <div className="card bg-dark border-success">
+          <div 
+            className="card bg-dark border-success"
+            style={{ 
+              transition: 'all 0.3s ease',
+              cursor: 'pointer'
+            }}
+            onClick={() => {
+              console.log('Navigazione allo storico richieste:', '/autisti/ferie?tab=storico');
+              router.push('/autisti/ferie?tab=storico');
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 4px 8px rgba(40, 167, 69, 0.3)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          >
             <div className="card-body text-center py-3">
               <Calendar className="text-success mb-2" size={28} />
               <h6 className="text-success mb-1">{leaveBalance?.vacation_days_used || 0}</h6>
@@ -883,11 +901,20 @@ export default function AutistiDashboardPage() {
         <div className="row mb-2 mb-md-4">
           <div className="col-12">
             <div className="card bg-dark border-secondary">
-              <div className="card-header py-2">
+              <div className="card-header py-2 d-flex justify-content-between align-items-center">
                 <h5 className="text-light mb-0" style={{ fontSize: '1rem' }}>
                   <Clock className="me-2" size={18} />
-                  Richieste Ferie Recenti
+                  Ultime 5 richieste
                 </h5>
+                <button
+                  type="button"
+                  className="btn btn-outline-light btn-sm"
+                  onClick={() => {
+                    router.push('/autisti/ferie?tab=storico');
+                  }}
+                >
+                  Mostra tutte
+                </button>
               </div>
               <div className="card-body p-2">
                 <div className="table-responsive">

@@ -134,7 +134,7 @@ export default function Dashboard() {
 
       // Calcolo statistiche dipendenti
       const totalEmployees = employeesData.data.length;
-      const activeEmployees = employeesData.data.filter((emp: any) => emp.active).length;
+      const activeEmployees = employeesData.data.filter((emp: any) => emp.active === 1).length;
       const drivers = employeesData.data.filter((emp: any) => emp.is_driver === 1).length;
       const nonDrivers = totalEmployees - drivers;
 

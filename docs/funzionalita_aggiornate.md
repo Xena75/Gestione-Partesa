@@ -1,12 +1,503 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-**Versione corrente**: v2.35.7  
+**Versione corrente**: v2.37.0  
 **Ultimo aggiornamento**: Novembre 2025
+
+---
+
+## v2.37.0 - Gestione Righe Preventivo e Luoghi Intervento
+
+**Data implementazione**: Novembre 2025  
+**Stato**: ✅ Completato e testato
+
+### 🎯 Funzionalità Gestione Righe Preventivo
+
+#### 📝 Inserimento Manuale Righe Preventivo
+- **Pagina**: `/vehicles/quotes`
+- **Modal**: `ManualQuoteEntryModal` per inserimento/modifica righe dettaglio
+- **Funzionalità**: 
+  - Inserimento manuale righe preventivo con tutti i dettagli
+  - Visualizzazione e modifica righe esistenti
+  - Calcolo automatico totali (imponibile, IVA, totale)
+  - Formattazione numeri con virgola italiana
+  - Formattazione data in formato gg/mm/aaaa
+- **File**: `src/components/ManualQuoteEntryModal.tsx`
+
+#### 🔍 Badge "Dettaglio" Cliccabile
+- **Pagina**: `/vehicles/quotes`
+- **Funzionalità**: Badge verde "Dettaglio" cliccabile per visualizzare/modificare righe
+- **Indicatore**: Mostra numero righe dettaglio nel tooltip
+- **File**: `src/app/vehicles/quotes/page.tsx`
+
+#### 📊 Visualizzazione Righe nella Pagina Dettaglio
+- **Pagina**: `/vehicles/quotes/[id]`
+- **Sezione**: "Sezione Righe Preventivo" con tabella completa
+- **Formattazione**: Numeri con virgola italiana, categorie con badge colorati
+- **File**: `src/app/vehicles/quotes/[id]/page.tsx`
+
+### 🎨 Caratteristiche Implementate
+
+#### Modal Inserimento Manuale
+- **Campi righe**:
+  - Codice (opzionale)
+  - Descrizione (obbligatoria)
+  - Categoria (Ricambio/Manodopera/Servizio)
+  - Quantità
+  - Unità di misura (NR/HH/KG/LT/PZ)
+  - Prezzo unitario (formattato con virgola)
+  - Sconto percentuale
+  - Totale riga (calcolato automaticamente)
+  - Aliquota IVA
+- **Dati preventivo**:
+  - KM veicolo
+  - Luogo intervento (select editabile)
+  - Data intervento (formato gg/mm/aaaa)
+- **Totali calcolati**:
+  - Imponibile (somma righe con sconto)
+  - IVA % (impostabile)
+  - IVA (calcolata)
+  - Totale (imponibile + IVA)
+
+#### Select Luoghi Intervento
+- **Funzionalità**: Select dropdown con luoghi dal database
+- **Aggiunta nuovo luogo**: Form inline per aggiungere nuovi luoghi
+- **Validazione**: Controllo duplicati, nome obbligatorio
+- **Auto-selezione**: Dopo l'aggiunta, il nuovo luogo viene selezionato automaticamente
+- **Supporto personalizzato**: Accetta anche valori non presenti nella lista
+
+### 🗄️ Database
+
+#### Nuova Tabella: `intervention_locations`
+- **Database**: `viaggi_db`
+- **Campi**:
+  - `id` (INT, AUTO_INCREMENT, PRIMARY KEY)
+  - `name` (VARCHAR(255), NOT NULL, UNIQUE)
+  - `description` (TEXT, NULL)
+  - `created_at` (TIMESTAMP)
+  - `updated_at` (TIMESTAMP)
+- **Indice**: `idx_name` su campo `name`
+- **File migration**: `migrations/create_intervention_locations_table.sql`
+
+### 🔌 API Endpoints
+
+#### `/api/intervention-locations`
+- **GET**: Recupera tutti i luoghi di intervento
+  - Query params: `search` (opzionale, ricerca per nome)
+  - Response: `{ success: true, locations: [...] }`
+- **POST**: Aggiunge un nuovo luogo di intervento
+  - Body: `{ name: string, description?: string }`
+  - Response: `{ success: true, location: {...}, message: string }`
+  - Validazione: Controllo duplicati, nome obbligatorio
+- **File**: `src/app/api/intervention-locations/route.ts`
+
+#### `/api/vehicles/quotes/[id]/save-parsed-data`
+- **POST**: Salva righe preventivo e dati intervento
+  - Body: `{ vehicle_km, intervention_location, intervention_date, taxable_amount, tax_amount, tax_rate, items: [...] }`
+  - Conversione data: Formato ISO (YYYY-MM-DD) per MySQL
+  - File: `src/app/api/vehicles/quotes/[id]/save-parsed-data/route.ts`
+
+### 📊 Formattazione Numeri e Date
+
+#### Formattazione Numeri
+- **Metodo**: `toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })`
+- **Campi formattati**:
+  - Imponibile
+  - IVA
+  - Totale
+  - Prezzo unitario (€/u)
+  - Totale riga
+- **Esempio**: `1.234,56` invece di `1234.56`
+
+#### Formattazione Date
+- **Formato visualizzazione**: `gg/mm/aaaa` (es: `20/10/2025`)
+- **Formato database**: `YYYY-MM-DD` (ISO)
+- **Conversione**: Automatica bidirezionale
+- **Validazione**: Regex per formato gg/mm/aaaa
+
+### ✅ Benefici Operativi
+- ✅ **Tracciamento dettagliato**: Registrazione completa di tutti i pezzi/servizi per ogni preventivo
+- ✅ **Confronto prezzi**: Possibilità di confrontare prezzi tra preventivi diversi
+- ✅ **Storico manutenzioni**: Tracciamento completo interventi e pezzi sostituiti
+- ✅ **Standardizzazione**: Luoghi intervento standardizzati nel database
+- ✅ **Formattazione italiana**: Numeri e date in formato italiano familiare
+- ✅ **UX migliorata**: Badge cliccabile per accesso rapido alle righe
+
+### 📁 File Modificati/Creati
+
+#### Componenti
+- `src/components/ManualQuoteEntryModal.tsx` - Modal inserimento/modifica righe
+- `src/app/vehicles/quotes/page.tsx` - Badge dettaglio cliccabile
+- `src/app/vehicles/quotes/[id]/page.tsx` - Visualizzazione righe dettaglio
+
+#### API
+- `src/app/api/intervention-locations/route.ts` - Gestione luoghi intervento
+- `src/app/api/vehicles/quotes/[id]/save-parsed-data/route.ts` - Salvataggio righe (aggiornato)
+
+#### Database
+- `migrations/create_intervention_locations_table.sql` - Creazione tabella luoghi
+
+#### File Rimossi
+- `src/components/PDFParsingModal.tsx` - Rimosso (funzionalità non utilizzata)
+- `src/app/api/vehicles/quotes/[id]/parse-pdf/route.ts` - Rimosso
+- `src/lib/pdf-quote-parser.ts` - Rimosso
+
+### 🔮 Note Tecniche
+- La tabella `intervention_locations` viene creata automaticamente se non esiste
+- I luoghi vengono caricati automaticamente all'apertura del modal
+- Il campo "Luogo Intervento" supporta sia selezione da lista che inserimento personalizzato
+- La conversione data gestisce automaticamente il formato ISO per MySQL
+- I totali vengono ricalcolati automaticamente ad ogni modifica delle righe
+
+---
+
+## v2.36.1 - Estensione Periodo Sincronizzazione da 5 a 7 Giorni
+
+**Data implementazione**: Novembre 2025  
+**Stato**: ✅ Completato e testato
+
+### 🎯 Modifica Periodo Sincronizzazione
+
+#### 🔄 Sincronizzazione Dipendenti e Terzisti
+- **Dashboard**: `/dashboard`
+- **Pagina Viaggi**: `/viaggi`
+- **Periodo aggiornato**: Da 5 giorni a 7 giorni
+- **File modificati**: 
+  - `src/app/dashboard/page.tsx`
+  - `src/app/viaggi/page.tsx`
+
+#### 🎨 Pulsanti Modificati
+1. **🔄 Sincronizza Dipendente** (Dashboard)
+   - Parametro API: `days=7` (precedentemente `days=5`)
+   - Messaggio: "Questa operazione sincronizzerà i dati degli ultimi 7 giorni..."
+   
+2. **🚛 Sincronizza Terzista** (Dashboard)
+   - Parametro API: `days=7` (precedentemente `days=5`)
+   - Messaggio: "Questa operazione sincronizzerà i dati dei TERZISTI degli ultimi 7 giorni..."
+
+3. **Sincronizzazione Viaggi** (Pagina /viaggi)
+   - Parametro API: `days=7` (precedentemente `days=5`)
+   - Messaggio: "Questa operazione sincronizzerà i dati degli ultimi 7 giorni..."
+
+### 🔧 Implementazione Tecnica
+
+#### Modifiche Dashboard (`src/app/dashboard/page.tsx`)
+- **handleSyncDipendenti**: Endpoint `/api/viaggi/sync-tab-viaggi?days=7`
+- **handleSyncTerzisti**: Endpoint `/api/viaggi/sync-tab-terzisti?days=7`
+
+#### Modifiche Pagina Viaggi (`src/app/viaggi/page.tsx`)
+- **handleSync**: Endpoint `/api/viaggi/sync-tab-viaggi?days=7`
+
+### 📊 API Interessate
+- `/api/viaggi/sync-tab-viaggi` - Sincronizzazione dati viaggi dipendenti
+- `/api/viaggi/sync-tab-terzisti` - Sincronizzazione dati viaggi terzisti
+
+### ✅ Benefici Operativi
+- ✅ **Copertura estesa**: Sincronizzazione include 2 giorni aggiuntivi di dati
+- ✅ **Maggiore affidabilità**: Ridotto rischio di perdere dati in periodi festivi
+- ✅ **Flessibilità**: Migliore gestione di ritardi nell'aggiornamento dati
+- ✅ **Coerenza**: Tutti i pulsanti di sincronizzazione ora usano lo stesso periodo (7 giorni)
+
+### 📁 File Modificati
+- `src/app/dashboard/page.tsx` - Aggiornati entrambi i pulsanti di sincronizzazione
+- `src/app/viaggi/page.tsx` - Aggiornato pulsante sincronizzazione viaggi
+
+### 🔮 Note Tecniche
+- Il parametro `days` viene passato come query string all'API
+- Le API utilizzano `DATE_SUB(NOW(), INTERVAL ${days} DAY)` per filtrare i dati
+- La modifica mantiene la compatibilità con il sistema esistente
+- Nessuna modifica necessaria al backend (le API già supportano il parametro dinamico)
+
+---
+
+## v2.36.0 - Gestione Stato Dipendenti (Attivo/Inattivo)
+
+**Data implementazione**: Novembre 2025  
+**Stato**: ✅ Completato e testato
+
+### 🎯 Funzionalità Gestione Stato Dipendenti
+
+#### 📝 Modifica Stato Dipendente
+- **Pagina**: `/gestione/dipendenti/[id]/modifica`
+- **Funzionalità**: Campo per modificare lo stato del dipendente (Attivo/Inattivo)
+- **Campo Database**: `employees.active` (1 = Attivo, 0 = Inattivo)
+- **File**: `src/app/gestione/dipendenti/[id]/modifica/page.tsx`
+
+#### 🔍 Filtro Stato nella Lista Dipendenti
+- **Pagina**: `/gestione/dipendenti`
+- **Funzionalità**: Dropdown per filtrare dipendenti per stato
+- **Opzioni**: Tutti / Attivi / Inattivi
+- **Default**: Mostra solo dipendenti attivi
+- **File**: `src/app/gestione/dipendenti/page.tsx`
+
+#### 📊 Dashboard Dipendenti
+- **Pagina**: `/gestione/dipendenti/dashboard`
+- **Funzionalità**: Card "DIPENDENTI ATTIVI" conta solo dipendenti con `active = 1`
+- **File**: `src/app/gestione/dipendenti/dashboard/page.tsx`
+
+### 🎨 Caratteristiche Implementate
+
+#### Pagina Modifica Dipendente
+- **Campo "Stato Dipendente"**: Dropdown con opzioni "Attivo" / "Inattivo" nella sezione "Dati Contrattuali"
+- **Posizione**: Tra "Orario di Lavoro" e "Data Assunzione"
+- **Messaggio informativo**: Tooltip che spiega che i dipendenti inattivi non appaiono nelle ricerche principali
+- **Salvataggio**: Conversione automatica in formato database (1/0)
+
+#### Pagina Lista Dipendenti
+- **Filtro Stato**: Dropdown con tre opzioni
+  - **Tutti**: Mostra tutti i dipendenti (attivi e inattivi)
+  - **Attivi**: Mostra solo dipendenti con `active = 1` (opzione di default)
+  - **Inattivi**: Mostra solo dipendenti con `active = 0`
+- **Colonna Stato**: Nuova colonna nella tabella con badge visivi
+  - Badge **verde** "Attivo" per dipendenti attivi
+  - Badge **rosso** "Inattivo" per dipendenti inattivi
+- **Statistiche**: Quando si seleziona "Tutti", mostra conteggio separato di attivi e inattivi
+
+#### Dashboard Dipendenti
+- **Conteggio corretto**: La card "DIPENDENTI ATTIVI" ora filtra correttamente solo i dipendenti con `active = 1`
+- **Query**: Modificata da `.filter((emp: any) => emp.active)` a `.filter((emp: any) => emp.active === 1)`
+
+### 🔧 Implementazione Tecnica
+
+#### Frontend - Pagina Modifica (`src/app/gestione/dipendenti/[id]/modifica/page.tsx`)
+```typescript
+// Interfaccia aggiornata
+interface Employee {
+  // ... altri campi
+  active: number | boolean;
+}
+
+// Inizializzazione del form
+const formattedData = {
+  // ... altri campi
+  active: employeeData.active === 1 || employeeData.active === true
+};
+
+// Salvataggio
+const dataToSave = {
+  // ... altri campi
+  active: formData.active === true || formData.active === 1 ? 1 : 0
+};
+```
+
+#### Frontend - Lista Dipendenti (`src/app/gestione/dipendenti/page.tsx`)
+```typescript
+// Nuovo stato per il filtro
+const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active');
+
+// Logica di filtro aggiornata
+const filteredAndSortedEmployees = employees.filter(emp => {
+  // ... altri filtri
+  
+  let matchesStatusFilter = true;
+  if (statusFilter === 'active') {
+    matchesStatusFilter = emp.active === 1;
+  } else if (statusFilter === 'inactive') {
+    matchesStatusFilter = emp.active === 0;
+  }
+  
+  return matchesDriverFilter && matchesStatusFilter && matchesSearch;
+});
+```
+
+#### Frontend - Dashboard (`src/app/gestione/dipendenti/dashboard/page.tsx`)
+```typescript
+// Conteggio dipendenti attivi corretto
+const activeEmployees = employeesData.data.filter((emp: any) => emp.active === 1).length;
+```
+
+### 📊 Struttura Dati
+
+#### Campo Database
+- **Tabella**: `employees`
+- **Campo**: `active`
+- **Tipo**: `TINYINT(1)` o `INT(1)`
+- **Valori**: 
+  - `1` = Dipendente Attivo
+  - `0` = Dipendente Inattivo
+- **Default**: `1` (Attivo) per nuovi dipendenti
+
+### 🎯 Casi d'Uso
+
+1. **Dipendente che lascia l'azienda**: 
+   - Impostare stato su "Inattivo" invece di eliminare il record
+   - Mantiene lo storico ma nasconde dalle ricerche principali
+
+2. **Dipendente in aspettativa**:
+   - Impostare temporaneamente su "Inattivo"
+   - Ripristinare ad "Attivo" al rientro
+
+3. **Pulizia lista dipendenti**:
+   - La vista di default mostra solo dipendenti attivi
+   - Lista più pulita e focalizzata su personale corrente
+
+4. **Report e statistiche**:
+   - Dashboard mostra conteggio accurato di dipendenti attualmente operativi
+   - Possibilità di analizzare anche dipendenti inattivi quando necessario
+
+### ✅ Benefici Operativi
+- ✅ **Gestione storico**: Mantenimento dati dipendenti senza eliminarli
+- ✅ **Vista pulita**: Lista dipendenti mostra solo personale attivo di default
+- ✅ **Flessibilità**: Possibilità di vedere tutti i dipendenti quando necessario
+- ✅ **Statistiche accurate**: Conteggi corretti nelle dashboard e report
+- ✅ **Audit trail**: Nessuna perdita di dati storici
+- ✅ **UX migliorata**: Badge visivi immediati per identificare lo stato
+
+### 📁 File Modificati
+- `src/app/gestione/dipendenti/[id]/modifica/page.tsx` - Aggiunto campo "Stato Dipendente"
+- `src/app/gestione/dipendenti/page.tsx` - Aggiunto filtro stato e colonna stato
+- `src/app/gestione/dipendenti/dashboard/page.tsx` - Corretto conteggio dipendenti attivi
+
+### 🔮 Note Importanti
+- Il filtro di default nella lista dipendenti è **"Attivi"** per mostrare solo personale corrente
+- I dipendenti inattivi rimangono accessibili selezionando "Tutti" o "Inattivi" dal filtro
+- Il campo `active` è già presente nel database, questa implementazione aggiunge solo l'interfaccia per gestirlo
+- Tutti i dipendenti esistenti hanno già un valore per `active` (verificato tramite script di analisi)
+
+---
+
+## v2.35.9 - Importazione Dati Handling da Excel
+
+**Data implementazione**: Gennaio 2025  
+**Stato**: ✅ Completato e testato
+
+### 🎯 Funzionalità Importazione Handling
+
+#### 📥 Importazione Excel Dati Handling
+- **Pagina**: `/handling`
+- **Funzionalità**: Importazione dati handling da file Excel (.xlsx, .xls) nella tabella `fatt_handling`
+- **API**: `/api/handling/import`
+- **File**: `src/app/handling/page.tsx`, `src/app/api/handling/import/route.ts`
+
+#### 🎨 Caratteristiche Implementate
+- **Upload file Excel**: Pulsante "Importa Excel" nella pagina handling
+- **Validazione file**: Controllo formato file (.xlsx, .xls) e presenza dati
+- **Controllo duplicati**: Verifica preventiva se il file è già stato importato per lo stesso mese
+- **Mapping automatico**: Lettura automatica colonne Excel e mapping ai campi database
+- **Precisione decimali**: Supporto per valori decimali con precisione fino a 4 decimali (`DECIMAL(12,4)`)
+- **Calcolo deposito**: Ricerca automatica `dep` dalla tabella `tab_deposito` basata su `div`
+- **Batch insertion**: Inserimento dati in batch per ottimizzare le performance
+- **Feedback utente**: Messaggi dettagliati su righe importate, errori e totale righe
+
+#### 🔧 Implementazione Tecnica
+
+##### Frontend (`src/app/handling/page.tsx`)
+- **Pulsante importazione**: Aggiunto pulsante "Importa Excel" con icona
+- **File input**: Selezione file tramite input HTML nativo
+- **Loading state**: Indicatore di caricamento durante l'importazione
+- **Messaggi successo/errore**: Alert dettagliati con statistiche importazione
+- **Reload automatico**: Ricaricamento pagina dopo importazione riuscita
+
+##### Backend (`src/app/api/handling/import/route.ts`)
+- **Lettura Excel**: Utilizzo libreria `xlsx` per parsing file
+- **Mapping colonne**: Mapping automatico colonne Excel ai campi database
+- **Conversione dati**: 
+  - Numeri con precisione preservata (fino a 4 decimali)
+  - Date convertite da formato Excel a formato database
+  - Stringhe con trim automatico
+- **Controllo duplicati**: Verifica `source_name` + `mese` prima dell'importazione
+- **JOIN deposito**: Ricerca `dep` tramite JOIN con `tab_deposito` usando `div`
+- **Batch processing**: Inserimento dati in batch per ottimizzazione
+- **Gestione errori**: Cattura e reporting errori dettagliati
+
+#### 📊 Struttura Dati
+
+##### Campi Importati
+- Informazioni documento: `doc_mat`, `doc_acq`, `EsMat`, `EsMat_1`
+- Informazioni materiale: `Materiale`, `descrizione_materiale`, `gr_m`, `comp`
+- Informazioni movimento: `tipo_movimento`, `data_mov_m`, `quantita`, `UMO`, `qta_uma`
+- Informazioni finanziarie: `imp_hf_um`, `imp_resi_v`, `imp_doc`, `tot_hand`
+- Informazioni organizzative: `Appalto`, `BU`, `em_fatt`, `rag_soc`, `div`, `dep`, `mag`
+- Informazioni cliente: `Cliente`, `tipo_imb`
+- Metadati: `mese`, `source_name` (nome file)
+
+##### Precisione Decimali
+- **Colonne decimali**: `tot_hand`, `imp_hf_um`, `imp_resi_v`, `imp_doc`
+- **Precisione**: `DECIMAL(12,4)` per supportare fino a 4 decimali
+- **Preservazione**: Valori Excel importati con precisione originale mantenuta
+
+#### ⚠️ Limitazioni Attuali
+- **Controllo duplicati**: Basato su `source_name` + `mese`, non su contenuto dati
+- **Indice unico**: Non ancora implementato (previsto: `doc_mat + materiale + mese + div + pos`)
+- **Prevenzione manuale**: Attualmente l'utente deve evitare di importare lo stesso file due volte
+
+#### 🔄 Flusso Importazione
+1. Utente clicca "Importa Excel" nella pagina `/handling`
+2. Selezione file Excel tramite file picker
+3. Validazione file (formato e presenza dati)
+4. Verifica duplicati (`source_name` + `mese`)
+5. Lettura e parsing file Excel
+6. Mapping colonne ai campi database
+7. Ricerca `dep` per ogni record tramite `div`
+8. Conversione dati (numeri, date, stringhe)
+9. Inserimento batch nel database
+10. Report risultati (righe importate, errori, totale)
+
+#### ✅ Benefici Operativi
+- ✅ **Automazione**: Importazione rapida dati handling senza inserimento manuale
+- ✅ **Precisione**: Mantenimento precisione decimali fino a 4 cifre
+- ✅ **Tracciabilità**: Campo `source_name` per identificare origine dati
+- ✅ **Performance**: Batch insertion per importazioni veloci
+- ✅ **Feedback**: Messaggi chiari su esito importazione
+- ✅ **Prevenzione errori**: Controllo duplicati preventivo
+
+#### 📁 File Modificati/Creati
+- `src/app/handling/page.tsx` - Aggiunto pulsante e logica importazione
+- `src/app/api/handling/import/route.ts` - Endpoint API importazione
+- `migrations/increase_handling_decimal_precision.sql` - Aumento precisione colonne decimali
+
+#### 🔮 Miglioramenti Futuri Pianificati
+- **Indice unico**: Implementazione indice unico `doc_mat + materiale + mese + div + pos` per prevenzione duplicati a livello database
+- **Gestione duplicati**: Script per identificazione e rimozione duplicati esistenti
+- **Validazione avanzata**: Controlli aggiuntivi su integrità dati prima dell'importazione
+- **Report dettagliato**: Pagina dedicata con storico importazioni e statistiche
+
+---
+
+## v2.35.8 - Correzione Conteggio Giorni Ferie Dashboard Autisti
+
+**Data implementazione**: Gennaio 2025  
+**Stato**: ✅ Completato e testato
+
+### 🎯 Problema Riscontrato
+- La card "Ferie e Permessi utilizzati" nella dashboard autisti mostrava 4 giorni
+- Le richieste effettivamente approvate e visibili nello storico erano solo 3 giorni
+- Discrepanza tra conteggio visivo e dati reali
+
+### 🔍 Analisi della Causa
+- Il valore mostrato nella card proveniva dal campo `vacation_days_used` nel database
+- Questo campo viene calcolato dallo script `scripts/recalculate-leave-balances.js`
+- Lo script includeva anche richieste vecchie o con status diversi da 'approved'
+- La tabella dello storico mostra solo le ultime 5 richieste recenti (limit=5)
+
+### ✅ Soluzione Implementata
+
+#### 1. Correzione Script Ricalcolo Saldi (`scripts/recalculate-leave-balances.js`)
+- **Filtro status**: Aggiunto filtro `status = 'approved'` per considerare solo richieste approvate
+- **Anno corrente**: Limitato il calcolo all'anno corrente (2025) con `YEAR(start_date) = 2025`
+- **Dry-run**: Aggiunto stampa dettagliata delle richieste trovate per verifica
+- **Aggiornamento database**: Corretto il valore da 4 a 3 giorni per l'utente vincenzo.cordella
+
+#### 2. Miglioramenti UI Dashboard
+- **Titolo sezione**: Aggiornato da "Storico Richieste" a "Ultime 5 richieste" per chiarezza
+- **Pulsante navigazione**: Aggiunto pulsante "Mostra tutte" che reindirizza a `/autisti/ferie?tab=storico`
+- **Coerenza dati**: Ora la card riflette esattamente le richieste visibili nello storico
+
+### 📊 Risultato Finale
+- ✅ Card "Ferie e Permessi utilizzati" mostra correttamente 3 giorni
+- ✅ Allineamento perfetto tra conteggio card e richieste visibili
+- ✅ Navigazione migliorata verso storico completo
+- ✅ Trasparenza dati per l'utente
+
+### 📁 File Modificati
+- `scripts/recalculate-leave-balances.js` - Corretto filtro e logica di calcolo
+- `src/app/autisti/dashboard/page.tsx` - Aggiornato titolo sezione e aggiunto pulsante navigazione
 
 ---
 
 ## 📑 Indice
 
+- [v2.35.9 - Importazione Dati Handling da Excel](#v2359)
+- [v2.35.8 - Correzione Conteggio Giorni Ferie Dashboard Autisti](#v2358)
 - [v2.35.7 - Correzioni e Miglioramenti Recenti](#v2357)
 - [v2.35.6 - Modifica Selettiva Richieste Ferie](#v2356)
 - [v2.35.5 - Rimozione Campi Patente Ridondanti](#v2355)
@@ -720,3 +1211,41 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 ---
 
 *Ultimo aggiornamento: Gennaio 2025*
+## v2.35.8 - Correzione Conteggio Giorni Ferie Dashboard Autisti
+
+**Data implementazione**: Gennaio 2025  
+**Stato**: ✅ Completato e testato
+
+### 🎯 Problema Riscontrato
+- La card "Ferie e Permessi utilizzati" nella dashboard autisti mostrava 4 giorni
+- Le richieste effettivamente approvate e visibili nello storico erano solo 3 giorni
+- Discrepanza tra conteggio visivo e dati reali
+
+### 🔍 Analisi della Causa
+- Il valore mostrato nella card proveniva dal campo `vacation_days_used` nel database
+- Questo campo viene calcolato dallo script `scripts/recalculate-leave-balances.js`
+- Lo script includeva anche richieste vecchie o con status diversi da 'approved'
+- La tabella dello storico mostra solo le ultime 5 richieste recenti (limit=5)
+
+### ✅ Soluzione Implementata
+
+#### 1. Correzione Script Ricalcolo Saldi (`scripts/recalculate-leave-balances.js`)
+- **Filtro status**: Aggiunto filtro `status = 'approved'` per considerare solo richieste approvate
+- **Anno corrente**: Limitato il calcolo all'anno corrente (2025) con `YEAR(start_date) = 2025`
+- **Dry-run**: Aggiunto stampa dettagliata delle richieste trovate per verifica
+- **Aggiornamento database**: Corretto il valore da 4 a 3 giorni per l'utente vincenzo.cordella
+
+#### 2. Miglioramenti UI Dashboard
+- **Titolo sezione**: Aggiornato da "Storico Richieste" a "Ultime 5 richieste" per chiarezza
+- **Pulsante navigazione**: Aggiunto pulsante "Mostra tutte" che reindirizza a `/autisti/ferie?tab=storico`
+- **Coerenza dati**: Ora la card riflette esattamente le richieste visibili nello storico
+
+### 📊 Risultato Finale
+- ✅ Card "Ferie e Permessi utilizzati" mostra correttamente 3 giorni
+- ✅ Allineamento perfetto tra conteggio card e richieste visibili
+- ✅ Navigazione migliorata verso storico completo
+- ✅ Trasparenza dati per l'utente
+
+### 📁 File Modificati
+- `scripts/recalculate-leave-balances.js` - Corretto filtro e logica di calcolo
+- `src/app/autisti/dashboard/page.tsx` - Aggiornato titolo sezione e aggiunto pulsante navigazione

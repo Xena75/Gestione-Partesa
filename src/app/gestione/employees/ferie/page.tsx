@@ -618,155 +618,118 @@ function GestioneFerieContent() {
 
   // Funzione per calcolare le ferie utilizzate da un dipendente in un anno specifico
   const calculateUsedVacationDays = (employeeId: string, year: number): number => {
-    console.log('🔍 FUNCTION CALLED:', employeeId, year);
-    
     if (!leaveRequests) {
-      console.log('❌ leaveRequests is null/undefined');
       return 0;
     }
     
-    console.log('✅ leaveRequests exists, length:', leaveRequests.length);
-    
-    // Debug: mostra tutti i leave_type e status unici presenti nei dati
-    const uniqueLeaveTypes = [...new Set(leaveRequests.map(req => req.leave_type))];
-    const uniqueStatuses = [...new Set(leaveRequests.map(req => req.status))];
-    console.log('🔍 UNIQUE LEAVE TYPES:', uniqueLeaveTypes);
-    console.log('🔍 UNIQUE STATUSES:', uniqueStatuses);
-    
-    // Debug: mostra la struttura delle prime 2 richieste
-    if (leaveRequests.length > 0) {
-      console.log('🔍 FIRST REQUEST STRUCTURE:', leaveRequests[0]);
-      if (leaveRequests.length > 1) {
-        console.log('🔍 SECOND REQUEST STRUCTURE:', leaveRequests[1]);
-      }
-    }
-    
-    const filteredRequests = leaveRequests.filter(request => {
-      // Debug: mostra la data originale
-      console.log(`🔍 ORIGINAL START_DATE: "${request.start_date}"`);
-      
-      // Funzione per estrarre l'anno da diversi formati di data
-      const extractYear = (dateString: string): number => {
-        if (!dateString) return NaN;
+    // Funzione per calcolare i giorni lavorativi tra due date
+    const calculateWorkingDaysInYear = (startDateStr: string, endDateStr: string, targetYear: number): number => {
+      const parseDate = (dateStr: string): Date | null => {
+        if (!dateStr) return null;
         
-        // Prova diversi formati
         // Formato DD/MM/YYYY
-        if (dateString.includes('/')) {
-          const parts = dateString.split('/');
+        if (dateStr.includes('/')) {
+          const parts = dateStr.split('/');
           if (parts.length === 3) {
+            const day = parseInt(parts[0]);
+            const month = parseInt(parts[1]) - 1; // I mesi in JS sono 0-based
             const year = parseInt(parts[2]);
-            console.log(`🔍 EXTRACTED YEAR FROM DD/MM/YYYY: ${year}`);
-            return year;
+            return new Date(year, month, day);
           }
         }
         
-        // Formato YYYY-MM-DD
-        if (dateString.includes('-')) {
-          const parts = dateString.split('-');
-          if (parts.length === 3) {
-            const year = parseInt(parts[0]);
-            console.log(`🔍 EXTRACTED YEAR FROM YYYY-MM-DD: ${year}`);
-            return year;
-          }
-        }
-        
-        // Fallback: prova con new Date()
-        const fallbackYear = new Date(dateString).getFullYear();
-        console.log(`🔍 FALLBACK YEAR FROM new Date(): ${fallbackYear}`);
-        return fallbackYear;
+        // Formato YYYY-MM-DD o ISO
+        const date = new Date(dateStr);
+        return isNaN(date.getTime()) ? null : date;
       };
       
-      const requestYear = extractYear(request.start_date);
+      const startDate = parseDate(startDateStr);
+      const endDate = parseDate(endDateStr);
       
-      // Costruisci il nome completo dalla richiesta
-      const requestEmployeeName = `${request.nome} ${request.cognome}`;
+      if (!startDate || !endDate) return 0;
       
-      console.log(`🔍 COMPARING: "${employeeId}" vs "${requestEmployeeName}" (ID: ${request.employee_id})`);
-      console.log(`🔍 REQUEST DETAILS: leave_type="${request.leave_type}", status="${request.status}", year=${requestYear}`);
+      // Limita le date all'anno specificato
+      const yearStart = new Date(targetYear, 0, 1); // 1 gennaio dell'anno
+      const yearEnd = new Date(targetYear, 11, 31); // 31 dicembre dell'anno
       
-      const match = requestEmployeeName === employeeId &&
-                   request.leave_type === 'ferie' &&
-                   request.status === 'approved' &&
-                   requestYear === year;
+      const effectiveStart = startDate > yearStart ? startDate : yearStart;
+      const effectiveEnd = endDate < yearEnd ? endDate : yearEnd;
       
-      if (match) {
-        console.log('✅ MATCH FOUND:', request);
+      // Se le date non si sovrappongono con l'anno target, ritorna 0
+      if (effectiveStart > yearEnd || effectiveEnd < yearStart) {
+        return 0;
       }
       
-      return match;
-    });
+      // Conta i giorni lavorativi nell'intervallo effettivo
+      let count = 0;
+      const current = new Date(effectiveStart);
+      
+      while (current <= effectiveEnd) {
+        const dayOfWeek = current.getDay();
+        // Escludi sabato (6) e domenica (0)
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+          count++;
+        }
+        current.setDate(current.getDate() + 1);
+      }
+      
+      return count;
+    };
     
-    console.log('📊 Filtered requests:', filteredRequests.length);
-    
-    const total = filteredRequests.reduce((total, request) => total + request.days_requested, 0);
-    console.log('🎯 TOTAL DAYS:', total);
+    // Filtra e calcola
+    const total = leaveRequests
+      .filter(request => {
+        const requestEmployeeName = `${request.nome} ${request.cognome}`;
+        return requestEmployeeName === employeeId &&
+               request.leave_type === 'ferie' &&
+               request.status === 'approved';
+      })
+      .reduce((sum, request) => {
+        const daysInYear = calculateWorkingDaysInYear(request.start_date, request.end_date, year);
+        return sum + daysInYear;
+      }, 0);
     
     return total;
   };
 
   // Funzione per calcolare le ore utilizzate dei permessi da un dipendente in un anno specifico
   const calculateUsedPermissionHours = (employeeId: string, year: number): number => {
-    console.log('🔍 PERMISSION HOURS FUNCTION CALLED:', employeeId, year);
-    
     if (!leaveRequests) {
-      console.log('❌ leaveRequests is null/undefined for permission hours');
       return 0;
     }
     
-    console.log('✅ leaveRequests exists for permission hours, length:', leaveRequests.length);
-    
-    const filteredRequests = leaveRequests.filter(request => {
-      // Funzione per estrarre l'anno da diversi formati di data
-      const extractYear = (dateString: string): number => {
-        if (!dateString) return NaN;
-        
-        // Formato DD/MM/YYYY
-        if (dateString.includes('/')) {
-          const parts = dateString.split('/');
-          if (parts.length === 3) {
-            const year = parseInt(parts[2]);
-            return year;
-          }
+    // Funzione per verificare se una data cade nell'anno specificato
+    const isDateInYear = (dateStr: string, targetYear: number): boolean => {
+      if (!dateStr) return false;
+      
+      // Formato DD/MM/YYYY
+      if (dateStr.includes('/')) {
+        const parts = dateStr.split('/');
+        if (parts.length === 3) {
+          return parseInt(parts[2]) === targetYear;
         }
-        
-        // Formato YYYY-MM-DD
-        if (dateString.includes('-')) {
-          const parts = dateString.split('-');
-          if (parts.length === 3) {
-            const year = parseInt(parts[0]);
-            return year;
-          }
-        }
-        
-        // Fallback: prova con new Date()
-        const fallbackYear = new Date(dateString).getFullYear();
-        return fallbackYear;
-      };
-      
-      const requestYear = extractYear(request.start_date);
-      
-      // Costruisci il nome completo dalla richiesta
-      const requestEmployeeName = `${request.nome} ${request.cognome}`;
-      
-      console.log(`🔍 PERMISSION COMPARING: "${employeeId}" vs "${requestEmployeeName}"`);
-      console.log(`🔍 PERMISSION REQUEST DETAILS: leave_type="${request.leave_type}", status="${request.status}", year=${requestYear}, hours_requested=${request.hours_requested}`);
-      
-      const match = requestEmployeeName === employeeId &&
-                   request.leave_type === 'permesso' &&
-                   request.status === 'approved' &&
-                   requestYear === year;
-      
-      if (match) {
-        console.log('✅ PERMISSION MATCH FOUND:', request);
       }
       
-      return match;
-    });
+      // Formato YYYY-MM-DD o ISO
+      const date = new Date(dateStr);
+      if (!isNaN(date.getTime())) {
+        return date.getFullYear() === targetYear;
+      }
+      
+      return false;
+    };
     
-    console.log('📊 Filtered permission requests:', filteredRequests.length);
-    
-    const total = filteredRequests.reduce((total, request) => total + (request.hours_requested || 0), 0);
-    console.log('🎯 TOTAL PERMISSION HOURS:', total);
+    // Filtra e calcola
+    const total = leaveRequests
+      .filter(request => {
+        const requestEmployeeName = `${request.nome} ${request.cognome}`;
+        // Per i permessi, controlliamo solo la data di inizio (solitamente sono di una giornata)
+        return requestEmployeeName === employeeId &&
+               request.leave_type === 'permesso' &&
+               request.status === 'approved' &&
+               isDateInYear(request.start_date, year);
+      })
+      .reduce((sum, request) => sum + (request.hours_requested || 0), 0);
     
     return total;
   };
@@ -777,63 +740,72 @@ function GestioneFerieContent() {
       return 0;
     }
     
-    const filteredRequests = leaveRequests.filter(request => {
-      // Funzione per estrarre l'anno da diversi formati di data
-      const extractYear = (dateString: string): number => {
-        if (!dateString) return NaN;
+    // Funzione per calcolare i giorni lavorativi in un anno specifico (stessa logica delle ferie)
+    const calculateWorkingDaysInYear = (startDateStr: string, endDateStr: string, targetYear: number): number => {
+      const parseDate = (dateStr: string): Date | null => {
+        if (!dateStr) return null;
         
         // Formato DD/MM/YYYY
-        if (dateString.includes('/')) {
-          const parts = dateString.split('/');
+        if (dateStr.includes('/')) {
+          const parts = dateStr.split('/');
           if (parts.length === 3) {
-            return parseInt(parts[2]);
+            const day = parseInt(parts[0]);
+            const month = parseInt(parts[1]) - 1;
+            const year = parseInt(parts[2]);
+            return new Date(year, month, day);
           }
         }
         
-        // Formato YYYY-MM-DD
-        if (dateString.includes('-')) {
-          const parts = dateString.split('-');
-          if (parts.length === 3) {
-            return parseInt(parts[0]);
-          }
-        }
-        
-        // Fallback: prova con new Date()
-        return new Date(dateString).getFullYear();
+        // Formato YYYY-MM-DD o ISO
+        const date = new Date(dateStr);
+        return isNaN(date.getTime()) ? null : date;
       };
       
-      const requestYear = extractYear(request.start_date);
+      const startDate = parseDate(startDateStr);
+      const endDate = parseDate(endDateStr);
       
-      // Costruisci il nome completo dalla richiesta (come nelle altre funzioni)
-      const requestEmployeeName = `${request.nome} ${request.cognome}`;
+      if (!startDate || !endDate) return 0;
       
-      // Normalizza il leave_type per confronto case-insensitive
-      const normalizedLeaveType = request.leave_type?.toUpperCase().trim();
+      // Limita le date all'anno specificato
+      const yearStart = new Date(targetYear, 0, 1);
+      const yearEnd = new Date(targetYear, 11, 31);
       
-      // Debug per verificare il matching (solo per PNR approvati)
-      if (normalizedLeaveType === 'PNR' && request.status === 'approved') {
-        console.log(`🔍 PNR DEBUG: employeeId="${employeeId}" vs requestEmployeeName="${requestEmployeeName}", year=${year} vs requestYear=${requestYear}, leave_type="${request.leave_type}" (normalized: "${normalizedLeaveType}"), status="${request.status}", days_requested=${request.days_requested}`);
+      const effectiveStart = startDate > yearStart ? startDate : yearStart;
+      const effectiveEnd = endDate < yearEnd ? endDate : yearEnd;
+      
+      // Se le date non si sovrappongono con l'anno target, ritorna 0
+      if (effectiveStart > yearEnd || effectiveEnd < yearStart) {
+        return 0;
       }
       
-      // Filtra per PNR approvati nell'anno specifico
-      // Confronta con employeeId che è nel formato "nome cognome"
-      // Usa confronto case-insensitive per leave_type
-      const match = requestEmployeeName === employeeId &&
-             normalizedLeaveType === 'PNR' &&
-             request.status === 'approved' &&
-             requestYear === year;
+      // Conta i giorni lavorativi nell'intervallo effettivo
+      let count = 0;
+      const current = new Date(effectiveStart);
       
-      if (match) {
-        console.log(`✅ PNR MATCH FOUND: ${requestEmployeeName}, days=${request.days_requested}`);
+      while (current <= effectiveEnd) {
+        const dayOfWeek = current.getDay();
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+          count++;
+        }
+        current.setDate(current.getDate() + 1);
       }
       
-      return match;
-    });
+      return count;
+    };
     
-    // Somma i giorni richiesti
-    const total = filteredRequests.reduce((total, request) => total + (request.days_requested || 0), 0);
-    
-    console.log(`📊 PNR TOTAL for ${employeeId} in ${year}: ${total} giorni (from ${filteredRequests.length} requests)`);
+    // Filtra e calcola
+    const total = leaveRequests
+      .filter(request => {
+        const requestEmployeeName = `${request.nome} ${request.cognome}`;
+        const normalizedLeaveType = request.leave_type?.toUpperCase().trim();
+        return requestEmployeeName === employeeId &&
+               normalizedLeaveType === 'PNR' &&
+               request.status === 'approved';
+      })
+      .reduce((sum, request) => {
+        const daysInYear = calculateWorkingDaysInYear(request.start_date, request.end_date, year);
+        return sum + daysInYear;
+      }, 0);
     
     return total;
   };
@@ -1945,13 +1917,13 @@ function GestioneFerieContent() {
                             </td>
                             <td>
                               <span className="badge bg-warning">
-                                {calculateUsedVacationDays(balance.employee_id, balance.year)} giorni
+                                {calculateUsedVacationDays(`${balance.nome} ${balance.cognome}`, balance.year)} giorni
                               </span>
                             </td>
                             <td>
                               <span className="badge" style={{ backgroundColor: '#6f42c1', color: 'white' }}>
                                 {(() => {
-                                  const result = calculateUsedPermissionHours(balance.employee_id, balance.year);
+                                  const result = calculateUsedPermissionHours(`${balance.nome} ${balance.cognome}`, balance.year);
                                   return result;
                                 })()} ore
                               </span>
@@ -2034,8 +2006,8 @@ function GestioneFerieContent() {
                   Totale bilanci: {filteredBalances.length} | 
                   Anno: {yearFilter} | 
                   Ferie totali: {filteredBalances.reduce((sum, b) => sum + b.vacation_days_total, 0)} giorni | 
-                  Ferie utilizzate: {filteredBalances.reduce((sum, b) => sum + calculateUsedVacationDays(b.employee_id, b.year), 0)} giorni | 
-                  Ore permessi utilizzate: {filteredBalances.reduce((sum, b) => sum + calculateUsedPermissionHours(b.employee_id, b.year), 0)} ore
+                  Ferie utilizzate: {filteredBalances.reduce((sum, b) => sum + calculateUsedVacationDays(`${b.nome} ${b.cognome}`, b.year), 0)} giorni | 
+                  Ore permessi utilizzate: {filteredBalances.reduce((sum, b) => sum + calculateUsedPermissionHours(`${b.nome} ${b.cognome}`, b.year), 0)} ore
                 </>
               )}
             </small>

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import DateInput from './DateInput';
+import { convertItalianToISO, convertISOToItalian } from '@/lib/date-utils';
 
 interface HandlingFiltersProps {
   onFiltersChange: (filters: any) => void;
@@ -31,7 +33,8 @@ export default function HandlingFilters({ onFiltersChange, initialFilters, viewT
     tipo_movimento: initialFilters.tipo_movimento || 'Tutti',
     doc_acq: initialFilters.doc_acq || '',
     doc_mat: initialFilters.doc_mat || '',
-    data_mov_m: initialFilters.data_mov_m || '',
+    // Converti la data da formato ISO (se presente) a formato italiano per la visualizzazione
+    data_mov_m: initialFilters.data_mov_m ? (initialFilters.data_mov_m.includes('/') ? initialFilters.data_mov_m : convertISOToItalian(initialFilters.data_mov_m)) : '',
     tipo_imb: initialFilters.tipo_imb || 'Tutti',
     mese: initialFilters.mese || 'Tutti'
   });
@@ -49,20 +52,28 @@ export default function HandlingFilters({ onFiltersChange, initialFilters, viewT
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [isLoadingOptions, setIsLoadingOptions] = useState(true);
 
-  // Effetto per gestire il lato client
+  // Effetto per gestire il lato client e inizializzare lo stato espanso
   useEffect(() => {
     setIsClient(true);
-    const saved = localStorage.getItem('handlingFiltersExpanded');
-    if (saved === 'true') {
+    // Se viewType è 'detailed', mostra i filtri espansi di default
+    if (viewType === 'detailed') {
       setIsExpanded(true);
+    } else {
+      // Altrimenti controlla il localStorage
+      const saved = localStorage.getItem('handlingFiltersExpanded');
+      if (saved === 'true') {
+        setIsExpanded(true);
+      }
     }
-  }, []);
+  }, [viewType]);
 
-  // Carica le opzioni dei filtri
+  // Carica le opzioni dei filtri immediatamente quando il componente viene montato
   useEffect(() => {
     const fetchFilterOptions = async () => {
       try {
+        setIsLoadingOptions(true);
         const params = new URLSearchParams();
         params.set('viewType', viewType);
         
@@ -73,6 +84,8 @@ export default function HandlingFilters({ onFiltersChange, initialFilters, viewT
         }
       } catch (error) {
         console.error('Errore nel caricamento delle opzioni filtri:', error);
+      } finally {
+        setIsLoadingOptions(false);
       }
     };
 
@@ -94,7 +107,12 @@ export default function HandlingFilters({ onFiltersChange, initialFilters, viewT
   };
 
   const applyFilters = () => {
-    onFiltersChange(filters);
+    // Converti la data in formato ISO prima di passarla ai filtri
+    const filtersToApply = { ...filters };
+    if (filtersToApply.data_mov_m && filtersToApply.data_mov_m.includes('/')) {
+      filtersToApply.data_mov_m = convertItalianToISO(filtersToApply.data_mov_m);
+    }
+    onFiltersChange(filtersToApply);
   };
 
   const resetFilters = () => {
@@ -120,7 +138,12 @@ export default function HandlingFilters({ onFiltersChange, initialFilters, viewT
   return (
     <div className="card mb-4">
       <div className="card-header d-flex justify-content-between align-items-center">
-        <h6 className="mb-0">Filtri Avanzati</h6>
+        <h6 className="mb-0">
+          Filtri Avanzati
+          {isLoadingOptions && (
+            <span className="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true"></span>
+          )}
+        </h6>
         <div className="d-flex gap-2">
             <button
               type="button"
@@ -162,13 +185,18 @@ export default function HandlingFilters({ onFiltersChange, initialFilters, viewT
                 className="form-select form-select-sm"
                 value={filters.bu}
                 onChange={(e) => handleInputChange('bu', e.target.value)}
+                disabled={isLoadingOptions}
               >
                 <option value="Tutti">Tutti</option>
-                {filterOptions.bu.map((bu) => (
-                  <option key={bu} value={bu}>
-                    {bu}
-                  </option>
-                ))}
+                {isLoadingOptions ? (
+                  <option disabled>Caricamento...</option>
+                ) : (
+                  filterOptions.bu.map((bu) => (
+                    <option key={bu} value={bu}>
+                      {bu}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
 
@@ -178,13 +206,18 @@ export default function HandlingFilters({ onFiltersChange, initialFilters, viewT
                 className="form-select form-select-sm"
                 value={filters.div}
                 onChange={(e) => handleInputChange('div', e.target.value)}
+                disabled={isLoadingOptions}
               >
                 <option value="Tutte">Tutte</option>
-                {filterOptions.divisioni.map((divisione) => (
-                  <option key={divisione} value={divisione}>
-                    {divisione}
-                  </option>
-                ))}
+                {isLoadingOptions ? (
+                  <option disabled>Caricamento...</option>
+                ) : (
+                  filterOptions.divisioni.map((divisione) => (
+                    <option key={divisione} value={divisione}>
+                      {divisione}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
 
@@ -194,13 +227,18 @@ export default function HandlingFilters({ onFiltersChange, initialFilters, viewT
                 className="form-select form-select-sm"
                 value={filters.dep}
                 onChange={(e) => handleInputChange('dep', e.target.value)}
+                disabled={isLoadingOptions}
               >
                 <option value="Tutti">Tutti</option>
-                {filterOptions.depositi.map((deposito) => (
-                  <option key={deposito} value={deposito}>
-                    {deposito}
-                  </option>
-                ))}
+                {isLoadingOptions ? (
+                  <option disabled>Caricamento...</option>
+                ) : (
+                  filterOptions.depositi.map((deposito) => (
+                    <option key={deposito} value={deposito}>
+                      {deposito}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
 
@@ -210,13 +248,18 @@ export default function HandlingFilters({ onFiltersChange, initialFilters, viewT
                 className="form-select form-select-sm"
                 value={filters.tipo_movimento}
                 onChange={(e) => handleInputChange('tipo_movimento', e.target.value)}
+                disabled={isLoadingOptions}
               >
                 <option value="Tutti">Tutti</option>
-                {filterOptions.tipiMovimento.map((tipo) => (
-                  <option key={tipo} value={tipo}>
-                    {tipo}
-                  </option>
-                ))}
+                {isLoadingOptions ? (
+                  <option disabled>Caricamento...</option>
+                ) : (
+                  filterOptions.tipiMovimento.map((tipo) => (
+                    <option key={tipo} value={tipo}>
+                      {tipo}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
           </div>
@@ -247,12 +290,19 @@ export default function HandlingFilters({ onFiltersChange, initialFilters, viewT
             
             <div className="col-md-2">
               <label className="form-label small">Data Movimento</label>
-              <input
-                type="date"
-                className="form-control form-control-sm"
-                value={filters.data_mov_m}
-                onChange={(e) => handleInputChange('data_mov_m', e.target.value)}
-              />
+              <div style={{ marginBottom: 0 }}>
+                <DateInput
+                  id="data_mov_m"
+                  name="data_mov_m"
+                  value={filters.data_mov_m ? convertItalianToISO(filters.data_mov_m) : ''}
+                  onChange={(isoValue) => {
+                    const italianDate = convertISOToItalian(isoValue);
+                    handleInputChange('data_mov_m', italianDate);
+                  }}
+                  className="form-control-sm"
+                  placeholder="gg/mm/aaaa"
+                />
+              </div>
             </div>
 
             <div className="col-md-2">
@@ -261,13 +311,18 @@ export default function HandlingFilters({ onFiltersChange, initialFilters, viewT
                 className="form-select form-select-sm"
                 value={filters.tipo_imb}
                 onChange={(e) => handleInputChange('tipo_imb', e.target.value)}
+                disabled={isLoadingOptions}
               >
                 <option value="Tutti">Tutti</option>
-                {filterOptions.tipiImb.map((tipo) => (
-                  <option key={tipo} value={tipo}>
-                    {tipo}
-                  </option>
-                ))}
+                {isLoadingOptions ? (
+                  <option disabled>Caricamento...</option>
+                ) : (
+                  filterOptions.tipiImb.map((tipo) => (
+                    <option key={tipo} value={tipo}>
+                      {tipo}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
 
@@ -277,13 +332,18 @@ export default function HandlingFilters({ onFiltersChange, initialFilters, viewT
                 className="form-select form-select-sm"
                 value={filters.mese}
                 onChange={(e) => handleInputChange('mese', e.target.value)}
+                disabled={isLoadingOptions}
               >
                 <option value="Tutti">Tutti</option>
-                {filterOptions.mesi.map((mese) => (
-                  <option key={mese} value={mese.split('-')[0]}>
-                    {mese}
-                  </option>
-                ))}
+                {isLoadingOptions ? (
+                  <option disabled>Caricamento...</option>
+                ) : (
+                  filterOptions.mesi.map((mese) => (
+                    <option key={mese} value={mese.split('-')[0]}>
+                      {mese}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
           </div>

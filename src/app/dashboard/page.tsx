@@ -382,13 +382,13 @@ export default function ModernDashboard() {
 
   // Funzione per sincronizzare i dati dei terzisti (copiata da pagina viaggi)
   const handleSyncTerzisti = async () => {
-    if (!confirm('Questa operazione sincronizzerà i dati dei TERZISTI degli ultimi 5 giorni e richiederà pochi secondi. Continuare?')) {
+    if (!confirm('Questa operazione sincronizzerà i dati dei TERZISTI degli ultimi 7 giorni e richiederà pochi secondi. Continuare?')) {
       return;
     }
     
     setIsSyncingTerzisti(true);
     try {
-      const response = await fetch('/api/viaggi/sync-tab-terzisti?days=5', {
+      const response = await fetch('/api/viaggi/sync-tab-terzisti?days=7', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -412,13 +412,13 @@ export default function ModernDashboard() {
 
   // Funzione per sincronizzare i dati dei dipendenti (copiata da pagina viaggi)
   const handleSyncDipendenti = async () => {
-    if (!confirm('Questa operazione sincronizzerà i dati degli ultimi 5 giorni e richiederà pochi secondi. Continuare?')) {
+    if (!confirm('Questa operazione sincronizzerà i dati degli ultimi 7 giorni e richiederà pochi secondi. Continuare?')) {
       return;
     }
     
     setIsSyncingDipendenti(true);
     try {
-      const response = await fetch('/api/viaggi/sync-tab-viaggi?days=5', {
+      const response = await fetch('/api/viaggi/sync-tab-viaggi?days=7', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

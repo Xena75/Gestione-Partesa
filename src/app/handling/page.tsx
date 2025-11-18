@@ -70,15 +70,29 @@ function HandlingContent() {
           body: formData,
         });
         
+        const result = await response.json();
+        
         if (!response.ok) {
-          throw new Error('Errore durante l\'import');
+          throw new Error(result.error || result.details || 'Errore durante l\'import');
         }
         
-        alert('Import completato con successo');
+        // Mostra messaggio dettagliato
+        let message = `✅ Import completato con successo!\n\n`;
+        message += `Righe importate: ${result.importedRows || 0}\n`;
+        message += `Totale righe: ${result.totalRows || 0}\n`;
+        if (result.errorCount > 0) {
+          message += `Errori: ${result.errorCount}\n`;
+          if (result.errors && result.errors.length > 0) {
+            message += `\nPrimi errori:\n${result.errors.slice(0, 5).join('\n')}`;
+          }
+        }
+        
+        alert(message);
         window.location.reload();
       } catch (error) {
         console.error('Errore import:', error);
-        alert('Errore durante l\'import dei dati');
+        const errorMessage = error instanceof Error ? error.message : 'Errore durante l\'import dei dati';
+        alert(`❌ Errore durante l'import:\n${errorMessage}`);
       } finally {
         setIsLoading(false);
       }
@@ -95,12 +109,21 @@ function HandlingContent() {
             <div className="d-flex gap-2">
               <ExportHandlingButton filters={activeFilters} disabled={isLoading} />
               <button
-                className="btn btn-outline-primary"
+                className="btn btn-success"
                 onClick={handleImport}
-                disabled={true}
+                disabled={isLoading}
               >
-                <i className="bi bi-upload me-2"></i>
-                Importa Excel
+                {isLoading ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    Importazione...
+                  </>
+                ) : (
+                  <>
+                    <i className="bi bi-upload me-2"></i>
+                    Importa Excel
+                  </>
+                )}
               </button>
             </div>
           </div>
