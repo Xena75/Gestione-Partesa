@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.38.0
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.39.0
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -48,6 +48,7 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Sistema preventivi**: Gestione completa preventivi con workflow approvazione
 - **Gestione fornitori**: Integrazione fornitori e servizi per preventivi
 - **Upload documenti**: Sistema drag-and-drop per allegati preventivi
+- **Upload documenti veicoli**: Sistema completo upload documenti con supporto tipi personalizzati e Vercel Blob Storage ⭐ **NUOVO v2.39.0**
 - **Anagrafica ricambi**: Sistema completo per gestione catalogo ricambi con autocompletamento ⭐ **NUOVO v2.38.0**
 - **Dashboard veicoli**: Card statistiche veicoli attivi/non attivi e preventivi in attesa ⭐ **NUOVO v2.38.0**
 - **Gestione righe preventivo**: Inserimento manuale righe dettaglio preventivo con formattazione italiana ⭐ **NUOVO v2.37.0**
@@ -215,6 +216,15 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Formato italiano**: Date in formato dd/mm/yyyy per conformità locale
 - **API complete**: Endpoint RESTful per tutte le operazioni CRUD
 - **Fix critici**: Risolti errori 500 su endpoint `/api/vehicles/quotes` ⭐ **NUOVO**
+
+### 📄 **Sistema Upload Documenti Veicoli** ⭐ **NUOVO v2.39.0**
+- **Pagina upload dedicata**: `/vehicles/documents/upload` per caricamento documenti veicoli
+- **Tipi personalizzati**: Supporto per tipi documento personalizzati (modificata colonna da ENUM a VARCHAR)
+- **Vercel Blob Storage**: Upload automatico su Vercel Blob Storage con fallback locale
+- **Formato date italiano**: Campo data scadenza con formato gg/mm/aaaa e auto-completamento `/`
+- **Eliminazione documenti**: Funzionalità completa eliminazione con conferma e pulizia storage
+- **Validazione file**: Supporto PDF, JPEG, PNG, WebP, DOC, DOCX con limite 10MB
+- **Gestione errori**: Messaggi chiari per utente con gestione completa errori
 
 ### 📄 **Ottimizzazioni Pagina Documenti Veicoli** ⭐ **NUOVO v2.31.1**
 - **Campo Veicolo completo**: Aggiunto campo "Veicolo" nella tabella documenti con targa, marca e modello

@@ -7,16 +7,18 @@ import moment from 'moment';
 import 'moment/locale/it';
 import Link from 'next/link';
 
+// Import diretto per funzioni e oggetti (non componenti)
+import { momentLocalizer as createMomentLocalizer, Views } from 'react-big-calendar';
+
+// Import CSS prima del dynamic import per evitare problemi di preload
+import 'react-big-calendar/lib/css/react-big-calendar.css';
+import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
+
 // Import dinamico per prevenire errori di inizializzazione
 const Calendar = dynamic(
   () => import('react-big-calendar').then((mod) => mod.Calendar),
   { ssr: false }
 );
-
-// Import diretto per funzioni e oggetti (non componenti)
-import { momentLocalizer as createMomentLocalizer, Views } from 'react-big-calendar';
-import 'react-big-calendar/lib/css/react-big-calendar.css';
-import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
 
 // CSS globale per forzare tutti i colori degli eventi in modalità dark
 const forceEventColorsCSS = `

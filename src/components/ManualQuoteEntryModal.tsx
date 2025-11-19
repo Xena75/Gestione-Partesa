@@ -61,6 +61,10 @@ export default function ManualQuoteEntryModal({
   // Stati per categorie pezzi
   const [categories, setCategories] = useState<string[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(false);
+  const [showNewCategoryInput, setShowNewCategoryInput] = useState<{ [key: number]: boolean }>({});
+  const [newCategoryName, setNewCategoryName] = useState<{ [key: number]: string }>({});
+  const [showNewCategoryInputPart, setShowNewCategoryInputPart] = useState<{ [key: number]: boolean }>({});
+  const [newCategoryNamePart, setNewCategoryNamePart] = useState<{ [key: number]: string }>({});
   
   // Righe del preventivo
   const [items, setItems] = useState<QuoteItem[]>([
@@ -139,6 +143,10 @@ export default function ManualQuoteEntryModal({
       setShowNewPartInput({});
       setNewPartData({});
       setUnitPriceDisplays({});
+      setShowNewCategoryInput({});
+      setNewCategoryName({});
+      setShowNewCategoryInputPart({});
+      setNewCategoryNamePart({});
     }
     
     // Cleanup timeout quando il componente viene smontato
@@ -176,6 +184,61 @@ export default function ManualQuoteEntryModal({
       console.error('Errore nel caricamento delle categorie:', err);
       setCategories([]);
     }
+  };
+
+  // Aggiungi nuova categoria
+  const handleAddNewCategory = (itemIndex: number) => {
+    const categoryName = newCategoryName[itemIndex]?.trim();
+    if (!categoryName) {
+      setError('Inserisci il nome della categoria');
+      return;
+    }
+
+    // Verifica se la categoria esiste già
+    if (categories.includes(categoryName)) {
+      setError('Questa categoria esiste già');
+      return;
+    }
+
+    // Aggiungi la categoria alla lista locale
+    setCategories([...categories, categoryName].sort());
+    
+    // Imposta la categoria nella riga corrente
+    updateItem(itemIndex, 'part_category', categoryName);
+    
+    // Reset form
+    setShowNewCategoryInput(prev => ({ ...prev, [itemIndex]: false }));
+    setNewCategoryName(prev => ({ ...prev, [itemIndex]: '' }));
+    setError(null);
+  };
+
+  // Aggiungi nuova categoria nel form nuovo pezzo
+  const handleAddNewCategoryPart = (itemIndex: number) => {
+    const categoryName = newCategoryNamePart[itemIndex]?.trim();
+    if (!categoryName) {
+      setError('Inserisci il nome della categoria');
+      return;
+    }
+
+    // Verifica se la categoria esiste già
+    if (categories.includes(categoryName)) {
+      setError('Questa categoria esiste già');
+      return;
+    }
+
+    // Aggiungi la categoria alla lista locale
+    setCategories([...categories, categoryName].sort());
+    
+    // Imposta la categoria nel form nuovo pezzo
+    setNewPartData(prev => ({
+      ...prev,
+      [itemIndex]: { ...prev[itemIndex], categoria: categoryName }
+    }));
+    
+    // Reset form
+    setShowNewCategoryInputPart(prev => ({ ...prev, [itemIndex]: false }));
+    setNewCategoryNamePart(prev => ({ ...prev, [itemIndex]: '' }));
+    setError(null);
   };
 
 
@@ -335,6 +398,9 @@ export default function ManualQuoteEntryModal({
     }]);
     // Inizializza display vuoto per la nuova riga
     setUnitPriceDisplays(prev => ({ ...prev, [newIndex]: '' }));
+    // Reset stati categoria per la nuova riga
+    setShowNewCategoryInput(prev => ({ ...prev, [newIndex]: false }));
+    setNewCategoryName(prev => ({ ...prev, [newIndex]: '' }));
   };
 
   const removeItem = (index: number) => {
@@ -785,17 +851,31 @@ export default function ManualQuoteEntryModal({
                           value={interventionDateDisplay}
                           onChange={(e) => {
                             let value = e.target.value;
-                            // Permetti solo numeri e slash
-                            value = value.replace(/[^\d\/]/g, '');
-                            // Limita la lunghezza
-                            if (value.length > 10) value = value.substring(0, 10);
+                            // Rimuovi tutto tranne i numeri
+                            const numbersOnly = value.replace(/\D/g, '');
                             
-                            setInterventionDateDisplay(value);
+                            // Limita a 8 numeri (gg + mm + aaaa)
+                            const limitedNumbers = numbersOnly.substring(0, 8);
+                            
+                            // Formatta automaticamente con le barre
+                            let formatted = '';
+                            if (limitedNumbers.length > 0) {
+                              formatted = limitedNumbers.substring(0, 2);
+                              if (limitedNumbers.length > 2) {
+                                formatted += '/' + limitedNumbers.substring(2, 4);
+                              }
+                              if (limitedNumbers.length > 4) {
+                                formatted += '/' + limitedNumbers.substring(4, 8);
+                              }
+                            }
+                            
+                            setInterventionDateDisplay(formatted);
                             
                             // Se il formato è completo gg/mm/aaaa, converti e salva in ISO
-                            const dateMatch = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-                            if (dateMatch) {
-                              const [, day, month, year] = dateMatch;
+                            if (limitedNumbers.length === 8) {
+                              const day = limitedNumbers.substring(0, 2);
+                              const month = limitedNumbers.substring(2, 4);
+                              const year = limitedNumbers.substring(4, 8);
                               const dayNum = parseInt(day);
                               const monthNum = parseInt(month);
                               const yearNum = parseInt(year);
@@ -807,22 +887,20 @@ export default function ManualQuoteEntryModal({
                                   setInterventionDate(date.toISOString().split('T')[0]);
                                 }
                               }
-                            } else if (value === '') {
+                            } else if (limitedNumbers.length === 0) {
                               setInterventionDate('');
                             }
                           }}
                           onBlur={(e) => {
                             const value = e.target.value;
-                            // Se il formato non è completo, prova a completarlo o resetta
+                            // Se il formato non è completo, lascia il display come è per permettere all'utente di completarla
                             if (value && value.length < 10) {
                               // Se è vuoto, mantieni vuoto
                               if (value === '') {
                                 setInterventionDateDisplay('');
                                 setInterventionDate('');
-                              } else {
-                                // Altrimenti mantieni quello che c'è scritto
-                                // L'utente può completarlo dopo
                               }
+                              // Altrimenti mantieni quello che c'è scritto
                             }
                           }}
                           placeholder="gg/mm/aaaa"
@@ -908,7 +986,7 @@ export default function ManualQuoteEntryModal({
                     Aggiungi Riga
                   </button>
                 </div>
-                <div className="table-responsive" style={{ maxHeight: '400px', overflowY: 'auto', overflowX: 'visible' }}>
+                <div className="table-responsive" style={{ maxHeight: 'none', overflowY: 'visible', overflowX: 'visible' }}>
                   <table className="table table-sm table-hover" style={{ width: '100%', tableLayout: 'auto' }}>
                     <thead className="sticky-top" style={{ backgroundColor: modalBg }}>
                       <tr>
@@ -1068,21 +1146,69 @@ export default function ManualQuoteEntryModal({
                                     />
                                   </div>
                                   <div className="col-6">
-                                    <select
-                                      className="form-select form-select-sm"
-                                      value={newPartData[index]?.categoria || ''}
-                                      onChange={(e) => setNewPartData(prev => ({
-                                        ...prev,
-                                        [index]: { ...prev[index], categoria: e.target.value }
-                                      }))}
-                                    >
-                                      <option value="">-- Seleziona categoria --</option>
-                                      {categories.map((cat) => (
-                                        <option key={cat} value={cat}>
-                                          {cat}
+                                    {showNewCategoryInputPart[index] ? (
+                                      <div className="d-flex gap-1 align-items-center">
+                                        <input
+                                          type="text"
+                                          className="form-control form-control-sm"
+                                          placeholder="Nome categoria"
+                                          value={newCategoryNamePart[index] || ''}
+                                          onChange={(e) => setNewCategoryNamePart(prev => ({ ...prev, [index]: e.target.value }))}
+                                          onKeyPress={(e) => {
+                                            if (e.key === 'Enter') {
+                                              e.preventDefault();
+                                              handleAddNewCategoryPart(index);
+                                            }
+                                          }}
+                                          style={{ width: '100%' }}
+                                          autoFocus
+                                        />
+                                        <button
+                                          type="button"
+                                          className="btn btn-sm btn-success"
+                                          onClick={() => handleAddNewCategoryPart(index)}
+                                          title="Aggiungi categoria"
+                                        >
+                                          <i className="fas fa-check"></i>
+                                        </button>
+                                        <button
+                                          type="button"
+                                          className="btn btn-sm btn-secondary"
+                                          onClick={() => {
+                                            setShowNewCategoryInputPart(prev => ({ ...prev, [index]: false }));
+                                            setNewCategoryNamePart(prev => ({ ...prev, [index]: '' }));
+                                          }}
+                                          title="Annulla"
+                                        >
+                                          <i className="fas fa-times"></i>
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <select
+                                        className="form-select form-select-sm"
+                                        value={newPartData[index]?.categoria || ''}
+                                        onChange={(e) => {
+                                          if (e.target.value === '__add_new__') {
+                                            setShowNewCategoryInputPart(prev => ({ ...prev, [index]: true }));
+                                          } else {
+                                            setNewPartData(prev => ({
+                                              ...prev,
+                                              [index]: { ...prev[index], categoria: e.target.value }
+                                            }));
+                                          }
+                                        }}
+                                      >
+                                        <option value="">-- Seleziona categoria --</option>
+                                        {categories.map((cat) => (
+                                          <option key={cat} value={cat}>
+                                            {cat}
+                                          </option>
+                                        ))}
+                                        <option value="__add_new__" className="text-primary fw-bold">
+                                          + Aggiungi nuova categoria
                                         </option>
-                                      ))}
-                                    </select>
+                                      </select>
+                                    )}
                                   </div>
                                 </div>
                                 <div className="row g-2 mb-2">
@@ -1154,19 +1280,67 @@ export default function ManualQuoteEntryModal({
                             </select>
                           </td>
                           <td>
-                            <select
-                              className="form-select form-select-sm"
-                              value={item.part_category || ''}
-                              onChange={(e) => updateItem(index, 'part_category', e.target.value)}
-                              style={{ width: '100%' }}
-                            >
-                              <option value="">-- Seleziona categoria --</option>
-                              {categories.map((cat) => (
-                                <option key={cat} value={cat}>
-                                  {cat}
+                            {showNewCategoryInput[index] ? (
+                              <div className="d-flex gap-1 align-items-center">
+                                <input
+                                  type="text"
+                                  className="form-control form-control-sm"
+                                  placeholder="Nome categoria"
+                                  value={newCategoryName[index] || ''}
+                                  onChange={(e) => setNewCategoryName(prev => ({ ...prev, [index]: e.target.value }))}
+                                  onKeyPress={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      handleAddNewCategory(index);
+                                    }
+                                  }}
+                                  style={{ width: '100%' }}
+                                  autoFocus
+                                />
+                                <button
+                                  type="button"
+                                  className="btn btn-sm btn-success"
+                                  onClick={() => handleAddNewCategory(index)}
+                                  title="Aggiungi categoria"
+                                >
+                                  <i className="fas fa-check"></i>
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn btn-sm btn-secondary"
+                                  onClick={() => {
+                                    setShowNewCategoryInput(prev => ({ ...prev, [index]: false }));
+                                    setNewCategoryName(prev => ({ ...prev, [index]: '' }));
+                                  }}
+                                  title="Annulla"
+                                >
+                                  <i className="fas fa-times"></i>
+                                </button>
+                              </div>
+                            ) : (
+                              <select
+                                className="form-select form-select-sm"
+                                value={item.part_category || ''}
+                                onChange={(e) => {
+                                  if (e.target.value === '__add_new__') {
+                                    setShowNewCategoryInput(prev => ({ ...prev, [index]: true }));
+                                  } else {
+                                    updateItem(index, 'part_category', e.target.value);
+                                  }
+                                }}
+                                style={{ width: '100%' }}
+                              >
+                                <option value="">-- Seleziona categoria --</option>
+                                {categories.map((cat) => (
+                                  <option key={cat} value={cat}>
+                                    {cat}
+                                  </option>
+                                ))}
+                                <option value="__add_new__" className="text-primary fw-bold">
+                                  + Aggiungi nuova categoria
                                 </option>
-                              ))}
-                            </select>
+                              </select>
+                            )}
                           </td>
                           <td>
                             <input 

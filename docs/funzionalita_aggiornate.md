@@ -1,7 +1,88 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-**Versione corrente**: v2.38.0  
+**Versione corrente**: v2.39.0  
 **Ultimo aggiornamento**: Gennaio 2025
+
+---
+
+## v2.39.0 - Gestione Documenti Veicoli e Upload Vercel Blob
+
+**Data implementazione**: Gennaio 2025  
+**Stato**: ✅ Completato e testato
+
+### 📄 Upload Documenti Veicoli
+
+#### 🚀 Pagina Upload Documenti
+- **Pagina**: `/vehicles/documents/upload`
+- **Funzionalità**: Upload documenti per veicoli con supporto tipi personalizzati
+- **Campi**:
+  - Veicolo (select con veicoli attivi)
+  - Tipo Documento (select con possibilità di aggiungere nuovi tipi)
+  - File (PDF, JPEG, PNG, WebP, DOC, DOCX - max 10MB)
+  - Data Scadenza (formato gg/mm/aaaa con auto-completamento `/`)
+  - Note (opzionale)
+- **File**: `src/app/vehicles/documents/upload/page.tsx`
+
+#### 📦 Upload su Vercel Blob Storage
+- **Storage**: Vercel Blob Storage (se disponibile `BLOB_READ_WRITE_TOKEN`)
+- **Fallback**: Salvataggio locale in sviluppo
+- **Path**: `vehicle-documents/{plate}/{documentType}_{timestamp}_{filename}`
+- **Access**: Pubblico per visualizzazione/scaricamento
+- **File**: `src/app/api/vehicles/[plate]/documents/route.ts`
+
+#### 🗑️ Eliminazione Documenti
+- **Funzionalità**: Eliminazione documenti con conferma
+- **Comportamento**:
+  - Elimina file da Vercel Blob Storage
+  - Elimina record dal database
+  - Ricarica automatica lista documenti
+- **File**: `src/app/vehicles/documents/page.tsx`, `src/app/api/vehicles/[plate]/documents/[id]/route.ts`
+
+### 🗄️ Modifiche Database
+
+#### Modifica Colonna `document_type`
+- **Tabella**: `vehicle_documents`
+- **Modifica**: Da `ENUM` a `VARCHAR(255)`
+- **Motivo**: Supporto per tipi di documento personalizzati
+- **Prima**: `enum('libretto','assicurazione','bollo','revisione','revisione_tachigrafo','ztl','altro')`
+- **Dopo**: `VARCHAR(255) NOT NULL`
+- **File migration**: `migrations/alter_vehicle_documents_document_type.sql`
+
+### 🔌 API Endpoints
+
+#### `/api/vehicles/[plate]/documents`
+- **POST**: Upload nuovo documento
+  - Body: `FormData` con `file`, `document_type`, `expiry_date?`, `notes?`
+  - Response: `{ success: true, message, document: {...} }`
+- **GET**: Lista documenti veicolo
+  - Response: `{ success: true, documents: [...] }`
+- **File**: `src/app/api/vehicles/[plate]/documents/route.ts`
+
+#### `/api/vehicles/[plate]/documents/[id]`
+- **DELETE**: Elimina documento
+  - Elimina file da Vercel Blob Storage
+  - Elimina record dal database
+  - Response: `{ success: true, message }`
+- **File**: `src/app/api/vehicles/[plate]/documents/[id]/route.ts`
+
+### 🎨 Miglioramenti UI/UX
+
+#### Data Scadenza
+- **Formato input**: `gg/mm/aaaa` con auto-inserimento `/`
+- **Validazione**: Solo numeri, inserimento automatico `/` dopo 2 e 4 cifre
+- **Conversione**: Automatica da formato italiano a ISO per database
+
+#### Tipo Documento Personalizzato
+- **Funzionalità**: Possibilità di aggiungere nuovi tipi documento
+- **Comportamento**: Input inline quando si seleziona "Aggiungi nuovo tipo"
+- **Validazione**: Nome tipo documento obbligatorio
+
+### 📝 Note Tecniche
+
+- **Gestione errori**: Migliorata con messaggi chiari per utente
+- **Validazione file**: Controllo tipo MIME e estensione
+- **Dimensione massima**: 10MB per file
+- **Formattazione date**: Conversione automatica gg/mm/aaaa ↔ YYYY-MM-DD
 
 ---
 

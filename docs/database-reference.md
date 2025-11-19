@@ -1446,12 +1446,12 @@ mese                     tinyint(4)   YES       NULL                 STORED GENE
 #### vehicle_documents
 Gestisce i documenti dei veicoli con supporto per diversi tipi di documento.
 
-**Struttura aggiornata (v2.29.0):**
+**Struttura aggiornata (v2.39.0):**
 ```sql
 Field         Type                                                                                      Null  Key  Default              Extra
 id            int(11)                                                                                   NO    PRI  NULL                 auto_increment
 vehicle_id    varchar(191)                                                                              NO    MUL  NULL                 
-document_type enum('libretto','assicurazione','bollo','revisione','revisione_tachigrafo','ztl','altro') NO        NULL                 
+document_type varchar(255)                                                                               NO        NULL                                  
 file_name     varchar(255)                                                                              NO        NULL                 
 file_path     varchar(500)                                                                              NO        NULL                 
 file_size     int(11)                                                                                   YES        NULL                 

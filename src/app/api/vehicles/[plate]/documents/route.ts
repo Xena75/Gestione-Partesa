@@ -113,34 +113,53 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ plate: string }> }
 ) {
+  let connection: any = null;
   try {
     // Verifica autenticazione
     const authResult = await verifyUserAccess(request);
     if (!authResult.success) {
-      return NextResponse.json({ error: authResult.message }, { status: 401 });
+      return NextResponse.json({ success: false, error: authResult.message }, { status: 401 });
     }
 
-    const { plate } = await params;
+    let plate: string;
+    try {
+      const paramsResolved = await params;
+      plate = paramsResolved.plate;
+    } catch (paramsError: any) {
+      return NextResponse.json(
+        { success: false, error: 'Errore nel parsing dei parametri della richiesta' },
+        { status: 400 }
+      );
+    }
+    
+    if (!plate || !plate.trim()) {
+      return NextResponse.json(
+        { success: false, error: 'Targa veicolo richiesta' },
+        { status: 400 }
+      );
+    }
+    
     const formData = await request.formData();
     
     const file = formData.get('file') as File;
     const documentType = formData.get('document_type') as string;
     const expiryDate = formData.get('expiry_date') as string;
     const notes = formData.get('notes') as string;
-
+    
     if (!file) {
       return NextResponse.json(
         { success: false, error: 'Nessun file fornito' },
         { status: 400 }
       );
     }
-
-    if (!documentType || !['libretto', 'assicurazione', 'bollo', 'revisione', 'revisione_tachigrafo', 'ztl', 'altro'].includes(documentType)) {
+    
+    if (!documentType || !documentType.trim()) {
       return NextResponse.json(
-        { success: false, error: 'Tipo documento non valido' },
+        { success: false, error: 'Tipo documento richiesto' },
         { status: 400 }
       );
     }
+
 
     // Validazione tipi file supportati
     const allowedTypes = [
@@ -148,12 +167,19 @@ export async function POST(
       'image/jpeg',
       'image/jpg',
       'image/png',
-      'image/webp'
+      'image/webp',
+      'application/msword', // .doc
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document' // .docx
     ];
 
-    if (!allowedTypes.includes(file.type)) {
+    // Verifica anche l'estensione del file come fallback
+    const fileName = file.name.toLowerCase();
+    const allowedExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.webp', '.doc', '.docx'];
+    const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
+
+    if (!allowedTypes.includes(file.type) && !hasValidExtension) {
       return NextResponse.json(
-        { success: false, error: 'Tipo file non supportato. Sono supportati: PDF, JPEG, PNG, WebP' },
+        { success: false, error: 'Tipo file non supportato. Sono supportati: PDF, JPEG, PNG, WebP, DOC, DOCX' },
         { status: 400 }
       );
     }
@@ -167,7 +193,7 @@ export async function POST(
       );
     }
 
-    const connection = await mysql.createConnection(dbConfig);
+    connection = await mysql.createConnection(dbConfig);
 
     // Recupera l'ID del veicolo dalla targa
     const [vehicleRows] = await connection.execute(
@@ -194,32 +220,39 @@ export async function POST(
 
     const vehicleId = vehicle.id;
 
-    // Upload su Vercel Blob Storage
-    const isProduction = process.env.NODE_ENV === 'production';
+    // Upload su Vercel Blob Storage (sempre se disponibile il token)
     const hasBlobToken = !!process.env.BLOB_READ_WRITE_TOKEN;
     
     let filePath: string;
     
-    if (isProduction && hasBlobToken) {
-      // PRODUZIONE: Usa Vercel Blob Storage
+    if (hasBlobToken) {
+      // Usa Vercel Blob Storage (sia in produzione che in sviluppo se disponibile)
       const blobName = `vehicle-documents/${plate}/${documentType}_${Date.now()}_${file.name}`;
       
       try {
-        const blob = await put(blobName, file, {
+        // Converti File in Buffer per Vercel Blob
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        
+        const blob = await put(blobName, buffer, {
           access: 'public',
-          addRandomSuffix: false
+          addRandomSuffix: false,
+          contentType: file.type || 'application/octet-stream'
         });
+        
         filePath = blob.url;
-      } catch (blobError) {
-        console.error('Errore upload Blob Storage:', blobError);
+      } catch (blobError: any) {
         await connection.end();
         return NextResponse.json(
-          { success: false, error: 'Errore durante upload file' },
+          { 
+            success: false, 
+            error: `Errore durante upload file su Vercel Blob: ${blobError?.message || 'Errore sconosciuto'}` 
+          },
           { status: 500 }
         );
       }
     } else {
-      // SVILUPPO: Salva localmente
+      // Fallback: Salva localmente se non c'è il token
       const fileName = `${documentType}_${Date.now()}_${file.name}`;
       const uploadDir = join(process.cwd(), 'uploads', 'vehicle-documents', plate);
       const localFilePath = join(uploadDir, fileName);
@@ -237,6 +270,9 @@ export async function POST(
     }
 
     // Salva informazioni documento nel database
+    // Tronca document_type a 255 caratteri se troppo lungo
+    const truncatedDocumentType = documentType.length > 255 ? documentType.substring(0, 255) : documentType;
+    
     const insertQuery = `
       INSERT INTO vehicle_documents (
         vehicle_id,
@@ -251,7 +287,7 @@ export async function POST(
 
     const [result] = await connection.execute(insertQuery, [
       vehicleId,
-      documentType,
+      truncatedDocumentType,
       file.name,
       filePath,
       file.size,
@@ -275,10 +311,34 @@ export async function POST(
         notes: notes || null
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Errore upload documento:', error);
+    
+    // Chiudi connessione se aperta
+    if (connection) {
+      try {
+        await connection.end();
+      } catch (closeError) {
+        // Ignora errori di chiusura
+      }
+    }
+    
+    // Assicurati di restituire sempre una risposta JSON valida
+    let errorMessage = 'Errore durante upload documento';
+    
+    if (error?.code === 'WARN_DATA_TRUNCATED') {
+      errorMessage = `Errore: Il valore inserito è troppo lungo per il campo '${error.sqlMessage?.match(/column '(\w+)'/)?.[1] || 'document_type'}'. Verifica che la colonna nel database sia stata modificata correttamente.`;
+    } else if (error?.sqlMessage) {
+      errorMessage = `Errore database: ${error.sqlMessage}`;
+    } else if (error?.message) {
+      errorMessage = error.message;
+    }
+    
     return NextResponse.json(
-      { success: false, error: 'Errore durante upload documento' },
+      { 
+        success: false, 
+        error: errorMessage
+      },
       { status: 500 }
     );
   }

@@ -329,14 +329,37 @@ export default function DocumentsManagement() {
     window.open(document.file_path, '_blank');
   };
 
-  const handleDelete = async (documentId: number) => {
+  const handleDelete = async (documentId: number, plate: string, filePath: string) => {
     if (!confirm('Sei sicuro di voler eliminare questo documento?')) return;
     
     try {
-      // Implementa la logica di eliminazione
-      // TODO: Implementare chiamata API per eliminazione documento
-    } catch (error) {
-      console.error('Errore nell\'eliminazione:', error);
+      console.log('🗑️ Eliminazione documento:', { documentId, plate, filePath });
+      
+      const response = await fetch(`/api/vehicles/${encodeURIComponent(plate)}/documents/${documentId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Errore ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Documento eliminato:', data);
+      
+      // Ricarica i documenti dopo l'eliminazione
+      if (selectedVehicle) {
+        await loadVehicleDocuments(selectedVehicle.targa);
+      } else {
+        await loadAllDocuments();
+      }
+      
+      // Mostra messaggio di successo
+      alert('Documento eliminato con successo!');
+    } catch (error: any) {
+      console.error('❌ Errore nell\'eliminazione:', error);
+      alert(`Errore durante l'eliminazione: ${error.message || 'Errore sconosciuto'}`);
     }
   };
 
@@ -863,11 +886,9 @@ export default function DocumentsManagement() {
                               <button
                                 className="btn btn-outline-danger"
                                 title="Elimina"
-                                onClick={() => {
-                                  if (confirm('Sei sicuro di voler eliminare questo documento?')) {
-                                    // TODO: Implementare eliminazione
-                                    console.log('Elimina documento:', doc.id);
-                                  }
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDelete(doc.id, doc.targa, doc.file_path);
                                 }}
                               >
                                 <Trash2 size={14} />
