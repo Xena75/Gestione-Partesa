@@ -14,23 +14,36 @@ const pool = mysql.createPool({
   queueLimit: 0
 });
 
-// GET: Recupera tutti i luoghi di intervento
+// GET: Recupera tutti i luoghi di intervento distinti dalla tabella maintenance_quotes
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
 
-    let query = 'SELECT id, name, description FROM intervention_locations';
+    // Recupera i valori DISTINCT dal campo intervention_location di maintenance_quotes
+    let query = `
+      SELECT DISTINCT intervention_location as name 
+      FROM maintenance_quotes 
+      WHERE intervention_location IS NOT NULL 
+      AND intervention_location != ''
+    `;
     const params: any[] = [];
 
     if (search) {
-      query += ' WHERE name LIKE ?';
+      query += ' AND intervention_location LIKE ?';
       params.push(`%${search}%`);
     }
 
-    query += ' ORDER BY name ASC';
+    query += ' ORDER BY intervention_location ASC';
 
-    const [locations] = await pool.execute(query, params);
+    const [rows] = await pool.execute(query, params);
+
+    // Trasforma i risultati in formato compatibile con il modal
+    const locations = (rows as any[]).map((row, index) => ({
+      id: index + 1, // ID temporaneo per compatibilità
+      name: row.name,
+      description: null
+    }));
 
     return NextResponse.json({
       success: true,
@@ -45,11 +58,12 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST: Aggiungi un nuovo luogo di intervento
+// POST: Non serve più inserire in una tabella separata
+// Il nuovo valore verrà salvato direttamente nel campo intervention_location quando si salva il preventivo
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, description } = body;
+    const { name } = body;
 
     if (!name || !name.trim()) {
       return NextResponse.json(
@@ -58,49 +72,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verifica se esiste già
-    const [existing] = await pool.execute(
-      'SELECT id FROM intervention_locations WHERE name = ?',
-      [name.trim()]
-    ) as [any[], any];
-
-    if (Array.isArray(existing) && existing.length > 0) {
-      return NextResponse.json({
-        success: true,
-        location: existing[0],
-        message: 'Luogo già esistente'
-      });
-    }
-
-    // Inserisci nuovo luogo
-    const [result] = await pool.execute(
-      'INSERT INTO intervention_locations (name, description) VALUES (?, ?)',
-      [name.trim(), description || null]
-    ) as [mysql.ResultSetHeader, any];
-
-    const [newLocation] = await pool.execute(
-      'SELECT id, name, description FROM intervention_locations WHERE id = ?',
-      [result.insertId]
-    ) as [any[], any];
-
+    // Restituisce semplicemente il nome, che verrà salvato quando si salva il preventivo
     return NextResponse.json({
       success: true,
-      location: Array.isArray(newLocation) ? newLocation[0] : newLocation,
-      message: 'Luogo aggiunto con successo'
+      location: { 
+        id: Date.now(), // ID temporaneo
+        name: name.trim(), 
+        description: null 
+      },
+      message: 'Il valore verrà salvato quando salvi il preventivo'
     });
   } catch (error: any) {
-    console.error('Errore nell\'aggiunta del luogo:', error);
-    
-    // Gestisci errore di duplicato
-    if (error.code === 'ER_DUP_ENTRY') {
-      return NextResponse.json(
-        { error: 'Questo luogo esiste già' },
-        { status: 409 }
-      );
-    }
-
+    console.error('Errore:', error);
     return NextResponse.json(
-      { error: 'Errore nell\'aggiunta del luogo di intervento' },
+      { error: 'Errore' },
       { status: 500 }
     );
   }

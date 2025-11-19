@@ -17,6 +17,8 @@ export async function GET(request: NextRequest) {
 
     let stats = {
       total_vehicles: 0,
+      active_vehicles: 0,
+      inactive_vehicles: 0,
       active_schedules: 0,
       overdue_schedules: 0,
       open_quotes: 0,
@@ -27,12 +29,21 @@ export async function GET(request: NextRequest) {
     try {
       // Recupera statistiche dalla tabella vehicles
       const [vehiclesResult] = await poolViaggi.execute(
-        'SELECT COUNT(*) as total_vehicles FROM vehicles'
+        `SELECT 
+          COUNT(*) as total_vehicles,
+          SUM(CASE WHEN active = 1 THEN 1 ELSE 0 END) as active_vehicles,
+          SUM(CASE WHEN active = 0 THEN 1 ELSE 0 END) as inactive_vehicles
+         FROM vehicles`
       );
-      stats.total_vehicles = (vehiclesResult as any[])[0]?.total_vehicles || 0;
+      const vehicleData = (vehiclesResult as any[])[0];
+      stats.total_vehicles = vehicleData?.total_vehicles || 0;
+      stats.active_vehicles = vehicleData?.active_vehicles || 0;
+      stats.inactive_vehicles = vehicleData?.inactive_vehicles || 0;
     } catch (error) {
       console.error('Errore nel contare i veicoli:', error);
       stats.total_vehicles = 0;
+      stats.active_vehicles = 0;
+      stats.inactive_vehicles = 0;
     }
 
     try {
@@ -66,16 +77,26 @@ export async function GET(request: NextRequest) {
       const [openQuotesResult] = await poolViaggi.execute(
         `SELECT COUNT(*) as open_quotes 
          FROM maintenance_quotes 
-         WHERE status IN ('pending', 'approved')`
+         WHERE status = 'pending'`
       );
       stats.open_quotes = (openQuotesResult as any[])[0]?.open_quotes || 0;
 
-      // Query per costo mensile manutenzione
+      // Query per costo mensile manutenzione (solo mese corrente)
+      // Usa invoice_amount se disponibile (costo effettivo fatturato), altrimenti calcola da taxable_amount + tax_amount, altrimenti usa amount
       const [monthlyMaintenanceCostResult] = await poolViaggi.execute(
-        `SELECT COALESCE(SUM(amount), 0) as monthly_cost 
+        `SELECT COALESCE(
+          SUM(
+            CASE 
+              WHEN invoice_amount IS NOT NULL AND invoice_amount > 0 THEN invoice_amount
+              WHEN taxable_amount IS NOT NULL AND tax_amount IS NOT NULL THEN (taxable_amount + tax_amount)
+              ELSE COALESCE(amount, 0)
+            END
+          ), 0
+        ) as monthly_cost 
          FROM maintenance_quotes 
          WHERE status = 'approved' 
-         AND approved_at >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)`
+         AND YEAR(approved_at) = YEAR(CURDATE())
+         AND MONTH(approved_at) = MONTH(CURDATE())`
       );
       stats.monthly_maintenance_cost = (monthlyMaintenanceCostResult as any[])[0]?.monthly_cost || 0;
 

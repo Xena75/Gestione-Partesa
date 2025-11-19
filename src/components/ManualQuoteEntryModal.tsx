@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 
 interface QuoteItem {
@@ -13,6 +13,7 @@ interface QuoteItem {
   total_price: number;
   vat_rate: number;
   category?: string;
+  part_category?: string; // categoria del pezzo (es: Filtri, Freni, ecc.)
 }
 
 interface ManualQuoteEntryModalProps {
@@ -48,6 +49,7 @@ export default function ManualQuoteEntryModal({
   const [vehicleKm, setVehicleKm] = useState<number | ''>(quoteData?.vehicle_km || '');
   const [interventionLocation, setInterventionLocation] = useState(quoteData?.intervention_location || '');
   const [interventionDate, setInterventionDate] = useState(quoteData?.intervention_date || '');
+  const [interventionDateDisplay, setInterventionDateDisplay] = useState('');
   
   // Stati per select luoghi
   const [locations, setLocations] = useState<Array<{ id: number; name: string; description?: string }>>([]);
@@ -55,6 +57,10 @@ export default function ManualQuoteEntryModal({
   const [showNewLocationInput, setShowNewLocationInput] = useState(false);
   const [newLocationName, setNewLocationName] = useState('');
   const [newLocationDescription, setNewLocationDescription] = useState('');
+  
+  // Stati per categorie pezzi
+  const [categories, setCategories] = useState<string[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
   
   // Righe del preventivo
   const [items, setItems] = useState<QuoteItem[]>([
@@ -69,12 +75,30 @@ export default function ManualQuoteEntryModal({
       category: 'ricambio'
     }
   ]);
+  
+  // Stati per il display dei prezzi unitari (permettono digitazione libera)
+  const [unitPriceDisplays, setUnitPriceDisplays] = useState<{ [key: number]: string }>({});
 
   // Totali calcolati
   const [taxRate, setTaxRate] = useState(22);
   const [taxableAmount, setTaxableAmount] = useState(0);
   const [taxAmount, setTaxAmount] = useState(0);
   const [totalAmount, setTotalAmount] = useState(0);
+
+  // Stati per autocompletamento pezzi - APPROCCIO SEMPLIFICATO
+  const [partsSuggestions, setPartsSuggestions] = useState<Array<{
+    id: number;
+    codice?: string;
+    descrizione: string;
+    categoria?: string;
+    tipo: string;
+    um: string;
+  }>>([]);
+  const [activeSearchIndex, setActiveSearchIndex] = useState<number | null>(null); // Indice della riga con ricerca attiva
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSearchRef = useRef<{ value: string; index: number } | null>(null); // Traccia ultima ricerca
+  const [showNewPartInput, setShowNewPartInput] = useState<{ [key: number]: boolean }>({});
+  const [newPartData, setNewPartData] = useState<{ [key: number]: { codice?: string; categoria?: string; tipo: string; um: string } }>({});
 
   const textClass = theme === 'dark' ? 'text-white' : 'text-dark';
   const bgClass = theme === 'dark' ? 'bg-dark' : 'bg-white';
@@ -85,6 +109,11 @@ export default function ManualQuoteEntryModal({
     if (show && quoteId) {
       loadExistingData();
       loadLocations();
+      loadCategories();
+    } else if (show && !quoteId) {
+      // Se il modal è aperto ma non c'è quoteId (nuovo preventivo), carica comunque categorie e luoghi
+      loadLocations();
+      loadCategories();
     } else {
       // Reset quando il modal viene chiuso
       setItems([{
@@ -105,7 +134,20 @@ export default function ManualQuoteEntryModal({
       setShowNewLocationInput(false);
       setNewLocationName('');
       setNewLocationDescription('');
+      setPartsSuggestions([]);
+      setActiveSearchIndex(null);
+      setShowNewPartInput({});
+      setNewPartData({});
+      setUnitPriceDisplays({});
     }
+    
+    // Cleanup timeout quando il componente viene smontato
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+        searchTimeoutRef.current = null;
+      }
+    };
   }, [show, quoteId]);
 
   const loadLocations = async () => {
@@ -122,6 +164,20 @@ export default function ManualQuoteEntryModal({
       setLoadingLocations(false);
     }
   };
+
+  const loadCategories = async () => {
+    try {
+      const response = await fetch('/api/parts-catalog?categories_only=true');
+      const data = await response.json();
+      if (data.success && data.categories && Array.isArray(data.categories)) {
+        setCategories(data.categories);
+      }
+    } catch (err) {
+      console.error('Errore nel caricamento delle categorie:', err);
+      setCategories([]);
+    }
+  };
+
 
   const handleAddNewLocation = async () => {
     if (!newLocationName.trim()) {
@@ -176,6 +232,16 @@ export default function ManualQuoteEntryModal({
         if (data.quote.intervention_date) {
           // La data dal DB è in formato ISO (YYYY-MM-DD), la manteniamo così per il salvataggio
           setInterventionDate(data.quote.intervention_date);
+          // Converti per la visualizzazione
+          try {
+            const date = new Date(data.quote.intervention_date);
+            if (!isNaN(date.getTime())) {
+              const day = String(date.getDate()).padStart(2, '0');
+              const month = String(date.getMonth() + 1).padStart(2, '0');
+              const year = date.getFullYear();
+              setInterventionDateDisplay(`${day}/${month}/${year}`);
+            }
+          } catch {}
         }
         if (data.quote.tax_rate) setTaxRate(data.quote.tax_rate);
 
@@ -190,9 +256,19 @@ export default function ManualQuoteEntryModal({
             discount_percent: Number(item.discount_percent) || 0,
             total_price: Number(item.total_price) || 0,
             vat_rate: Number(item.vat_rate) || 22,
-            category: item.item_category || 'ricambio'
+            category: item.item_category || 'ricambio',
+            part_category: item.part_category || undefined
           }));
           setItems(loadedItems);
+          
+          // Inizializza i display dei prezzi unitari
+          const displays: { [key: number]: string } = {};
+          loadedItems.forEach((item: QuoteItem, idx: number) => {
+            if (item.unit_price > 0) {
+              displays[idx] = item.unit_price.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+          });
+          setUnitPriceDisplays(displays);
         } else {
           // Nessuna riga esistente, mantieni riga vuota
           setItems([{
@@ -246,6 +322,7 @@ export default function ManualQuoteEntryModal({
   }, []); // Solo al mount, poi gestito manualmente
 
   const addItem = () => {
+    const newIndex = items.length;
     setItems([...items, {
       description: '',
       unit: 'NR',
@@ -256,11 +333,126 @@ export default function ManualQuoteEntryModal({
       vat_rate: 22,
       category: 'ricambio'
     }]);
+    // Inizializza display vuoto per la nuova riga
+    setUnitPriceDisplays(prev => ({ ...prev, [newIndex]: '' }));
   };
 
   const removeItem = (index: number) => {
     if (items.length > 1) {
       setItems(items.filter((_, i) => i !== index));
+      // Rimuovi anche il display del prezzo unitario e riorganizza gli indici
+      setUnitPriceDisplays(prev => {
+        const newDisplays: { [key: number]: string } = {};
+        Object.keys(prev).forEach(key => {
+          const oldIdx = parseInt(key);
+          if (oldIdx < index) {
+            newDisplays[oldIdx] = prev[oldIdx];
+          } else if (oldIdx > index) {
+            newDisplays[oldIdx - 1] = prev[oldIdx];
+          }
+        });
+        return newDisplays;
+      });
+    }
+  };
+
+  // Cerca pezzi nell'anagrafica per autocompletamento
+  const searchParts = useCallback(async (query: string, itemIndex: number) => {
+    if (!query || query.trim().length < 2) {
+      setPartsSuggestions([]);
+      setActiveSearchIndex(null);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/parts-catalog?q=${encodeURIComponent(query.trim())}&limit=10`);
+      const data = await response.json();
+      
+      // Mostra sempre il dropdown se c'è una query (anche senza risultati)
+      setActiveSearchIndex(itemIndex);
+      
+      if (data.success && data.data && data.data.length > 0) {
+        setPartsSuggestions(data.data);
+      } else {
+        // Nessun risultato trovato, ma mostra comunque il dropdown per permettere l'aggiunta
+        setPartsSuggestions([]);
+      }
+    } catch (err) {
+      console.error('Errore ricerca pezzi:', err);
+      // In caso di errore, mostra comunque il dropdown per permettere l'aggiunta manuale
+      setPartsSuggestions([]);
+      setActiveSearchIndex(itemIndex);
+    }
+  }, []);
+
+  // Seleziona un pezzo dall'autocompletamento e precompila i campi
+  const selectPart = (part: { codice?: string; descrizione: string; categoria?: string; tipo: string; um: string }, itemIndex: number) => {
+    const newItems = [...items];
+    const item = newItems[itemIndex];
+    
+    // Mappa tipo DB -> category form
+    const tipoMap: { [key: string]: string } = {
+      'Ricambio': 'ricambio',
+      'Servizio': 'servizio',
+      'Manodopera': 'manodopera'
+    };
+    
+    newItems[itemIndex] = {
+      ...item,
+      description: part.descrizione,
+      code: part.codice || undefined,
+      category: tipoMap[part.tipo] || 'ricambio',
+      part_category: part.categoria || undefined,
+      unit: part.um || 'NR'
+    };
+    
+    setItems(newItems);
+    setPartsSuggestions([]);
+    setActiveSearchIndex(null);
+  };
+
+  // Aggiungi nuovo pezzo all'anagrafica
+  const handleAddNewPart = async (itemIndex: number) => {
+    const item = items[itemIndex];
+    const newPart = newPartData[itemIndex];
+    
+    if (!item.description.trim()) {
+      setError('Inserisci una descrizione per il nuovo pezzo');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/parts-catalog', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          codice: newPart?.codice || null,
+          descrizione: item.description.trim(),
+          categoria: newPart?.categoria || null,
+          tipo: newPart?.tipo || 'Ricambio',
+          um: newPart?.um || 'NR'
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Precompila i campi con il nuovo pezzo
+        selectPart({
+          codice: data.data.codice,
+          descrizione: data.data.descrizione,
+          categoria: data.data.categoria,
+          tipo: data.data.tipo,
+          um: data.data.um
+        }, itemIndex);
+        
+        setShowNewPartInput(prev => ({ ...prev, [itemIndex]: false }));
+        setNewPartData(prev => ({ ...prev, [itemIndex]: { tipo: 'Ricambio', um: 'NR' } }));
+      } else {
+        setError(data.error || 'Errore nell\'aggiunta del nuovo pezzo');
+      }
+    } catch (err: any) {
+      setError('Errore nell\'aggiunta del nuovo pezzo');
     }
   };
 
@@ -276,7 +468,57 @@ export default function ManualQuoteEntryModal({
     }
     
     setItems(newItems);
+    
+    // Se cambia la descrizione, salva per ricerca debounced
+    if (field === 'description') {
+      // Nascondi suggerimenti se la descrizione è vuota
+      if (!value || value.trim().length < 2) {
+        if (activeSearchIndex === index) {
+          setPartsSuggestions([]);
+          setActiveSearchIndex(null);
+        }
+        lastSearchRef.current = null;
+        // Cancella timeout se esiste
+        if (searchTimeoutRef.current) {
+          clearTimeout(searchTimeoutRef.current);
+          searchTimeoutRef.current = null;
+        }
+      } else {
+        // Salva l'ultima ricerca
+        lastSearchRef.current = { value: value.trim(), index };
+        
+        // Cancella timeout precedente
+        if (searchTimeoutRef.current) {
+          clearTimeout(searchTimeoutRef.current);
+        }
+        
+        // Cerca dopo 300ms
+        searchTimeoutRef.current = setTimeout(() => {
+          if (lastSearchRef.current) {
+            searchParts(lastSearchRef.current.value, lastSearchRef.current.index);
+          }
+          searchTimeoutRef.current = null;
+        }, 300);
+      }
+    }
   };
+
+  // Nascondi dropdown quando si clicca fuori
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (activeSearchIndex !== null && !target.closest('.autocomplete-dropdown') && !target.closest('input[placeholder*="Descrizione"]')) {
+        setActiveSearchIndex(null);
+      }
+    };
+
+    if (activeSearchIndex !== null) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [activeSearchIndex]);
 
   const handleSave = async () => {
     // Validazione
@@ -345,8 +587,8 @@ export default function ManualQuoteEntryModal({
 
   return (
     <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} tabIndex={-1}>
-      <div className="modal-dialog modal-xl modal-dialog-scrollable">
-        <div className={`modal-content ${bgClass}`}>
+      <div className="modal-dialog modal-xl modal-dialog-scrollable" style={{ maxWidth: '95%', width: '95%', maxHeight: '95vh', height: '95vh' }}>
+        <div className={`modal-content ${bgClass}`} style={{ overflow: 'visible', height: '100%', display: 'flex', flexDirection: 'column' }}>
           <div className="modal-header">
             <h5 className={`modal-title ${textClass}`}>
               <i className="fas fa-edit me-2"></i>
@@ -360,7 +602,7 @@ export default function ManualQuoteEntryModal({
             ></button>
           </div>
 
-          <div className="modal-body">
+          <div className="modal-body" style={{ overflow: 'visible', flex: '1', overflowY: 'auto' }}>
             {loading && (
               <div className="text-center py-4">
                 <div className="spinner-border text-primary" role="status">
@@ -540,34 +782,47 @@ export default function ManualQuoteEntryModal({
                         <input 
                           type="text"
                           className="form-control form-control-sm"
-                          value={interventionDate ? (() => {
-                            try {
-                              const date = new Date(interventionDate);
-                              if (isNaN(date.getTime())) return interventionDate;
-                              const day = String(date.getDate()).padStart(2, '0');
-                              const month = String(date.getMonth() + 1).padStart(2, '0');
-                              const year = date.getFullYear();
-                              return `${day}/${month}/${year}`;
-                            } catch {
-                              return interventionDate;
-                            }
-                          })() : ''}
+                          value={interventionDateDisplay}
                           onChange={(e) => {
-                            const value = e.target.value;
-                            // Accetta formato gg/mm/aaaa
-                            const dateMatch = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+                            let value = e.target.value;
+                            // Permetti solo numeri e slash
+                            value = value.replace(/[^\d\/]/g, '');
+                            // Limita la lunghezza
+                            if (value.length > 10) value = value.substring(0, 10);
+                            
+                            setInterventionDateDisplay(value);
+                            
+                            // Se il formato è completo gg/mm/aaaa, converti e salva in ISO
+                            const dateMatch = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
                             if (dateMatch) {
                               const [, day, month, year] = dateMatch;
-                              const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-                              if (!isNaN(date.getTime())) {
-                                setInterventionDate(date.toISOString().split('T')[0]);
-                              } else {
-                                setInterventionDate(value);
+                              const dayNum = parseInt(day);
+                              const monthNum = parseInt(month);
+                              const yearNum = parseInt(year);
+                              
+                              // Validazione base
+                              if (dayNum >= 1 && dayNum <= 31 && monthNum >= 1 && monthNum <= 12 && yearNum >= 1900 && yearNum <= 2100) {
+                                const date = new Date(yearNum, monthNum - 1, dayNum);
+                                if (!isNaN(date.getTime()) && date.getDate() === dayNum && date.getMonth() === monthNum - 1) {
+                                  setInterventionDate(date.toISOString().split('T')[0]);
+                                }
                               }
                             } else if (value === '') {
                               setInterventionDate('');
-                            } else {
-                              setInterventionDate(value);
+                            }
+                          }}
+                          onBlur={(e) => {
+                            const value = e.target.value;
+                            // Se il formato non è completo, prova a completarlo o resetta
+                            if (value && value.length < 10) {
+                              // Se è vuoto, mantieni vuoto
+                              if (value === '') {
+                                setInterventionDateDisplay('');
+                                setInterventionDate('');
+                              } else {
+                                // Altrimenti mantieni quello che c'è scritto
+                                // L'utente può completarlo dopo
+                              }
                             }
                           }}
                           placeholder="gg/mm/aaaa"
@@ -653,21 +908,22 @@ export default function ManualQuoteEntryModal({
                     Aggiungi Riga
                   </button>
                 </div>
-                <div className="table-responsive" style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                  <table className="table table-sm table-hover">
+                <div className="table-responsive" style={{ maxHeight: '400px', overflowY: 'auto', overflowX: 'visible' }}>
+                  <table className="table table-sm table-hover" style={{ width: '100%', tableLayout: 'auto' }}>
                     <thead className="sticky-top" style={{ backgroundColor: modalBg }}>
                       <tr>
-                        <th className={textClass}>#</th>
-                        <th className={textClass}>Codice</th>
-                        <th className={textClass}>Descrizione *</th>
-                        <th className={textClass}>Cat</th>
-                        <th className={textClass}>Qtà</th>
-                        <th className={textClass}>UM</th>
-                        <th className={textClass}>€/u</th>
-                        <th className={textClass}>Sc%</th>
-                        <th className={textClass}>Totale</th>
-                        <th className={textClass}>IVA%</th>
-                        <th className={textClass}></th>
+                        <th className={textClass} style={{ width: '40px' }}>#</th>
+                        <th className={textClass} style={{ width: '10%' }}>Codice</th>
+                        <th className={textClass} style={{ width: '25%', minWidth: '250px' }}>Descrizione *</th>
+                        <th className={textClass} style={{ width: '10%', minWidth: '130px' }}>Tipo</th>
+                        <th className={textClass} style={{ width: '12%' }}>Categoria</th>
+                        <th className={textClass} style={{ width: '6%' }}>Qtà</th>
+                        <th className={textClass} style={{ width: '6%' }}>UM</th>
+                        <th className={textClass} style={{ width: '8%' }}>€/u</th>
+                        <th className={textClass} style={{ width: '6%' }}>Sc%</th>
+                        <th className={textClass} style={{ width: '9%' }}>Totale</th>
+                        <th className={textClass} style={{ width: '6%' }}>IVA%</th>
+                        <th className={textClass} style={{ width: '50px' }}></th>
                       </tr>
                     </thead>
                     <tbody>
@@ -680,31 +936,236 @@ export default function ManualQuoteEntryModal({
                               className="form-control form-control-sm"
                               value={item.code || ''}
                               onChange={(e) => updateItem(index, 'code', e.target.value)}
-                              style={{ width: '120px' }}
+                              style={{ width: '100%' }}
                               placeholder="Opzionale"
                             />
                           </td>
-                          <td>
+                          <td style={{ position: 'relative', overflow: 'visible' }}>
                             <input 
                               type="text"
                               className="form-control form-control-sm"
                               value={item.description}
                               onChange={(e) => updateItem(index, 'description', e.target.value)}
-                              style={{ minWidth: '300px' }}
+                              style={{ width: '100%' }}
                               placeholder="Descrizione prodotto/servizio *"
                               required
                             />
+                            {/* Dropdown suggerimenti - POSIZIONAMENTO FIXED PER EVITARE CLIPPING */}
+                            {activeSearchIndex === index && item.description.trim().length >= 2 && (
+                              <div 
+                                className="autocomplete-dropdown"
+                                style={{
+                                  position: 'fixed',
+                                  zIndex: 10000,
+                                  maxHeight: '200px',
+                                  overflowY: 'auto',
+                                  backgroundColor: theme === 'dark' ? '#2d3238' : '#fff',
+                                  border: `1px solid ${theme === 'dark' ? '#495057' : '#dee2e6'}`,
+                                  borderRadius: '4px',
+                                  marginTop: '2px',
+                                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                                  minWidth: '300px',
+                                  width: '300px'
+                                }}
+                              >
+                                {partsSuggestions.length > 0 ? (
+                                  partsSuggestions.map((part) => (
+                                    <div
+                                      key={part.id}
+                                      className={`${textClass}`}
+                                      style={{ 
+                                        padding: '8px 12px',
+                                        cursor: 'pointer',
+                                        borderBottom: `1px solid ${theme === 'dark' ? '#495057' : '#dee2e6'}`
+                                      }}
+                                      onClick={() => {
+                                        selectPart(part, index);
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        e.currentTarget.style.backgroundColor = theme === 'dark' ? '#495057' : '#f8f9fa';
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                      }}
+                                    >
+                                      <div>
+                                        <strong>{part.descrizione}</strong>
+                                        {part.codice && <small className="text-muted ms-2">({part.codice})</small>}
+                                      </div>
+                                      <small className="text-muted">
+                                        {part.categoria && `${part.categoria} • `}
+                                        {part.tipo} • UM: {part.um}
+                                      </small>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div 
+                                    className={`${textClass}`}
+                                    style={{ 
+                                      padding: '8px 12px',
+                                      fontStyle: 'italic',
+                                      color: theme === 'dark' ? '#adb5bd' : '#6c757d',
+                                      borderBottom: `1px solid ${theme === 'dark' ? '#495057' : '#dee2e6'}`
+                                    }}
+                                  >
+                                    Nessun risultato trovato
+                                  </div>
+                                )}
+                                <div 
+                                  className={`${textClass}`}
+                                  style={{ 
+                                    padding: '8px 12px',
+                                    cursor: 'pointer',
+                                    borderTop: `1px solid ${theme === 'dark' ? '#495057' : '#dee2e6'}`,
+                                    color: theme === 'dark' ? '#4dabf7' : '#0d6efd'
+                                  }}
+                                  onClick={() => {
+                                    setShowNewPartInput(prev => ({ ...prev, [index]: true }));
+                                    setActiveSearchIndex(null);
+                                    setNewPartData(prev => ({
+                                      ...prev,
+                                      [index]: {
+                                        tipo: 'Ricambio',
+                                        um: 'NR'
+                                      }
+                                    }));
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = theme === 'dark' ? '#495057' : '#f8f9fa';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'transparent';
+                                  }}
+                                >
+                                  <i className="fas fa-plus me-1"></i>
+                                  Aggiungi "{item.description}" all'anagrafica
+                                </div>
+                              </div>
+                            )}
+                            {/* Form per nuovo pezzo */}
+                            {showNewPartInput[index] && (
+                              <div 
+                                className="p-2 border rounded mt-2"
+                                style={{ 
+                                  backgroundColor: theme === 'dark' ? '#1e2124' : '#f8f9fa',
+                                  borderColor: theme === 'dark' ? '#495057' : '#dee2e6'
+                                }}
+                              >
+                                <small className={`d-block mb-2 ${textClass}`}>
+                                  <strong>Aggiungi nuovo pezzo all'anagrafica</strong>
+                                </small>
+                                <div className="row g-2 mb-2">
+                                  <div className="col-6">
+                                    <input
+                                      type="text"
+                                      className="form-control form-control-sm"
+                                      placeholder="Codice (opzionale)"
+                                      value={newPartData[index]?.codice || ''}
+                                      onChange={(e) => setNewPartData(prev => ({
+                                        ...prev,
+                                        [index]: { ...prev[index], codice: e.target.value }
+                                      }))}
+                                    />
+                                  </div>
+                                  <div className="col-6">
+                                    <select
+                                      className="form-select form-select-sm"
+                                      value={newPartData[index]?.categoria || ''}
+                                      onChange={(e) => setNewPartData(prev => ({
+                                        ...prev,
+                                        [index]: { ...prev[index], categoria: e.target.value }
+                                      }))}
+                                    >
+                                      <option value="">-- Seleziona categoria --</option>
+                                      {categories.map((cat) => (
+                                        <option key={cat} value={cat}>
+                                          {cat}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                </div>
+                                <div className="row g-2 mb-2">
+                                  <div className="col-6">
+                                    <select
+                                      className="form-select form-select-sm"
+                                      value={newPartData[index]?.tipo || 'Ricambio'}
+                                      onChange={(e) => setNewPartData(prev => ({
+                                        ...prev,
+                                        [index]: { ...prev[index], tipo: e.target.value }
+                                      }))}
+                                    >
+                                      <option value="Ricambio">Ricambio</option>
+                                      <option value="Servizio">Servizio</option>
+                                      <option value="Manodopera">Manodopera</option>
+                                    </select>
+                                  </div>
+                                  <div className="col-6">
+                                    <select
+                                      className="form-select form-select-sm"
+                                      value={newPartData[index]?.um || 'NR'}
+                                      onChange={(e) => setNewPartData(prev => ({
+                                        ...prev,
+                                        [index]: { ...prev[index], um: e.target.value }
+                                      }))}
+                                    >
+                                      <option value="NR">NR</option>
+                                      <option value="PZ">PZ</option>
+                                      <option value="CF">CF</option>
+                                      <option value="HH">HH</option>
+                                      <option value="KG">KG</option>
+                                      <option value="LT">LT</option>
+                                    </select>
+                                  </div>
+                                </div>
+                                <div className="d-flex gap-2">
+                                  <button
+                                    type="button"
+                                    className="btn btn-sm btn-success"
+                                    onClick={() => handleAddNewPart(index)}
+                                  >
+                                    <i className="fas fa-check me-1"></i>
+                                    Aggiungi
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn btn-sm btn-outline-secondary"
+                                    onClick={() => {
+                                      setShowNewPartInput(prev => ({ ...prev, [index]: false }));
+                                      setNewPartData(prev => ({ ...prev, [index]: { tipo: 'Ricambio', um: 'NR' } }));
+                                    }}
+                                  >
+                                    Annulla
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </td>
                           <td>
                             <select
                               className="form-select form-select-sm"
                               value={item.category || 'ricambio'}
                               onChange={(e) => updateItem(index, 'category', e.target.value)}
-                              style={{ width: '100px' }}
+                              style={{ width: '100%' }}
                             >
                               <option value="ricambio">Ricambio</option>
                               <option value="manodopera">Manodopera</option>
                               <option value="servizio">Servizio</option>
+                            </select>
+                          </td>
+                          <td>
+                            <select
+                              className="form-select form-select-sm"
+                              value={item.part_category || ''}
+                              onChange={(e) => updateItem(index, 'part_category', e.target.value)}
+                              style={{ width: '100%' }}
+                            >
+                              <option value="">-- Seleziona categoria --</option>
+                              {categories.map((cat) => (
+                                <option key={cat} value={cat}>
+                                  {cat}
+                                </option>
+                              ))}
                             </select>
                           </td>
                           <td>
@@ -714,7 +1175,7 @@ export default function ManualQuoteEntryModal({
                               className="form-control form-control-sm"
                               value={item.quantity}
                               onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value) || 0)}
-                              style={{ width: '90px' }}
+                              style={{ width: '100%' }}
                               min="0"
                             />
                           </td>
@@ -723,7 +1184,7 @@ export default function ManualQuoteEntryModal({
                               className="form-select form-select-sm"
                               value={item.unit}
                               onChange={(e) => updateItem(index, 'unit', e.target.value)}
-                              style={{ width: '70px' }}
+                              style={{ width: '100%' }}
                             >
                               <option value="NR">NR</option>
                               <option value="HH">HH</option>
@@ -736,11 +1197,15 @@ export default function ManualQuoteEntryModal({
                             <input 
                               type="text"
                               className="form-control form-control-sm"
-                              value={item.unit_price > 0 ? item.unit_price.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}
+                              value={unitPriceDisplays[index] !== undefined ? unitPriceDisplays[index] : (item.unit_price > 0 ? item.unit_price.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '')}
                               onChange={(e) => {
                                 const value = e.target.value;
-                                // Rimuovi spazi e sostituisci virgola con punto per il parsing
-                                const normalizedValue = value.replace(/\s/g, '').replace(',', '.');
+                                // Permetti digitazione libera (solo numeri, virgola e punto)
+                                const cleanedValue = value.replace(/[^\d,.]/g, '');
+                                setUnitPriceDisplays(prev => ({ ...prev, [index]: cleanedValue }));
+                                
+                                // Aggiorna anche il valore numerico per i calcoli
+                                const normalizedValue = cleanedValue.replace(',', '.');
                                 const numValue = parseFloat(normalizedValue) || 0;
                                 updateItem(index, 'unit_price', numValue);
                               }}
@@ -750,8 +1215,15 @@ export default function ManualQuoteEntryModal({
                                 const normalizedValue = value.replace(/\s/g, '').replace(',', '.');
                                 const numValue = parseFloat(normalizedValue) || 0;
                                 updateItem(index, 'unit_price', numValue);
+                                
+                                // Formatta per la visualizzazione
+                                if (numValue > 0) {
+                                  setUnitPriceDisplays(prev => ({ ...prev, [index]: numValue.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }));
+                                } else {
+                                  setUnitPriceDisplays(prev => ({ ...prev, [index]: '' }));
+                                }
                               }}
-                              style={{ width: '100px' }}
+                              style={{ width: '100%' }}
                               placeholder="0,00"
                             />
                           </td>
@@ -762,7 +1234,7 @@ export default function ManualQuoteEntryModal({
                               className="form-control form-control-sm"
                               value={item.discount_percent}
                               onChange={(e) => updateItem(index, 'discount_percent', parseFloat(e.target.value) || 0)}
-                              style={{ width: '70px' }}
+                              style={{ width: '100%' }}
                               min="0"
                               max="100"
                             />
@@ -773,7 +1245,7 @@ export default function ManualQuoteEntryModal({
                               className="form-control form-control-sm"
                               value={item.total_price.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               readOnly
-                              style={{ width: '110px', backgroundColor: theme === 'dark' ? '#2d3238' : '#f8f9fa' }}
+                              style={{ width: '100%', backgroundColor: theme === 'dark' ? '#2d3238' : '#f8f9fa' }}
                             />
                           </td>
                           <td>
@@ -782,7 +1254,7 @@ export default function ManualQuoteEntryModal({
                               className="form-control form-control-sm"
                               value={item.vat_rate}
                               onChange={(e) => updateItem(index, 'vat_rate', parseFloat(e.target.value) || 22)}
-                              style={{ width: '60px' }}
+                              style={{ width: '100%' }}
                               min="0"
                               max="100"
                             />
@@ -802,17 +1274,18 @@ export default function ManualQuoteEntryModal({
                     </tbody>
                   </table>
                 </div>
-                <div className={`mt-2 ${textClass}`}>
-                  <small>
-                    <i className="fas fa-info-circle me-1"></i>
-                    I totali vengono calcolati automaticamente. Il totale riga = (Prezzo × Quantità) × (1 - Sconto%)
-                  </small>
-                </div>
               </div>
             </div>
               </>
             )}
 
+          </div>
+
+          <div className={`px-3 py-2 ${textClass}`} style={{ borderTop: `1px solid ${theme === 'dark' ? '#495057' : '#dee2e6'}` }}>
+            <small>
+              <i className="fas fa-info-circle me-1"></i>
+              I totali vengono calcolati automaticamente. Il totale riga = (Prezzo × Quantità) × (1 - Sconto%)
+            </small>
           </div>
 
           <div className="modal-footer">

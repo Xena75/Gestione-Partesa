@@ -1262,6 +1262,55 @@ uploaded_at   timestamp    NO        current_timestamp()
 - **Funzionalità**: Upload file PDF, DOC, DOCX, JPG, PNG, TXT (max 10MB)
 - **Storage**: Vercel Blob Storage (produzione) / Filesystem locale (sviluppo)
 
+#### maintenance_quote_items
+**Tabella per gestione righe dettaglio preventivo** ⭐ **NUOVO v2.37.0**
+
+```sql
+CREATE TABLE maintenance_quote_items (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  quote_id INT NOT NULL,
+  item_code VARCHAR(255) NULL COMMENT 'Codice pezzo (opzionale)',
+  part_description VARCHAR(500) NOT NULL COMMENT 'Descrizione pezzo/servizio',
+  item_category ENUM('Ricambio', 'Manodopera', 'Servizio') NOT NULL DEFAULT 'Ricambio',
+  part_category VARCHAR(255) NULL COMMENT 'Categoria del pezzo (es: Filtri, Freni, ecc.)' ⭐ **NUOVO v2.38.0**,
+  quantity DECIMAL(10,2) NOT NULL DEFAULT 1,
+  unit_of_measure VARCHAR(10) NOT NULL DEFAULT 'NR',
+  unit_price DECIMAL(10,2) NOT NULL DEFAULT 0,
+  discount_percent DECIMAL(5,2) DEFAULT 0,
+  total_price DECIMAL(10,2) NOT NULL DEFAULT 0,
+  tax_rate DECIMAL(5,2) NOT NULL DEFAULT 22,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (quote_id) REFERENCES maintenance_quotes(id) ON DELETE CASCADE,
+  INDEX idx_quote_id (quote_id),
+  INDEX idx_part_description (part_description)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+**Campi:**
+- `id`: ID univoco riga
+- `quote_id`: Riferimento al preventivo (FK a `maintenance_quotes.id`)
+- `item_code`: Codice pezzo (opzionale)
+- `part_description`: Descrizione pezzo/servizio (obbligatoria)
+- `item_category`: Categoria (Ricambio/Manodopera/Servizio)
+- `part_category`: Categoria del pezzo (es: "Filtri", "Freni") ⭐ **NUOVO v2.38.0**
+- `quantity`: Quantità
+- `unit_of_measure`: Unità di misura (NR, PZ, HH, KG, LT, CF)
+- `unit_price`: Prezzo unitario
+- `discount_percent`: Percentuale sconto
+- `total_price`: Totale riga (calcolato)
+- `tax_rate`: Aliquota IVA
+
+**Utilizzo nel progetto:**
+- **Componente**: `ManualQuoteEntryModal` per inserimento/modifica righe
+- **API**: `/api/vehicles/quotes/[id]/save-parsed-data` per salvataggio righe
+- **API**: `/api/vehicles/quotes/[id]` per recupero righe esistenti
+- **Pagina**: `/vehicles/quotes/[id]` per visualizzazione righe dettaglio
+- **Funzionalità**: Tracciamento dettagliato pezzi/servizi per ogni preventivo
+
+**Migration:**
+- `migrations/add_part_category_to_quote_items.sql` - Aggiunta colonna `part_category` (v2.38.0)
+
 #### intervention_locations
 **Tabella per gestione luoghi di intervento manutenzione** ⭐ **NUOVO v2.37.0**
 
@@ -2012,6 +2061,46 @@ CREATE TABLE tab_viaggi (
 );
 ```
 
+#### Tabella: `parts_catalog`
+**Anagrafica ricambi/servizi/manodopera** ⭐ **NUOVO v2.38.0**
+
+```sql
+CREATE TABLE IF NOT EXISTS parts_catalog (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  codice VARCHAR(50) NULL COMMENT 'Codice pezzo (opzionale, non tutti lo usano)',
+  descrizione VARCHAR(255) NOT NULL COMMENT 'Nome unico e pulito del pezzo/servizio (es: "Filtro Olio", "Pastiglie Freno Ant.")',
+  categoria VARCHAR(100) NULL COMMENT 'Categoria pezzo di ricambio (es: "Filtri", "Freni", "Manutenzione")',
+  tipo ENUM('Ricambio', 'Servizio', 'Manodopera') NOT NULL DEFAULT 'Ricambio' COMMENT 'Tipo: Ricambio, Servizio o Manodopera',
+  um VARCHAR(10) NOT NULL DEFAULT 'NR' COMMENT 'Unità di misura (NR, PZ, CF, HH, KG, LT, ecc.)',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  
+  UNIQUE KEY uk_parts_descrizione (descrizione),
+  INDEX idx_parts_codice (codice),
+  INDEX idx_parts_categoria (categoria),
+  INDEX idx_parts_tipo (tipo),
+  INDEX idx_parts_descrizione_search (descrizione)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci 
+COMMENT='Anagrafica ricambi/servizi/manodopera per autocompletamento rapido';
+```
+
+**Campi:**
+- `id`: ID univoco pezzo
+- `codice`: Codice pezzo (opzionale)
+- `descrizione`: Nome unico del pezzo/servizio (UNIQUE, obbligatorio) - usato per autocompletamento
+- `categoria`: Categoria pezzo (es: "Filtri", "Freni", "Manutenzione")
+- `tipo`: Tipo (Ricambio/Servizio/Manodopera)
+- `um`: Unità di misura (NR, PZ, CF, HH, KG, LT)
+
+**Utilizzo nel progetto:**
+- **Componente**: `ManualQuoteEntryModal` - Autocompletamento campo "Descrizione"
+- **API**: `/api/parts-catalog` per ricerca e gestione catalogo
+- **Funzionalità**: Autocompletamento rapido nell'inserimento righe preventivo
+- **Pre-compilazione**: Selezione pezzo precompila codice, categoria, tipo, UM
+
+**Migration:**
+- `migrations/create_parts_catalog_table.sql` - Creazione tabella con dati iniziali
+
 #### Tabella: `viaggi_pod` (se presente)
 - Dati Proof of Delivery per viaggi
 
@@ -2415,6 +2504,16 @@ SELECT * FROM backup_schedules WHERE enabled = TRUE;
 #### Tabella: `intervention_locations` ⭐ **NUOVO v2.37.0**
 - **src/app/api/intervention-locations/route.ts** - API gestione luoghi intervento
 - **src/components/ManualQuoteEntryModal.tsx** - Select editabile luoghi nel modal inserimento righe
+
+#### Tabella: `maintenance_quote_items` ⭐ **NUOVO v2.37.0**
+- **src/components/ManualQuoteEntryModal.tsx** - Modal inserimento/modifica righe preventivo
+- **src/app/api/vehicles/quotes/[id]/save-parsed-data/route.ts** - API salvataggio righe
+- **src/app/api/vehicles/quotes/[id]/route.ts** - API recupero righe esistenti
+- **src/app/vehicles/quotes/[id]/page.tsx** - Visualizzazione righe dettaglio preventivo
+
+#### Tabella: `parts_catalog` ⭐ **NUOVO v2.38.0**
+- **src/app/api/parts-catalog/route.ts** - API gestione catalogo ricambi
+- **src/components/ManualQuoteEntryModal.tsx** - Autocompletamento descrizione pezzi
 
 #### Tabella: `automation_logs`
 - **src/lib/data-viaggi.ts** - Log automazione

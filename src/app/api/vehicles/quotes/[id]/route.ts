@@ -87,6 +87,18 @@ export async function GET(
     const quote = quotes[0];
     
     // Recupera anche le righe del preventivo (se esistono)
+    // Verifica se la colonna part_category esiste
+    const [columns] = await connection.execute(
+      `SELECT COLUMN_NAME 
+       FROM INFORMATION_SCHEMA.COLUMNS 
+       WHERE TABLE_SCHEMA = ? 
+         AND TABLE_NAME = 'maintenance_quote_items' 
+         AND COLUMN_NAME = 'part_category'`,
+      [process.env.DB_VIAGGI_NAME || 'viaggi_db']
+    );
+    
+    const hasPartCategory = Array.isArray(columns) && columns.length > 0;
+    
     const [itemsRows] = await connection.execute(
       `SELECT 
         id,
@@ -99,7 +111,7 @@ export async function GET(
         discount_percent,
         total_price,
         vat_rate,
-        item_category
+        item_category${hasPartCategory ? ', part_category' : ''}
       FROM maintenance_quote_items 
       WHERE quote_id = ? 
       ORDER BY id`,

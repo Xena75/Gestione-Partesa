@@ -9,6 +9,8 @@ import {
 
 interface VehicleStats {
   total_vehicles: number;
+  active_vehicles: number;
+  inactive_vehicles: number;
   active_schedules: number;
   overdue_schedules: number;
   open_quotes: number;
@@ -67,6 +69,8 @@ export default function VehiclesDashboard() {
       // Dati di fallback
       setStats({
         total_vehicles: 0,
+        active_vehicles: 0,
+        inactive_vehicles: 0,
         active_schedules: 0,
         overdue_schedules: 0,
         open_quotes: 0,
@@ -146,8 +150,8 @@ export default function VehiclesDashboard() {
 
 
       {/* Statistiche Principali */}
-      <div className="row mb-4">
-        <div className="col-md-6 col-lg-3 mb-3">
+      <div className="row mb-4 g-3">
+        <div className="col-6 col-md-4 col-lg-2">
           <div className="card h-100 border-0 shadow-sm">
             <div className="card-body d-flex align-items-center">
               <div className="p-3 bg-primary bg-opacity-10 rounded me-3">
@@ -161,7 +165,35 @@ export default function VehiclesDashboard() {
           </div>
         </div>
 
-        <div className="col-md-6 col-lg-3 mb-3">
+        <div className="col-6 col-md-4 col-lg-2">
+          <div className="card h-100 border-0 shadow-sm">
+            <div className="card-body d-flex align-items-center">
+              <div className="p-3 bg-success bg-opacity-10 rounded me-3">
+                <CheckCircle size={24} className="text-success" />
+              </div>
+              <div>
+                <p className="card-text text-muted small mb-1">Veicoli Attivi</p>
+                <h4 className="card-title mb-0">{stats?.active_vehicles || 0}</h4>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-6 col-md-4 col-lg-2">
+          <div className="card h-100 border-0 shadow-sm">
+            <div className="card-body d-flex align-items-center">
+              <div className="p-3 bg-secondary bg-opacity-10 rounded me-3">
+                <AlertTriangle size={24} className="text-secondary" />
+              </div>
+              <div>
+                <p className="card-text text-muted small mb-1">Veicoli Non Attivi</p>
+                <h4 className="card-title mb-0">{stats?.inactive_vehicles || 0}</h4>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-6 col-md-4 col-lg-2">
           <div className="card h-100 border-0 shadow-sm">
             <div className="card-body d-flex align-items-center">
               <div className="p-3 bg-warning bg-opacity-10 rounded me-3">
@@ -175,7 +207,7 @@ export default function VehiclesDashboard() {
           </div>
         </div>
 
-        <div className="col-md-6 col-lg-3 mb-3">
+        <div className="col-6 col-md-4 col-lg-2">
           <div className="card h-100 border-0 shadow-sm">
             <div className="card-body d-flex align-items-center">
               <div className="p-3 bg-danger bg-opacity-10 rounded me-3">
@@ -189,7 +221,7 @@ export default function VehiclesDashboard() {
           </div>
         </div>
 
-        <div className="col-md-6 col-lg-3 mb-3">
+        <div className="col-6 col-md-4 col-lg-2">
           <div className="card h-100 border-0 shadow-sm">
             <div className="card-body d-flex align-items-center">
               <div className="p-3 bg-success bg-opacity-10 rounded me-3">

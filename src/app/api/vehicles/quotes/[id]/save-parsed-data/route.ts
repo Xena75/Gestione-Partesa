@@ -19,10 +19,11 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const connection = await pool.getConnection();
+  let body: any = null;
   
   try {
     const { id } = await params;
-    const body = await request.json();
+    body = await request.json();
 
     const {
       vehicle_km,
@@ -88,29 +89,66 @@ export async function POST(
 
     // 3. Inserisci nuove righe
     if (items.length > 0) {
-      const itemsValues = items.map((item: any) => [
-        id,
-        null, // part_id (per ora NULL, poi possiamo collegare all'anagrafica)
-        item.description || 'N/D',
-        item.code || null,
-        null, // part_description
-        null, // supplier_part_code
-        item.quantity || 1,
-        item.unit || 'NR',
-        item.unit_price || 0,
-        item.discount_percent || 0,
-        item.total_price || 0,
-        item.vat_rate || 22,
-        item.category || 'ricambio',
-        null // notes
-      ]);
+      // Verifica se la colonna part_category esiste
+      let hasPartCategory = false;
+      try {
+        const [columnsResult] = await connection.query(
+          `SELECT COLUMN_NAME 
+           FROM INFORMATION_SCHEMA.COLUMNS 
+           WHERE TABLE_SCHEMA = ? 
+           AND TABLE_NAME = 'maintenance_quote_items' 
+           AND COLUMN_NAME = 'part_category'`,
+          [process.env.DB_VIAGGI_NAME || 'viaggi_db']
+        );
+        
+        // mysql2 restituce [rows, fields], quindi prendiamo solo le righe
+        const columns = Array.isArray(columnsResult) ? columnsResult : [];
+        hasPartCategory = columns.length > 0;
+        
+        console.log('Controllo colonna part_category:', { hasPartCategory, columnsCount: columns.length });
+      } catch (checkError) {
+        console.error('Errore nel controllo colonna part_category:', checkError);
+        // In caso di errore, assumiamo che la colonna non esista
+        hasPartCategory = false;
+      }
+      
+      const itemsValues = items.map((item: any) => {
+        const baseValues = [
+          id,
+          null, // part_id (per ora NULL, poi possiamo collegare all'anagrafica)
+          item.description || 'N/D',
+          item.code || null,
+          null, // part_description
+          null, // supplier_part_code
+          item.quantity || 1,
+          item.unit || 'NR',
+          item.unit_price || 0,
+          item.discount_percent || 0,
+          item.total_price || 0,
+          item.vat_rate || 22,
+          item.category || 'ricambio',
+          null // notes
+        ];
+        
+        // Aggiungi part_category solo se la colonna esiste
+        if (hasPartCategory) {
+          baseValues.splice(-1, 0, item.part_category || null); // Inserisci prima di notes
+        }
+        
+        return baseValues;
+      });
+
+      // Costruisci la query dinamicamente in base alla presenza della colonna
+      const columnsList = hasPartCategory
+        ? `(quote_id, part_id, part_name, part_code, part_description, 
+           supplier_part_code, quantity, unit, unit_price, discount_percent,
+           total_price, vat_rate, item_category, part_category, notes)`
+        : `(quote_id, part_id, part_name, part_code, part_description, 
+           supplier_part_code, quantity, unit, unit_price, discount_percent,
+           total_price, vat_rate, item_category, notes)`;
 
       await connection.query(
-        `INSERT INTO maintenance_quote_items 
-        (quote_id, part_id, part_name, part_code, part_description, 
-         supplier_part_code, quantity, unit, unit_price, discount_percent,
-         total_price, vat_rate, item_category, notes)
-        VALUES ?`,
+        `INSERT INTO maintenance_quote_items ${columnsList} VALUES ?`,
         [itemsValues]
       );
     }
@@ -147,10 +185,13 @@ export async function POST(
   } catch (error: any) {
     await connection.rollback();
     console.error('Errore salvataggio dati:', error);
+    console.error('Stack trace:', error.stack);
+    console.error('Body ricevuto:', JSON.stringify(body, null, 2));
     return NextResponse.json(
       { 
         error: 'Errore durante il salvataggio',
-        details: error.message 
+        details: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
       },
       { status: 500 }
     );

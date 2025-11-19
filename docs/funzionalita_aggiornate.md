@@ -1,7 +1,101 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-**Versione corrente**: v2.37.0  
-**Ultimo aggiornamento**: Novembre 2025
+**Versione corrente**: v2.38.0  
+**Ultimo aggiornamento**: Gennaio 2025
+
+---
+
+## v2.38.0 - Anagrafica Ricambi e Miglioramenti Dashboard Veicoli
+
+**Data implementazione**: Gennaio 2025  
+**Stato**: ✅ Completato e testato
+
+### 🎯 Funzionalità Anagrafica Ricambi
+
+#### 📦 Tabella Anagrafica Ricambi
+- **Tabella**: `parts_catalog` nel database `viaggi_db`
+- **Campi**:
+  - `codice` (VARCHAR(255), opzionale)
+  - `descrizione` (VARCHAR(255), NOT NULL, UNIQUE) - per autocompletamento
+  - `categoria` (VARCHAR(255), opzionale) - es: "Filtri", "Freni", ecc.
+  - `tipo` (ENUM: 'Ricambio', 'Servizio', 'Manodopera')
+  - `um` (VARCHAR(10)) - Unità di misura (NR, PZ, CF, HH, KG, LT)
+- **File migration**: `migrations/create_parts_catalog_table.sql`
+
+#### 🔍 Autocompletamento Descrizione
+- **Componente**: `ManualQuoteEntryModal`
+- **Funzionalità**: Autocompletamento campo "Descrizione" con ricerca nel catalogo
+- **Comportamento**:
+  - Ricerca dopo 2 caratteri digitati
+  - Dropdown con suggerimenti dal catalogo
+  - Selezione precompila: codice, categoria, tipo, UM
+  - Opzione "Aggiungi all'anagrafica" se voce non esiste
+- **File**: `src/components/ManualQuoteEntryModal.tsx`
+
+#### 📋 Campo Categoria
+- **Componente**: `ManualQuoteEntryModal`
+- **Tipo**: Select dropdown che carica categorie dal database
+- **Fonte dati**: `SELECT DISTINCT categoria FROM parts_catalog`
+- **Comportamento**: Select semplice identico al campo "Tipo"
+- **File**: `src/components/ManualQuoteEntryModal.tsx`
+
+### 🚗 Dashboard Veicoli Migliorata
+
+#### 📊 Card Statistiche Aggiornate
+- **Pagina**: `/vehicles`
+- **Nuove card**:
+  - **Veicoli Attivi**: Conteggio veicoli con `active = 1`
+  - **Veicoli Non Attivi**: Conteggio veicoli con `active = 0`
+- **Layout**: Tutte le 6 card su una riga (responsive)
+- **File**: `src/app/vehicles/page.tsx`
+
+#### 💰 Costo Manutenzioni
+- **Modifica**: Mostra solo preventivi approvati del mese corrente
+- **Logica**: `YEAR(approved_at) = YEAR(CURDATE()) AND MONTH(approved_at) = MONTH(CURDATE())`
+- **Calcolo**: Usa `invoice_amount` se disponibile, altrimenti `taxable_amount + tax_amount`, altrimenti `amount`
+- **File**: `src/app/api/vehicles/stats/route.ts`
+
+#### 📋 Preventivi Aperti
+- **Modifica**: Mostra solo preventivi in attesa di approvazione
+- **Logica**: `status = 'pending'` (rimossi quelli con `status = 'approved'`)
+- **File**: `src/app/api/vehicles/stats/route.ts`
+
+### 🎨 Miglioramenti UI/UX
+
+#### Campo Prezzo Unitario (€/u)
+- **Problema risolto**: Digitazione non funzionava a causa di formattazione immediata
+- **Soluzione**: Stato separato per display (`unitPriceDisplays`) che permette digitazione libera
+- **Formattazione**: Applicata solo al blur (quando perde il focus)
+- **File**: `src/components/ManualQuoteEntryModal.tsx`
+
+### 🔌 API Endpoints
+
+#### `/api/parts-catalog`
+- **GET**: Ricerca pezzi per autocompletamento
+  - Query params: `q` (query di ricerca), `limit` (default 10), `categories_only=true` (solo categorie)
+  - Response: `{ success: true, data: [...] }` o `{ success: true, categories: [...] }`
+- **POST**: Aggiunge nuovo pezzo al catalogo
+  - Body: `{ codice?, descrizione, categoria?, tipo, um }`
+  - Validazione: `descrizione` obbligatoria e univoca
+  - Response: `{ success: true, data: {...} }`
+- **File**: `src/app/api/parts-catalog/route.ts`
+
+### 🗄️ Database
+
+#### Nuova Colonna: `part_category` in `maintenance_quote_items`
+- **Database**: `viaggi_db`
+- **Tabella**: `maintenance_quote_items`
+- **Colonna**: `part_category` (VARCHAR(255), NULL)
+- **Posizione**: Dopo `item_category`
+- **Scopo**: Categoria del pezzo (es: "Filtri", "Freni", ecc.)
+- **File migration**: `migrations/add_part_category_to_quote_items.sql`
+
+### 📝 Note Tecniche
+
+- **Autocompletamento**: Implementato con debounce (300ms) per ottimizzare query
+- **Dropdown positioning**: Usa `position: fixed` con calcolo dinamico per evitare clipping
+- **Formattazione numeri**: Tutti i valori monetari usano formato italiano (virgola decimale)
+- **Formattazione date**: Campo data intervento in formato `gg/mm/aaaa` con conversione automatica
 
 ---
 
