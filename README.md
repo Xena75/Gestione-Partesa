@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.39.0
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.40.0
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -47,7 +47,8 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Interfaccia ottimizzata**: Visualizzazione responsive con formattazione italiana
 - **Sistema preventivi**: Gestione completa preventivi con workflow approvazione
 - **Gestione fornitori**: Integrazione fornitori e servizi per preventivi
-- **Upload documenti**: Sistema drag-and-drop per allegati preventivi
+- **Upload documenti**: Sistema drag-and-drop per allegati preventivi con Vercel Blob Storage (anche in locale) ⭐ **AGGIORNATO v2.40.0**
+- **Campo IVA% avanzato**: Supporto per "Esclusa art. 15" nel campo IVA% dei preventivi ⭐ **NUOVO v2.40.0**
 - **Upload documenti veicoli**: Sistema completo upload documenti con supporto tipi personalizzati e Vercel Blob Storage ⭐ **NUOVO v2.39.0**
 - **Anagrafica ricambi**: Sistema completo per gestione catalogo ricambi con autocompletamento ⭐ **NUOVO v2.38.0**
 - **Dashboard veicoli**: Card statistiche veicoli attivi/non attivi e preventivi in attesa ⭐ **NUOVO v2.38.0**

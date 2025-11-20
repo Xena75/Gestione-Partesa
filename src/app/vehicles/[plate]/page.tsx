@@ -393,13 +393,12 @@ export default function VehicleDetailPage() {
   };
 
   const handleQuoteDocumentDownload = (doc: QuoteDocument) => {
-    const downloadUrl = `/api/uploads/${doc.file_path}?download=true`;
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = doc.file_name;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Se il file_path è già un URL completo (Vercel Blob), usalo direttamente
+    // Altrimenti usa l'endpoint API per servire il file
+    const downloadUrl = doc.file_path.startsWith('https://') 
+      ? doc.file_path 
+      : `/api/files/quote-documents?type=quote&id=${doc.quote_id}`;
+    window.open(downloadUrl, '_blank');
   };
 
   const handleApproveQuote = async (quoteId: number) => {

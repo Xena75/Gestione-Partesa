@@ -11,7 +11,7 @@ interface QuoteItem {
   unit_price: number;
   discount_percent: number;
   total_price: number;
-  vat_rate: number;
+  vat_rate: number | string; // Può essere un numero o "Esclusa art. 15"
   category?: string;
   part_category?: string; // categoria del pezzo (es: Filtri, Freni, ecc.)
 }
@@ -79,6 +79,22 @@ export default function ManualQuoteEntryModal({
       category: 'ricambio'
     }
   ]);
+
+  // Funzione helper per ottenere il valore numerico dell'IVA (o 0 se "Esclusa art. 15")
+  const getVatRateValue = (vatRate: number | string): number => {
+    if (vatRate === 'Esclusa art. 15' || vatRate === -1) {
+      return 0;
+    }
+    return typeof vatRate === 'number' ? vatRate : parseFloat(String(vatRate)) || 0;
+  };
+
+  // Funzione helper per ottenere il display dell'IVA
+  const getVatRateDisplay = (vatRate: number | string): string => {
+    if (vatRate === 'Esclusa art. 15' || vatRate === -1) {
+      return 'Esclusa art. 15';
+    }
+    return String(vatRate);
+  };
   
   // Stati per il display dei prezzi unitari (permettono digitazione libera)
   const [unitPriceDisplays, setUnitPriceDisplays] = useState<{ [key: number]: string }>({});
@@ -318,7 +334,7 @@ export default function ManualQuoteEntryModal({
             unit_price: Number(item.unit_price) || 0,
             discount_percent: Number(item.discount_percent) || 0,
             total_price: Number(item.total_price) || 0,
-            vat_rate: Number(item.vat_rate) || 22,
+            vat_rate: item.vat_rate === -1 || item.vat_rate === 'Esclusa art. 15' ? 'Esclusa art. 15' : (Number(item.vat_rate) || 22),
             category: item.item_category || 'ricambio',
             part_category: item.part_category || undefined
           }));
@@ -357,21 +373,25 @@ export default function ManualQuoteEntryModal({
   // Calcola totali quando cambiano le righe
   useEffect(() => {
     let subtotal = 0;
+    let totalTax = 0;
     
     items.forEach(item => {
       // Calcola totale riga: (prezzo_unitario * quantità) * (1 - sconto%)
       const lineTotal = (item.unit_price * item.quantity) * (1 - (item.discount_percent / 100));
       subtotal += lineTotal;
+      
+      // Calcola IVA per questa riga (se non è "Esclusa art. 15")
+      const itemVatRate = getVatRateValue(item.vat_rate);
+      if (itemVatRate > 0) {
+        totalTax += lineTotal * (itemVatRate / 100);
+      }
     });
 
     setTaxableAmount(subtotal);
-    
-    // Calcola IVA
-    const tax = subtotal * (taxRate / 100);
-    setTaxAmount(tax);
+    setTaxAmount(totalTax);
     
     // Totale finale
-    setTotalAmount(subtotal + tax);
+    setTotalAmount(subtotal + totalTax);
   }, [items, taxRate]);
 
   // Aggiorna total_price quando cambiano quantità, prezzo o sconto
@@ -620,6 +640,12 @@ export default function ManualQuoteEntryModal({
         }
       }
 
+      // Prepara gli items per il salvataggio, convertendo "Esclusa art. 15" in -1
+      const itemsToSave = items.map(item => ({
+        ...item,
+        vat_rate: item.vat_rate === 'Esclusa art. 15' ? -1 : (typeof item.vat_rate === 'number' ? item.vat_rate : parseFloat(String(item.vat_rate)) || 22)
+      }));
+
       const response = await fetch(`/api/vehicles/quotes/${quoteId}/save-parsed-data`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -630,7 +656,7 @@ export default function ManualQuoteEntryModal({
           taxable_amount: taxableAmount,
           tax_amount: taxAmount,
           tax_rate: taxRate,
-          items: items
+          items: itemsToSave
         })
       });
 
@@ -1423,15 +1449,25 @@ export default function ManualQuoteEntryModal({
                             />
                           </td>
                           <td>
-                            <input 
-                              type="number"
-                              className="form-control form-control-sm"
-                              value={item.vat_rate}
-                              onChange={(e) => updateItem(index, 'vat_rate', parseFloat(e.target.value) || 22)}
+                            <select
+                              className="form-select form-select-sm"
+                              value={item.vat_rate === 'Esclusa art. 15' || item.vat_rate === -1 ? 'Esclusa art. 15' : String(item.vat_rate)}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                if (value === 'Esclusa art. 15') {
+                                  updateItem(index, 'vat_rate', 'Esclusa art. 15');
+                                } else {
+                                  updateItem(index, 'vat_rate', parseFloat(value) || 22);
+                                }
+                              }}
                               style={{ width: '100%' }}
-                              min="0"
-                              max="100"
-                            />
+                            >
+                              <option value="0">0%</option>
+                              <option value="4">4%</option>
+                              <option value="10">10%</option>
+                              <option value="22">22%</option>
+                              <option value="Esclusa art. 15">Esclusa art. 15</option>
+                            </select>
                           </td>
                           <td>
                             <button

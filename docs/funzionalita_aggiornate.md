@@ -1,7 +1,48 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-**Versione corrente**: v2.39.0  
+**Versione corrente**: v2.40.0  
 **Ultimo aggiornamento**: Gennaio 2025
+
+---
+
+## v2.40.0 - Miglioramenti Preventivi e Upload Vercel Blob
+
+**Data implementazione**: Gennaio 2025  
+**Stato**: ✅ Completato e testato
+
+### 💰 Campo IVA% Avanzato nei Preventivi
+
+#### 🆕 Supporto "Esclusa art. 15"
+- **Funzionalità**: Aggiunta opzione "Esclusa art. 15" nel campo IVA% delle righe preventivo
+- **Comportamento**:
+  - Select con opzioni: 0%, 4%, 10%, 22%, Esclusa art. 15
+  - Quando selezionata "Esclusa art. 15", l'IVA non viene calcolata per quella riga
+  - Salvataggio nel database come valore speciale (-1)
+  - Visualizzazione corretta al caricamento dei dati esistenti
+- **Calcolo IVA**: L'IVA viene calcolata per riga, escludendo automaticamente le righe con "Esclusa art. 15"
+- **File**: `src/components/ManualQuoteEntryModal.tsx`
+
+### 📄 Upload Documenti Preventivi su Vercel Blob
+
+#### 🔧 Upload Sempre su Vercel Blob (anche in locale)
+- **Comportamento**: Upload documenti preventivi sempre su Vercel Blob se `BLOB_READ_WRITE_TOKEN` è disponibile
+- **Prima**: Solo in produzione
+- **Dopo**: Anche in sviluppo locale se il token è presente
+- **Path**: `quote-documents/{quoteId}_{timestamp}_{filename}`
+- **File**: `src/app/api/vehicles/quotes/route.ts`
+
+#### 🔧 Upload Documenti Fatture su Vercel Blob (anche in locale)
+- **Comportamento**: Upload documenti fatture preventivi sempre su Vercel Blob se `BLOB_READ_WRITE_TOKEN` è disponibile
+- **Prima**: Solo in produzione
+- **Dopo**: Anche in sviluppo locale se il token è presente
+- **Path**: `quote-invoice-documents/{quoteId}_{timestamp}_{filename}`
+- **File**: `src/app/api/vehicles/quotes/[id]/documents/route.ts`
+
+#### 🔗 Gestione URL Documenti
+- **Download documenti**: Corretta gestione URL per download documenti preventivi
+- **Comportamento**: Se `file_path` è un URL completo (Vercel Blob), viene usato direttamente
+- **Fallback**: Altrimenti viene usato l'endpoint API `/api/files/`
+- **File**: `src/app/vehicles/[plate]/page.tsx`
 
 ---
 

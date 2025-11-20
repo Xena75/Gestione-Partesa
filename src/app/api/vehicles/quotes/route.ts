@@ -479,23 +479,32 @@ export async function POST(request: NextRequest) {
       }
 
       try {
-        // Determina se siamo in produzione e abbiamo il token Blob
-        const isProduction = process.env.NODE_ENV === 'production';
+        // Upload su Vercel Blob Storage (sempre se disponibile il token)
         const hasBlobToken = !!process.env.BLOB_READ_WRITE_TOKEN;
         
         let filePath: string;
         
-        if (isProduction && hasBlobToken) {
-          // PRODUZIONE: Usa Vercel Blob Storage
+        if (hasBlobToken) {
+          // Usa Vercel Blob Storage (sia in produzione che in sviluppo se disponibile)
           const blobName = `quote-documents/${quoteId}_${Date.now()}_${attachment.name}`;
           
-          const blob = await put(blobName, attachment, {
-            access: 'public',
-            addRandomSuffix: false
-          });
-          filePath = blob.url;
+          try {
+            // Converti File in Buffer per Vercel Blob
+            const arrayBuffer = await attachment.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            
+            const blob = await put(blobName, buffer, {
+              access: 'public',
+              addRandomSuffix: false,
+              contentType: attachment.type || 'application/octet-stream'
+            });
+            
+            filePath = blob.url;
+          } catch (blobError: any) {
+            throw new Error(`Errore durante upload file su Vercel Blob: ${blobError?.message || 'Errore sconosciuto'}`);
+          }
         } else {
-          // SVILUPPO: Salva localmente
+          // Fallback: Salva localmente se non c'è il token
           const fileName = `${quoteId}_${Date.now()}_${attachment.name}`;
           const uploadDir = join(process.cwd(), 'uploads', 'quote-documents');
           const localFilePath = join(uploadDir, fileName);
