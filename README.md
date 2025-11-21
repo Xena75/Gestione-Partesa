@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.40.0
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.41.0
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -111,6 +111,23 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Database esteso**: Tabelle `employee_leave_requests` e `employee_leave_balance` ottimizzate
 - **Campo leave_type**: Convertito da ENUM a VARCHAR per supportare tipi personalizzati ⭐ **NUOVO v2.35.5**
  - **Conteggio giorni corretto in dashboard**: Allineata la card "Ferie e Permessi utilizzati" ai giorni approvati dell'anno corrente (2025). Calcolo aggiornato via `scripts/recalculate-leave-balances.js` con filtro `status='approved'` e `YEAR(start_date)=2025` ⭐ **NUOVO v2.35.8**
+
+### 📦 **Sistema Resi e Vuoti Non Fatturati** ⭐ **NUOVO v2.41.0**
+- **Gestione completa**: Sistema integrato per gestione ritiri resi e vuoti non fatturati
+- **Modal inserimento**: Form di inserimento in modal invece di pagina separata per UX migliorata ⭐ **NUOVO v2.41.0**
+- **Inserimento batch**: Possibilità di inserire una bolla con multiple righe prodotto in un'unica operazione
+- **Lookup automatico**: Ricerca automatica cliente e prodotto con visualizzazione descrizioni
+- **Calcolo automatico**: Calcolo automatico ID_TARIFFA, Tariffa e Totale_compenso per ogni riga
+- **Gestione depositi**: Dropdown depositi con possibilità di aggiungere nuovi valori
+- **Filtri avanzati**: Sistema filtri completo per ricerca e analisi dati (Deposito, Cliente, Prodotto, Date, ecc.)
+- **Statistiche aggregate**: Visualizzazione totale colli e totale compenso per tutti i record filtrati
+- **Performance ottimizzate**: Lookup e calcoli ottimizzati con debounce ridotto e useCallback ⭐ **NUOVO v2.41.0**
+- **Gestione spazi database**: Corretto lookup prodotti con gestione spazi finali nel database
+- **Validazione completa**: Validazione client-side e server-side per tutti i campi obbligatori
+- **Database dedicato**: Tabella `resi_vuoti_non_fatturati` nel database `gestionelogistica`
+- **Import Excel**: Sistema import iniziale da file Excel con calcolo automatico campi derivati
+- **API batch**: Endpoint `/api/resi-vuoti/batch` per inserimento multiplo ottimizzato
+- **Interfaccia responsive**: Tabella con sorting, paginazione e filtri organizzati su due righe
 
 ### 🔧 **Aggiornamenti Database e Compatibilità Next.js 15** ⭐ **AGGIORNATO v2.35.8**
 - **Correzione ID dipendente**: Aggiornato ID "Alberto Racano" → "Alberto Vincenzo Racano" con transazione atomica

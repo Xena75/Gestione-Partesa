@@ -1,7 +1,82 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-**Versione corrente**: v2.40.0  
+**Versione corrente**: v2.41.0  
 **Ultimo aggiornamento**: Gennaio 2025
+
+---
+
+## v2.41.0 - Sistema Resi e Vuoti Non Fatturati - Modal e Ottimizzazioni
+
+**Data implementazione**: Gennaio 2025  
+**Stato**: ✅ Completato e testato
+
+### 📦 Conversione Pagina in Modal
+
+#### 🆕 Modal Inserimento Resi e Vuoti
+- **Funzionalità**: Convertita la pagina `/resi-vuoti/nuovo` in modal integrato nella pagina principale
+- **Vantaggi**:
+  - UX migliorata: inserimento senza navigazione tra pagine
+  - Ricaricamento automatico: lista aggiornata automaticamente dopo il salvataggio
+  - Reset automatico: form resettato quando il modal viene chiuso
+  - Interfaccia integrata: tutto in un'unica schermata
+- **File**: `src/components/NuovoResiVuotiModal.tsx`
+- **Integrazione**: Modal integrato in `src/app/resi-vuoti/page.tsx`
+
+### 🔍 Miglioramenti Lookup Prodotto
+
+#### 🆕 Gestione Spazi Database
+- **Problema risolto**: I prodotti nel database hanno spazi finali (es: "0104T             " invece di "0104T")
+- **Soluzione**: Query SQL con `TRIM(UPPER(cod_articolo))` e fallback con `LIKE` per gestire spazi
+- **Risultato**: Lookup prodotti funziona correttamente anche con spazi finali
+- **File**: `src/app/api/resi-vuoti/lookup/route.ts`
+
+#### 🆕 Visualizzazione Descrizione Prodotto
+- **Problema risolto**: Descrizione prodotto non veniva mostrata anche se il prodotto era trovato
+- **Soluzione**: Aggiunto flag `prodottoTrovato` per tracciare correttamente lo stato del lookup
+- **Comportamento**: Descrizione mostrata sempre quando disponibile, anche se `classe_prod` è presente ma `descr_articolo` è vuoto
+- **File**: `src/app/resi-vuoti/nuovo/page.tsx` (ora `src/components/NuovoResiVuotiModal.tsx`)
+
+### ⚡ Ottimizzazioni Performance
+
+#### 🆕 Debounce Ridotto
+- **Lookup cliente**: Debounce ridotto da 500ms a 300ms per risposta più rapida
+- **Lookup prodotto**: Eseguito immediatamente con `requestAnimationFrame` invece di `setTimeout`
+
+#### 🆕 useCallback e Memoizzazione
+- **Funzioni memoizzate**: `lookupProdotto`, `ricalcolaTariffa`, `ricalcolaTotaleCompenso`, `handleRigaProdottoChange`
+- **Vantaggi**: Evita ricreazioni inutili delle funzioni, migliorando le performance
+- **Prevenzione chiamate duplicate**: Aggiunto `lookupInProgressRef` per evitare chiamate API duplicate
+
+#### 🆕 requestAnimationFrame
+- **Sostituzione setTimeout**: Uso di `requestAnimationFrame` per eseguire calcoli dopo il render
+- **Vantaggi**: Non blocca l'interfaccia utente durante i calcoli
+
+### 💰 Correzioni Calcolo Totale Compenso
+
+#### 🔧 Calcolo Corretto
+- **Problema risolto**: Totale compenso non veniva calcolato correttamente quando tariffa e colli erano presenti
+- **Causa**: Uso dello stato iniziale invece dello stato corrente durante il calcolo asincrono
+- **Soluzione**: Uso di `current.find()` per ottenere sempre i Colli aggiornati quando viene recuperata la tariffa
+- **File**: `src/components/NuovoResiVuotiModal.tsx`
+
+### 🗄️ Correzione Inserimento Batch SQL
+
+#### 🔧 Sintassi SQL Corretta
+- **Problema risolto**: Errore SQL "You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '?'"
+- **Causa**: Sintassi `VALUES ?` non valida per inserimenti multipli con mysql2
+- **Soluzione**: Costruzione corretta dei placeholder `(?, ?, ...), (?, ?, ...)` e appiattimento array valori
+- **File**: `src/app/api/resi-vuoti/batch/route.ts`
+
+### 🔐 Autenticazione e Route Protection
+
+#### 🆕 Route Protetta
+- **Aggiunta**: Route `/resi-vuoti` aggiunta alle route protette del middleware
+- **Comportamento**: Richiede autenticazione per accedere alla pagina e alle API
+- **File**: `src/middleware.ts`
+
+#### 🆕 Credentials Include
+- **Aggiunta**: `credentials: 'include'` a tutte le chiamate API per includere cookie di autenticazione
+- **File**: `src/app/resi-vuoti/page.tsx`, `src/components/NuovoResiVuotiModal.tsx`
 
 ---
 

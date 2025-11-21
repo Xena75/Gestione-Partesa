@@ -61,7 +61,8 @@ const protectedRoutes = [
   '/monitoraggio',
   '/fatturazione',
   '/backup-dashboard',
-  '/autisti/dashboard'
+  '/autisti/dashboard',
+  '/resi-vuoti'
 ];
 
 

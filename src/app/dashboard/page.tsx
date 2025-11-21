@@ -2241,10 +2241,16 @@ export default function ModernDashboard() {
                       Fatturazione Delivery
                     </Link>
                   </div>
-                  <div className="col-12">
+                  <div className="col-6">
                     <Link href="/handling" className="btn btn-outline-primary btn-action btn-sm w-100">
                       <Package size={16} className="me-1" />
                       Fatturazione Handling
+                    </Link>
+                  </div>
+                  <div className="col-6">
+                    <Link href="/resi-vuoti" className="btn btn-outline-primary btn-action btn-sm w-100">
+                      <Package size={16} className="me-1" />
+                      Resi e Vuoti non fatturati
                     </Link>
                   </div>
                 </div>
