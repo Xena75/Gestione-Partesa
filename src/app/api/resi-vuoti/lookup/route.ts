@@ -63,53 +63,81 @@ export async function GET(request: NextRequest) {
       });
 
     } else if (type === 'prodotto') {
-      // Lookup prodotto - gestisce spazi finali nel database
+      // Lookup prodotto - gestisce spazi finali nel database e preferisce versione senza spazi
       // Pulisci il codice ricevuto da eventuali spazi e converti in maiuscolo
       const codeClean = code.trim().toUpperCase();
       
-      console.log(`[Lookup Prodotto] Codice ricevuto: "${code}" (lunghezza: ${code.length}), pulito: "${codeClean}"`);
+      console.log(`[Lookup Prodotto API] Codice ricevuto: "${code}" (lunghezza: ${code.length}), pulito: "${codeClean}"`);
       
-      // Prova prima con TRIM e UPPER
-      let [rows] = await connection.execute(
-        `SELECT DISTINCT cod_articolo, descr_articolo, classe_prod 
+      // Query migliorata: cerca tutte le varianti e preferisce quella senza spazi
+      // Usa GROUP BY con MIN per ottenere la versione più corta (senza spazi) quando ci sono duplicati
+      const [rows] = await connection.execute(
+        `SELECT 
+           TRIM(cod_articolo) as cod_articolo,
+           MAX(descr_articolo) as descr_articolo,
+           MAX(classe_prod) as classe_prod,
+           MIN(LENGTH(cod_articolo)) as min_length
          FROM fatt_delivery 
-         WHERE TRIM(UPPER(cod_articolo)) = ? 
+         WHERE TRIM(UPPER(cod_articolo)) = ?
+         GROUP BY TRIM(cod_articolo)
+         ORDER BY min_length ASC
          LIMIT 1`,
         [codeClean]
       ) as [any[], any];
 
-      console.log(`[Lookup Prodotto] Query TRIM(UPPER): ${rows.length} risultati`);
+      console.log(`[Lookup Prodotto API] Query esatta (TRIM+UPPER=): ${rows.length} risultati`);
 
-      // Se non trovato, prova con LIKE (gestisce spazi finali)
-      if (!rows || rows.length === 0) {
-        [rows] = await connection.execute(
-          `SELECT DISTINCT cod_articolo, descr_articolo, classe_prod 
+      // Se non trovato con TRIM, prova con LIKE come fallback
+      let resultRows = rows;
+      if (!resultRows || resultRows.length === 0) {
+        console.log(`[Lookup Prodotto API] Nessun risultato con query esatta, provo LIKE fallback...`);
+        [resultRows] = await connection.execute(
+          `SELECT 
+             TRIM(cod_articolo) as cod_articolo,
+             MAX(descr_articolo) as descr_articolo,
+             MAX(classe_prod) as classe_prod,
+             MIN(LENGTH(cod_articolo)) as min_length
            FROM fatt_delivery 
-           WHERE UPPER(cod_articolo) LIKE ? 
+           WHERE UPPER(cod_articolo) LIKE ?
+           GROUP BY TRIM(cod_articolo)
+           ORDER BY min_length ASC
            LIMIT 1`,
           [`${codeClean}%`]
         ) as [any[], any];
         
-        console.log(`[Lookup Prodotto] Query LIKE fallback: ${rows.length} risultati`);
+        console.log(`[Lookup Prodotto API] Query LIKE fallback: ${resultRows.length} risultati`);
       }
 
-      if (!rows || rows.length === 0) {
+      if (!resultRows || resultRows.length === 0) {
+        console.log(`[Lookup Prodotto API] ❌ Prodotto "${codeClean}" non trovato`);
         return NextResponse.json({
           success: false,
           message: 'Prodotto non trovato'
         });
       }
 
-      console.log(`[Lookup Prodotto] Prodotto trovato: cod_articolo="${rows[0].cod_articolo}", descr="${rows[0].descr_articolo?.substring(0, 30)}...", classe_prod="${rows[0].classe_prod}"`);
+      const result = resultRows[0];
+      console.log(`[Lookup Prodotto API] ✅ Prodotto trovato:`);
+      console.log(`   cod_articolo: "${result.cod_articolo}"`);
+      console.log(`   descr_articolo: "${result.descr_articolo?.substring(0, 60)}..."`);
+      console.log(`   classe_prod: "${result.classe_prod}"`);
 
-      return NextResponse.json({
+      const responseData = {
         success: true,
         data: {
-          cod_articolo: rows[0].cod_articolo?.trim() || rows[0].cod_articolo,
-          descr_articolo: rows[0].descr_articolo?.trim() || rows[0].descr_articolo || '',
-          classe_prod: rows[0].classe_prod?.trim() || rows[0].classe_prod
+          cod_articolo: result.cod_articolo?.trim() || result.cod_articolo,
+          descr_articolo: result.descr_articolo?.trim() || result.descr_articolo || '',
+          classe_prod: result.classe_prod?.trim() || result.classe_prod
         }
+      };
+      
+      console.log(`[Lookup Prodotto API] Risposta inviata:`, {
+        cod_articolo: responseData.data.cod_articolo,
+        descr_articolo: responseData.data.descr_articolo?.substring(0, 60),
+        classe_prod: responseData.data.classe_prod
       });
+
+      return NextResponse.json(responseData);
 
     } else {
       return NextResponse.json(

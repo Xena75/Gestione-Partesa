@@ -59,12 +59,15 @@ export default function NuovoResiVuotiModal({ isOpen, onClose, onSuccess }: Nuov
   const [vettoriOptions, setVettoriOptions] = useState<string[]>([]);
   const [showNewDepositoInput, setShowNewDepositoInput] = useState(false);
   const [newDepositoName, setNewDepositoName] = useState('');
+  const [showNewVettoreInput, setShowNewVettoreInput] = useState(false);
+  const [newVettoreName, setNewVettoreName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
   const [lookupLoading, setLookupLoading] = useState(false);
   const lookupTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lookupInProgressRef = useRef<Set<string>>(new Set());
+  const lookupRequestIdRef = useRef<Map<string, number>>(new Map()); // Traccia l'ID della richiesta per ogni riga
 
   // Reset form quando il modal viene chiuso
   useEffect(() => {
@@ -86,6 +89,16 @@ export default function NuovoResiVuotiModal({ isOpen, onClose, onSuccess }: Nuov
       setSuccess('');
       setShowNewDepositoInput(false);
       setNewDepositoName('');
+      setShowNewVettoreInput(false);
+      setNewVettoreName('');
+      
+      // Pulisci timeout e ref di lookup
+      if (lookupTimeoutRef.current) {
+        clearTimeout(lookupTimeoutRef.current);
+        lookupTimeoutRef.current = null;
+      }
+      lookupInProgressRef.current.clear();
+      lookupRequestIdRef.current.clear();
     }
   }, [isOpen]);
 
@@ -220,6 +233,25 @@ export default function NuovoResiVuotiModal({ isOpen, onClose, onSuccess }: Nuov
     setError('');
   };
 
+  const handleAddNewVettore = () => {
+    const vettoreName = newVettoreName.trim();
+    if (!vettoreName) {
+      setError('Inserisci il nome del vettore');
+      return;
+    }
+
+    if (vettoriOptions.includes(vettoreName)) {
+      setError('Questo vettore esiste già');
+      return;
+    }
+
+    setVettoriOptions(prev => [...prev, vettoreName].sort());
+    setBollaData(prev => ({ ...prev, VETTORE: vettoreName }));
+    setShowNewVettoreInput(false);
+    setNewVettoreName('');
+    setError('');
+  };
+
   // Aggiungi nuova riga prodotto
   const handleAddRigaProdotto = () => {
     const newRiga: ProdottoRiga = {
@@ -319,8 +351,10 @@ export default function NuovoResiVuotiModal({ isOpen, onClose, onSuccess }: Nuov
   }, [clienteLookup.div, clienteLookup.classe_tariffa]);
 
   // Lookup prodotto
-  const lookupProdotto = useCallback(async (rigaId: string, codProd: string) => {
+  const lookupProdotto = useCallback(async (rigaId: string, codProd: string, requestId: number) => {
     const codProdClean = codProd.trim().toUpperCase();
+    
+    console.log(`[Modal Lookup] Richiesta lookup per riga ${rigaId}, codice: "${codProd}" (pulito: "${codProdClean}"), requestId: ${requestId}`);
     
     if (!codProdClean || codProdClean.length < 2) {
       setRigheProdotto(prev => prev.map(r => 
@@ -332,6 +366,7 @@ export default function NuovoResiVuotiModal({ isOpen, onClose, onSuccess }: Nuov
     // Evita chiamate duplicate per lo stesso prodotto
     const lookupKey = `${rigaId}-${codProdClean}`;
     if (lookupInProgressRef.current.has(lookupKey)) {
+      console.log(`[Modal Lookup] Lookup già in corso per ${lookupKey}, skip`);
       return;
     }
 
@@ -343,34 +378,66 @@ export default function NuovoResiVuotiModal({ isOpen, onClose, onSuccess }: Nuov
       });
       const data = await response.json();
       
-      if (data.success && data.data) {
-        // Prodotto trovato se abbiamo almeno classe_prod (necessario per calcolare tariffa)
-        const prodottoTrovato = !!data.data.classe_prod;
-        // Pulisci la descrizione da spazi e mostra sempre se presente
-        const descrArticolo = data.data.descr_articolo ? data.data.descr_articolo.trim() : '';
+      console.log(`[Modal Lookup] Risposta API per "${codProdClean}" (requestId: ${requestId}):`, {
+        success: data.success,
+        cod_articolo: data.data?.cod_articolo,
+        descr_articolo: data.data?.descr_articolo?.substring(0, 50),
+        classe_prod: data.data?.classe_prod
+      });
+      
+      // Verifica che questa risposta sia ancora valida (il codice nella riga non è cambiato)
+      setRigheProdotto(prev => {
+        const riga = prev.find(r => r.id === rigaId);
+        if (!riga) return prev;
         
-        setRigheProdotto(prev => prev.map(r => {
-          if (r.id === rigaId) {
-            return {
-              ...r,
-              descr_articolo: descrArticolo,
-              classe_prod: data.data.classe_prod,
-              prodottoTrovato: prodottoTrovato
-            };
-          }
-          return r;
-        }));
+        const currentCodProd = riga.Cod_Prod.trim().toUpperCase();
+        const currentRequestId = lookupRequestIdRef.current.get(rigaId) || 0;
         
-        if (prodottoTrovato) {
-          ricalcolaTariffa(rigaId);
+        // Se il codice è cambiato o c'è una richiesta più recente, ignora questa risposta
+        if (currentCodProd !== codProdClean || currentRequestId > requestId) {
+          console.log(`[Modal Lookup] Risposta obsoleta ignorata: codice attuale="${currentCodProd}", risposta="${codProdClean}", requestId attuale=${currentRequestId}, risposta=${requestId}`);
+          return prev;
         }
-      } else {
-        setRigheProdotto(prev => prev.map(r => 
-          r.id === rigaId ? { ...r, descr_articolo: undefined, classe_prod: undefined, prodottoTrovato: false } : r
-        ));
-      }
+        
+        if (data.success && data.data) {
+          // Prodotto trovato se abbiamo almeno classe_prod (necessario per calcolare tariffa)
+          const prodottoTrovato = !!data.data.classe_prod;
+          // Pulisci la descrizione da spazi e mostra sempre se presente
+          const descrArticolo = data.data.descr_articolo ? data.data.descr_articolo.trim() : '';
+          
+          console.log(`[Modal Lookup] Aggiornamento stato riga ${rigaId} (requestId: ${requestId}):`, {
+            descrArticolo: descrArticolo.substring(0, 50),
+            classe_prod: data.data.classe_prod,
+            prodottoTrovato
+          });
+          
+          return prev.map(r => {
+            if (r.id === rigaId) {
+              const updated = {
+                ...r,
+                descr_articolo: descrArticolo,
+                classe_prod: data.data.classe_prod,
+                prodottoTrovato: prodottoTrovato
+              };
+              
+              // Calcola tariffa se prodotto trovato
+              if (prodottoTrovato) {
+                setTimeout(() => ricalcolaTariffa(rigaId), 0);
+              }
+              
+              return updated;
+            }
+            return r;
+          });
+        } else {
+          console.log(`[Modal Lookup] Prodotto non trovato per "${codProdClean}" (requestId: ${requestId})`);
+          return prev.map(r => 
+            r.id === rigaId ? { ...r, descr_articolo: undefined, classe_prod: undefined, prodottoTrovato: false } : r
+          );
+        }
+      });
     } catch (err) {
-      console.error('Errore lookup prodotto:', err);
+      console.error('[Modal Lookup] Errore lookup prodotto:', err);
       setRigheProdotto(prev => prev.map(r => 
         r.id === rigaId ? { ...r, prodottoTrovato: false } : r
       ));
@@ -394,6 +461,10 @@ export default function NuovoResiVuotiModal({ isOpen, onClose, onSuccess }: Nuov
             updatedRiga.Tariffa = undefined;
             updatedRiga.Totale_compenso = undefined;
             updatedRiga.prodottoTrovato = undefined;
+            
+            // Incrementa requestId per questa riga per invalidare richieste precedenti
+            const currentRequestId = lookupRequestIdRef.current.get(id) || 0;
+            lookupRequestIdRef.current.set(id, currentRequestId + 1);
           }
           
           return updatedRiga;
@@ -401,12 +472,21 @@ export default function NuovoResiVuotiModal({ isOpen, onClose, onSuccess }: Nuov
         return riga;
       });
       
-      // Se cambia Cod_Prod, fai lookup immediatamente (senza setTimeout)
+      // Se cambia Cod_Prod, fai lookup con debounce per evitare troppe chiamate
       if (field === 'Cod_Prod') {
-        // Usa requestAnimationFrame per evitare blocchi durante il render
-        requestAnimationFrame(() => {
-          lookupProdotto(id, value);
-        });
+        // Cancella timeout precedente se esiste
+        if (lookupTimeoutRef.current) {
+          clearTimeout(lookupTimeoutRef.current);
+        }
+        
+        // Debounce: aspetta 500ms dopo l'ultimo carattere digitato
+        lookupTimeoutRef.current = setTimeout(() => {
+          const riga = updated.find(r => r.id === id);
+          if (riga) {
+            const requestId = lookupRequestIdRef.current.get(id) || 0;
+            lookupProdotto(id, riga.Cod_Prod, requestId);
+          }
+        }, 500);
       }
       
       // Se cambia Colli, ricalcola Totale_compenso immediatamente
@@ -493,7 +573,7 @@ export default function NuovoResiVuotiModal({ isOpen, onClose, onSuccess }: Nuov
             Data_Ritiro: bollaData.Data_Ritiro || null
           },
           righe: righeProdotto.map(riga => ({
-            Cod_Prod: riga.Cod_Prod.toUpperCase().trim(),
+            Cod_Prod: riga.Cod_Prod ? riga.Cod_Prod.trim().toUpperCase() : '', // Sempre pulito: maiuscolo e senza spazi
             Colli: parseInt(riga.Colli)
           }))
         })
@@ -574,29 +654,45 @@ export default function NuovoResiVuotiModal({ isOpen, onClose, onSuccess }: Nuov
                       <label htmlFor="Deposito" className="form-label">
                         Deposito <span className="text-danger">*</span>
                       </label>
-                      <div className="d-flex gap-2">
-                        <select
-                          className="form-select"
-                          id="Deposito"
-                          name="Deposito"
-                          value={bollaData.Deposito}
-                          onChange={handleBollaInputChange}
-                          required
-                        >
-                          <option value="">-- Seleziona deposito --</option>
-                          {depositiOptions.map((deposito) => (
-                            <option key={deposito} value={deposito}>
-                              {deposito}
-                            </option>
-                          ))}
-                        </select>
-                        {bollaData.Deposito === '' && (
+                      <div className="d-flex gap-2 align-items-start">
+                        <div className="flex-grow-1">
+                          <select
+                            className="form-select"
+                            id="Deposito"
+                            name="Deposito"
+                            value={bollaData.Deposito}
+                            onChange={(e) => {
+                              if (e.target.value === '__NEW__') {
+                                setShowNewDepositoInput(true);
+                                setBollaData(prev => ({ ...prev, Deposito: '' }));
+                              } else {
+                                handleBollaInputChange(e);
+                              }
+                            }}
+                            required
+                            disabled={showNewDepositoInput}
+                          >
+                            <option value="">-- Seleziona deposito --</option>
+                            {depositiOptions.map((deposito) => (
+                              <option key={deposito} value={deposito}>
+                                {deposito}
+                              </option>
+                            ))}
+                            <option value="__NEW__">+ Aggiungi nuovo deposito</option>
+                          </select>
+                        </div>
+                        {!showNewDepositoInput && (
                           <button
                             type="button"
                             className="btn btn-outline-secondary"
-                            onClick={() => setShowNewDepositoInput(!showNewDepositoInput)}
+                            onClick={() => {
+                              setShowNewDepositoInput(true);
+                              setBollaData(prev => ({ ...prev, Deposito: '' }));
+                            }}
+                            title="Aggiungi nuovo deposito"
+                            style={{ flexShrink: 0 }}
                           >
-                            <Plus size={16} />
+                            <Plus size={18} />
                           </button>
                         )}
                       </div>
@@ -608,7 +704,18 @@ export default function NuovoResiVuotiModal({ isOpen, onClose, onSuccess }: Nuov
                             placeholder="Nome nuovo deposito"
                             value={newDepositoName}
                             onChange={(e) => setNewDepositoName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                handleAddNewDeposito();
+                              } else if (e.key === 'Escape') {
+                                e.preventDefault();
+                                setShowNewDepositoInput(false);
+                                setNewDepositoName('');
+                              }
+                            }}
                             maxLength={100}
+                            autoFocus
                           />
                           <button
                             type="button"
@@ -708,20 +815,87 @@ export default function NuovoResiVuotiModal({ isOpen, onClose, onSuccess }: Nuov
 
                     <div className="col-md-6 mb-3">
                       <label htmlFor="VETTORE" className="form-label">Vettore</label>
-                      <select
-                        className="form-select"
-                        id="VETTORE"
-                        name="VETTORE"
-                        value={bollaData.VETTORE}
-                        onChange={handleBollaInputChange}
-                      >
-                        <option value="">-- Seleziona vettore --</option>
-                        {vettoriOptions.map((vettore) => (
-                          <option key={vettore} value={vettore}>
-                            {vettore}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="d-flex gap-2 align-items-start">
+                        <div className="flex-grow-1">
+                          <select
+                            className="form-select"
+                            id="VETTORE"
+                            name="VETTORE"
+                            value={bollaData.VETTORE}
+                            onChange={(e) => {
+                              if (e.target.value === '__NEW__') {
+                                setShowNewVettoreInput(true);
+                                setBollaData(prev => ({ ...prev, VETTORE: '' }));
+                              } else {
+                                handleBollaInputChange(e);
+                              }
+                            }}
+                            disabled={showNewVettoreInput}
+                          >
+                            <option value="">-- Seleziona vettore --</option>
+                            {vettoriOptions.map((vettore) => (
+                              <option key={vettore} value={vettore}>
+                                {vettore}
+                              </option>
+                            ))}
+                            <option value="__NEW__">+ Aggiungi nuovo vettore</option>
+                          </select>
+                        </div>
+                        {!showNewVettoreInput && (
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary"
+                            onClick={() => {
+                              setShowNewVettoreInput(true);
+                              setBollaData(prev => ({ ...prev, VETTORE: '' }));
+                            }}
+                            title="Aggiungi nuovo vettore"
+                            style={{ flexShrink: 0 }}
+                          >
+                            <Plus size={18} />
+                          </button>
+                        )}
+                      </div>
+                      {showNewVettoreInput && (
+                        <div className="mt-2 d-flex gap-2">
+                          <input
+                            type="text"
+                            className="form-control form-control-sm"
+                            placeholder="Nome nuovo vettore"
+                            value={newVettoreName}
+                            onChange={(e) => setNewVettoreName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                handleAddNewVettore();
+                              } else if (e.key === 'Escape') {
+                                e.preventDefault();
+                                setShowNewVettoreInput(false);
+                                setNewVettoreName('');
+                              }
+                            }}
+                            maxLength={100}
+                            autoFocus
+                          />
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-primary"
+                            onClick={handleAddNewVettore}
+                          >
+                            Aggiungi
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-secondary"
+                            onClick={() => {
+                              setShowNewVettoreInput(false);
+                              setNewVettoreName('');
+                            }}
+                          >
+                            Annulla
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     <div className="col-md-6 mb-3">

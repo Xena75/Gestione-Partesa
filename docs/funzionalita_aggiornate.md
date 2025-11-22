@@ -1,7 +1,34 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-**Versione corrente**: v2.41.0  
+**Versione corrente**: v2.42.0  
 **Ultimo aggiornamento**: Gennaio 2025
+
+---
+
+## v2.42.0 - Sistema Resi e Vuoti - Aggiunta Nuovo Vettore
+
+**Data implementazione**: Gennaio 2025  
+**Stato**: ✅ Completato e testato
+
+### 🚚 Inserimento Nuovo Vettore
+
+#### 🆕 Funzionalità Aggiunta
+- **Possibilità di inserire nuovo vettore**: Aggiunta la stessa funzionalità già presente per il deposito anche al campo Vettore
+- **Opzioni disponibili**:
+  - Opzione "+ Aggiungi nuovo vettore" nel dropdown
+  - Pulsante "+" sempre visibile accanto al dropdown
+  - Campo di input per inserire il nome del nuovo vettore
+  - Validazione: controllo che il vettore non esista già
+  - Tastiera: Enter per confermare, Escape per annullare
+- **Comportamento**: Il nuovo vettore viene aggiunto alla lista e selezionato automaticamente
+- **Reset automatico**: Gli stati vengono resettati quando il modal viene chiuso
+- **File**: `src/components/NuovoResiVuotiModal.tsx`
+
+#### ✅ Benefici
+- **Consistenza UX**: Stessa esperienza utente per Deposito e Vettore
+- **Flessibilità**: Possibilità di aggiungere nuovi vettori senza modificare il database manualmente
+- **Validazione**: Prevenzione duplicati con controllo automatico
+- **Usabilità**: Supporto tastiera per operazioni rapide
 
 ---
 

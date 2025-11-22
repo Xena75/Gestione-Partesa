@@ -80,13 +80,17 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      // Recupera dati prodotto
+      // Recupera dati prodotto - preferisce versione senza spazi quando ci sono duplicati
       const [prodRows] = await connection.execute(
-        `SELECT DISTINCT classe_prod, descr_articolo 
+        `SELECT 
+           MAX(classe_prod) as classe_prod,
+           MAX(descr_articolo) as descr_articolo
          FROM fatt_delivery 
-         WHERE cod_articolo = ? 
+         WHERE TRIM(UPPER(cod_articolo)) = ?
+         GROUP BY TRIM(cod_articolo)
+         ORDER BY MIN(LENGTH(cod_articolo)) ASC
          LIMIT 1`,
-        [Cod_Prod]
+        [Cod_Prod.toUpperCase()]
       ) as [any[], any];
 
       if (!prodRows || prodRows.length === 0) {
@@ -114,7 +118,9 @@ export async function POST(request: NextRequest) {
       // Calcola Totale_compenso
       const totaleCompenso = tariffa !== null && !isNaN(tariffa) ? Colli * tariffa : null;
 
-      // Prepara valori per inserimento
+      // Prepara valori per inserimento - assicura che Cod_Prod sia sempre pulito (maiuscolo, senza spazi)
+      const Cod_Prod_Clean = Cod_Prod.trim().toUpperCase();
+      
       values.push([
         bolla.Riferimento || null,
         bolla.Data_rif_ddt,
@@ -122,7 +128,7 @@ export async function POST(request: NextRequest) {
         bolla.Cod_Cliente,
         ragione_sociale,
         bolla.VETTORE || null,
-        Cod_Prod,
+        Cod_Prod_Clean, // Sempre pulito: maiuscolo e senza spazi
         descr_articolo,
         bolla.Deposito,
         Colli,

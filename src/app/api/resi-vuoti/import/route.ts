@@ -151,13 +151,17 @@ export async function POST(request: NextRequest) {
           const classe_tariffa = clienteRows[0].classe_tariffa;
           const ragione_sociale = clienteRows[0].ragione_sociale || null;
 
-          // Recupera dati da fatt_delivery per Cod_Prod (DISTINCT)
+          // Recupera dati da fatt_delivery per Cod_Prod - preferisce versione senza spazi quando ci sono duplicati
           const [prodRows] = await connection.execute(
-            `SELECT DISTINCT classe_prod, descr_articolo 
+            `SELECT 
+               MAX(classe_prod) as classe_prod,
+               MAX(descr_articolo) as descr_articolo
              FROM fatt_delivery 
-             WHERE cod_articolo = ? 
+             WHERE TRIM(UPPER(cod_articolo)) = ?
+             GROUP BY TRIM(cod_articolo)
+             ORDER BY MIN(LENGTH(cod_articolo)) ASC
              LIMIT 1`,
-            [codProd]
+            [codProd.toUpperCase()]
           ) as [any[], any];
 
           if (!prodRows || prodRows.length === 0) {
@@ -197,6 +201,9 @@ export async function POST(request: NextRequest) {
           // Calcola Totale_compenso
           const totaleCompenso = tariffa !== null && !isNaN(tariffa) ? colli * tariffa : null;
 
+          // Assicura che codProd sia sempre pulito (maiuscolo, senza spazi) prima dell'inserimento
+          const codProdClean = codProd.trim().toUpperCase();
+          
           // Prepara valori per inserimento
           values.push([
             riferimento,
@@ -205,7 +212,7 @@ export async function POST(request: NextRequest) {
             codCliente,
             ragione_sociale,
             vettore,
-            codProd,
+            codProdClean, // Sempre pulito: maiuscolo e senza spazi
             descr_articolo,
             deposito,
             colli,

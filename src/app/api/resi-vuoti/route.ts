@@ -70,11 +70,23 @@ export async function POST(request: NextRequest) {
     const classe_tariffa = clienteRows[0].classe_tariffa;
     const ragione_sociale = clienteRows[0].ragione_sociale || null;
 
-    // Recupera dati da fatt_delivery per Cod_Prod (DISTINCT)
+    // Recupera dati da fatt_delivery per Cod_Prod - preferisce versione senza spazi quando ci sono duplicati
+    if (!Cod_Prod) {
+      await connection.rollback();
+      return NextResponse.json(
+        { error: 'Cod_Prod è obbligatorio' },
+        { status: 400 }
+      );
+    }
+
     const [prodRows] = await connection.execute(
-      `SELECT DISTINCT classe_prod, descr_articolo 
+      `SELECT 
+         MAX(classe_prod) as classe_prod,
+         MAX(descr_articolo) as descr_articolo
        FROM fatt_delivery 
-       WHERE cod_articolo = ? 
+       WHERE TRIM(UPPER(cod_articolo)) = ?
+       GROUP BY TRIM(cod_articolo)
+       ORDER BY MIN(LENGTH(cod_articolo)) ASC
        LIMIT 1`,
       [Cod_Prod]
     ) as [any[], any];
@@ -118,6 +130,9 @@ export async function POST(request: NextRequest) {
     // Calcola Totale_compenso
     const totaleCompenso = tariffa !== null && !isNaN(tariffa) ? Colli * tariffa : null;
 
+    // Assicura che Cod_Prod sia sempre pulito (maiuscolo, senza spazi)
+    const Cod_Prod_Clean = Cod_Prod ? Cod_Prod.trim().toUpperCase() : null;
+    
     // Inserisci nella tabella
     const [result] = await connection.execute(
       `INSERT INTO resi_vuoti_non_fatturati 
@@ -130,7 +145,7 @@ export async function POST(request: NextRequest) {
         Cod_Cliente,
         ragione_sociale,
         VETTORE || null,
-        Cod_Prod,
+        Cod_Prod_Clean, // Sempre pulito: maiuscolo e senza spazi
         descr_articolo,
         deposito,
         Colli,
