@@ -1,7 +1,43 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-**Versione corrente**: v2.42.0  
+**Versione corrente**: v2.43.0  
 **Ultimo aggiornamento**: Gennaio 2025
+
+---
+
+## v2.43.0 - Sistema Resi e Vuoti - Modifica Record e Correzioni
+
+**Data implementazione**: Gennaio 2025  
+**Stato**: ✅ Completato e testato
+
+### ✏️ Modifica Record Esistenti
+
+#### 🆕 Funzionalità Modifica
+- **Modal di modifica**: Aggiunta possibilità di modificare i record inseriti direttamente dalla tabella
+- **Pulsante modifica**: Aggiunta colonna "Azioni" con pulsante modifica per ogni record
+- **Componente dedicato**: Creato `ModificaResiVuotiModal.tsx` per gestire la modifica dei record
+- **API endpoint**: Creato endpoint `PUT /api/resi-vuoti/[id]` per aggiornare i record esistenti
+- **Ricalcolo automatico**: ID_TARIFFA, Tariffa e Totale_compenso vengono ricalcolati automaticamente durante la modifica
+- **Lookup automatico**: Lookup cliente e prodotto con debounce durante la modifica
+- **File**: 
+  - `src/components/ModificaResiVuotiModal.tsx`
+  - `src/app/api/resi-vuoti/[id]/route.ts`
+  - `src/app/resi-vuoti/page.tsx`
+
+#### 🔧 Correzioni Caricamento Dati
+- **Problema risolto**: La data "Data rif/ddt" non veniva caricata correttamente nel modal di modifica
+- **Soluzione**: 
+  - Aggiunte funzioni helper `normalizeDateToISO` e `normalizeDateToItalian` per gestire diversi formati di data
+  - Migliorato il caricamento iniziale dei dati con fallback multipli
+  - Gestione preservazione valore ISO durante la digitazione
+  - Conversione automatica nel submit se necessario
+- **Risultato**: La data viene sempre caricata e visualizzata correttamente nel formato italiano (gg/mm/aaaa)
+
+#### ✅ Benefici
+- **Correzione errori**: Possibilità di correggere record inseriti per errore senza doverli eliminare e reinserire
+- **Efficienza**: Modifica rapida direttamente dalla tabella senza navigazione
+- **Affidabilità**: Gestione robusta delle date con supporto per diversi formati
+- **UX migliorata**: Feedback visivo durante il caricamento e messaggi di successo/errore
 
 ---
 

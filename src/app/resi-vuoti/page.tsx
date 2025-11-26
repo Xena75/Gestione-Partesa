@@ -3,9 +3,10 @@
 import { Suspense, useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, ArrowUpDown, ArrowUp, ArrowDown, Filter, X } from 'lucide-react';
+import { Plus, ArrowUpDown, ArrowUp, ArrowDown, Filter, X, Edit } from 'lucide-react';
 import { formatDateEuropean, convertItalianToISO } from '@/lib/date-utils';
 import NuovoResiVuotiModal from '@/components/NuovoResiVuotiModal';
+import ModificaResiVuotiModal from '@/components/ModificaResiVuotiModal';
 
 interface ResiVuotiRecord {
   id: number;
@@ -49,6 +50,8 @@ function ResiVuotiContent() {
   const [totalPages, setTotalPages] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const [showNuovoModal, setShowNuovoModal] = useState(false);
+  const [showModificaModal, setShowModificaModal] = useState(false);
+  const [recordDaModificare, setRecordDaModificare] = useState<ResiVuotiRecord | null>(null);
   const [stats, setStats] = useState({
     totale_colli: 0,
     totale_compenso: 0
@@ -511,12 +514,13 @@ function ResiVuotiContent() {
                           <th style={{ cursor: 'pointer' }} onClick={() => handleSort('created_at')}>
                             Creato il {renderSortIcon('created_at')}
                           </th>
+                          <th>Azioni</th>
                         </tr>
                       </thead>
                       <tbody>
                         {data.length === 0 ? (
                           <tr>
-                            <td colSpan={16} className="text-center py-4 text-muted">
+                            <td colSpan={17} className="text-center py-4 text-muted">
                               Nessun record trovato
                             </td>
                           </tr>
@@ -538,6 +542,18 @@ function ResiVuotiContent() {
                               <td>{formatDate(record.Data_Ritiro)}</td>
                               <td>{record.ID_TARIFFA || '-'}</td>
                               <td className="text-muted small">{formatDate(record.created_at)}</td>
+                              <td>
+                                <button
+                                  className="btn btn-sm btn-outline-primary"
+                                  onClick={() => {
+                                    setRecordDaModificare(record);
+                                    setShowModificaModal(true);
+                                  }}
+                                  title="Modifica record"
+                                >
+                                  <Edit size={14} />
+                                </button>
+                              </td>
                             </tr>
                           ))
                         )}
@@ -626,6 +642,42 @@ function ResiVuotiContent() {
               console.error('Errore nel ricaricare i dati:', error);
             });
         }}
+      />
+
+      {/* Modal Modifica Record */}
+      <ModificaResiVuotiModal
+        isOpen={showModificaModal}
+        onClose={() => {
+          setShowModificaModal(false);
+          setRecordDaModificare(null);
+        }}
+        onSuccess={() => {
+          // Ricarica i dati dopo l'aggiornamento
+          const params = new URLSearchParams();
+          params.set('page', currentPage.toString());
+          params.set('limit', limit.toString());
+          params.set('sortBy', sortBy);
+          params.set('sortOrder', sortOrder);
+          
+          Object.entries(filters).forEach(([key, value]) => {
+            if (value) params.set(key, value);
+          });
+
+          fetch(`/api/resi-vuoti?${params.toString()}`, {
+            credentials: 'include'
+          })
+            .then(response => response.json())
+            .then(result => {
+              setData(result.data || []);
+              setTotalRecords(result.pagination?.total || 0);
+              setTotalPages(result.pagination?.totalPages || 1);
+              setStats(result.stats || { totale_colli: 0, totale_compenso: 0 });
+            })
+            .catch(error => {
+              console.error('Errore nel ricaricare i dati:', error);
+            });
+        }}
+        record={recordDaModificare}
       />
     </div>
   );
