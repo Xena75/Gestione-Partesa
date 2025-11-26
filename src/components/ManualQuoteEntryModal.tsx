@@ -694,7 +694,7 @@ export default function ManualQuoteEntryModal({
             ></button>
           </div>
 
-          <div className="modal-body" style={{ overflow: 'visible', flex: '1', overflowY: 'auto' }}>
+          <div className="modal-body" style={{ overflow: 'auto', flex: '1', overflowY: 'auto', overflowX: 'hidden' }}>
             {loading && (
               <div className="text-center py-4">
                 <div className="spinner-border text-primary" role="status">
@@ -1001,7 +1001,7 @@ export default function ManualQuoteEntryModal({
             {/* Righe */}
             <div className="row">
               <div className="col-12">
-                <div className="d-flex justify-content-between align-items-center mb-2">
+                <div className="d-flex justify-content-between align-items-center mb-2 sticky-top" style={{ backgroundColor: modalBg, zIndex: 10, padding: '10px 0', marginTop: '-10px', marginBottom: '10px' }}>
                   <h6 className={`mb-0 ${textClass}`}>📦 Righe Preventivo ({items.length})</h6>
                   <button 
                     className="btn btn-sm btn-success"
@@ -1012,9 +1012,9 @@ export default function ManualQuoteEntryModal({
                     Aggiungi Riga
                   </button>
                 </div>
-                <div className="table-responsive" style={{ maxHeight: 'none', overflowY: 'visible', overflowX: 'visible' }}>
+                <div className="table-responsive" style={{ overflowX: 'auto' }}>
                   <table className="table table-sm table-hover" style={{ width: '100%', tableLayout: 'auto' }}>
-                    <thead className="sticky-top" style={{ backgroundColor: modalBg }}>
+                    <thead className="sticky-top" style={{ backgroundColor: modalBg, zIndex: 5 }}>
                       <tr>
                         <th className={textClass} style={{ width: '40px' }}>#</th>
                         <th className={textClass} style={{ width: '10%' }}>Codice</th>
@@ -1483,6 +1483,17 @@ export default function ManualQuoteEntryModal({
                       ))}
                     </tbody>
                   </table>
+                </div>
+                {/* Pulsante aggiungi riga anche in fondo alla tabella per facilità d'uso */}
+                <div className="d-flex justify-content-center mt-3">
+                  <button 
+                    className="btn btn-sm btn-success"
+                    onClick={addItem}
+                    title="Aggiungi riga"
+                  >
+                    <i className="fas fa-plus me-1"></i>
+                    Aggiungi Riga ({items.length + 1})
+                  </button>
                 </div>
               </div>
             </div>
