@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { AlertTriangle, FileText, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import { formatDateItalian } from '@/lib/date-utils';
@@ -140,7 +140,7 @@ export default function DocumentExpiryAlert({ className = '', showDismissed = fa
     color: string,
     bgColor: string,
     borderColor: string,
-    icon: JSX.Element
+    icon: React.ReactElement
   ) => {
     if (documents.length === 0) return null;
 
