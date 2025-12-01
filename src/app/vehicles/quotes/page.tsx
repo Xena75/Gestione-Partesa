@@ -125,8 +125,11 @@ function VehicleQuotesContent() {
   const [filterSupplier, setFilterSupplier] = useState<string>(searchParams?.get('filterSupplier') || 'all');
   const [filterInvoiceStatus, setFilterInvoiceStatus] = useState<string>(searchParams?.get('filterInvoiceStatus') || 'all');
   const [filterDiscrepancies, setFilterDiscrepancies] = useState<string>(searchParams?.get('filterDiscrepancies') || 'all');
+  const [filterHasDetail, setFilterHasDetail] = useState<string>(searchParams?.get('filterHasDetail') || 'all');
   const [searchTarga, setSearchTarga] = useState<string>(searchParams?.get('searchTarga') || '');
   const [searchTargaInput, setSearchTargaInput] = useState<string>(searchParams?.get('searchTarga') || ''); // Stato locale per l'input
+  const [searchQuoteNumber, setSearchQuoteNumber] = useState<string>(searchParams?.get('searchQuoteNumber') || '');
+  const [searchQuoteNumberInput, setSearchQuoteNumberInput] = useState<string>(searchParams?.get('searchQuoteNumber') || ''); // Stato locale per l'input
   
   // Stati per modale inserimento manuale
   const [showManualModal, setShowManualModal] = useState(false);
@@ -159,6 +162,31 @@ function VehicleQuotesContent() {
     }
   }, [searchParams]);
 
+  // Debounce per la ricerca per numero offerta
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchQuoteNumberInput !== searchQuoteNumber) {
+        setSearchQuoteNumber(searchQuoteNumberInput);
+      }
+    }, 500); // 500ms di debounce
+
+    return () => clearTimeout(timer);
+  }, [searchQuoteNumberInput, searchQuoteNumber]);
+
+  // Aggiorna URL quando searchQuoteNumber cambia (dopo il debounce)
+  useEffect(() => {
+    updateURLParams({ searchQuoteNumber });
+  }, [searchQuoteNumber]);
+
+  // Sincronizza searchQuoteNumberInput con i parametri URL (per navigazione browser)
+  useEffect(() => {
+    const urlSearchQuoteNumber = searchParams?.get('searchQuoteNumber') || '';
+    if (urlSearchQuoteNumber !== searchQuoteNumberInput) {
+      setSearchQuoteNumberInput(urlSearchQuoteNumber);
+      setSearchQuoteNumber(urlSearchQuoteNumber);
+    }
+  }, [searchParams]);
+
   // Sincronizza sortBy e sortOrder con i parametri URL (per ordinamento cliccabile)
   useEffect(() => {
     const urlSortBy = searchParams?.get('sortBy') || 'created_at';
@@ -180,7 +208,9 @@ function VehicleQuotesContent() {
     filterSupplier?: string;
     filterInvoiceStatus?: string;
     filterDiscrepancies?: string;
+    filterHasDetail?: string;
     searchTarga?: string;
+    searchQuoteNumber?: string;
   } = {}) => {
     const params = new URLSearchParams();
     
@@ -191,7 +221,9 @@ function VehicleQuotesContent() {
     const currentFilterSupplier = updates.filterSupplier !== undefined ? updates.filterSupplier : filterSupplier;
     const currentFilterInvoiceStatus = updates.filterInvoiceStatus !== undefined ? updates.filterInvoiceStatus : filterInvoiceStatus;
     const currentFilterDiscrepancies = updates.filterDiscrepancies !== undefined ? updates.filterDiscrepancies : filterDiscrepancies;
+    const currentFilterHasDetail = updates.filterHasDetail !== undefined ? updates.filterHasDetail : filterHasDetail;
     const currentSearchTarga = updates.searchTarga !== undefined ? updates.searchTarga : searchTarga;
+    const currentSearchQuoteNumber = updates.searchQuoteNumber !== undefined ? updates.searchQuoteNumber : searchQuoteNumber;
     
     // Aggiungi parametri solo se diversi dai valori di default
     if (currentSortBy !== 'created_at') {
@@ -212,13 +244,19 @@ function VehicleQuotesContent() {
     if (currentFilterDiscrepancies !== 'all') {
       params.set('filterDiscrepancies', currentFilterDiscrepancies);
     }
+    if (currentFilterHasDetail !== 'all') {
+      params.set('filterHasDetail', currentFilterHasDetail);
+    }
     if (currentSearchTarga !== '') {
       params.set('searchTarga', currentSearchTarga);
+    }
+    if (currentSearchQuoteNumber !== '') {
+      params.set('searchQuoteNumber', currentSearchQuoteNumber);
     }
     
     const newURL = params.toString() ? `?${params.toString()}` : '';
     router.push(`/vehicles/quotes${newURL}`, { scroll: false });
-  }, [sortBy, sortOrder, filterStatus, filterSupplier, filterInvoiceStatus, filterDiscrepancies, searchTarga, router]);
+  }, [sortBy, sortOrder, filterStatus, filterSupplier, filterInvoiceStatus, filterDiscrepancies, filterHasDetail, searchTarga, searchQuoteNumber, router]);
 
   // Funzioni per gestire i cambiamenti dei filtri (ottimizzate con useCallback)
   const handleSortByChange = useCallback((value: string) => {
@@ -270,11 +308,13 @@ function VehicleQuotesContent() {
     if (filterSupplier !== 'all') params.set('filterSupplier', filterSupplier);
     if (filterInvoiceStatus !== 'all') params.set('filterInvoiceStatus', filterInvoiceStatus);
     if (filterDiscrepancies !== 'all') params.set('filterDiscrepancies', filterDiscrepancies);
+    if (filterHasDetail !== 'all') params.set('filterHasDetail', filterHasDetail);
     if (searchTarga !== '') params.set('searchTarga', searchTarga);
+    if (searchQuoteNumber !== '') params.set('searchQuoteNumber', searchQuoteNumber);
     
     const newURL = params.toString() ? `?${params.toString()}` : '';
     router.push(`/vehicles/quotes${newURL}`, { scroll: false });
-  }, [sortBy, sortOrder, filterStatus, filterSupplier, filterInvoiceStatus, filterDiscrepancies, searchTarga, router, searchParams]);
+  }, [sortBy, sortOrder, filterStatus, filterSupplier, filterInvoiceStatus, filterDiscrepancies, filterHasDetail, searchTarga, searchQuoteNumber, router, searchParams]);
 
   const handleFilterStatusChange = useCallback((value: string) => {
     setFilterStatus(value);
@@ -296,8 +336,17 @@ function VehicleQuotesContent() {
     updateURLParams({ filterDiscrepancies: value });
   }, []);
 
+  const handleFilterHasDetailChange = useCallback((value: string) => {
+    setFilterHasDetail(value);
+    updateURLParams({ filterHasDetail: value });
+  }, []);
+
   const handleSearchTargaChange = useCallback((value: string) => {
     setSearchTargaInput(value); // Aggiorna solo lo stato locale dell'input
+  }, []);
+
+  const handleSearchQuoteNumberChange = useCallback((value: string) => {
+    setSearchQuoteNumberInput(value); // Aggiorna solo lo stato locale dell'input
   }, []);
 
   // Funzione per generare URL con filtri correnti per la navigazione
@@ -322,8 +371,14 @@ function VehicleQuotesContent() {
     if (filterDiscrepancies !== 'all') {
       params.set('filterDiscrepancies', filterDiscrepancies);
     }
+    if (filterHasDetail !== 'all') {
+      params.set('filterHasDetail', filterHasDetail);
+    }
     if (searchTarga !== '') {
       params.set('searchTarga', searchTarga);
+    }
+    if (searchQuoteNumber !== '') {
+      params.set('searchQuoteNumber', searchQuoteNumber);
     }
     
     return params.toString() ? `?${params.toString()}` : '';
@@ -366,9 +421,23 @@ function VehicleQuotesContent() {
       }
     }
     
+    if (filterHasDetail !== 'all') {
+      if (filterHasDetail === 'yes') {
+        filtered = filtered.filter(quote => quote.has_items === 1);
+      } else if (filterHasDetail === 'no') {
+        filtered = filtered.filter(quote => quote.has_items !== 1);
+      }
+    }
+    
     if (searchTarga) {
       filtered = filtered.filter(quote => 
         quote.targa.toLowerCase().includes(searchTarga.toLowerCase())
+      );
+    }
+    
+    if (searchQuoteNumber) {
+      filtered = filtered.filter(quote => 
+        quote.quote_number && quote.quote_number.toLowerCase().includes(searchQuoteNumber.toLowerCase())
       );
     }
     
@@ -402,7 +471,7 @@ function VehicleQuotesContent() {
     });
     
     return filtered;
-  }, [allQuotes, filterStatus, filterSupplier, filterInvoiceStatus, filterDiscrepancies, searchTarga, sortBy, sortOrder]);
+  }, [allQuotes, filterStatus, filterSupplier, filterInvoiceStatus, filterDiscrepancies, filterHasDetail, searchTarga, searchQuoteNumber, sortBy, sortOrder]);
 
   // Aggiorna quotes quando i filtri cambiano
   useEffect(() => {
@@ -910,21 +979,31 @@ function VehicleQuotesContent() {
           {/* Filters and Sorting */}
           <div className={`card mb-4 ${cardClass}`}>
             <div className="card-body">
-              <div className="row">
-                <div className="col-lg-2 col-md-2 col-sm-12 mb-3">
-                  <label className={`form-label ${textClass}`}>Cerca per Targa</label>
+              <div className="row g-2">
+                <div className="col-lg col-md-3 col-sm-6">
+                  <label className={`form-label small ${textClass}`}>Cerca per Targa</label>
                   <input 
                     type="text"
-                    className="form-control"
-                    placeholder="Inserisci targa..."
+                    className="form-control form-control-sm"
+                    placeholder="Targa..."
                     value={searchTargaInput}
                     onChange={(e) => handleSearchTargaChange(e.target.value)}
                   />
                 </div>
-                <div className="col-lg-1 col-md-2 col-sm-12 mb-3">
-                  <label className={`form-label ${textClass}`}>Stato</label>
+                <div className="col-lg col-md-3 col-sm-6">
+                  <label className={`form-label small ${textClass}`}>N. Offerta</label>
+                  <input 
+                    type="text"
+                    className="form-control form-control-sm"
+                    placeholder="N. Offerta..."
+                    value={searchQuoteNumberInput}
+                    onChange={(e) => handleSearchQuoteNumberChange(e.target.value)}
+                  />
+                </div>
+                <div className="col-lg col-md-2 col-sm-6">
+                  <label className={`form-label small ${textClass}`}>Stato</label>
                   <select 
-                    className="form-select"
+                    className="form-select form-select-sm"
                     value={filterStatus}
                     onChange={(e) => handleFilterStatusChange(e.target.value)}
                   >
@@ -935,10 +1014,10 @@ function VehicleQuotesContent() {
                     <option value="expired">Scaduti</option>
                   </select>
                 </div>
-                <div className="col-lg-2 col-md-2 col-sm-12 mb-3">
-                  <label className={`form-label ${textClass}`}>Fornitore</label>
+                <div className="col-lg-2 col-md-3 col-sm-6">
+                  <label className={`form-label small ${textClass}`}>Fornitore</label>
                   <select 
-                    className="form-select"
+                    className="form-select form-select-sm"
                     value={filterSupplier}
                     onChange={(e) => handleFilterSupplierChange(e.target.value)}
                   >
@@ -950,10 +1029,10 @@ function VehicleQuotesContent() {
                     ))}
                   </select>
                 </div>
-                <div className="col-lg-2 col-md-2 col-sm-12 mb-3">
-                  <label className={`form-label ${textClass}`}>Stato Fatturazione</label>
+                <div className="col-lg col-md-2 col-sm-6">
+                  <label className={`form-label small ${textClass}`}>Stato Fatt.</label>
                   <select 
-                    className="form-select"
+                    className="form-select form-select-sm"
                     value={filterInvoiceStatus}
                     onChange={(e) => handleFilterInvoiceStatusChange(e.target.value)}
                   >
@@ -964,10 +1043,10 @@ function VehicleQuotesContent() {
                     <option value="not_applicable">Non Applicabile</option>
                   </select>
                 </div>
-                <div className="col-lg-1 col-md-2 col-sm-12 mb-3">
-                  <label className={`form-label ${textClass}`}>Discrepanze</label>
+                <div className="col-lg col-md-2 col-sm-6">
+                  <label className={`form-label small ${textClass}`}>Discrepanze</label>
                   <select 
-                    className="form-select"
+                    className="form-select form-select-sm"
                     value={filterDiscrepancies}
                     onChange={(e) => handleFilterDiscrepanciesChange(e.target.value)}
                   >
@@ -976,10 +1055,22 @@ function VehicleQuotesContent() {
                     <option value="false">Senza</option>
                   </select>
                 </div>
-                <div className="col-lg-2 col-md-2 col-sm-12 mb-3">
-                  <label className={`form-label ${textClass}`}>Ordina per</label>
+                <div className="col-lg col-md-2 col-sm-6">
+                  <label className={`form-label small ${textClass}`}>Dettaglio</label>
                   <select 
-                    className="form-select"
+                    className="form-select form-select-sm"
+                    value={filterHasDetail}
+                    onChange={(e) => handleFilterHasDetailChange(e.target.value)}
+                  >
+                    <option value="all">Tutti</option>
+                    <option value="yes">Con Dettaglio</option>
+                    <option value="no">Senza Dettaglio</option>
+                  </select>
+                </div>
+                <div className="col-lg-2 col-md-3 col-sm-6">
+                  <label className={`form-label small ${textClass}`}>Ordina per</label>
+                  <select 
+                    className="form-select form-select-sm"
                     value={sortBy}
                     onChange={(e) => handleSortByChange(e.target.value)}
                   >
@@ -995,10 +1086,10 @@ function VehicleQuotesContent() {
                     <option value="targa">Veicolo</option>
                   </select>
                 </div>
-                <div className="col-lg-2 col-md-2 col-sm-12 mb-3">
-                  <label className={`form-label ${textClass}`}>Ordine</label>
+                <div className="col-lg col-md-2 col-sm-6">
+                  <label className={`form-label small ${textClass}`}>Ordine</label>
                   <select 
-                    className="form-select"
+                    className="form-select form-select-sm"
                     value={sortOrder}
                     onChange={(e) => handleSortOrderChange(e.target.value as 'asc' | 'desc')}
                   >

@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.41.0
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.42.0
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -253,6 +253,35 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Caricamento veloce**: Eliminazione query separate per dati veicolo
 
 ## ✨ **NUOVE FUNZIONALITÀ IMPLEMENTATE**
+
+### 🎨 **Ottimizzazioni UI Preventivi e Dashboard - v2.42.0** ⭐ **NUOVO**
+
+#### 🎯 **Miglioramenti Interfaccia Preventivi**
+- **Rimozione duplicati**: Eliminato pulsante "Aggiungi Riga" duplicato nel footer del modal
+- **Posizionamento intelligente dropdown**: Dropdown autocompletamento codici si posiziona dinamicamente per rimanere sempre visibile anche con tabelle lunghe
+- **Input numerici ottimizzati**: Rimossi spinner incremento/decremento da input numerici mantenendo editabilità manuale
+- **Pulsanti azione nell'header**: Spostati pulsanti "Annulla" e "Salva Righe" nell'header delle righe per migliore accessibilità
+
+#### 🔍 **Filtri Preventivi Avanzati**
+- **Filtro presenza dettaglio**: Nuovo filtro per filtrare preventivi con/senza righe dettaglio
+- **Filtro numero offerta**: Ricerca per numero offerta con debounce per performance ottimali
+- **Layout filtri ottimizzato**: Tutti i filtri organizzati su una singola riga con distribuzione automatica spazio
+- **Responsive design**: Layout adattivo per tablet e mobile
+
+#### 📊 **Dashboard Documenti in Scadenza**
+- **Card integrate**: Trasformati alert documenti veicoli in scadenza in card moderne integrate nella sezione "Avvisi e Notifiche"
+- **Raggruppamento intelligente**: Card separate per documenti scaduti, in scadenza critica (≤7 giorni) e in scadenza (8-30 giorni)
+- **Design uniforme**: Stile glassmorphism coerente con altre card della dashboard
+- **Modal dettagli**: Click su card apre modal con elenco completo documenti e link diretti per gestione
+
+#### ✅ **Benefici Operativi**
+- ✅ Interfaccia più pulita e organizzata
+- ✅ Migliore utilizzo spazio disponibile
+- ✅ Esperienza utente migliorata con controlli più accessibili
+- ✅ Dashboard più uniforme e professionale
+- ✅ Ricerca e filtri più efficienti
+
+---
 
 ### 👥 **Gestione Stato Dipendenti (Attivo/Inattivo) - v2.36.0** ⭐ **NUOVO**
 

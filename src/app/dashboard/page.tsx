@@ -954,8 +954,6 @@ export default function ModernDashboard() {
           </div>
         </div>
 
-        {/* Alert Scadenze Documenti */}
-        <DocumentExpiryAlert className="mb-4" />
 
         {/* Sezione Avvisi e Notifiche */}
         {(pendingLeaveCount > 0 || expiredMaintenanceCount > 0 || expiringMaintenanceCount > 0 || criticalSchedulesCount > 0 || approachingSchedulesCount > 0 || expiredDocumentsCount > 0 || expiringDocumentsCount > 0) && (
@@ -1965,6 +1963,9 @@ export default function ModernDashboard() {
                     </div>
                   </div>
                   )}
+
+                  {/* Card Documenti Veicoli in Scadenza */}
+                  <DocumentExpiryAlert />
                 </div>
                 )}
               </div>

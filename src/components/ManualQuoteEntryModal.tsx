@@ -119,6 +119,10 @@ export default function ManualQuoteEntryModal({
   const lastSearchRef = useRef<{ value: string; index: number } | null>(null); // Traccia ultima ricerca
   const [showNewPartInput, setShowNewPartInput] = useState<{ [key: number]: boolean }>({});
   const [newPartData, setNewPartData] = useState<{ [key: number]: { codice?: string; categoria?: string; tipo: string; um: string } }>({});
+  
+  // Posizione del dropdown per mantenerlo visibile
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number; width: number } | null>(null);
+  const inputRefs = useRef<{ [key: number]: HTMLInputElement | null }>({});
 
   const textClass = theme === 'dark' ? 'text-white' : 'text-dark';
   const bgClass = theme === 'dark' ? 'bg-dark' : 'bg-white';
@@ -442,11 +446,63 @@ export default function ManualQuoteEntryModal({
     }
   };
 
+  // Calcola la posizione del dropdown per mantenerlo visibile nella viewport
+  const calculateDropdownPosition = useCallback((itemIndex: number) => {
+    const input = inputRefs.current[itemIndex];
+    if (!input) return;
+
+    const rect = input.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
+    const dropdownHeight = 200; // maxHeight del dropdown
+    const spaceBelow = viewportHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const inputWidth = rect.width;
+
+    let top: number;
+    let left: number;
+    let width: number;
+
+    // Calcola la posizione orizzontale (allinea con l'input)
+    left = rect.left;
+    width = Math.max(300, inputWidth); // minimo 300px, altrimenti larghezza input
+
+    // Se il dropdown esce a destra, spostalo a sinistra
+    if (left + width > viewportWidth) {
+      left = viewportWidth - width - 10; // 10px di margine
+    }
+
+    // Calcola la posizione verticale
+    // Se c'è spazio sotto (almeno 200px), posiziona sotto l'input
+    if (spaceBelow >= dropdownHeight) {
+      top = rect.bottom + 2; // 2px di margine
+    } 
+    // Se c'è più spazio sopra che sotto, posiziona sopra l'input
+    else if (spaceAbove > spaceBelow) {
+      top = rect.top - dropdownHeight - 2; // 2px di margine
+      // Se va sopra la viewport, posiziona in alto con scroll
+      if (top < 0) {
+        top = 10; // 10px dal top della viewport
+      }
+    }
+    // Altrimenti posiziona sotto anche se poco spazio (con scroll interno)
+    else {
+      top = rect.bottom + 2;
+      // Se va sotto la viewport, posiziona in basso con scroll
+      if (top + dropdownHeight > viewportHeight) {
+        top = viewportHeight - dropdownHeight - 10; // 10px dal bottom
+      }
+    }
+
+    setDropdownPosition({ top, left, width });
+  }, []);
+
   // Cerca pezzi nell'anagrafica per autocompletamento
   const searchParts = useCallback(async (query: string, itemIndex: number) => {
     if (!query || query.trim().length < 2) {
       setPartsSuggestions([]);
       setActiveSearchIndex(null);
+      setDropdownPosition(null);
       return;
     }
 
@@ -456,6 +512,11 @@ export default function ManualQuoteEntryModal({
       
       // Mostra sempre il dropdown se c'è una query (anche senza risultati)
       setActiveSearchIndex(itemIndex);
+      
+      // Calcola la posizione del dropdown dopo un breve delay per assicurarsi che il DOM sia aggiornato
+      setTimeout(() => {
+        calculateDropdownPosition(itemIndex);
+      }, 10);
       
       if (data.success && data.data && data.data.length > 0) {
         setPartsSuggestions(data.data);
@@ -468,8 +529,11 @@ export default function ManualQuoteEntryModal({
       // In caso di errore, mostra comunque il dropdown per permettere l'aggiunta manuale
       setPartsSuggestions([]);
       setActiveSearchIndex(itemIndex);
+      setTimeout(() => {
+        calculateDropdownPosition(itemIndex);
+      }, 10);
     }
-  }, []);
+  }, [calculateDropdownPosition]);
 
   // Seleziona un pezzo dall'autocompletamento e precompila i campi
   const selectPart = (part: { codice?: string; descrizione: string; categoria?: string; tipo: string; um: string }, itemIndex: number) => {
@@ -495,6 +559,7 @@ export default function ManualQuoteEntryModal({
     setItems(newItems);
     setPartsSuggestions([]);
     setActiveSearchIndex(null);
+    setDropdownPosition(null);
   };
 
   // Aggiungi nuovo pezzo all'anagrafica
@@ -562,6 +627,7 @@ export default function ManualQuoteEntryModal({
         if (activeSearchIndex === index) {
           setPartsSuggestions([]);
           setActiveSearchIndex(null);
+          setDropdownPosition(null);
         }
         lastSearchRef.current = null;
         // Cancella timeout se esiste
@@ -589,22 +655,39 @@ export default function ManualQuoteEntryModal({
     }
   };
 
-  // Nascondi dropdown quando si clicca fuori
+  // Nascondi dropdown quando si clicca fuori e aggiorna posizione durante lo scroll
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (activeSearchIndex !== null && !target.closest('.autocomplete-dropdown') && !target.closest('input[placeholder*="Descrizione"]')) {
         setActiveSearchIndex(null);
+        setDropdownPosition(null);
+      }
+    };
+
+    const handleScroll = () => {
+      if (activeSearchIndex !== null) {
+        calculateDropdownPosition(activeSearchIndex);
       }
     };
 
     if (activeSearchIndex !== null) {
       document.addEventListener('mousedown', handleClickOutside);
+      window.addEventListener('scroll', handleScroll, true); // true per catturare anche scroll nei container
+      const modalBody = document.querySelector('.modal-body');
+      if (modalBody) {
+        modalBody.addEventListener('scroll', handleScroll);
+      }
+      
       return () => {
         document.removeEventListener('mousedown', handleClickOutside);
+        window.removeEventListener('scroll', handleScroll, true);
+        if (modalBody) {
+          modalBody.removeEventListener('scroll', handleScroll);
+        }
       };
     }
-  }, [activeSearchIndex]);
+  }, [activeSearchIndex, calculateDropdownPosition]);
 
   const handleSave = async () => {
     // Validazione
@@ -678,8 +761,19 @@ export default function ManualQuoteEntryModal({
   if (!show) return null;
 
   return (
-    <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} tabIndex={-1}>
-      <div className="modal-dialog modal-xl modal-dialog-scrollable" style={{ maxWidth: '95%', width: '95%', maxHeight: '95vh', height: '95vh' }}>
+    <>
+      <style>{`
+        .no-spinner::-webkit-outer-spin-button,
+        .no-spinner::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        .no-spinner {
+          -moz-appearance: textfield;
+        }
+      `}</style>
+      <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} tabIndex={-1}>
+        <div className="modal-dialog modal-xl modal-dialog-scrollable" style={{ maxWidth: '95%', width: '95%', maxHeight: '95vh', height: '95vh' }}>
         <div className={`modal-content ${bgClass}`} style={{ overflow: 'visible', height: '100%', display: 'flex', flexDirection: 'column' }}>
           <div className="modal-header">
             <h5 className={`modal-title ${textClass}`}>
@@ -777,7 +871,7 @@ export default function ManualQuoteEntryModal({
                       <td>
                         <input 
                           type="number"
-                          className="form-control form-control-sm"
+                          className="form-control form-control-sm no-spinner"
                           value={vehicleKm}
                           onChange={(e) => setVehicleKm(e.target.value ? parseInt(e.target.value) : '')}
                           placeholder="Es: 150000"
@@ -961,7 +1055,7 @@ export default function ManualQuoteEntryModal({
                     <label className={`form-label small ${textClass}`}>IVA %</label>
                     <input 
                       type="number"
-                      className="form-control form-control-sm"
+                      className="form-control form-control-sm no-spinner"
                       value={taxRate}
                       onChange={(e) => setTaxRate(parseFloat(e.target.value) || 22)}
                       min="0"
@@ -1003,14 +1097,42 @@ export default function ManualQuoteEntryModal({
               <div className="col-12">
                 <div className="d-flex justify-content-between align-items-center mb-2 sticky-top" style={{ backgroundColor: modalBg, zIndex: 10, padding: '10px 0', marginTop: '-10px', marginBottom: '10px' }}>
                   <h6 className={`mb-0 ${textClass}`}>📦 Righe Preventivo ({items.length})</h6>
-                  <button 
-                    className="btn btn-sm btn-success"
-                    onClick={addItem}
-                    title="Aggiungi riga"
-                  >
-                    <i className="fas fa-plus me-1"></i>
-                    Aggiungi Riga
-                  </button>
+                  <div className="d-flex gap-2">
+                    <button 
+                      className="btn btn-sm btn-success"
+                      onClick={addItem}
+                      title="Aggiungi riga"
+                    >
+                      <i className="fas fa-plus me-1"></i>
+                      Aggiungi Riga
+                    </button>
+                    <button 
+                      type="button" 
+                      className="btn btn-sm btn-secondary" 
+                      onClick={onClose}
+                      disabled={saving}
+                    >
+                      Annulla
+                    </button>
+                    <button 
+                      type="button" 
+                      className="btn btn-sm btn-primary"
+                      onClick={handleSave}
+                      disabled={saving || loading || items.some(item => !item.description.trim())}
+                    >
+                      {saving ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2"></span>
+                          Salvataggio...
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-save me-2"></i>
+                          Salva Righe
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
                 <div className="table-responsive" style={{ overflowX: 'auto' }}>
                   <table className="table table-sm table-hover" style={{ width: '100%', tableLayout: 'auto' }}>
@@ -1046,6 +1168,7 @@ export default function ManualQuoteEntryModal({
                           </td>
                           <td style={{ position: 'relative', overflow: 'visible' }}>
                             <input 
+                              ref={(el) => { inputRefs.current[index] = el; }}
                               type="text"
                               className="form-control form-control-sm"
                               value={item.description}
@@ -1054,22 +1177,22 @@ export default function ManualQuoteEntryModal({
                               placeholder="Descrizione prodotto/servizio *"
                               required
                             />
-                            {/* Dropdown suggerimenti - POSIZIONAMENTO FIXED PER EVITARE CLIPPING */}
-                            {activeSearchIndex === index && item.description.trim().length >= 2 && (
+                            {/* Dropdown suggerimenti - POSIZIONAMENTO DINAMICO PER MANTENERLO VISIBILE */}
+                            {activeSearchIndex === index && item.description.trim().length >= 2 && dropdownPosition && (
                               <div 
                                 className="autocomplete-dropdown"
                                 style={{
                                   position: 'fixed',
+                                  top: `${dropdownPosition.top}px`,
+                                  left: `${dropdownPosition.left}px`,
+                                  width: `${dropdownPosition.width}px`,
                                   zIndex: 10000,
                                   maxHeight: '200px',
                                   overflowY: 'auto',
                                   backgroundColor: theme === 'dark' ? '#2d3238' : '#fff',
                                   border: `1px solid ${theme === 'dark' ? '#495057' : '#dee2e6'}`,
                                   borderRadius: '4px',
-                                  marginTop: '2px',
-                                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                                  minWidth: '300px',
-                                  width: '300px'
+                                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
                                 }}
                               >
                                 {partsSuggestions.length > 0 ? (
@@ -1126,6 +1249,7 @@ export default function ManualQuoteEntryModal({
                                   onClick={() => {
                                     setShowNewPartInput(prev => ({ ...prev, [index]: true }));
                                     setActiveSearchIndex(null);
+                                    setDropdownPosition(null);
                                     setNewPartData(prev => ({
                                       ...prev,
                                       [index]: {
@@ -1372,7 +1496,7 @@ export default function ManualQuoteEntryModal({
                             <input 
                               type="number"
                               step="0.01"
-                              className="form-control form-control-sm"
+                              className="form-control form-control-sm no-spinner"
                               value={item.quantity}
                               onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value) || 0)}
                               style={{ width: '100%' }}
@@ -1431,7 +1555,7 @@ export default function ManualQuoteEntryModal({
                             <input 
                               type="number"
                               step="0.01"
-                              className="form-control form-control-sm"
+                              className="form-control form-control-sm no-spinner"
                               value={item.discount_percent}
                               onChange={(e) => updateItem(index, 'discount_percent', parseFloat(e.target.value) || 0)}
                               style={{ width: '100%' }}
@@ -1484,17 +1608,6 @@ export default function ManualQuoteEntryModal({
                     </tbody>
                   </table>
                 </div>
-                {/* Pulsante aggiungi riga anche in fondo alla tabella per facilità d'uso */}
-                <div className="d-flex justify-content-center mt-3">
-                  <button 
-                    className="btn btn-sm btn-success"
-                    onClick={addItem}
-                    title="Aggiungi riga"
-                  >
-                    <i className="fas fa-plus me-1"></i>
-                    Aggiungi Riga ({items.length + 1})
-                  </button>
-                </div>
               </div>
             </div>
               </>
@@ -1508,38 +1621,10 @@ export default function ManualQuoteEntryModal({
               I totali vengono calcolati automaticamente. Il totale riga = (Prezzo × Quantità) × (1 - Sconto%)
             </small>
           </div>
-
-          <div className="modal-footer">
-            <button 
-              type="button" 
-              className="btn btn-secondary" 
-              onClick={onClose}
-              disabled={saving}
-            >
-              Annulla
-            </button>
-            <button 
-              type="button" 
-              className="btn btn-primary"
-              onClick={handleSave}
-              disabled={saving || loading || items.some(item => !item.description.trim())}
-            >
-              {saving ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2"></span>
-                  Salvataggio...
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-save me-2"></i>
-                  Salva Righe
-                </>
-              )}
-            </button>
-          </div>
         </div>
       </div>
     </div>
+    </>
   );
 }
 
