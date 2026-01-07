@@ -1,7 +1,56 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-**Versione corrente**: v2.43.0  
+**Versione corrente**: v2.43.1  
 **Ultimo aggiornamento**: Gennaio 2025
+
+---
+
+## v2.43.1 - Estensione Periodo Sincronizzazione da 7 a 10 Giorni (Dashboard)
+
+**Data implementazione**: Gennaio 2025  
+**Stato**: ✅ Completato e testato
+
+### 🎯 Modifica Periodo Sincronizzazione Dashboard
+
+#### 🔄 Sincronizzazione Dipendenti e Terzisti
+- **Dashboard**: `/dashboard`
+- **Periodo aggiornato**: Da 7 giorni a 10 giorni
+- **File modificato**: 
+  - `src/app/dashboard/page.tsx`
+
+#### 🎨 Pulsanti Modificati
+1. **🔄 Sincronizza Dipendente** (Dashboard)
+   - Parametro API: `days=10` (precedentemente `days=7`)
+   - Messaggio: "Questa operazione sincronizzerà i dati degli ultimi 10 giorni..."
+   
+2. **🚛 Sincronizza Terzista** (Dashboard)
+   - Parametro API: `days=10` (precedentemente `days=7`)
+   - Messaggio: "Questa operazione sincronizzerà i dati dei TERZISTI degli ultimi 10 giorni..."
+
+### 🔧 Implementazione Tecnica
+
+#### Modifiche Dashboard (`src/app/dashboard/page.tsx`)
+- **handleSyncDipendenti**: Endpoint `/api/viaggi/sync-tab-viaggi?days=10`
+- **handleSyncTerzisti**: Endpoint `/api/viaggi/sync-tab-terzisti?days=10`
+
+### 📊 API Interessate
+- `/api/viaggi/sync-tab-viaggi` - Sincronizzazione dati viaggi dipendenti
+- `/api/viaggi/sync-tab-terzisti` - Sincronizzazione dati viaggi terzisti
+
+### ✅ Benefici Operativi
+- ✅ **Copertura estesa**: Sincronizzazione include 3 giorni aggiuntivi di dati rispetto alla versione precedente
+- ✅ **Maggiore affidabilità**: Ridotto rischio di perdere dati in periodi festivi o weekend
+- ✅ **Flessibilità**: Migliore gestione di ritardi nell'aggiornamento dati
+- ✅ **Coerenza**: Entrambi i pulsanti di sincronizzazione della dashboard usano lo stesso periodo (10 giorni)
+
+### 📁 File Modificati
+- `src/app/dashboard/page.tsx` - Aggiornati entrambi i pulsanti di sincronizzazione
+
+### 🔮 Note Tecniche
+- Il parametro `days` viene passato come query string all'API
+- Le API utilizzano `DATE_SUB(NOW(), INTERVAL ${days} DAY)` per filtrare i dati
+- La modifica mantiene la compatibilità con il sistema esistente
+- Nessuna modifica necessaria al backend (le API già supportano il parametro dinamico)
 
 ---
 
