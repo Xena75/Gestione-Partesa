@@ -1,0 +1,189 @@
+---
+alwaysApply: true
+---
+🧭 WORKFLOW UFFICIALE – GESTIONE DATABASE & DOCUMENTAZIONE
+
+(Da seguire SEMPRE quando si lavora su tabelle o query)
+
+------------------------------------
+🔄 WORKFLOW DATABASE
+------------------------------------
+1️⃣ Prima di fare qualsiasi modifica
+
+Controllare docs/database-reference.md
+
+Controllare la struttura reale della tabella nel database
+(colonne, tipi, indici, default, chiavi, nullability)
+
+2️⃣ Se la tabella reale è diversa dal file
+
+➡️ Aggiornare immediatamente docs/database-reference.md per riflettere la struttura reale.
+
+L’aggiornamento include:
+
+aggiunta/rimozione colonne
+
+modifiche tipi dati
+
+default aggiornati
+
+chiavi primarie/esterne corrette
+
+relazioni aggiornate
+
+note o comportamenti particolari
+
+Mai procedere allo sviluppo finché il file non è perfettamente allineato.
+
+3️⃣ Durante lo sviluppo
+
+Ogni volta che si esegue una di queste operazioni:
+
+crei una nuova tabella
+
+modifichi una tabella esistente
+
+aggiungi o rimuovi colonne
+
+modifichi tipi o constraints
+
+cambi logiche di relazione tra tabelle
+
+➡️ Aggiornare immediatamente docs/database-reference.md
+
+👉 La documentazione deve rimanere sempre “live” e sincronizzata.
+
+4️⃣ Dopo una modifica importante
+
+Ricontrollare che le query nel progetto utilizzino i nomi corretti
+
+Aggiornare eventuali file che dipendono dalla nuova struttura
+
+Se la modifica impatta API, endpoint, funzioni → aggiornare la documentazione tecnica
+
+5️⃣ Solo quando tutto è coerente
+
+➡️ Procedere con sviluppi, test, integrazioni e deploy.
+
+📘 Regola Assoluta del Workflow
+
+Il database reale è sempre la fonte di verità,
+e docs/database-reference.md deve essere sempre la sua copia fedele.
+
+Se anche una singola colonna è diversa → ripara la documentazione prima di andare avanti.
+
+------------------------------------
+2. TECNICO / AMBIENTE DI SVILUPPO
+------------------------------------
+🔹 Porte
+
+Usare sempre la porta 3001 per il progetto.
+Se la porta è occupata → chiedere quale porta usare.
+
+🔹 MySQL
+
+MySQL NON è nel PATH su Windows.
+
+Usare il percorso completo della versione inclusa in XAMPP.
+
+In PowerShell serve l’operatore & per eseguirlo.
+
+🔹 PowerShell
+
+curl non funziona correttamente →
+usare Invoke-RestMethod o Invoke-WebRequest.
+
+Attenzione alla gestione parametri → PowerShell interpreta diversamente.
+
+🔹 Test API
+
+Preferire:
+
+Postman
+
+OPPURE fetch() nella console del browser
+(Evitare curl su PowerShell)
+
+🔹 Percorsi importanti
+
+Gli script di backup si trovano qui:
+M:\Progetti\In produzione\gestione-partesa\backup-system\scripts
+
+🔹 Frontend
+
+Usare sempre Bootstrap
+
+Non utilizzare Tailwind CSS
+
+------------------------------------
+3. DOCUMENTAZIONE
+------------------------------------
+
+Quando l’utente dice “aggiorna documentazione”, la procedura è:
+
+1️⃣ Se la modifica riguarda database:
+
+Aggiornare prima:
+
+docs/database-reference.md
+
+2️⃣ Poi aggiornare:
+
+README.md
+
+funzionalita_aggiornate.md
+
+Eventuali altri documenti di progetto correlati
+
+Regola generale:
+
+La documentazione DEVE sempre essere coerente con lo stato attuale del codice.
+
+------------------------------------
+4. PULIZIA DEL PROGETTO
+------------------------------------
+
+Quando l’utente dice “fai pulizia”:
+
+🔹 Eseguire:
+
+Eliminazione file temporanei
+
+Cache
+
+Build non più necessarie
+
+File di test e file provvisori
+
+🔹 NON eliminare:
+
+File richiesti da Vercel
+
+File di configurazione fondamentali
+
+Se un file potrebbe essere utile →
+➡️ chiedere conferma prima di cancellarlo.
+
+------------------------------------
+5. DEPLOY
+------------------------------------
+
+Quando l’utente dice “deploy”, eseguire in quest’ordine:
+
+Build del progetto
+
+Test della build
+
+Commit
+
+Push
+
+------------------------------------
+6. GESTIONE BRANCH
+------------------------------------
+
+“Vai sul main” → checkout su main
+
+“Torna al mobile” → checkout su feature/mobile-responsive
+
+“Branch delle modifiche” → checkout su feature/updates

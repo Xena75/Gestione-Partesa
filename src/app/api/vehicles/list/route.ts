@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
         v.tipo_patente,
         v.active,
         COUNT(vd.id) as total_documents,
-        COUNT(CASE WHEN vd.expiry_date < CURDATE() THEN 1 END) as expired_documents,
+        COUNT(CASE WHEN vd.expiry_date < CURDATE() AND (vd.is_archived = 0 OR vd.is_archived IS NULL) THEN 1 END) as expired_documents,
         COUNT(CASE WHEN vd.expiry_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 1 END) as expiring_soon,
         COUNT(CASE WHEN vd.expiry_date > DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 1 END) as valid_documents
       FROM vehicles v

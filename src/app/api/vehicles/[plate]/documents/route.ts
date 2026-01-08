@@ -28,9 +28,45 @@ export async function GET(
     }
 
     const { plate } = await params;
+    const { searchParams } = new URL(request.url);
+    const showArchived = searchParams.get('show_archived');
+    
     const connection = await mysql.createConnection(dbConfig);
 
+    // Verifica se il campo is_archived esiste nella tabella
+    let hasArchivedField = false;
+    try {
+      const [columns] = await connection.execute(`
+        SELECT COLUMN_NAME 
+        FROM INFORMATION_SCHEMA.COLUMNS 
+        WHERE TABLE_SCHEMA = ? 
+        AND TABLE_NAME = 'vehicle_documents' 
+        AND COLUMN_NAME = 'is_archived'
+      `, [dbConfig.database]);
+      hasArchivedField = Array.isArray(columns) && columns.length > 0;
+    } catch (err) {
+      console.warn('Errore verifica campo is_archived:', err);
+    }
+
+    // Costruisci la condizione per i documenti archiviati
+    let documentFilter = '';
+    if (hasArchivedField) {
+      if (showArchived === 'false' || !showArchived) {
+        // Nascondi archiviati di default
+        documentFilter = 'AND (COALESCE(vd.is_archived, 0) = 0)';
+      } else if (showArchived === 'only') {
+        // Mostra solo archiviati
+        documentFilter = 'AND COALESCE(vd.is_archived, 0) = 1';
+      }
+      // Se showArchived === 'true', mostra tutti (inclusi archiviati) - nessun filtro
+    }
+
     // Query ottimizzata: unisce verifica veicolo e recupero documenti in una sola chiamata
+    const isArchivedSelect = hasArchivedField ? 'COALESCE(vd.is_archived, 0) as is_archived' : '0 as is_archived';
+    const archivedCase = hasArchivedField 
+      ? "WHEN COALESCE(vd.is_archived, 0) = 1 THEN 'archived'"
+      : '';
+
     const optimizedQuery = `
       SELECT 
         v.id as vehicle_id,
@@ -44,9 +80,12 @@ export async function GET(
         vd.file_name,
         vd.file_path,
         vd.file_size,
-        vd.expiry_date,
+        DATE_FORMAT(vd.expiry_date, '%Y-%m-%d') as expiry_date,
         vd.uploaded_at,
+        vd.notes,
+        ${isArchivedSelect},
         CASE 
+          ${archivedCase}
           WHEN vd.expiry_date IS NULL THEN 'no_expiry'
           WHEN vd.expiry_date < CURDATE() THEN 'expired'
           WHEN vd.expiry_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 'expiring_soon'
@@ -54,7 +93,7 @@ export async function GET(
         END as expiry_status
       FROM vehicles v
       LEFT JOIN vehicle_documents vd ON v.id = vd.vehicle_id
-      WHERE v.targa = ?
+      WHERE v.targa = ? ${documentFilter}
       ORDER BY vd.uploaded_at DESC
     `;
 
@@ -89,6 +128,8 @@ export async function GET(
         file_size: row.file_size,
         expiry_date: row.expiry_date,
         uploaded_at: row.uploaded_at,
+        notes: row.notes,
+        is_archived: row.is_archived || 0,
         expiry_status: row.expiry_status,
         targa: row.targa,
         marca: row.marca,

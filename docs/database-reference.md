@@ -1446,19 +1446,37 @@ mese                     tinyint(4)   YES       NULL                 STORED GENE
 #### vehicle_documents
 Gestisce i documenti dei veicoli con supporto per diversi tipi di documento.
 
-**Struttura aggiornata (v2.39.0):**
+**Struttura aggiornata (v2.43.2):**
 ```sql
 Field         Type                                                                                      Null  Key  Default              Extra
 id            int(11)                                                                                   NO    PRI  NULL                 auto_increment
 vehicle_id    varchar(191)                                                                              NO    MUL  NULL                 
-document_type varchar(255)                                                                               NO        NULL                                  
+document_type varchar(255)                                                                               NO        NULL                                   
 file_name     varchar(255)                                                                              NO        NULL                 
 file_path     varchar(500)                                                                              NO        NULL                 
 file_size     int(11)                                                                                   YES        NULL                 
 expiry_date   date                                                                                      YES  MUL  NULL                 
 uploaded_at   timestamp                                                                                 NO        current_timestamp()  
 notes         text                                                                                      YES        NULL                 
+is_archived   tinyint(1)                                                                                NO    MUL  0                   
 ```
+
+**Campi:**
+- `id` (INT, PRIMARY KEY): Identificativo univoco documento
+- `vehicle_id` (VARCHAR(191)): ID veicolo (FK verso vehicles.id)
+- `document_type` (VARCHAR(255)): Tipo documento (libretto, assicurazione, bollo, revisione, etc.)
+- `file_name` (VARCHAR(255)): Nome originale del file
+- `file_path` (VARCHAR(500)): Percorso file su Vercel Blob Storage o filesystem locale
+- `file_size` (INT): Dimensione file in bytes
+- `expiry_date` (DATE): Data di scadenza del documento (NULL se non ha scadenza)
+- `uploaded_at` (TIMESTAMP): Data/ora upload (default: CURRENT_TIMESTAMP)
+- `notes` (TEXT): Note aggiuntive sul documento
+- `is_archived` (TINYINT(1)): Indica se il documento è archiviato (1) o attivo (0). I documenti archiviati non vengono conteggiati come scaduti. *(Nuovo in v2.43.2)*
+
+**Indici:**
+- `idx_vehicle_documents_vehicle_id`: Indice su `vehicle_id` per join con vehicles
+- `idx_vehicle_documents_expiry_date`: Indice su `expiry_date` per query di scadenza
+- `idx_vehicle_documents_is_archived`: Indice su `is_archived` per filtri archiviati *(Nuovo in v2.43.2)*
 
 **Tipi di documento supportati:**
 - `libretto`: Libretto di Circolazione

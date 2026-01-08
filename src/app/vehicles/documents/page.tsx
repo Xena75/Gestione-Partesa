@@ -5,8 +5,9 @@ import Link from 'next/link';
 import { 
   FileText, Search, Filter, Download, Eye, Trash2, 
   Calendar, AlertTriangle, CheckCircle, Clock, 
-  Car, ToggleLeft, ToggleRight, Upload, RefreshCw
+  Car, ToggleLeft, ToggleRight, Upload, RefreshCw, Edit
 } from 'lucide-react';
+import ModificaDocumentoVeicoloModal from '@/components/ModificaDocumentoVeicoloModal';
 
 interface Vehicle {
   id: string;
@@ -36,7 +37,8 @@ interface Document {
   targa: string;
   marca: string;
   modello: string;
-  expiry_status: 'expired' | 'expiring_soon' | 'valid' | 'no_expiry';
+  expiry_status: 'expired' | 'expiring_soon' | 'valid' | 'no_expiry' | 'archived';
+  is_archived?: number;
 }
 
 interface DocumentStats {
@@ -71,6 +73,10 @@ export default function DocumentsManagement() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loadingDocuments, setLoadingDocuments] = useState(false);
   
+  // STATI PER MODAL MODIFICA
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  
   // STATI CONDIVISI
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
@@ -80,7 +86,8 @@ export default function DocumentsManagement() {
     tipo_patente: '',
     active: '',
     sort_by: 'uploaded_at',
-    sort_order: 'desc'
+    sort_order: 'desc',
+    show_archived: 'false'
   });
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     proprieta: [],
@@ -111,7 +118,7 @@ export default function DocumentsManagement() {
       console.log('📋 Caricando tutti i documenti (nessun veicolo selezionato)');
       loadAllDocuments();
     }
-  }, [selectedVehicle]);
+  }, [selectedVehicle, filters.show_archived]);
 
   // Reset della paginazione quando cambia il termine di ricerca o i filtri
   useEffect(() => {
@@ -210,7 +217,11 @@ export default function DocumentsManagement() {
     console.log('🔄 loadVehicleDocuments chiamata per targa:', plate);
     try {
       setLoadingDocuments(true);
-      const url = `/api/vehicles/${plate}/documents`;
+      const params = new URLSearchParams();
+      if (filters.show_archived) {
+        params.append('show_archived', filters.show_archived);
+      }
+      const url = `/api/vehicles/${plate}/documents${params.toString() ? '?' + params.toString() : ''}`;
       console.log('📡 Chiamando API:', url);
       
       const response = await fetch(url, {
@@ -239,7 +250,11 @@ export default function DocumentsManagement() {
   const loadAllDocuments = async () => {
     try {
       setLoadingDocuments(true);
-      const response = await fetch('/api/vehicles/documents/all', {
+      const params = new URLSearchParams();
+      if (filters.show_archived) {
+        params.append('show_archived', filters.show_archived);
+      }
+      const response = await fetch(`/api/vehicles/documents/all?${params.toString()}`, {
         credentials: 'include'
       });
       
@@ -287,6 +302,8 @@ export default function DocumentsManagement() {
 
   const getExpiryStatusBadge = (status: string, expiryDate?: string | null) => {
     switch (status) {
+      case 'archived':
+        return <span className="badge bg-dark">Archiviato</span>;
       case 'expired':
         return <span className="badge bg-danger">Scaduto</span>;
       case 'expiring_soon':
@@ -360,6 +377,20 @@ export default function DocumentsManagement() {
     } catch (error: any) {
       console.error('❌ Errore nell\'eliminazione:', error);
       alert(`Errore durante l'eliminazione: ${error.message || 'Errore sconosciuto'}`);
+    }
+  };
+
+  const handleEdit = (document: Document) => {
+    setSelectedDocument(document);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSuccess = async () => {
+    // Ricarica i documenti dopo la modifica
+    if (selectedVehicle) {
+      await loadVehicleDocuments(selectedVehicle.targa);
+    } else {
+      await loadAllDocuments();
     }
   };
 
@@ -531,7 +562,8 @@ export default function DocumentsManagement() {
                       tipo_patente: '',
                       active: '',
                       sort_by: 'uploaded_at',
-                      sort_order: 'desc'
+                      sort_order: 'desc',
+                      show_archived: 'false'
                     });
                     clearFiltersFromStorage();
                   }}
@@ -605,6 +637,20 @@ export default function DocumentsManagement() {
                         {status.label}
                       </option>
                     ))}
+                  </select>
+                </div>
+
+                {/* Filtro Mostra Archiviati */}
+                <div className="col-lg-2 col-md-4">
+                  <label className="form-label small text-muted">Archiviati</label>
+                  <select
+                    className="form-select form-select-sm"
+                    value={filters.show_archived}
+                    onChange={(e) => setFilters({...filters, show_archived: e.target.value})}
+                  >
+                    <option value="false">Nascondi</option>
+                    <option value="true">Mostra</option>
+                    <option value="only">Solo archiviati</option>
                   </select>
                 </div>
               </div>
@@ -840,6 +886,12 @@ export default function DocumentsManagement() {
                             )}
                           </td>
                           <td>
+                            {doc.expiry_status === 'archived' && (
+                              <span className="badge bg-dark">
+                                <FileText size={12} className="me-1" />
+                                Archiviato
+                              </span>
+                            )}
                             {doc.expiry_status === 'expired' && (
                               <span className="badge bg-danger">
                                 <AlertTriangle size={12} className="me-1" />
@@ -884,6 +936,16 @@ export default function DocumentsManagement() {
                                 <Eye size={14} />
                               </a>
                               <button
+                                className="btn btn-outline-warning"
+                                title="Modifica"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEdit(doc);
+                                }}
+                              >
+                                <Edit size={14} />
+                              </button>
+                              <button
                                 className="btn btn-outline-danger"
                                 title="Elimina"
                                 onClick={(e) => {
@@ -917,6 +979,17 @@ export default function DocumentsManagement() {
           )}
         </div>
       </div>
+
+      {/* Modal Modifica Documento */}
+      <ModificaDocumentoVeicoloModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedDocument(null);
+        }}
+        onSuccess={handleEditSuccess}
+        document={selectedDocument}
+      />
     </div>
   );
 }

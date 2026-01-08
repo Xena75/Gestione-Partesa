@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
       SELECT COUNT(*) as expired_documents
       FROM vehicle_documents vd
       INNER JOIN vehicles v ON vd.vehicle_id = v.id
-      WHERE v.active = 1 AND vd.expiry_date < CURDATE()
+      WHERE v.active = 1 AND vd.expiry_date < CURDATE() AND (vd.is_archived = 0 OR vd.is_archived IS NULL)
     `);
 
     const [expiringSoonResult] = await connection.execute(`
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
       SELECT 
         vd.document_type,
         COUNT(*) as count,
-        SUM(CASE WHEN vd.expiry_date < CURDATE() THEN 1 ELSE 0 END) as expired,
+        SUM(CASE WHEN vd.expiry_date < CURDATE() AND (vd.is_archived = 0 OR vd.is_archived IS NULL) THEN 1 ELSE 0 END) as expired,
         SUM(CASE WHEN vd.expiry_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) as expiring_soon
       FROM vehicle_documents vd
       INNER JOIN vehicles v ON vd.vehicle_id = v.id

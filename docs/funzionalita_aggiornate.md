@@ -1,7 +1,83 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-**Versione corrente**: v2.43.1  
+**Versione corrente**: v2.43.2  
 **Ultimo aggiornamento**: Gennaio 2025
+
+---
+
+## v2.43.2 - Sistema Archiviazione e Modifica Documenti Veicoli
+
+**Data implementazione**: Gennaio 2025  
+**Stato**: ✅ Completato e testato
+
+### 🎯 Archiviazione Documenti Veicoli
+
+#### 🆕 Funzionalità Archiviazione
+- **Campo database**: Aggiunto campo `is_archived` (TINYINT(1)) alla tabella `vehicle_documents`
+- **Migration SQL**: Eseguita migration per aggiungere il campo e l'indice
+- **Checkbox archivio**: Aggiunto checkbox "Archivio" nel modal di modifica documenti
+- **Filtro archiviati**: Aggiunto filtro per visualizzare/nascondere documenti archiviati
+- **Esclusione conteggi**: I documenti archiviati non vengono più conteggiati come scaduti nelle statistiche
+
+#### 📋 Modal Modifica Documenti
+- **Pulsante modifica**: Aggiunto pulsante "Modifica" nella colonna "Azioni" della tabella documenti
+- **Componente**: Creato `ModificaDocumentoVeicoloModal.tsx` per la modifica documenti
+- **Campi modificabili**:
+  - Tipo documento (con supporto per tipi non standard)
+  - Data scadenza (formato italiano gg/mm/aaaa)
+  - Note
+  - Nuovo allegato (opzionale)
+  - Archivio (checkbox)
+- **API endpoint**: Creato endpoint `PUT /api/vehicles/[plate]/documents/[id]` per aggiornare documenti
+- **Gestione file**: Supporto per upload nuovo file con eliminazione automatica del vecchio file
+
+#### 🔍 Filtro Documenti Archiviati
+- **Opzioni filtro**:
+  - "Nascondi" (default): Nasconde i documenti archiviati
+  - "Mostra": Mostra tutti i documenti inclusi quelli archiviati
+  - "Solo archiviati": Mostra solo i documenti archiviati
+- **Integrazione**: Filtro applicato sia nella vista per veicolo che nella vista globale
+
+#### 📊 Statistiche e Conteggi Aggiornati
+- **API aggiornate**:
+  - `/api/vehicles/documents/stats` - Esclude archiviati dai conteggi scaduti
+  - `/api/vehicles/list` - Esclude archiviati dai conteggi per veicolo
+  - `/api/vehicles/documents/expiring` - Esclude archiviati dagli alert scadenza
+  - `/api/vehicles/[plate]/documents` - Supporta filtro archiviati
+  - `/api/vehicles/documents/all` - Supporta filtro archiviati
+- **Componente alert**: `DocumentExpiryAlert` ora esclude documenti archiviati dal conteggio
+
+#### 🔧 Miglioramenti Formato Data
+- **Formato italiano**: Data scadenza visualizzata in formato gg/mm/aaaa
+- **Conversione automatica**: Conversione automatica tra formato ISO (database) e italiano (UI)
+- **Formattazione input**: Input data formattato automaticamente durante la digitazione
+- **Risoluzione timezone**: Risolto problema di shift data causato da conversioni timezone
+
+### 📁 File Modificati/Creati
+- `src/components/ModificaDocumentoVeicoloModal.tsx` (nuovo)
+- `src/app/api/vehicles/[plate]/documents/[id]/route.ts` (modificato - aggiunto PUT)
+- `src/app/api/vehicles/[plate]/documents/route.ts` (modificato - filtro archiviati)
+- `src/app/api/vehicles/documents/all/route.ts` (modificato - filtro archiviati)
+- `src/app/api/vehicles/documents/stats/route.ts` (modificato - esclusione archiviati)
+- `src/app/api/vehicles/list/route.ts` (modificato - esclusione archiviati)
+- `src/app/api/vehicles/documents/expiring/route.ts` (modificato - esclusione archiviati)
+- `src/app/vehicles/documents/page.tsx` (modificato - aggiunto modal e filtro)
+- `migrations/add_is_archived_to_vehicle_documents.sql` (nuovo)
+- `docs/database-reference.md` (aggiornato - struttura tabella)
+
+### ✅ Benefici
+- **Gestione scadenze**: Possibilità di archiviare documenti scaduti senza eliminarli
+- **Pulizia interfaccia**: Documenti archiviati non appaiono più nelle liste attive
+- **Modifica documenti**: Possibilità di aggiornare dati e allegati dei documenti
+- **Rinnovi**: Facile gestione rinnovi documenti con aggiornamento data e nuovo allegato
+- **Statistiche accurate**: Conteggi scaduti escludono documenti archiviati
+- **UX migliorata**: Formato data italiano più intuitivo per gli utenti
+
+### 🔮 Note Tecniche
+- Il campo `is_archived` ha default 0 (non archiviato)
+- L'indice `idx_vehicle_documents_is_archived` migliora le performance delle query filtrate
+- Le API verificano dinamicamente se il campo esiste per compatibilità retroattiva
+- La conversione data evita problemi di timezone usando `DATE_FORMAT` nelle query SQL
 
 ---
 

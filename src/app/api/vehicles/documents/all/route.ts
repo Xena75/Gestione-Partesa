@@ -35,6 +35,21 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit;
     const connection = await mysql.createConnection(dbConfig);
 
+    // Verifica se il campo is_archived esiste nella tabella
+    let hasArchivedField = false;
+    try {
+      const [columns] = await connection.execute(`
+        SELECT COLUMN_NAME 
+        FROM INFORMATION_SCHEMA.COLUMNS 
+        WHERE TABLE_SCHEMA = ? 
+        AND TABLE_NAME = 'vehicle_documents' 
+        AND COLUMN_NAME = 'is_archived'
+      `, [dbConfig.database]);
+      hasArchivedField = Array.isArray(columns) && columns.length > 0;
+    } catch (err) {
+      console.warn('Errore verifica campo is_archived:', err);
+    }
+
     // Costruisci la query base
     let whereConditions = ['v.active = 1'];
     let queryParams: any[] = [];
@@ -51,17 +66,47 @@ export async function GET(request: NextRequest) {
       queryParams.push(documentType);
     }
 
+    // Filtro mostra archiviati (solo se il campo esiste)
+    if (hasArchivedField) {
+      const showArchived = searchParams.get('show_archived');
+      if (showArchived === 'false' || !showArchived) {
+        // Nascondi archiviati di default
+        whereConditions.push('(COALESCE(vd.is_archived, 0) = 0)');
+      } else if (showArchived === 'only') {
+        // Mostra solo archiviati
+        whereConditions.push('COALESCE(vd.is_archived, 0) = 1');
+      }
+      // Se showArchived === 'true', mostra tutti (inclusi archiviati)
+    }
+
     // Filtro stato scadenza
     if (expiryStatus) {
       switch (expiryStatus) {
+        case 'archived':
+          if (hasArchivedField) {
+            whereConditions.push('COALESCE(vd.is_archived, 0) = 1');
+          }
+          break;
         case 'expired':
-          whereConditions.push('vd.expiry_date < CURDATE()');
+          if (hasArchivedField) {
+            whereConditions.push('vd.expiry_date < CURDATE() AND (COALESCE(vd.is_archived, 0) = 0)');
+          } else {
+            whereConditions.push('vd.expiry_date < CURDATE()');
+          }
           break;
         case 'expiring_soon':
-          whereConditions.push('vd.expiry_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)');
+          if (hasArchivedField) {
+            whereConditions.push('vd.expiry_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY) AND (COALESCE(vd.is_archived, 0) = 0)');
+          } else {
+            whereConditions.push('vd.expiry_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)');
+          }
           break;
         case 'valid':
-          whereConditions.push('(vd.expiry_date IS NULL OR vd.expiry_date > DATE_ADD(CURDATE(), INTERVAL 30 DAY))');
+          if (hasArchivedField) {
+            whereConditions.push('(vd.expiry_date IS NULL OR vd.expiry_date > DATE_ADD(CURDATE(), INTERVAL 30 DAY)) AND (COALESCE(vd.is_archived, 0) = 0)');
+          } else {
+            whereConditions.push('(vd.expiry_date IS NULL OR vd.expiry_date > DATE_ADD(CURDATE(), INTERVAL 30 DAY))');
+          }
           break;
       }
     }
@@ -98,6 +143,13 @@ export async function GET(request: NextRequest) {
     const total = (countResult as any[])[0]?.total || 0;
 
     // Query principale con paginazione
+    const isArchivedSelect = hasArchivedField 
+      ? 'COALESCE(vd.is_archived, 0) as is_archived' 
+      : '0 as is_archived';
+    const archivedCase = hasArchivedField 
+      ? "WHEN COALESCE(vd.is_archived, 0) = 1 THEN 'archived'"
+      : '';
+    
     const documentsQuery = `
       SELECT 
         vd.id,
@@ -106,13 +158,15 @@ export async function GET(request: NextRequest) {
         vd.file_name,
         vd.file_path,
         vd.file_size,
-        vd.expiry_date,
+        DATE_FORMAT(vd.expiry_date, '%Y-%m-%d') as expiry_date,
         vd.uploaded_at,
         vd.notes,
+        ${isArchivedSelect},
         v.targa,
         v.marca,
         v.modello,
         CASE 
+          ${archivedCase}
           WHEN vd.expiry_date IS NULL THEN 'no_expiry'
           WHEN vd.expiry_date < CURDATE() THEN 'expired'
           WHEN vd.expiry_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 'expiring_soon'

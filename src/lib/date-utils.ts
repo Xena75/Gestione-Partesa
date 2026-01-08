@@ -164,16 +164,18 @@ export const convertISOToItalian = (isoDate: string): string => {
   }
   
   try {
+    // Estrai direttamente i componenti senza creare Date object per evitare problemi timezone
     const [year, month, day] = isoDate.split('-').map(Number);
-    const date = new Date(year, month - 1, day);
     
-    if (isNaN(date.getTime())) {
+    // Validazione base
+    if (year < 1900 || year > 2100 || month < 1 || month > 12 || day < 1 || day > 31) {
       return '';
     }
     
-    const italianDay = date.getDate().toString().padStart(2, '0');
-    const italianMonth = (date.getMonth() + 1).toString().padStart(2, '0');
-    const italianYear = date.getFullYear();
+    // Formatta direttamente senza conversioni timezone
+    const italianDay = day.toString().padStart(2, '0');
+    const italianMonth = month.toString().padStart(2, '0');
+    const italianYear = year.toString();
     
     return `${italianDay}/${italianMonth}/${italianYear}`;
   } catch (error) {
