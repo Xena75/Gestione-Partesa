@@ -1,15 +1,30 @@
-import { NextResponse } from 'next/server';
-import { cache } from '@/lib/cache';
+import { NextRequest, NextResponse } from 'next/server';
+import { cache, invalidateCache, cacheKeys } from '@/lib/cache';
 
-export async function DELETE() {
+export async function DELETE(request: NextRequest) {
   try {
-    cache.clear();
-    console.log('🧹 Cache pulita manualmente');
+    const { searchParams } = new URL(request.url);
+    const key = searchParams.get('key');
     
-    return NextResponse.json({ 
-      message: 'Cache pulita con successo',
-      timestamp: new Date().toISOString()
-    });
+    if (key) {
+      // Invalida solo una chiave specifica
+      invalidateCache(key);
+      console.log(`🧹 Cache invalidata per chiave: ${key}`);
+      
+      return NextResponse.json({ 
+        message: `Cache invalidata per chiave: ${key}`,
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      // Pulisce tutta la cache
+      cache.clear();
+      console.log('🧹 Cache pulita manualmente');
+      
+      return NextResponse.json({ 
+        message: 'Cache pulita con successo',
+        timestamp: new Date().toISOString()
+      });
+    }
   } catch (error) {
     console.error('Errore nel pulire la cache:', error);
     return NextResponse.json(

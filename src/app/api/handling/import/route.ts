@@ -3,30 +3,90 @@ import * as XLSX from 'xlsx';
 import pool from '@/lib/db-gestione';
 import type { PoolConnection } from 'mysql2/promise';
 
+// Configurazione per file grandi: timeout aumentato
+export const dynamic = 'force-dynamic';
+export const maxDuration = 300; // 5 minuti per file grandi
+export const runtime = 'nodejs'; // Usa Node.js runtime per gestire file grandi
+
 export async function POST(request: NextRequest) {
   let connection: PoolConnection | null = null;
   
   try {
-    const formData = await request.formData();
-    const file = formData.get('file') as File;
+    // Supporta 3 modalità:
+    // 1. Dati JSON processati lato client (per file grandi) - Content-Type: application/json
+    // 2. Upload tramite blobUrl (file salvato su filesystem) - Content-Type: application/json
+    // 3. Upload diretto (per file piccoli < 10MB) - Content-Type: multipart/form-data
     
-    if (!file) {
+    let data: any[];
+    let fileName: string;
+    
+    // Controlla il Content-Type PRIMA di leggere il body
+    const contentType = request.headers.get('content-type') || '';
+    
+    if (contentType.includes('application/json')) {
+      // Modalità JSON (dati processati o blobUrl)
+      const jsonBody = await request.json();
+      
+      if (jsonBody.data && Array.isArray(jsonBody.data)) {
+        // Modalità dati JSON processati lato client
+        data = jsonBody.data;
+        fileName = jsonBody.fileName || 'imported_file.xlsx';
+        console.log(`📥 Import handling da dati JSON - File: ${fileName}, Righe: ${data.length}`);
+      } else if (jsonBody.blobUrl) {
+        // Modalità upload separato: leggi il file dal filesystem
+        const { readFile } = await import('fs/promises');
+        const { join } = await import('path');
+        
+        // Estrai il nome del file dall'URL
+        const urlParts = jsonBody.blobUrl.split('/');
+        fileName = urlParts[urlParts.length - 1];
+        
+        // Leggi il file dal filesystem
+        const filePath = join(process.cwd(), 'uploads', 'handling', fileName);
+        const fileBuffer = await readFile(filePath);
+        
+        console.log(`📥 Import handling da file salvato: ${fileName}, Dimensione: ${(fileBuffer.length / 1024 / 1024).toFixed(2)} MB`);
+        
+        // Leggi il file Excel
+        const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        data = XLSX.utils.sheet_to_json(worksheet, { defval: '' }) as any[];
+      } else {
+        return NextResponse.json(
+          { error: 'Formato richiesta non valido. Atteso: {data: [...]} o {blobUrl: "..."}' },
+          { status: 400 }
+        );
+      }
+    } else if (contentType.includes('multipart/form-data')) {
+      // Modalità FormData (upload diretto - solo per file piccoli)
+      const formData = await request.formData();
+      const file = formData.get('file') as File;
+      
+      if (!file) {
+        return NextResponse.json(
+          { error: 'File non fornito' },
+          { status: 400 }
+        );
+      }
+      
+      fileName = file.name;
+      const arrayBuffer = await file.arrayBuffer();
+      const fileBuffer = Buffer.from(arrayBuffer);
+      
+      console.log(`📥 Import handling - File: ${file.name}, Dimensione: ${(fileBuffer.length / 1024 / 1024).toFixed(2)} MB`);
+      
+      // Leggi il file Excel
+      const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      data = XLSX.utils.sheet_to_json(worksheet, { defval: '' }) as any[];
+    } else {
       return NextResponse.json(
-        { error: 'File non fornito' },
+        { error: 'Content-Type non supportato. Usa application/json o multipart/form-data' },
         { status: 400 }
       );
     }
-    
-    console.log(`📥 Import handling - File: ${file.name}, Dimensione: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
-    
-    // Leggi il file Excel
-    const buffer = await file.arrayBuffer();
-    const workbook = XLSX.read(buffer, { type: 'buffer' });
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    
-    // Leggi i dati con header (il file ha già le intestazioni nella prima riga)
-    const data = XLSX.utils.sheet_to_json(worksheet, { defval: '' }) as any[];
     
     if (data.length === 0) {
       return NextResponse.json(
@@ -41,8 +101,8 @@ export async function POST(request: NextRequest) {
     connection = await pool.getConnection();
     
     // Estrai il nome del file e il mese dai dati per verificare duplicati
-    const sourceName = data[0]?.source_name || file.name;
-    const meseFromData = data[0]?.mese;
+    const sourceName = data[0]?.source_name || fileName;
+    const meseFromData = data[0]?.mese || data[0]?.Mese || data[0]?.['Mese'];
     
     // Verifica se questo file è già stato importato
     if (meseFromData) {
@@ -229,7 +289,7 @@ export async function POST(request: NextRequest) {
             convertNumber(row['Imp.Resi V']), // Campo con caratteri speciali
             convertNumber(row['Imp. Doc.']), // Campo con caratteri speciali
             convertNumber(row.tot_hand),
-            convertNumber(row.mese)
+            convertNumber(row.mese || row.Mese || row['Mese']) // Gestisce sia minuscola che maiuscola
           ];
           
           batchValues.push(values);

@@ -19,6 +19,10 @@
     "src/app/api/vehicles/quotes/[id]/documents/route.ts": {
       "maxDuration": 60,
       "memory": 1024
+    },
+    "src/app/api/handling/import/route.ts": {
+      "maxDuration": 300,
+      "memory": 1024
     }
   },
   "headers": [

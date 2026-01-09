@@ -20,6 +20,10 @@ const nextConfig: NextConfig = {
   // 🎨 OTTIMIZZAZIONI CSS per eliminare warning preload
   experimental: {
     optimizePackageImports: ['react-big-calendar', 'lucide-react'],
+    // Aumenta limite body size per import file grandi (50MB)
+    serverActions: {
+      bodySizeLimit: '50mb',
+    },
   },
 
   // 🔧 CONFIGURAZIONE PRELOAD per eliminare warning CSS

@@ -1,7 +1,66 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-**Versione corrente**: v2.43.2  
+**Versione corrente**: v2.43.3  
 **Ultimo aggiornamento**: Gennaio 2025
+
+---
+
+## v2.43.3 - Importazione Dati Delivery da Excel e Invalidazione Cache Filtri
+
+**Data implementazione**: Gennaio 2025  
+**Stato**: ✅ Completato e testato
+
+### 🎯 Importazione Dati Delivery da Excel
+
+#### 🆕 Funzionalità Import Excel
+- **Pagina**: `/gestione` - Gestione Fatturazione Delivery
+- **Pulsante import**: Aggiunto pulsante "Importa Excel" nella pagina delivery
+- **Modal import**: Modal per selezione cartella e file Excel da importare
+- **Cartelle predefinite**: Supporto per cartelle predefinite (`import/Mensili`, `import`) e percorsi personalizzati
+- **Persistenza percorso**: Il percorso della cartella viene salvato in localStorage per ogni utente
+- **API endpoint**: Creato endpoint `/api/delivery/import-from-folder` per importazione dati
+
+#### 📊 Logica Import
+- **Mappatura automatica**: Mappatura automatica delle colonne Excel alle colonne database
+- **Batch processing**: Inserimento dati in batch di 1000 righe (stessa logica di handling)
+- **Gestione errori**: Fallback a inserimenti singoli in caso di errore batch
+- **Pulizia dati**: Pulizia automatica di caratteri binari e non stampabili dai campi stringa
+- **Campo `source_name`**: Utilizza `source_name` dal file Excel, con fallback al nome file se invalido
+- **Campo `div`**: Supporto per parola riservata SQL con backticks
+- **Campo `anomalia`**: Supporto per colonna anomalia opzionale
+- **Campo `dep`**: Supporto per mappatura sia `dep` che `Deposito` dal file Excel
+
+#### 🔄 Invalidazione Cache Automatica
+- **Cache filtri**: Invalidazione automatica della cache dei filtri dopo l'import
+- **Aggiornamento mesi**: I mesi disponibili nei filtri si aggiornano automaticamente dopo l'import
+- **Endpoint cache**: Endpoint `/api/gestione/cache` migliorato per invalidare chiavi specifiche
+- **Parametro key**: Supporto per parametro `?key=filters` per invalidare solo la cache dei filtri
+
+#### 🗑️ Script Pulizia Dati
+- **Script pulizia**: Creato script `scripts/delete-delivery-mese-12.js` per cancellare dati per mese specifico
+- **Utilizzo**: Script per pulire dati prima di reimportare (es. mese 12)
+
+### 📁 File Modificati/Creati
+- `src/app/gestione/page.tsx` (modificato - aggiunto modal import)
+- `src/app/api/delivery/import-from-folder/route.ts` (nuovo)
+- `src/app/api/gestione/cache/route.ts` (modificato - supporto invalidazione chiave specifica)
+- `src/app/api/delivery/import-from-folder/route.ts` (nuovo - invalidazione cache)
+- `scripts/delete-delivery-mese-12.js` (nuovo)
+
+### ✅ Benefici
+- **Importazione semplificata**: Importazione dati delivery direttamente da Excel senza script manuali
+- **Flessibilità percorso**: Ogni PC può selezionare la propria cartella condivisa (percorsi diversi)
+- **Aggiornamento automatico**: Cache filtri si aggiorna automaticamente dopo l'import
+- **Gestione errori robusta**: Fallback automatico per gestire errori batch
+- **Pulizia dati**: Rimozione automatica di caratteri problematici dai dati importati
+- **Performance**: Batch processing per file grandi (stessa logica di handling)
+
+### 🔮 Note Tecniche
+- La logica di import è identica a quella di handling per coerenza
+- Il campo `mese` è `STORED GENERATED` (calcolato da `data_mov_merce`)
+- La cache dei filtri ha TTL di 10 minuti, ma viene invalidata automaticamente dopo l'import
+- Il campo `source_name` viene pulito da caratteri binari prima dell'inserimento
+- Supporto per file Excel grandi con batch processing ottimizzato
 
 ---
 
