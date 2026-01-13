@@ -6,7 +6,7 @@ async function runMigration() {
     connection = await mysql.createConnection({
       host: process.env.DB_VIAGGI_HOST || 'localhost',
       user: process.env.DB_VIAGGI_USER || 'root',
-      password: process.env.DB_VIAGGI_PASSWORD || '',
+      password: process.env.DB_VIAGGI_PASS || '',
       database: process.env.DB_VIAGGI_NAME || 'viaggi_db',
       charset: 'utf8mb4'
     });

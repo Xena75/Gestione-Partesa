@@ -4,7 +4,7 @@ const pool = mysql.createPool({
   host: process.env.DB_VIAGGI_HOST || 'localhost',
   port: parseInt(process.env.DB_VIAGGI_PORT || '3306'),
   user: process.env.DB_VIAGGI_USER || 'root',
-  password: process.env.DB_VIAGGI_PASSWORD || '',
+  password: process.env.DB_VIAGGI_PASS || '',
   database: process.env.DB_VIAGGI_NAME || 'viaggi_db',
 });
 

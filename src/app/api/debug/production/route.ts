@@ -16,7 +16,7 @@ export async function GET() {
         host: process.env.DB_VIAGGI_HOST || 'NOT_SET',
         port: process.env.DB_VIAGGI_PORT || 'NOT_SET',
         user: process.env.DB_VIAGGI_USER || 'NOT_SET',
-        password: process.env.DB_VIAGGI_PASSWORD ? '***SET***' : 'NOT_SET',
+        password: process.env.DB_VIAGGI_PASS ? '***SET***' : 'NOT_SET',
         database: process.env.DB_VIAGGI_DATABASE || 'NOT_SET',
       },
       
