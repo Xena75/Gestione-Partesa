@@ -33,6 +33,7 @@ interface Viaggio {
   litriRiforniti: number | null;
   euroLitro: number | null;
   haiEffettuatoRitiri: boolean;
+  exclude_from_pending: boolean | null;
   kmEffettivi: number | null;
   oreEffettive: number | null;
   updatedAt: string | null;

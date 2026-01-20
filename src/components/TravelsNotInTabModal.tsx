@@ -4,12 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface Travel {
+  id: string;
   numero_viaggio: string;
   deposito: string;
   nominativo: string;
   targa: string;
   data_inizio: string;
   status: string;
+  exclude_from_pending: number;
 }
 
 interface Stats {
@@ -39,6 +41,7 @@ const TravelsNotInTabModal: React.FC<TravelsNotInTabModalProps> = ({ isOpen, onC
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set());
   const router = useRouter();
 
   const fetchData = async (page: number = 1) => {
@@ -73,6 +76,40 @@ const TravelsNotInTabModal: React.FC<TravelsNotInTabModalProps> = ({ isOpen, onC
   const handleViewFullPage = () => {
     onClose();
     router.push('/dashboard/travels-not-in-tab');
+  };
+
+  const handleToggleExclude = async (travelId: string, currentValue: number) => {
+    const newValue = currentValue === 1 ? 0 : 1;
+    
+    setUpdatingIds(prev => new Set(prev).add(travelId));
+    
+    try {
+      const response = await fetch(`/api/dashboard/travels-not-in-tab/${travelId}/exclude`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          exclude_from_pending: newValue === 1
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Errore nell\'aggiornamento');
+      }
+
+      // Ricarica i dati per aggiornare la lista
+      await fetchData(currentPage);
+    } catch (err) {
+      console.error('Errore nel toggle exclude_from_pending:', err);
+      alert('Errore nell\'aggiornamento. Riprova.');
+    } finally {
+      setUpdatingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(travelId);
+        return newSet;
+      });
+    }
   };
 
   if (!isOpen) return null;
@@ -157,11 +194,12 @@ const TravelsNotInTabModal: React.FC<TravelsNotInTabModalProps> = ({ isOpen, onC
                             <th>Targa</th>
                             <th>Data Inizio</th>
                             <th>Status</th>
+                            <th>Escludi</th>
                           </tr>
                         </thead>
                         <tbody>
                           {data.travels.map((travel, index) => (
-                            <tr key={index}>
+                            <tr key={travel.id || index}>
                               <td>
                                 <span className="badge bg-primary">{travel.numero_viaggio}</span>
                               </td>
@@ -181,6 +219,26 @@ const TravelsNotInTabModal: React.FC<TravelsNotInTabModalProps> = ({ isOpen, onC
                                 }`}>
                                   {travel.status}
                                 </span>
+                              </td>
+                              <td>
+                                <div className="form-check form-switch">
+                                  <input
+                                    className="form-check-input"
+                                    type="checkbox"
+                                    role="switch"
+                                    checked={travel.exclude_from_pending === 1}
+                                    disabled={updatingIds.has(travel.id)}
+                                    onChange={() => handleToggleExclude(travel.id, travel.exclude_from_pending)}
+                                    title={travel.exclude_from_pending === 1 
+                                      ? 'Escluso dal conteggio Monitoraggi Pending' 
+                                      : 'Incluso nel conteggio Monitoraggi Pending'}
+                                  />
+                                  {updatingIds.has(travel.id) && (
+                                    <span className="spinner-border spinner-border-sm ms-2" role="status">
+                                      <span className="visually-hidden">Aggiornamento...</span>
+                                    </span>
+                                  )}
+                                </div>
                               </td>
                             </tr>
                           ))}

@@ -12,6 +12,7 @@ interface TravelNotInTab {
   dataOraFineViaggio: string | null;
   targa: string;
   status: string;
+  exclude_from_pending: number;
 }
 
 interface PaginationInfo {
@@ -47,6 +48,7 @@ export async function GET(request: NextRequest) {
     console.log('📊 Viaggi trovati in tab_viaggi:', viaggiInTab.length);
 
     // Costruiamo la condizione WHERE per escludere i viaggi già presenti in tab_viaggi
+    // NOTA: Mostriamo TUTTI i viaggi non sincronizzati (anche quelli esclusi) per permettere di modificarli
     let whereCondition = 'WHERE t.numeroViaggio IS NOT NULL AND t.numeroViaggio != ""';
     const queryParams: any[] = [];
     
@@ -56,19 +58,22 @@ export async function GET(request: NextRequest) {
       queryParams.push(...viaggiInTab);
     }
 
-    // Query per contare il totale dei viaggi non presenti in tab_viaggi
+    // Query per contare il totale dei viaggi non presenti in tab_viaggi (esclusi quelli con exclude_from_pending = 1 per le statistiche)
     const countQuery = `
       SELECT COUNT(*) as total 
       FROM travels t
-      ${whereCondition}
+      WHERE t.numeroViaggio IS NOT NULL AND t.numeroViaggio != "" 
+        AND (t.exclude_from_pending IS NULL OR t.exclude_from_pending = 0)
+        ${viaggiInTab.length > 0 ? `AND t.numeroViaggio NOT IN (${viaggiInTab.map(() => '?').join(',')})` : ''}
     `;
     
-    const [countResult] = await poolViaggi.execute(countQuery, queryParams);
+    const [countResult] = await poolViaggi.execute(countQuery, viaggiInTab.length > 0 ? [...viaggiInTab] : []);
     const totalItems = (countResult as any[])[0]?.total || 0;
     const totalPages = Math.ceil(totalItems / limit);
 
     // Query per recuperare i viaggi non presenti in tab_viaggi con paginazione
     // Include join per ottenere nominativo e targa
+    // NOTA: Mostriamo TUTTI i viaggi non sincronizzati (anche quelli esclusi) per permettere di modificarli
     const dataQuery = `
       SELECT 
         t.id,
@@ -78,6 +83,7 @@ export async function GET(request: NextRequest) {
         t.dataOraInizioViaggio as data_inizio,
         t.dataOraFineViaggio,
         COALESCE(v.targa, t.targaMezzoId, 'N/A') as targa,
+        COALESCE(t.exclude_from_pending, 0) as exclude_from_pending,
         CASE 
           WHEN t.dataOraFineViaggio IS NOT NULL THEN 'Completato'
           WHEN t.dataOraInizioViaggio IS NOT NULL THEN 'In corso'

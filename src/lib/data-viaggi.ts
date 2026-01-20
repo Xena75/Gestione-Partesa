@@ -18,6 +18,7 @@ export type Viaggio = {
   litriRiforniti: number | null;
   euroLitro: number | null;
   haiEffettuatoRitiri: boolean | null;
+  exclude_from_pending: boolean | null;
   updatedAt: string | null;
   createdAt: string | null;
   kmEffettivi: number | null;
@@ -45,7 +46,7 @@ export async function getViaggiData(
       SELECT 
         id, deposito, numeroViaggio, nominativoId, affiancatoDaId, totaleColli,
         dataOraInizioViaggio, dataOraFineViaggio, targaMezzoId, kmIniziali, kmFinali,
-        kmAlRifornimento, litriRiforniti, euroLitro, haiEffettuatoRitiri,
+        kmAlRifornimento, litriRiforniti, euroLitro, haiEffettuatoRitiri, exclude_from_pending,
         updatedAt, createdAt, kmEffettivi, oreEffettive, mese
       FROM travels 
       ORDER BY ${validSortBy} ${validSortOrder}
@@ -115,7 +116,7 @@ export async function getViaggioById(id: string): Promise<Viaggio | null> {
       SELECT 
         id, deposito, numeroViaggio, nominativoId, affiancatoDaId, totaleColli,
         dataOraInizioViaggio, dataOraFineViaggio, targaMezzoId, kmIniziali, kmFinali,
-        kmAlRifornimento, litriRiforniti, euroLitro, haiEffettuatoRitiri,
+        kmAlRifornimento, litriRiforniti, euroLitro, haiEffettuatoRitiri, exclude_from_pending,
         updatedAt, createdAt, kmEffettivi, oreEffettive, mese
       FROM travels WHERE id = ?
     `;
@@ -269,7 +270,7 @@ export async function getViaggiFiltrati(
       SELECT 
         id, deposito, numeroViaggio, nominativoId, affiancatoDaId, totaleColli,
         dataOraInizioViaggio, dataOraFineViaggio, targaMezzoId, kmIniziali, kmFinali,
-        kmAlRifornimento, litriRiforniti, euroLitro, haiEffettuatoRitiri,
+        kmAlRifornimento, litriRiforniti, euroLitro, haiEffettuatoRitiri, exclude_from_pending,
         updatedAt, createdAt, kmEffettivi, oreEffettive, mese
       FROM travels 
       ${whereClause}

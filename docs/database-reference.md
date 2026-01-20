@@ -1429,6 +1429,7 @@ kmAlRifornimento         int(11)      YES       NULL
 litriRiforniti           double       YES       NULL                 
 euroLitro                double       YES       NULL                 
 haiEffettuatoRitiri      tinyint(1)   YES       NULL                 
+exclude_from_pending     tinyint(1)   YES   MUL 0                   
 updatedAt                datetime(3)  YES       NULL                 
 createdAt                datetime(3)  YES       NULL                 
 kmEffettivi              int(11)      YES       NULL                 STORED GENERATED
@@ -1436,10 +1437,21 @@ oreEffettive             double       YES       NULL                 STORED GENE
 mese                     tinyint(4)   YES       NULL                 STORED GENERATED                 
 ```
 
+**Note sul campo `exclude_from_pending`:**
+- **Tipo**: `TINYINT(1)` (booleano)
+- **Default**: `0` (incluso nel conteggio)
+- **Scopo**: Permette di escludere viaggi dal conteggio "Monitoraggi Pending" nella dashboard
+- **Valori**: 
+  - `0` o `NULL` = viaggio incluso nel conteggio (default)
+  - `1` = viaggio escluso dal conteggio
+- **Utilizzo**: I viaggi con `exclude_from_pending = 1` non vengono conteggiati nelle statistiche dei viaggi pending, anche se non sono ancora presenti in `tab_viaggi`
+- **Migration**: `migrations/add_exclude_from_pending_to_travels.sql`
+
 **Utilizzo nel progetto:**
 - **Pagine**: Sistema di monitoraggio viaggi
 - **API**: `/api/viaggi/sync-tab-viaggi` per sincronizzazione con tab_viaggi
 - **Componenti**: `data-viaggi.ts` per gestione dati
+- **Dashboard**: Statistiche viaggi escludono automaticamente i viaggi con `exclude_from_pending = 1`
 - **Funzionalità**: Monitoraggio viaggi in tempo reale, sincronizzazione dati
 - **Dashboard**: Statistiche viaggi, calcolo KPI performance
 

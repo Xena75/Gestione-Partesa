@@ -327,6 +327,7 @@ async function getViaggiStats() {
     `) as [any[], any];
 
     // Calcola viaggi in monitoraggio (travels) non ancora presenti in tab_viaggi con confronto settimanale
+    // Esclude i viaggi con exclude_from_pending = 1
     const [monitoraggioRows] = await poolViaggi.execute(`
       SELECT 
         COUNT(*) as monitoraggi_aperti,
@@ -335,6 +336,7 @@ async function getViaggiStats() {
       FROM travels t
       LEFT JOIN gestionelogistica.tab_viaggi tv ON t.numeroViaggio = tv.\`Viaggio\`
       WHERE tv.\`Viaggio\` IS NULL
+        AND (t.exclude_from_pending IS NULL OR t.exclude_from_pending = 0)
     `) as [any[], any];
 
     const tabViaggi = tabViaggiRows[0] || { total: 0, today: 0, thisWeek: 0, thisMonth: 0 };

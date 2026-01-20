@@ -1,7 +1,53 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-**Versione corrente**: v2.43.3  
+**Versione corrente**: v2.43.4  
 **Ultimo aggiornamento**: Gennaio 2025
+
+---
+
+## v2.43.4 - Esclusione Viaggi dal Conteggio Monitoraggi Pending
+
+**Data implementazione**: Gennaio 2025  
+**Stato**: ✅ Completato e testato
+
+### 🎯 Campo exclude_from_pending nella Tabella travels
+
+#### 🆕 Funzionalità Esclusione Viaggi
+- **Campo database**: Aggiunto campo `exclude_from_pending` (TINYINT(1)) alla tabella `travels`
+- **Default**: `0` (viaggio incluso nel conteggio)
+- **Scopo**: Permette di escludere viaggi specifici dal conteggio "Monitoraggi Pending" nella dashboard
+- **Migration**: `migrations/add_exclude_from_pending_to_travels.sql`
+
+#### 📊 Gestione nel Modal Viaggi Non Sincronizzati
+- **Colonna "Escludi"**: Aggiunta colonna con toggle switch nella tabella del modal
+- **Toggle interattivo**: Switch Bootstrap per includere/escludere viaggi dal conteggio
+- **Aggiornamento immediato**: Modifica salvata immediatamente nel database
+- **Feedback visivo**: Spinner durante l'aggiornamento per feedback utente
+- **API endpoint**: Creato endpoint `/api/dashboard/travels-not-in-tab/[id]/exclude` per aggiornamento campo
+
+#### 🔄 Logica Query Aggiornata
+- **Dashboard statistiche**: Query escludono automaticamente viaggi con `exclude_from_pending = 1`
+- **Modal visualizzazione**: Mostra tutti i viaggi non sincronizzati (anche quelli esclusi) per permettere modifica
+- **Statistiche accurate**: Conteggio "Monitoraggi Pending" esclude correttamente i viaggi marcati
+
+#### 📁 File Modificati/Creati
+- `migrations/add_exclude_from_pending_to_travels.sql` (nuovo)
+- `scripts/run-migration-exclude-from-pending.js` (nuovo)
+- `scripts/verify-exclude-from-pending.js` (nuovo)
+- `src/app/api/dashboard-stats/route.ts` (modificato - query aggiornata)
+- `src/app/api/dashboard/stats/route.ts` (modificato - query aggiornata)
+- `src/app/api/dashboard/travels-not-in-tab/route.ts` (modificato - campo aggiunto)
+- `src/app/api/dashboard/travels-not-in-tab/[id]/exclude/route.ts` (nuovo)
+- `src/components/TravelsNotInTabModal.tsx` (modificato - colonna toggle aggiunta)
+- `src/lib/data-viaggi.ts` (modificato - interfaccia aggiornata)
+- `src/app/monitoraggio/[id]/modifica/page.tsx` (modificato - interfaccia aggiornata)
+- `docs/database-reference.md` (modificato - documentazione campo)
+
+### ✅ Benefici
+- ✅ Controllo granulare sui viaggi da conteggiare nelle statistiche
+- ✅ Interfaccia intuitiva per gestire esclusioni direttamente dal modal
+- ✅ Statistiche dashboard più accurate e personalizzabili
+- ✅ Performance ottimizzate con indice sul campo exclude_from_pending
 
 ---
 
