@@ -17,6 +17,8 @@ export async function GET(request: NextRequest) {
 
     const balances = await getAllLeaveBalances(yearNumber);
     
+    console.log(`[API /api/employees/leave/balances] Anno richiesto: ${yearNumber || 'non specificato'}, Bilanci restituiti: ${balances.length}`);
+    
     return NextResponse.json({
       success: true,
       data: balances

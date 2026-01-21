@@ -184,6 +184,46 @@ function GestioneFerieContent() {
       loadLeaveTypes();
     }
   }, [isLoading, isAuthenticated]);
+  
+  // Ricarica i bilanci quando cambia il filtro anno (solo se siamo nella tab bilanci)
+  // Nota: Non includiamo loadData nelle dipendenze per evitare loop infiniti
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && activeTab === 'bilanci') {
+      console.log(`[GestioneFerie] useEffect: Ricarico bilanci per anno ${yearFilter} (activeTab: ${activeTab})`);
+      // Usa una funzione wrapper per evitare warning di dipendenze
+      const loadBalancesForYear = async () => {
+        try {
+          setLoading(true);
+          setError(null);
+          const balancesUrl = yearFilter ? `/api/employees/leave/balances?year=${yearFilter}` : '/api/employees/leave/balances';
+          console.log(`[GestioneFerie] useEffect - Caricamento bilanci da: ${balancesUrl}`);
+          const balancesResponse = await fetch(balancesUrl);
+          if (balancesResponse.ok) {
+            const balancesData = await balancesResponse.json();
+            console.log(`[GestioneFerie] useEffect - Risposta API:`, balancesData);
+            if (balancesData.success && balancesData.data) {
+              const balancesArray = Array.isArray(balancesData.data) ? balancesData.data : [];
+              console.log(`[GestioneFerie] useEffect - Bilanci caricati: ${balancesArray.length}`);
+              setLeaveBalances(balancesArray);
+            } else {
+              console.warn(`[GestioneFerie] useEffect - Risposta API non valida:`, balancesData);
+              setLeaveBalances([]);
+            }
+          } else {
+            console.error(`[GestioneFerie] useEffect - Errore nella risposta API: ${balancesResponse.status}`);
+            setLeaveBalances([]);
+          }
+        } catch (err) {
+          console.error('[GestioneFerie] useEffect - Errore nel caricamento bilanci:', err);
+          setError(err instanceof Error ? err.message : 'Errore sconosciuto');
+          setLeaveBalances([]);
+        } finally {
+          setLoading(false);
+        }
+      };
+      loadBalancesForYear();
+    }
+  }, [yearFilter, activeTab, isLoading, isAuthenticated]);
 
   const loadLeaveTypes = async () => {
     try {
@@ -201,6 +241,7 @@ function GestioneFerieContent() {
 
   const loadData = async () => {
     try {
+      console.log(`[GestioneFerie] loadData chiamato - yearFilter: ${yearFilter}, activeTab: ${activeTab}`);
       setLoading(true);
       setError(null);
 
@@ -231,13 +272,24 @@ function GestioneFerieContent() {
         }
       }
 
-      // Carica tutti i bilanci ferie
-      const balancesResponse = await fetch('/api/employees/leave/balances');
+      // Carica tutti i bilanci ferie con filtro anno se presente
+      const balancesUrl = yearFilter ? `/api/employees/leave/balances?year=${yearFilter}` : '/api/employees/leave/balances';
+      console.log(`[GestioneFerie] Caricamento bilanci da: ${balancesUrl}`);
+      const balancesResponse = await fetch(balancesUrl);
       if (balancesResponse.ok) {
         const balancesData = await balancesResponse.json();
+        console.log(`[GestioneFerie] Risposta API:`, balancesData);
         if (balancesData.success && balancesData.data) {
-          setLeaveBalances(Array.isArray(balancesData.data) ? balancesData.data : []);
+          const balancesArray = Array.isArray(balancesData.data) ? balancesData.data : [];
+          console.log(`[GestioneFerie] Bilanci caricati: ${balancesArray.length}`);
+          setLeaveBalances(balancesArray);
+        } else {
+          console.warn(`[GestioneFerie] Risposta API non valida:`, balancesData);
+          setLeaveBalances([]);
         }
+      } else {
+        console.error(`[GestioneFerie] Errore nella risposta API: ${balancesResponse.status} ${balancesResponse.statusText}`);
+        setLeaveBalances([]);
       }
 
     } catch (err) {
@@ -415,9 +467,12 @@ function GestioneFerieContent() {
     e.preventDefault();
     if (!editingRequest || !originalRequestData) return;
 
+    // Inizializza updateData fuori dal try per renderlo accessibile nel catch
+    let updateData: any = {};
+
     try {
       // Confronta i valori del form con quelli originali per inviare solo i campi modificati
-      const updateData: any = {};
+      updateData = {};
       
       // Normalizza le date originali per il confronto (converti da DD/MM/YYYY a YYYY-MM-DD se necessario)
       const normalizeDate = (dateStr: string): string => {
@@ -438,12 +493,26 @@ function GestioneFerieContent() {
       const originalLeaveType = originalRequestData.leave_type;
 
       // Confronta e aggiungi solo i campi modificati
+      let datesChanged = false;
       if (editFormData.start_date !== originalStartDate) {
         updateData.start_date = editFormData.start_date;
+        datesChanged = true;
       }
 
       if (editFormData.end_date !== originalEndDate) {
         updateData.end_date = editFormData.end_date;
+        datesChanged = true;
+      }
+
+      // Se le date sono state modificate, ricalcola i giorni richiesti
+      if (datesChanged && editFormData.leave_type !== 'permesso') {
+        const startDate = updateData.start_date || editFormData.start_date;
+        const endDate = updateData.end_date || editFormData.end_date;
+        if (startDate && endDate) {
+          const newDaysRequested = calculateWorkingDays(startDate, endDate);
+          updateData.days_requested = newDaysRequested;
+          console.log(`[GestioneFerie] Date modificate, ricalcolati giorni: ${newDaysRequested}`);
+        }
       }
 
       if (editFormData.leave_type !== originalLeaveType) {
@@ -516,6 +585,11 @@ function GestioneFerieContent() {
         return;
       }
 
+      // Verifica che editingRequest.id sia valido
+      if (!editingRequest.id) {
+        throw new Error('ID richiesta non valido');
+      }
+
       // Se c'è un file allegato o se deve eliminare l'allegato, usa FormData
       if (editAttachmentFile || deleteEditAttachment) {
         const formData = new FormData();
@@ -533,6 +607,9 @@ function GestioneFerieContent() {
         if (updateData.hours !== undefined) {
           formData.append('hours', updateData.hours.toString());
         }
+        if (updateData.days_requested !== undefined) {
+          formData.append('days_requested', updateData.days_requested.toString());
+        }
         if (updateData.notes !== undefined) {
           formData.append('notes', updateData.notes);
         }
@@ -543,7 +620,10 @@ function GestioneFerieContent() {
           formData.append('attachment', editAttachmentFile);
         }
 
-        const response = await fetch(`/api/employees/leave/${editingRequest.id}`, {
+        const apiUrl = `/api/employees/leave/${editingRequest.id}`;
+        console.log(`[GestioneFerie] PUT richiesta con FormData a: ${apiUrl}`, { updateData, hasFile: !!editAttachmentFile, deleteAttachment: deleteEditAttachment });
+
+        const response = await fetch(apiUrl, {
           method: 'PUT',
           credentials: 'include',
           body: formData
@@ -566,11 +646,15 @@ function GestioneFerieContent() {
         }
       } else {
         // Nessun file, usa JSON standard con solo i campi modificati
-        const response = await fetch(`/api/employees/leave/${editingRequest.id}`, {
+        const apiUrl = `/api/employees/leave/${editingRequest.id}`;
+        console.log(`[GestioneFerie] PUT richiesta con JSON a: ${apiUrl}`, updateData);
+
+        const response = await fetch(apiUrl, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: 'include',
           body: JSON.stringify(updateData)
         });
 
@@ -591,7 +675,15 @@ function GestioneFerieContent() {
 
     } catch (err) {
       console.error('Errore aggiornamento richiesta:', err);
-      alert(err instanceof Error ? err.message : 'Errore durante l\'aggiornamento della richiesta');
+      const errorMessage = err instanceof Error ? err.message : 'Errore durante l\'aggiornamento della richiesta';
+      console.error('Dettagli errore:', {
+        error: err,
+        editingRequestId: editingRequest?.id,
+        updateData,
+        hasAttachment: !!editAttachmentFile,
+        deleteAttachment: deleteEditAttachment
+      });
+      alert(errorMessage);
     }
   };
 
@@ -660,14 +752,34 @@ function GestioneFerieContent() {
         return 0;
       }
       
+      // Lista dei giorni festivi fissi italiani (giorno/mese)
+      const italianHolidays = [
+        [1, 1],   // Capodanno
+        [6, 1],   // Epifania
+        [25, 4],  // Liberazione
+        [1, 5],   // Festa del Lavoro
+        [2, 6],   // Festa della Repubblica
+        [15, 8],  // Ferragosto
+        [1, 11],  // Ognissanti
+        [8, 12],  // Immacolata Concezione
+        [25, 12], // Natale
+        [26, 12]  // Santo Stefano
+      ];
+      
+      const isHoliday = (date: Date): boolean => {
+        const day = date.getDate();
+        const month = date.getMonth() + 1; // getMonth() è 0-based
+        return italianHolidays.some(([hDay, hMonth]) => day === hDay && month === hMonth);
+      };
+      
       // Conta i giorni lavorativi nell'intervallo effettivo
       let count = 0;
       const current = new Date(effectiveStart);
       
       while (current <= effectiveEnd) {
         const dayOfWeek = current.getDay();
-        // Escludi sabato (6) e domenica (0)
-        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        // Escludi sabato (6), domenica (0) e giorni festivi
+        if (dayOfWeek !== 0 && dayOfWeek !== 6 && !isHoliday(current)) {
           count++;
         }
         current.setDate(current.getDate() + 1);
@@ -730,6 +842,81 @@ function GestioneFerieContent() {
                isDateInYear(request.start_date, year);
       })
       .reduce((sum, request) => sum + (request.hours_requested || 0), 0);
+    
+    return total;
+  };
+
+  // Funzione per calcolare i giorni di malattia utilizzati da un dipendente in un anno specifico
+  const calculateUsedSickDays = (employeeId: string, year: number): number => {
+    if (!leaveRequests) {
+      return 0;
+    }
+    
+    // Funzione per calcolare i giorni lavorativi in un anno specifico (stessa logica delle ferie)
+    const calculateWorkingDaysInYear = (startDateStr: string, endDateStr: string, targetYear: number): number => {
+      const parseDate = (dateStr: string): Date | null => {
+        if (!dateStr) return null;
+        
+        // Formato DD/MM/YYYY
+        if (dateStr.includes('/')) {
+          const parts = dateStr.split('/');
+          if (parts.length === 3) {
+            const day = parseInt(parts[0]);
+            const month = parseInt(parts[1]) - 1;
+            const year = parseInt(parts[2]);
+            return new Date(year, month, day);
+          }
+        }
+        
+        // Formato YYYY-MM-DD o ISO
+        const date = new Date(dateStr);
+        return isNaN(date.getTime()) ? null : date;
+      };
+      
+      const startDate = parseDate(startDateStr);
+      const endDate = parseDate(endDateStr);
+      
+      if (!startDate || !endDate) return 0;
+      
+      // Limita le date all'anno specificato
+      const yearStart = new Date(targetYear, 0, 1);
+      const yearEnd = new Date(targetYear, 11, 31);
+      
+      const effectiveStart = startDate > yearStart ? startDate : yearStart;
+      const effectiveEnd = endDate < yearEnd ? endDate : yearEnd;
+      
+      // Se le date non si sovrappongono con l'anno target, ritorna 0
+      if (effectiveStart > yearEnd || effectiveEnd < yearStart) {
+        return 0;
+      }
+      
+      // Conta i giorni lavorativi nell'intervallo effettivo
+      let count = 0;
+      const current = new Date(effectiveStart);
+      
+      while (current <= effectiveEnd) {
+        const dayOfWeek = current.getDay();
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+          count++;
+        }
+        current.setDate(current.getDate() + 1);
+      }
+      
+      return count;
+    };
+    
+    // Filtra e calcola
+    const total = leaveRequests
+      .filter(request => {
+        const requestEmployeeName = `${request.nome} ${request.cognome}`;
+        return requestEmployeeName === employeeId &&
+               request.leave_type === 'malattia' &&
+               request.status === 'approved';
+      })
+      .reduce((sum, request) => {
+        const daysInYear = calculateWorkingDaysInYear(request.start_date, request.end_date, year);
+        return sum + daysInYear;
+      }, 0);
     
     return total;
   };
@@ -1102,6 +1289,8 @@ function GestioneFerieContent() {
 
   const filteredBalances = leaveBalances.filter(balance => {
     if (employeeFilter && balance.employee_id.toString() !== employeeFilter) return false;
+    // Filtra anche per anno se il filtro è attivo (backup, l'API dovrebbe già filtrare)
+    if (yearFilter && balance.year.toString() !== yearFilter) return false;
     return true;
   });
 
@@ -1630,9 +1819,11 @@ function GestioneFerieContent() {
                       className="form-select"
                       value={yearFilter}
                       onChange={(e) => {
-                        setYearFilter(e.target.value);
-                        // Ricarica i bilanci per il nuovo anno
-                        loadData();
+                        const newYear = e.target.value;
+                        console.log(`[GestioneFerie] Cambio filtro anno: ${yearFilter} -> ${newYear}`);
+                        setYearFilter(newYear);
+                        // Nota: il useEffect gestirà il caricamento quando yearFilter cambia
+                        // Non chiamiamo loadData() qui perché usa ancora il vecchio valore di yearFilter
                       }}
                     >
                       {[2024, 2025, 2026].map((year) => (
@@ -1903,7 +2094,7 @@ function GestioneFerieContent() {
                       </thead>
                       <tbody>
                         {filteredBalances.map((balance) => (
-                          <tr key={balance.id}>
+                          <tr key={`${balance.employee_id}-${balance.year}-${balance.month || 1}`}>
                             <td>
                               <strong className="text-white">{balance.cognome}, {balance.nome}</strong>
                             </td>
@@ -1963,7 +2154,7 @@ function GestioneFerieContent() {
                             </td>
                             <td>
                               <span className="badge bg-danger">
-                                {balance.sick_days_used} giorni
+                                {calculateUsedSickDays(`${balance.nome} ${balance.cognome}`, balance.year)} giorni
                               </span>
                             </td>
                             <td>

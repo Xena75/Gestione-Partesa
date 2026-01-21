@@ -1051,17 +1051,130 @@ export async function getAllLeaveBalances(year?: number): Promise<(LeaveBalance 
   const connection = await getConnection();
   try {
     const currentYear = year || new Date().getFullYear();
+    const previousYear = currentYear - 1;
     
-    // Ora abbiamo un solo record per dipendente per anno
-    const [rows] = await connection.execute(
-      `SELECT elb.*, e.nome, e.cognome 
-       FROM employee_leave_balance elb 
-       JOIN employees e ON elb.employee_id COLLATE utf8mb4_general_ci = e.id COLLATE utf8mb4_general_ci
-       WHERE elb.year = ? AND e.active = true
-       ORDER BY e.cognome, e.nome`,
-      [currentYear]
-    );
-    return rows as (LeaveBalance & { nome: string; cognome: string })[];
+    // Recupera tutti i dipendenti attivi
+    const [employees] = await connection.execute(
+      `SELECT id, nome, cognome FROM employees WHERE active = true ORDER BY cognome, nome`
+    ) as [any[], any];
+    
+    console.log(`[getAllLeaveBalances] Trovati ${employees.length} dipendenti attivi per l'anno ${currentYear}`);
+    
+    if (employees.length === 0) {
+      console.warn(`[getAllLeaveBalances] Nessun dipendente attivo trovato!`);
+      return [];
+    }
+    
+    const result: (LeaveBalance & { nome: string; cognome: string })[] = [];
+    
+    for (const emp of employees) {
+      // Converti employee_id a string per il confronto
+      const employeeId = String(emp.id);
+      
+      // Cerca il bilancio dell'anno corrente (priorità al mese più recente, o gennaio se disponibile)
+      // Nota: se il campo month non esiste, la query funzionerà comunque (ORDER BY ignorerà il campo inesistente)
+      const [currentYearBalances] = await connection.execute(
+        `SELECT elb.* 
+         FROM employee_leave_balance elb 
+         WHERE elb.employee_id = ? AND elb.year = ?
+         ORDER BY COALESCE(elb.month, 1) DESC
+         LIMIT 1`,
+        [employeeId, currentYear]
+      ) as [any[], any];
+      
+      let balance: any = null;
+      
+      if (currentYearBalances.length > 0) {
+        balance = currentYearBalances[0];
+        balance.nome = emp.nome;
+        balance.cognome = emp.cognome;
+        
+        // Se il mese è gennaio (1) o se i residui sono NULL o 0, cerca i residui di dicembre dell'anno precedente
+        const isJanuary = balance.month === 1;
+        const hasZeroOrNullResiduals = 
+          (balance.vacation_hours_remaining === null || balance.vacation_hours_remaining === 0) ||
+          (balance.ex_holiday_hours_remaining === null || balance.ex_holiday_hours_remaining === 0) ||
+          (balance.rol_hours_remaining === null || balance.rol_hours_remaining === 0);
+        
+        if (isJanuary || hasZeroOrNullResiduals) {
+          const [prevYearDecBalance] = await connection.execute(
+            `SELECT vacation_hours_remaining, ex_holiday_hours_remaining, rol_hours_remaining
+             FROM employee_leave_balance 
+             WHERE employee_id = ? AND year = ? AND month = 12
+             LIMIT 1`,
+            [employeeId, previousYear]
+          ) as [any[], any];
+          
+          if (prevYearDecBalance.length > 0) {
+            const prevBalance = prevYearDecBalance[0];
+            // Se è gennaio, sostituisci sempre i residui con quelli di dicembre dell'anno precedente
+            // Altrimenti, sostituisci solo i residui NULL o 0
+            if (isJanuary) {
+              balance.vacation_hours_remaining = prevBalance.vacation_hours_remaining || 0;
+              balance.ex_holiday_hours_remaining = prevBalance.ex_holiday_hours_remaining || 0;
+              balance.rol_hours_remaining = prevBalance.rol_hours_remaining || 0;
+            } else {
+              // Sostituisci solo i residui NULL o 0 con quelli di dicembre dell'anno precedente
+              if (balance.vacation_hours_remaining === null || balance.vacation_hours_remaining === 0) {
+                balance.vacation_hours_remaining = prevBalance.vacation_hours_remaining || 0;
+              }
+              if (balance.ex_holiday_hours_remaining === null || balance.ex_holiday_hours_remaining === 0) {
+                balance.ex_holiday_hours_remaining = prevBalance.ex_holiday_hours_remaining || 0;
+              }
+              if (balance.rol_hours_remaining === null || balance.rol_hours_remaining === 0) {
+                balance.rol_hours_remaining = prevBalance.rol_hours_remaining || 0;
+              }
+            }
+          }
+        }
+      } else {
+        // Se non c'è bilancio per l'anno corrente, cerca quello di dicembre dell'anno precedente
+        const [prevYearDecBalance] = await connection.execute(
+          `SELECT elb.* 
+           FROM employee_leave_balance elb 
+           WHERE elb.employee_id = ? AND elb.year = ? AND elb.month = 12
+           LIMIT 1`,
+          [employeeId, previousYear]
+        ) as [any[], any];
+        
+        if (prevYearDecBalance.length > 0) {
+          balance = prevYearDecBalance[0];
+          balance.year = currentYear; // Aggiorna l'anno al corrente
+          balance.month = 1; // Imposta gennaio come mese di riferimento
+          balance.nome = emp.nome;
+          balance.cognome = emp.cognome;
+          // I residui vengono mantenuti da dicembre dell'anno precedente
+          console.log(`[getAllLeaveBalances] Usato bilancio dicembre ${previousYear} per ${emp.nome} ${emp.cognome} (anno ${currentYear})`);
+        } else {
+          // Se non c'è nemmeno quello, crea un bilancio vuoto
+          balance = {
+            id: 0, // ID temporaneo per React key
+            employee_id: employeeId,
+            year: currentYear,
+            month: 1,
+            vacation_days_total: 26,
+            vacation_days_used: 0,
+            vacation_hours_remaining: 0,
+            ex_holiday_hours_remaining: 0,
+            rol_hours_remaining: 0,
+            sick_days_used: 0,
+            personal_days_used: 0,
+            nome: emp.nome,
+            cognome: emp.cognome,
+            created_at: new Date().toISOString(),
+            last_updated: new Date().toISOString()
+          };
+          console.log(`[getAllLeaveBalances] Creato bilancio vuoto per ${emp.nome} ${emp.cognome} (anno ${currentYear})`);
+        }
+      }
+      
+      if (balance) {
+        result.push(balance);
+      }
+    }
+    
+    console.log(`[getAllLeaveBalances] Restituiti ${result.length} bilanci per l'anno ${currentYear}`);
+    return result;
   } finally {
     await connection.end();
   }
@@ -1171,6 +1284,7 @@ export async function updateLeaveRequest(
     end_date?: string;
     leave_type?: 'ferie' | 'permesso';
     hours?: number;
+    days_requested?: number;
     notes?: string;
     attachment_url?: string | null;
   }
@@ -1210,8 +1324,13 @@ export async function updateLeaveRequest(
     }
     
     if (updateData.hours !== undefined) {
-      updateFields.push('hours = ?');
+      updateFields.push('hours_requested = ?');
       updateValues.push(updateData.hours);
+    }
+    
+    if (updateData.days_requested !== undefined) {
+      updateFields.push('days_requested = ?');
+      updateValues.push(updateData.days_requested);
     }
     
     if (updateData.notes !== undefined) {

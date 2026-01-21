@@ -1,7 +1,35 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-**Versione corrente**: v2.43.4  
+**Versione corrente**: v2.43.5  
 **Ultimo aggiornamento**: Gennaio 2025
+
+---
+
+## v2.43.5 - Esclusione Giorni Festivi dal Calcolo Ferie Utilizzate
+
+**Data implementazione**: Gennaio 2025  
+**Stato**: ✅ Completato e testato
+
+### 🎯 Calcolo Corretto Giorni Lavorativi
+
+#### 🆕 Esclusione Giorni Festivi Italiani
+- **Problema risolto**: Il calcolo dei giorni di ferie utilizzate includeva erroneamente i giorni festivi
+- **Soluzione**: Aggiunta esclusione automatica dei giorni festivi fissi italiani nel calcolo
+- **Giorni festivi esclusi**: Capodanno (1 gennaio), Epifania (6 gennaio), Liberazione (25 aprile), Festa del Lavoro (1 maggio), Festa della Repubblica (2 giugno), Ferragosto (15 agosto), Ognissanti (1 novembre), Immacolata Concezione (8 dicembre), Natale (25 dicembre), Santo Stefano (26 dicembre)
+
+#### 📊 Funzione calculateUsedVacationDays Aggiornata
+- **Logica migliorata**: La funzione `calculateWorkingDaysInYear` ora esclude sabato, domenica e giorni festivi
+- **Calcolo accurato**: I giorni di ferie utilizzate vengono calcolati considerando solo i giorni lavorativi effettivi
+- **Esempio**: Richiesta dal 22/12/2025 al 6/01/2026 conta correttamente 2 giorni nel 2026 (escludendo Capodanno ed Epifania)
+
+#### 📁 File Modificati
+- `src/app/gestione/employees/ferie/page.tsx` (modificato - funzione calculateWorkingDaysInYear aggiornata)
+
+### ✅ Benefici
+- ✅ Calcolo preciso dei giorni di ferie utilizzate
+- ✅ Esclusione automatica dei giorni festivi
+- ✅ Bilanci ferie più accurati per i dipendenti
+- ✅ Conformità con le normative sul calcolo dei giorni lavorativi
 
 ---
 

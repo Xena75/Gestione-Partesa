@@ -35,6 +35,7 @@ export async function PUT(
       const leaveTypeValue = formData.get('leave_type');
       const hoursValue = formData.get('hours');
       const notesValue = formData.get('notes');
+      const daysRequestedValue = formData.get('days_requested');
       
       // Per i campi obbligatori (date, tipo), aggiungili solo se presenti e non vuoti
       if (startDateValue !== null && startDateValue !== '') {
@@ -48,6 +49,9 @@ export async function PUT(
       }
       if (hoursValue !== null && hoursValue !== '') {
         body.hours = parseFloat(hoursValue as string);
+      }
+      if (daysRequestedValue !== null && daysRequestedValue !== '') {
+        body.days_requested = parseInt(daysRequestedValue as string);
       }
       // Per le note, aggiungile anche se sono stringa vuota (per permettere di cancellarle)
       if (notesValue !== null) {
@@ -119,7 +123,7 @@ export async function PUT(
       }
     }
 
-    const { start_date, end_date, leave_type, hours, notes } = body;
+    const { start_date, end_date, leave_type, hours, notes, days_requested } = body;
 
     // Validazione dei dati
     if (start_date && !/^\d{4}-\d{2}-\d{2}$/.test(start_date)) {
@@ -181,6 +185,9 @@ export async function PUT(
     if (leave_type !== undefined && leave_type !== null) updateData.leave_type = leave_type;
     if (hours !== undefined && hours !== null) updateData.hours = hours;
     if (notes !== undefined && notes !== null) updateData.notes = notes;
+    if (days_requested !== undefined && days_requested !== null) {
+      updateData.days_requested = parseInt(days_requested);
+    }
     
     // Gestisci attachment_url: se deleteAttachment è true, passa null; se c'è un nuovo file, passa l'URL; altrimenti non modificare
     if (deleteAttachment) {
