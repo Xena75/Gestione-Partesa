@@ -119,8 +119,8 @@ export async function POST(request: NextRequest) {
       WHERE fd.\`div\` IN ('W007', 'W009')
       AND tv.Tipo_Vettore = 'Terzista'
       AND fd.tipologia = 'Consegna pieni'
-      AND fd.mese = ?
-      AND fd.anno = ?
+      AND (COALESCE(fd.mese_fatturazione, fd.mese) = ?)
+      AND (COALESCE(fd.anno_fatturazione, fd.anno) = ?)
       ORDER BY fd.data_mov_merce DESC
     `;
 

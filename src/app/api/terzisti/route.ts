@@ -41,6 +41,10 @@ export async function GET(request: NextRequest) {
       filters.mese = searchParams.get('mese')!;
     }
     
+    if (searchParams.get('anno')) {
+      filters.anno = searchParams.get('anno')!;
+    }
+    
     if (searchParams.get('viaggio')) {
       filters.viaggio = searchParams.get('viaggio')!;
     }

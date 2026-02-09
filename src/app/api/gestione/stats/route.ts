@@ -44,6 +44,9 @@ export async function GET(request: NextRequest) {
     const mese = searchParams.get('mese');
     if (mese) filters.mese = mese;
 
+    const anno = searchParams.get('anno');
+    if (anno) filters.anno = anno;
+
     // 🚀 OTTIMIZZAZIONE: timeout per evitare blocchi
     const stats = await Promise.race([
       getDeliveryStats(filters),

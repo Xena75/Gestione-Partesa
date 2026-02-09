@@ -31,7 +31,8 @@ export async function POST(request: NextRequest) {
       deposito: filters?.deposito || undefined,
       bu: filters?.bu || undefined,
       ordine: filters?.ordine || undefined,
-      mese: filters?.mese || undefined
+      mese: filters?.mese || undefined,
+      anno: filters?.anno || undefined
     };
 
     // Funzione per recuperare TUTTI i record (non solo la prima pagina)
@@ -87,6 +88,10 @@ export async function POST(request: NextRequest) {
         if (filters.mese && filters.mese !== 'Tutti' && filters.mese !== '') {
           conditions.push('mese = ?');
           queryParams.push(parseInt(filters.mese));
+        }
+        if (filters.anno && filters.anno !== 'Tutti' && filters.anno !== '') {
+          conditions.push('anno = ?');
+          queryParams.push(parseInt(filters.anno));
         }
       }
 

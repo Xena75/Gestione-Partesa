@@ -12,6 +12,7 @@ interface FilterOptions {
   bu: string[];
   divisioni: string[];
   mesi: string[];
+  anni: string[];
 }
 
 export default function DeliveryFilters() {
@@ -25,7 +26,8 @@ export default function DeliveryFilters() {
     tipologie: [],
     bu: [],
     divisioni: [],
-    mesi: []
+    mesi: [],
+    anni: []
   });
 
 
@@ -42,7 +44,8 @@ export default function DeliveryFilters() {
     cliente: searchParams?.get('cliente') || '',
     dataDa: searchParams?.get('dataDa') || '',
     dataA: searchParams?.get('dataA') || '',
-    mese: searchParams?.get('mese') || 'Tutti'
+    mese: searchParams?.get('mese') || 'Tutti',
+    anno: searchParams?.get('anno') || 'Tutti'
   });
 
   // Carica le opzioni dei filtri
@@ -76,7 +79,8 @@ export default function DeliveryFilters() {
       cliente: searchParams?.get('cliente') || '',
       dataDa: searchParams?.get('dataDa') || '',
       dataA: searchParams?.get('dataA') || '',
-      mese: searchParams?.get('mese') || 'Tutti'
+      mese: searchParams?.get('mese') || 'Tutti',
+      anno: searchParams?.get('anno') || 'Tutti'
     });
   }, [searchParams]);
 
@@ -131,7 +135,8 @@ export default function DeliveryFilters() {
       cliente: '',
       dataDa: '',
       dataA: '',
-      mese: 'Tutti'
+      mese: 'Tutti',
+      anno: 'Tutti'
     });
 
     // Mantieni solo i parametri essenziali
@@ -328,6 +333,22 @@ export default function DeliveryFilters() {
                 {filterOptions.vettori.map((vettore) => (
                   <option key={vettore} value={vettore}>
                     {vettore}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="col-md-2">
+              <label className="form-label">Anno</label>
+              <select
+                className="form-select"
+                value={filters.anno}
+                onChange={(e) => handleInputChange('anno', e.target.value)}
+              >
+                <option value="Tutti">Tutti</option>
+                {filterOptions.anni.map((anno) => (
+                  <option key={anno} value={anno}>
+                    {anno}
                   </option>
                 ))}
               </select>

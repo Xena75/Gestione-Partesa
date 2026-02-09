@@ -61,7 +61,7 @@ export default function DeliveryTable({ viewType }: DeliveryTableProps) {
         params.set('sortOrder', sortOrder);
         
         // Aggiungi tutti i parametri dei filtri
-        const filterParams = ['viaggio', 'ordine', 'bu', 'divisione', 'deposito', 'vettore', 'tipologia', 'codCliente', 'cliente', 'dataDa', 'dataA', 'mese'];
+        const filterParams = ['viaggio', 'ordine', 'bu', 'divisione', 'deposito', 'vettore', 'tipologia', 'codCliente', 'cliente', 'dataDa', 'dataA', 'mese', 'anno'];
         filterParams.forEach(param => {
           const value = searchParams?.get(param);
           if (value) params.set(param, value);
@@ -206,7 +206,8 @@ export default function DeliveryTable({ viewType }: DeliveryTableProps) {
          !searchParams?.get('vettore') && !searchParams?.get('bu') && 
          !searchParams?.get('divisione') && !searchParams?.get('viaggio') && 
          !searchParams?.get('ordine') && !searchParams?.get('codCliente') && 
-         !searchParams?.get('cliente') && (
+         !searchParams?.get('cliente') && !searchParams?.get('mese') && 
+         !searchParams?.get('anno') && (
           <div className="alert alert-info mb-3">
             <i className="fas fa-info-circle me-2"></i>
             <strong>Ottimizzazione Performance:</strong> Per migliorare i tempi di caricamento, 

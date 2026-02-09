@@ -492,6 +492,8 @@ mese               tinyint(4)     YES   MUL  NULL                 STORED GENERAT
 settimana          tinyint(4)     YES        NULL                 STORED GENERATED
 ID_fatt            varchar(255)   YES        NULL                 STORED GENERATED
 anno               smallint(6)    YES        NULL                 STORED GENERATED
+mese_fatturazione  tinyint(4)     YES   MUL  NULL                 
+anno_fatturazione  smallint(6)    YES   MUL  NULL                 
 ```
 
 **Utilizzo nel progetto:**
@@ -500,6 +502,13 @@ anno               smallint(6)    YES        NULL                 STORED GENERAT
 - **Componenti**: `DeliveryTable.tsx` per visualizzazione tabellare
 - **Funzionalità**: Gestione fatturazione delivery, analisi performance, reportistica
 - **Analytics**: `DeliveryCharts.tsx` per grafici e statistiche
+
+**Note importanti:**
+- **Campi generati**: `mese`, `anno`, `settimana`, `ID_fatt` sono calcolati automaticamente da `data_mov_merce`
+- **Campi fatturazione**: `mese_fatturazione` e `anno_fatturazione` vengono estratti dal nome del file (`source_name`) durante l'importazione
+  - Pattern `Fut_MM_YYYY.xlsx` → estrae mese e anno direttamente
+  - Pattern `Futura_Mese.xlsx` → estrae mese dal nome, anno da `data_mov_merce`
+- **Filtri**: Le query di filtro usano `mese_fatturazione`/`anno_fatturazione` quando disponibili, altrimenti `mese`/`anno`
 
 #### fatt_extra_navette
 ```sql
@@ -722,7 +731,19 @@ created_at           timestamp      NO        current_timestamp()
 mese                 int(11)        YES        NULL                 STORED GENERATED
 trimestre            int(11)        YES        NULL                 STORED GENERATED
 settimana            int(11)        YES        NULL                 STORED GENERATED
+anno                 smallint(6)    YES   MUL  NULL                 STORED GENERATED
 ```
+
+**Note importanti:**
+- **Campi generati da `data_viaggio`**: `mese`, `trimestre`, `settimana`, `anno` sono calcolati automaticamente da `data_viaggio`:
+  - `mese` = `MONTH(data_viaggio)`
+  - `trimestre` = `QUARTER(data_viaggio)`
+  - `settimana` = `WEEK(data_viaggio, 1)`
+  - `anno` = `YEAR(data_viaggio)` ⭐ **NUOVO v2.43.7**
+- **Campi generati da calcoli**: `compenso` e `tot_compenso` sono calcolati automaticamente:
+  - `compenso` = `colli × tariffa_terzista`
+  - `tot_compenso` = `compenso + extra_cons`
+- **Indici**: `idx_anno` per migliorare le performance delle query di filtro per anno ⭐ **NUOVO v2.43.7**
 
 #### tab_deposito
 ```sql

@@ -56,6 +56,9 @@ export default function DeliveryStats({ className = '' }: DeliveryStatsProps) {
         
         const mese = searchParams?.get('mese');
         if (mese) params.append('mese', mese);
+        
+        const anno = searchParams?.get('anno');
+        if (anno) params.append('anno', anno);
 
         // 🚀 OTTIMIZZAZIONE: timeout per evitare attese infinite
         const controller = new AbortController();

@@ -78,6 +78,7 @@ export interface TerzistiFilters {
   dataDa?: string;
   dataA?: string;
   mese?: string;
+  anno?: string;
   trimestre?: string;
   settimana?: string;
   viaggio?: string;
@@ -93,6 +94,7 @@ export interface TerzistiFilterOptions {
   vettori: string[];
   aziende: string[];
   mesi: string[];
+  anni: string[];
   trimestri: string[];
   settimane: string[];
   viaggi: string[];
@@ -165,42 +167,47 @@ export async function getTerzistiData(
     }
 
     if (filters.mese) {
-      whereConditions.push('mese = ?');
+      whereConditions.push('tdt.mese = ?');
       queryParams.push(filters.mese);
     }
 
+    if (filters.anno) {
+      whereConditions.push('tdt.anno = ?');
+      queryParams.push(parseInt(filters.anno));
+    }
+
     if (filters.trimestre) {
-      whereConditions.push('trimestre = ?');
+      whereConditions.push('tdt.trimestre = ?');
       queryParams.push(filters.trimestre);
     }
 
     if (filters.settimana) {
-      whereConditions.push('settimana = ?');
+      whereConditions.push('tdt.settimana = ?');
       queryParams.push(filters.settimana);
     }
 
     if (filters.viaggio) {
-      whereConditions.push('viaggio LIKE ?');
+      whereConditions.push('tdt.viaggio LIKE ?');
       queryParams.push(`%${filters.viaggio}%`);
     }
 
     if (filters.ordine) {
-      whereConditions.push('ordine LIKE ?');
+      whereConditions.push('tdt.ordine LIKE ?');
       queryParams.push(`%${filters.ordine}%`);
     }
 
     if (filters.consegna) {
-      whereConditions.push('consegna_num LIKE ?');
+      whereConditions.push('tdt.consegna_num LIKE ?');
       queryParams.push(`%${filters.consegna}%`);
     }
 
     if (filters.cliente) {
-      whereConditions.push('(cod_cliente LIKE ? OR ragione_sociale LIKE ? OR REGEXP_REPLACE(TRIM(ragione_sociale), \'[[:space:]]+\', \' \') LIKE ?)');
+      whereConditions.push('(tdt.cod_cliente LIKE ? OR tdt.ragione_sociale LIKE ? OR REGEXP_REPLACE(TRIM(tdt.ragione_sociale), \'[[:space:]]+\', \' \') LIKE ?)');
       queryParams.push(`%${filters.cliente}%`, `%${filters.cliente}%`, `%${filters.cliente}%`);
     }
 
     if (filters.articolo) {
-      whereConditions.push('(cod_articolo LIKE ? OR descr_articolo LIKE ?)');
+      whereConditions.push('(tdt.cod_articolo LIKE ? OR tdt.descr_articolo LIKE ?)');
       queryParams.push(`%${filters.articolo}%`, `%${filters.articolo}%`);
     }
 
@@ -209,23 +216,23 @@ export async function getTerzistiData(
     // Query per i dati (AGGIORNATA con campi tariffa e campi calcolati)
     const dataQuery = `
       SELECT 
-        *,
-        Id_Tariffa,
-        tariffa_terzista,
-        ID_fatt,
-        mese,
-        trimestre,
-        settimana
-      FROM tab_delivery_terzisti
+        tdt.*,
+        tdt.Id_Tariffa,
+        tdt.tariffa_terzista,
+        tdt.ID_fatt,
+        tdt.mese,
+        tdt.trimestre,
+        tdt.settimana
+      FROM tab_delivery_terzisti tdt
       ${whereClause}
-      ORDER BY ${sort.field} ${sort.order}
+      ORDER BY tdt.${sort.field} ${sort.order}
       LIMIT ? OFFSET ?
     `;
 
     // Query per il conteggio totale
     const countQuery = `
       SELECT COUNT(*) as total
-      FROM tab_delivery_terzisti
+      FROM tab_delivery_terzisti tdt
       ${whereClause}
     `;
 
@@ -340,47 +347,52 @@ export async function getTerzistiStats(filters: TerzistiFilters = {}): Promise<T
     }
 
     if (filters.dataA) {
-      whereConditions.push('data_mov_merce <= ?');
+      whereConditions.push('tdt.data_mov_merce <= ?');
       queryParams.push(filters.dataA);
     }
 
+    if (filters.anno) {
+      whereConditions.push('tdt.anno = ?');
+      queryParams.push(parseInt(filters.anno));
+    }
+
     if (filters.mese) {
-      whereConditions.push('mese = ?');
+      whereConditions.push('tdt.mese = ?');
       queryParams.push(filters.mese);
     }
 
     if (filters.trimestre) {
-      whereConditions.push('trimestre = ?');
+      whereConditions.push('tdt.trimestre = ?');
       queryParams.push(filters.trimestre);
     }
 
     if (filters.settimana) {
-      whereConditions.push('settimana = ?');
+      whereConditions.push('tdt.settimana = ?');
       queryParams.push(filters.settimana);
     }
 
     if (filters.viaggio) {
-      whereConditions.push('viaggio LIKE ?');
+      whereConditions.push('tdt.viaggio LIKE ?');
       queryParams.push(`%${filters.viaggio}%`);
     }
 
     if (filters.ordine) {
-      whereConditions.push('ordine LIKE ?');
+      whereConditions.push('tdt.ordine LIKE ?');
       queryParams.push(`%${filters.ordine}%`);
     }
 
     if (filters.consegna) {
-      whereConditions.push('consegna_num LIKE ?');
+      whereConditions.push('tdt.consegna_num LIKE ?');
       queryParams.push(`%${filters.consegna}%`);
     }
 
     if (filters.cliente) {
-      whereConditions.push('(cod_cliente LIKE ? OR ragione_sociale LIKE ? OR REGEXP_REPLACE(TRIM(ragione_sociale), \'[[:space:]]+\', \' \') LIKE ?)');
+      whereConditions.push('(tdt.cod_cliente LIKE ? OR tdt.ragione_sociale LIKE ? OR REGEXP_REPLACE(TRIM(tdt.ragione_sociale), \'[[:space:]]+\', \' \') LIKE ?)');
       queryParams.push(`%${filters.cliente}%`, `%${filters.cliente}%`, `%${filters.cliente}%`);
     }
 
     if (filters.articolo) {
-      whereConditions.push('(cod_articolo LIKE ? OR descr_articolo LIKE ?)');
+      whereConditions.push('(tdt.cod_articolo LIKE ? OR tdt.descr_articolo LIKE ?)');
       queryParams.push(`%${filters.articolo}%`, `%${filters.articolo}%`);
     }
 
@@ -389,35 +401,35 @@ export async function getTerzistiStats(filters: TerzistiFilters = {}): Promise<T
     const query = `
       SELECT 
         COUNT(*) as totalRecords,
-        COUNT(DISTINCT consegna_num) as totalConsegne,
-        COUNT(DISTINCT viaggio) as totalViaggi,
-        SUM(colli) as totalColli,
-        SUM(compenso) as totalCompenso,
-        SUM(extra_cons) as totalExtra,
-        SUM(tot_compenso) as totalFatturato,
-        COUNT(DISTINCT Cod_Vettore) as uniqueVettori,
-        COUNT(DISTINCT Azienda_Vettore) as uniqueAziende,
+        COUNT(DISTINCT tdt.consegna_num) as totalConsegne,
+        COUNT(DISTINCT tdt.viaggio) as totalViaggi,
+        SUM(tdt.colli) as totalColli,
+        SUM(tdt.compenso) as totalCompenso,
+        SUM(tdt.extra_cons) as totalExtra,
+        SUM(tdt.tot_compenso) as totalFatturato,
+        COUNT(DISTINCT tdt.Cod_Vettore) as uniqueVettori,
+        COUNT(DISTINCT tdt.Azienda_Vettore) as uniqueAziende,
         CASE 
-          WHEN COUNT(DISTINCT consegna_num) > 0 
-          THEN SUM(colli) / COUNT(DISTINCT consegna_num) 
+          WHEN COUNT(DISTINCT tdt.consegna_num) > 0 
+          THEN SUM(tdt.colli) / COUNT(DISTINCT tdt.consegna_num) 
           ELSE 0 
         END as mediaColliConsegna,
         CASE 
-          WHEN COUNT(DISTINCT viaggio) > 0 
-          THEN SUM(colli) / COUNT(DISTINCT viaggio) 
+          WHEN COUNT(DISTINCT tdt.viaggio) > 0 
+          THEN SUM(tdt.colli) / COUNT(DISTINCT tdt.viaggio) 
           ELSE 0 
         END as mediaColliViaggio,
         CASE 
-          WHEN COUNT(DISTINCT viaggio) > 0 
-          THEN SUM(compenso) / COUNT(DISTINCT viaggio) 
+          WHEN COUNT(DISTINCT tdt.viaggio) > 0 
+          THEN SUM(tdt.compenso) / COUNT(DISTINCT tdt.viaggio) 
           ELSE 0 
         END as mediaCompensoViaggio,
         CASE 
-          WHEN COUNT(DISTINCT consegna_num) > 0 
-          THEN SUM(compenso) / COUNT(DISTINCT consegna_num) 
+          WHEN COUNT(DISTINCT tdt.consegna_num) > 0 
+          THEN SUM(tdt.compenso) / COUNT(DISTINCT tdt.consegna_num) 
           ELSE 0 
         END as mediaFatturatoViaggio
-      FROM tab_delivery_terzisti
+      FROM tab_delivery_terzisti tdt
       ${whereClause}
     `;
 
@@ -457,7 +469,16 @@ export async function getTerzistiFilterOptions(): Promise<TerzistiFilterOptions>
       const [divisioniResult] = await pool.execute('SELECT DISTINCT `div` FROM tab_delivery_terzisti ORDER BY `div`');
       const [vettoriResult] = await pool.execute('SELECT DISTINCT REGEXP_REPLACE(TRIM(Descr_Vettore_Join), \'[[:space:]]+\', \' \') as Descr_Vettore_Join FROM tab_delivery_terzisti WHERE Descr_Vettore_Join IS NOT NULL AND TRIM(Descr_Vettore_Join) != \'\' ORDER BY REGEXP_REPLACE(TRIM(Descr_Vettore_Join), \'[[:space:]]+\', \' \')');
       const [aziendeResult] = await pool.execute('SELECT DISTINCT TRIM(REGEXP_REPLACE(Azienda_Vettore, \'[[:space:]]+\', \' \')) as Azienda_Vettore FROM tab_delivery_terzisti WHERE Azienda_Vettore IS NOT NULL AND TRIM(Azienda_Vettore) != \'\' ORDER BY TRIM(REGEXP_REPLACE(Azienda_Vettore, \'[[:space:]]+\', \' \'))');
-      const [mesiResult] = await pool.execute('SELECT DISTINCT mese FROM tab_delivery_terzisti WHERE mese IS NOT NULL ORDER BY mese DESC');
+      const [mesiResult] = await pool.execute('SELECT DISTINCT mese FROM tab_delivery_terzisti WHERE mese IS NOT NULL ORDER BY mese ASC');
+      // Per gli anni, usiamo la colonna anno STORED GENERATED
+      const [anniResult] = await pool.execute(`
+        SELECT DISTINCT anno
+        FROM tab_delivery_terzisti
+        WHERE anno IS NOT NULL
+        GROUP BY anno
+        HAVING COUNT(*) > 0
+        ORDER BY anno DESC
+      `);
       const [trimestriResult] = await pool.execute('SELECT DISTINCT trimestre FROM tab_delivery_terzisti WHERE trimestre IS NOT NULL ORDER BY trimestre DESC');
       const [settimaneResult] = await pool.execute('SELECT DISTINCT settimana FROM tab_delivery_terzisti WHERE settimana IS NOT NULL ORDER BY settimana DESC');
       const [viaggiResult] = await pool.execute('SELECT DISTINCT viaggio FROM tab_delivery_terzisti WHERE viaggio IS NOT NULL ORDER BY viaggio');
@@ -471,6 +492,7 @@ export async function getTerzistiFilterOptions(): Promise<TerzistiFilterOptions>
         vettori: (vettoriResult as any[]).map(row => row.Descr_Vettore_Join),
         aziende: (aziendeResult as any[]).map(row => row.Azienda_Vettore),
         mesi: (mesiResult as any[]).map(row => row.mese),
+        anni: (anniResult as any[]).map(row => String(row.anno)),
         trimestri: (trimestriResult as any[]).map(row => row.trimestre),
         settimane: (settimaneResult as any[]).map(row => row.settimana),
         viaggi: (viaggiResult as any[]).map(row => row.viaggio),
@@ -538,67 +560,72 @@ export async function getTerzistiGroupedData(
     const queryParams: any[] = [];
 
     if (filters.divisione) {
-      whereConditions.push('`div` = ?');
+      whereConditions.push('tdt.`div` = ?');
       queryParams.push(filters.divisione);
     }
 
     if (filters.vettore) {
-      whereConditions.push('(Descr_Vettore_Join LIKE ? OR REGEXP_REPLACE(TRIM(Descr_Vettore_Join), \'[[:space:]]+\', \' \') LIKE ?)');
+      whereConditions.push('(tdt.Descr_Vettore_Join LIKE ? OR REGEXP_REPLACE(TRIM(tdt.Descr_Vettore_Join), \'[[:space:]]+\', \' \') LIKE ?)');
       queryParams.push(`%${filters.vettore}%`, `%${filters.vettore}%`);
     }
 
     if (filters.azienda) {
-      whereConditions.push('(Azienda_Vettore LIKE ? OR TRIM(REGEXP_REPLACE(Azienda_Vettore, \'[[:space:]]+\', \' \')) LIKE ?)');
+      whereConditions.push('(tdt.Azienda_Vettore LIKE ? OR TRIM(REGEXP_REPLACE(tdt.Azienda_Vettore, \'[[:space:]]+\', \' \')) LIKE ?)');
       queryParams.push(`%${filters.azienda}%`, `%${filters.azienda}%`);
     }
 
     if (filters.dataDa) {
-      whereConditions.push('data_mov_merce >= ?');
+      whereConditions.push('tdt.data_mov_merce >= ?');
       queryParams.push(filters.dataDa);
     }
 
     if (filters.dataA) {
-      whereConditions.push('data_mov_merce <= ?');
+      whereConditions.push('tdt.data_mov_merce <= ?');
       queryParams.push(filters.dataA);
     }
 
+    if (filters.anno) {
+      whereConditions.push('tdt.anno = ?');
+      queryParams.push(parseInt(filters.anno));
+    }
+
     if (filters.mese) {
-      whereConditions.push('mese = ?');
+      whereConditions.push('tdt.mese = ?');
       queryParams.push(filters.mese);
     }
 
     if (filters.trimestre) {
-      whereConditions.push('trimestre = ?');
+      whereConditions.push('tdt.trimestre = ?');
       queryParams.push(filters.trimestre);
     }
 
     if (filters.settimana) {
-      whereConditions.push('settimana = ?');
+      whereConditions.push('tdt.settimana = ?');
       queryParams.push(filters.settimana);
     }
 
     if (filters.viaggio) {
-      whereConditions.push('viaggio LIKE ?');
+      whereConditions.push('tdt.viaggio LIKE ?');
       queryParams.push(`%${filters.viaggio}%`);
     }
 
     if (filters.ordine) {
-      whereConditions.push('ordine LIKE ?');
+      whereConditions.push('tdt.ordine LIKE ?');
       queryParams.push(`%${filters.ordine}%`);
     }
 
     if (filters.consegna) {
-      whereConditions.push('consegna_num LIKE ?');
+      whereConditions.push('tdt.consegna_num LIKE ?');
       queryParams.push(`%${filters.consegna}%`);
     }
 
     if (filters.cliente) {
-      whereConditions.push('(cod_cliente LIKE ? OR ragione_sociale LIKE ? OR REGEXP_REPLACE(TRIM(ragione_sociale), \'[[:space:]]+\', \' \') LIKE ?)');
+      whereConditions.push('(tdt.cod_cliente LIKE ? OR tdt.ragione_sociale LIKE ? OR REGEXP_REPLACE(TRIM(tdt.ragione_sociale), \'[[:space:]]+\', \' \') LIKE ?)');
       queryParams.push(`%${filters.cliente}%`, `%${filters.cliente}%`, `%${filters.cliente}%`);
     }
 
     if (filters.articolo) {
-      whereConditions.push('(cod_articolo LIKE ? OR descr_articolo LIKE ?)');
+      whereConditions.push('(tdt.cod_articolo LIKE ? OR tdt.descr_articolo LIKE ?)');
       queryParams.push(`%${filters.articolo}%`, `%${filters.articolo}%`);
     }
 
@@ -607,28 +634,28 @@ export async function getTerzistiGroupedData(
     // Query per i dati raggruppati (AGGIORNATA con campi tariffa)
     const groupedQuery = `
       SELECT 
-        \`div\`,
-        dep,
-        DATE_FORMAT(data_mov_merce, '%Y-%m-%d') as data_mov_merce,
-        viaggio,
-        ordine,
-        consegna_num,
-        Descr_Vettore_Join,
-        Azienda_Vettore,
-        tipologia,
-        ragione_sociale,
+        tdt.\`div\`,
+        tdt.dep,
+        DATE_FORMAT(tdt.data_mov_merce, '%Y-%m-%d') as data_mov_merce,
+        tdt.viaggio,
+        tdt.ordine,
+        tdt.consegna_num,
+        tdt.Descr_Vettore_Join,
+        tdt.Azienda_Vettore,
+        tdt.tipologia,
+        tdt.ragione_sociale,
         COUNT(*) as articoli_count,
-        SUM(colli) as total_colli,
-        SUM(extra_cons) as total_extra_cons,
-        SUM(tot_compenso) as total_compenso,
-        DATE_FORMAT(data_viaggio, '%Y-%m-%d') as data_viaggio,
-        Id_Tariffa,
-        AVG(tariffa_terzista) as avg_tariffa_terzista,
-        ID_fatt
-      FROM tab_delivery_terzisti
+        SUM(tdt.colli) as total_colli,
+        SUM(tdt.extra_cons) as total_extra_cons,
+        SUM(tdt.tot_compenso) as total_compenso,
+        DATE_FORMAT(tdt.data_viaggio, '%Y-%m-%d') as data_viaggio,
+        tdt.Id_Tariffa,
+        AVG(tdt.tariffa_terzista) as avg_tariffa_terzista,
+        tdt.ID_fatt
+      FROM tab_delivery_terzisti tdt
       ${whereClause}
-      GROUP BY consegna_num, Descr_Vettore_Join, tipologia
-      ORDER BY ${sort.field} ${sort.order}
+      GROUP BY tdt.consegna_num, tdt.Descr_Vettore_Join, tdt.tipologia
+      ORDER BY tdt.${sort.field} ${sort.order}
       LIMIT ? OFFSET ?
     `;
 
@@ -636,40 +663,45 @@ export async function getTerzistiGroupedData(
     const countQuery = `
       SELECT COUNT(*) as total
       FROM (
-        SELECT consegna_num, Descr_Vettore_Join, tipologia
-        FROM tab_delivery_terzisti
+        SELECT tdt.consegna_num, tdt.Descr_Vettore_Join, tdt.tipologia
+        FROM tab_delivery_terzisti tdt
         ${whereClause}
-        GROUP BY consegna_num, Descr_Vettore_Join, tipologia
+        GROUP BY tdt.consegna_num, tdt.Descr_Vettore_Join, tdt.tipologia
       ) as grouped
     `;
 
     // Query per le statistiche
     const statsQuery = `
       SELECT 
-        COUNT(DISTINCT consegna_num) as totalConsegne,
-        COUNT(DISTINCT viaggio) as totalViaggi,
-        SUM(colli) as totalColli,
-        SUM(compenso) as totalCompenso,
-        SUM(extra_cons) as totalExtra,
-        SUM(tot_compenso) as totalFatturato,
-        COUNT(DISTINCT Cod_Vettore) as uniqueVettori,
-        COUNT(DISTINCT Azienda_Vettore) as uniqueAziende,
+        COUNT(DISTINCT tdt.consegna_num) as totalConsegne,
+        COUNT(DISTINCT tdt.viaggio) as totalViaggi,
+        SUM(tdt.colli) as totalColli,
+        SUM(tdt.compenso) as totalCompenso,
+        SUM(tdt.extra_cons) as totalExtra,
+        SUM(tdt.tot_compenso) as totalFatturato,
+        COUNT(DISTINCT tdt.Cod_Vettore) as uniqueVettori,
+        COUNT(DISTINCT tdt.Azienda_Vettore) as uniqueAziende,
         CASE 
-          WHEN COUNT(DISTINCT consegna_num) > 0 
-          THEN SUM(colli) / COUNT(DISTINCT consegna_num) 
+          WHEN COUNT(DISTINCT tdt.consegna_num) > 0 
+          THEN SUM(tdt.colli) / COUNT(DISTINCT tdt.consegna_num) 
           ELSE 0 
         END as mediaColliConsegna,
         CASE 
-          WHEN COUNT(DISTINCT viaggio) > 0 
-          THEN SUM(colli) / COUNT(DISTINCT viaggio) 
+          WHEN COUNT(DISTINCT tdt.viaggio) > 0 
+          THEN SUM(tdt.colli) / COUNT(DISTINCT tdt.viaggio) 
           ELSE 0 
         END as mediaColliViaggio,
         CASE 
-          WHEN COUNT(DISTINCT consegna_num) > 0 
-          THEN SUM(tot_compenso) / COUNT(DISTINCT consegna_num) 
+          WHEN COUNT(DISTINCT tdt.viaggio) > 0 
+          THEN SUM(tdt.compenso) / COUNT(DISTINCT tdt.viaggio) 
+          ELSE 0 
+        END as mediaCompensoViaggio,
+        CASE 
+          WHEN COUNT(DISTINCT tdt.consegna_num) > 0 
+          THEN SUM(tdt.compenso) / COUNT(DISTINCT tdt.consegna_num) 
           ELSE 0 
         END as mediaFatturatoViaggio
-      FROM tab_delivery_terzisti
+      FROM tab_delivery_terzisti tdt
       ${whereClause}
     `;
 

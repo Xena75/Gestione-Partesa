@@ -1,7 +1,126 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-**Versione corrente**: v2.43.5  
-**Ultimo aggiornamento**: Gennaio 2025
+**Versione corrente**: v2.43.8  
+**Ultimo aggiornamento**: Gennaio 2026
+
+---
+
+## v2.43.8 - Ottimizzazione Layout Filtri Fatturazione Terzisti
+
+**Data implementazione**: Gennaio 2026  
+**Stato**: ✅ Completato e testato
+
+### 🎨 Miglioramenti UI/UX Filtri
+
+#### 📐 Layout Ottimizzato su 2 Righe
+- **Problema risolto**: I filtri erano distribuiti su 3 righe, occupando troppo spazio verticale
+- **Soluzione**: Riorganizzati i filtri su 2 righe per un layout più compatto ed efficiente
+- **Prima riga**: Divisione, Vettore, Azienda, Anno, Mese, Trimestre, Data Da, Data A
+- **Seconda riga**: Settimana, Viaggio, Cliente, Ordine, Consegna, Articolo
+
+#### 📏 Riduzione Larghezze Filtri
+- **Ottimizzazione spazio**: Ridotte le larghezze dei filtri per recuperare spazio orizzontale
+- **Divisione**: `col-md-1` (ridotto da col-md-2)
+- **Vettore**: `col-md-2` (mantenuto per valori lunghi come "LAI01 FUTURA")
+- **Azienda**: `col-md-2` (mantenuto per nomi lunghi)
+- **Anno**: `col-md-1` (ridotto da col-md-2)
+- **Mese**: `col-md-1` (ridotto da col-md-2)
+- **Trimestre**: `col-md-1` (ridotto da col-md-2)
+- **Data Da/Data A**: `col-md-2` ciascuno (spostati dalla seconda riga alla prima)
+
+#### 🔄 Riorganizzazione Elementi
+- **Data Da/Data A**: Spostati dalla seconda riga alla prima riga per migliore accessibilità
+- **Consegna/Articolo**: Spostati dalla terza riga alla seconda riga
+- **Terza riga**: Eliminata completamente
+
+#### 📁 File Modificati
+- `src/app/fatturazione-terzisti/page.tsx` (modificato - layout filtri ottimizzato)
+
+### ✅ Benefici
+- ✅ Layout più compatto e professionale
+- ✅ Migliore utilizzo dello spazio disponibile
+- ✅ Filtri più facilmente accessibili
+- ✅ Esperienza utente migliorata
+
+---
+
+## v2.43.7 - Filtro Anno nella Fatturazione Terzisti e Colonna Anno STORED GENERATED
+
+**Data implementazione**: Gennaio 2026  
+**Stato**: ✅ Completato e testato
+
+### 🎯 Filtro Anno nella Pagina Fatturazione Terzisti
+
+#### 🆕 Filtro Anno
+- **Problema risolto**: Con solo il filtro mese, venivano mostrati dati di anni diversi (es: gennaio 2025 e gennaio 2026 insieme)
+- **Soluzione**: Aggiunto filtro anno che aggiorna sia le card statistiche che i dati della tabella
+- **Coerenza**: Il filtro anno funziona come il filtro mese, trimestre e settimana
+- **Posizionamento**: Il filtro anno è posizionato prima del filtro mese nella prima riga
+
+#### 📊 Colonna Anno STORED GENERATED
+- **Ottimizzazione**: Aggiunta colonna `anno` STORED GENERATED calcolata da `YEAR(data_viaggio)` per migliorare le performance
+- **Coerenza**: `mese`, `trimestre`, `settimana` e `anno` sono tutti calcolati da `data_viaggio` (non `data_mov_merce`)
+- **Indice**: Creato indice `idx_anno` per ottimizzare le query di filtro
+- **Migration**: `migrations/add_anno_to_tab_delivery_terzisti.sql`
+
+#### 🔍 Query Aggiornate
+- **Rimozione JOIN**: Le query non necessitano più di JOIN con `fatt_delivery` per filtrare per anno
+- **Performance**: Query più veloci grazie alla colonna STORED GENERATED e all'indice
+- **Filtri dropdown**: Popolati con valori dalla colonna `anno` della tabella
+- **Ordinamento mesi**: I mesi nel dropdown sono ordinati in ordine crescente (Gennaio, Febbraio, ecc.)
+
+#### 📁 File Modificati
+- `src/lib/data-terzisti.ts` (modificato - aggiunto filtro anno, rimosso JOIN, ordinamento mesi ASC)
+- `src/app/api/terzisti/route.ts` (modificato - aggiunto parametro anno)
+- `src/app/api/terzisti/stats/route.ts` (modificato - aggiunto parametro anno)
+- `src/app/fatturazione-terzisti/page.tsx` (modificato - aggiunto dropdown filtro anno, formato mese senza anno)
+- `migrations/add_anno_to_tab_delivery_terzisti.sql` (creato)
+- `docs/database-reference.md` (aggiornato - documentazione colonna anno)
+
+### ✅ Benefici
+- ✅ Filtro anno funzionante nella pagina Fatturazione Terzisti
+- ✅ Performance migliorate grazie alla colonna STORED GENERATED e all'indice
+- ✅ Coerenza con gli altri filtri (mese, trimestre, settimana)
+- ✅ Query semplificate senza JOIN non necessari
+- ✅ UI migliorata con mesi ordinati e senza anno nel dropdown
+
+---
+
+## v2.43.6 - Filtro per Mese/Anno di Fatturazione nella Gestione Delivery
+
+**Data implementazione**: Gennaio 2026  
+**Stato**: ✅ Completato e testato
+
+### 🎯 Campi Mese/Anno di Fatturazione
+
+#### 🆕 Colonne mese_fatturazione e anno_fatturazione
+- **Problema risolto**: I record pagati in un mese ma con data_mov_merce di un altro mese non venivano inclusi correttamente nei filtri
+- **Soluzione**: Aggiunti campi `mese_fatturazione` e `anno_fatturazione` che vengono estratti dal nome del file (`source_name`)
+- **Pattern supportati**:
+  - `Fut_01_2026.xlsx` → mese 1, anno 2026 (estratto direttamente dal nome)
+  - `Futura_Aprile.xlsx` → mese 4, anno dalla `data_mov_merce` o corrente
+- **Migration**: `migrations/add_mese_anno_fatturazione_to_fatt_delivery.sql`
+
+#### 📊 Logica di Estrazione
+- **Con anno esplicito**: Estrae mese e anno direttamente dal nome del file (es: `Fut_MM_YYYY.xlsx`)
+- **Senza anno**: Estrae il mese dal nome (es: `Futura_Aprile.xlsx`) e usa l'anno da `data_mov_merce` o anno corrente
+- **Fallback**: Se non è possibile estrarre, usa `mese` e `anno` basati su `data_mov_merce`
+
+#### 🔍 Query di Filtro Aggiornate
+- **Priorità**: Le query usano `mese_fatturazione`/`anno_fatturazione` quando disponibili, altrimenti `mese`/`anno`
+- **Filtri dropdown**: Popolati con valori da `mese_fatturazione`/`anno_fatturazione` quando disponibili
+- **Compatibilità**: Funziona con record vecchi (senza i nuovi campi) e nuovi (con i nuovi campi)
+
+#### 📁 File Modificati
+- `src/lib/data-gestione.ts` (modificato - query di filtro e getDeliveryFilterOptions)
+- `src/app/api/delivery/import-from-folder/route.ts` (modificato - estrazione mese/anno da nome file)
+- `migrations/add_mese_anno_fatturazione_to_fatt_delivery.sql` (creato)
+
+### ✅ Benefici
+- ✅ Filtri corretti per mese/anno di fatturazione invece che solo data movimento merce
+- ✅ Record pagati in un mese ma con data diversa vengono inclusi correttamente
+- ✅ Compatibilità con record esistenti
+- ✅ Supporto per entrambi i formati di nome file (con e senza anno)
 
 ---
 

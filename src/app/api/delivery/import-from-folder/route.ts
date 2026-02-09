@@ -83,9 +83,16 @@ function convertDate(dateValue: any): string | null {
 
 function convertNumber(value: any): number | null {
   if (value === null || value === undefined || value === '') return null;
-  if (typeof value === 'number') return value;
-  const num = parseFloat(String(value));
-  return isNaN(num) ? null : num;
+  if (typeof value === 'number') {
+    // Gestisci precisione per numeri decimali
+    return Math.round(value * 100) / 100;
+  }
+  // Rimuovi spazi e caratteri non numerici, poi converti
+  const cleaned = String(value).replace(/[^\d.,-]/g, '').replace(',', '.');
+  const num = parseFloat(cleaned);
+  if (isNaN(num)) return null;
+  // Arrotonda a 2 decimali per evitare problemi di precisione
+  return Math.round(num * 100) / 100;
 }
 
 // GET - Lista file disponibili nelle cartelle
@@ -231,6 +238,82 @@ export async function POST(request: NextRequest) {
     // Ottieni connessione
     connection = await pool.getConnection();
     
+    // 🗑️ Elimina record esistenti dello stesso file per evitare duplicati
+    // Questo permette di riimportare file aggiornati senza creare duplicati
+    // Controlla se nel file Excel c'è una colonna source_name con valori specifici
+    const firstRow = data[0] || {};
+    const hasSourceNameColumn = firstRow.source_name !== undefined && 
+                                firstRow.source_name !== null && 
+                                String(firstRow.source_name).trim() !== '';
+    
+    // Se c'è una colonna source_name con valori, elimina i record con quel source_name
+    // Altrimenti elimina i record con il nome del file
+    const sourceNameToDelete = hasSourceNameColumn ? String(firstRow.source_name).trim() : fileName;
+    
+    try {
+      const [deleteResult] = await connection.execute(
+        'DELETE FROM fatt_delivery WHERE source_name = ?',
+        [sourceNameToDelete]
+      );
+      const deletedCount = (deleteResult as any).affectedRows || 0;
+      if (deletedCount > 0) {
+        console.log(`🗑️ Eliminati ${deletedCount} record esistenti con source_name "${sourceNameToDelete}" per evitare duplicati`);
+      }
+    } catch (deleteError: any) {
+      console.warn(`⚠️ Avviso: impossibile eliminare record esistenti: ${deleteError.message}`);
+      // Continua comunque con l'importazione
+    }
+    
+    // Estrai mese e anno di fatturazione dal nome del file
+    // Pattern supportati:
+    // - Fut_01_2026.xlsx → mese 1, anno 2026
+    // - Futura_Aprile.xlsx → mese 4, anno dalla data_mov_merce o corrente
+    const extractFatturazioneFromFileName = (fileName: string, dataMovMerce?: string | null): { mese: number | null, anno: number | null } => {
+      // Pattern 1: Fut_MM_YYYY.xlsx (con anno esplicito)
+      let match = fileName.match(/Fut_([0-9]{2})_([0-9]{4})/i) || fileName.match(/([0-9]{2})_([0-9]{4})/);
+      if (match) {
+        return {
+          mese: parseInt(match[1]),
+          anno: parseInt(match[2])
+        };
+      }
+      
+      // Pattern 2: Futura_Mese.xlsx (senza anno, usa nome mese)
+      const nomiMesi: Record<string, number> = {
+        'gennaio': 1, 'febbraio': 2, 'marzo': 3, 'aprile': 4,
+        'maggio': 5, 'giugno': 6, 'luglio': 7, 'agosto': 8,
+        'settembre': 9, 'ottobre': 10, 'novembre': 11, 'dicembre': 12
+      };
+      
+      for (const [nomeMese, numeroMese] of Object.entries(nomiMesi)) {
+        if (fileName.toLowerCase().includes(nomeMese.toLowerCase())) {
+          // Se c'è una data_mov_merce, usa l'anno da quella, altrimenti usa l'anno corrente
+          let anno: number | null = null;
+          if (dataMovMerce) {
+            try {
+              const date = new Date(dataMovMerce);
+              if (!isNaN(date.getTime())) {
+                anno = date.getFullYear();
+              }
+            } catch (e) {
+              // Ignora
+            }
+          }
+          // Se non abbiamo l'anno dalla data, usa l'anno corrente
+          if (!anno) {
+            anno = new Date().getFullYear();
+          }
+          
+          return {
+            mese: numeroMese,
+            anno: anno
+          };
+        }
+      }
+      
+      return { mese: null, anno: null };
+    };
+    
     // Prepara la query di inserimento (usa backtick per parole riservate)
     const insertQuery = `
       INSERT INTO fatt_delivery (
@@ -264,9 +347,11 @@ export async function POST(request: NextRequest) {
         tipologia,
         cod_em_fat,
         emittente_fattura,
-        oda
+        oda,
+        mese_fatturazione,
+        anno_fatturazione
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     
     let importedCount = 0;
@@ -297,44 +382,75 @@ export async function POST(request: NextRequest) {
             sourceNameValue = fileName;
           }
           
+          // Funzione helper per convertire stringhe vuote in null
+          const toNullIfEmpty = (value: any): string | null => {
+            if (value === null || value === undefined) return null;
+            const str = String(value).trim();
+            return str === '' ? null : str;
+          };
+          
+          // Estrai mese/anno di fatturazione per questo record specifico
+          // (può variare se source_name è diverso per ogni riga)
+          const dataMovMerceValue = convertDate(row.data_mov_merce);
+          const { mese: meseFattRecord, anno: annoFattRecord } = extractFatturazioneFromFileName(
+            sourceNameValue || fileName,
+            dataMovMerceValue
+          );
+          
           const values = [
             sourceNameValue, // source_name - dalla colonna del file Excel (o nome file se non valido)
-            row.appalto || null,
-            row.ordine || null,
+            toNullIfEmpty(row.appalto),
+            toNullIfEmpty(row.ordine),
             convertNumber(row.cod_vettore),
-            row.descr_vettore || null,
-            row.viaggio || null,
-            row.consegna_num || null,
-            row.cod_cliente || null,
-            row.ragione_sociale || null,
-            row.cod_articolo || null,
-            row.descr_articolo || null,
-            row.gr_stat || null,
-            row.descr_gruppo_st || null,
-            row.classe_prod || null,
-            row.descr_classe_prod || null,
-            row.classe_tariffa || null,
-            row.anomalia || null, // Opzionale, può essere vuoto
-            convertDate(row.data_mov_merce),
+            toNullIfEmpty(row.descr_vettore),
+            toNullIfEmpty(row.viaggio), // Converti stringhe vuote in null
+            toNullIfEmpty(row.consegna_num),
+            toNullIfEmpty(row.cod_cliente),
+            toNullIfEmpty(row.ragione_sociale),
+            toNullIfEmpty(row.cod_articolo),
+            toNullIfEmpty(row.descr_articolo),
+            toNullIfEmpty(row.gr_stat),
+            toNullIfEmpty(row.descr_gruppo_st),
+            toNullIfEmpty(row.classe_prod),
+            toNullIfEmpty(row.descr_classe_prod),
+            toNullIfEmpty(row.classe_tariffa),
+            toNullIfEmpty(row.anomalia), // Opzionale, può essere vuoto
+            dataMovMerceValue,
             convertNumber(row.colli),
             convertNumber(row.tariffa),
             convertNumber(row.tariffa_vuoti),
             convertNumber(row.compenso),
             convertNumber(row.tr_cons),
             convertNumber(row.tot_compenso),
-            row.bu || null,
-            row.div || null,
-            row.dep || row.Deposito || null, // Supporta sia "dep" che "Deposito"
-            row.tipologia || null,
-            row.cod_em_fat || null,
-            row.emittente_fattura || null,
-            row.oda || null,
+            toNullIfEmpty(row.bu),
+            toNullIfEmpty(row.div),
+            toNullIfEmpty(row.dep || row.Deposito), // Supporta sia "dep" che "Deposito"
+            toNullIfEmpty(row.tipologia),
+            toNullIfEmpty(row.cod_em_fat),
+            toNullIfEmpty(row.emittente_fattura),
+            toNullIfEmpty(row.oda),
+            meseFattRecord, // Mese di fatturazione estratto dal nome del file (o source_name)
+            annoFattRecord, // Anno di fatturazione estratto dal nome del file (o source_name)
           ];
           
           batchValues.push(values);
         } catch (error: any) {
           errorCount++;
-          errors.push(`Riga ${i + batchValues.length + 1}: ${error.message}`);
+          const rowNum = i + batchValues.length + 1;
+          const errorMsg = `Riga ${rowNum}: ${error.message}`;
+          errors.push(errorMsg);
+          // Log dettagliato per i record problematici
+          console.error(`❌ Errore preparazione riga ${rowNum}:`, {
+            error: error.message,
+            stack: error.stack,
+            row: {
+              consegna_num: row.consegna_num || row['consegna_num'],
+              viaggio: row.viaggio || row['viaggio'],
+              ordine: row.ordine || row['ordine'],
+              data_mov_merce: row.data_mov_merce || row['data_mov_merce'],
+              tot_compenso: row.tot_compenso || row['tot_compenso']
+            }
+          });
         }
       }
       
@@ -360,7 +476,16 @@ export async function POST(request: NextRequest) {
               importedCount++;
             } catch (singleError: any) {
               errorCount++;
-              errors.push(`Riga ${importedCount + errorCount}: ${singleError.message}`);
+              const errorMsg = `Riga ${importedCount + errorCount}: ${singleError.message}`;
+              errors.push(errorMsg);
+              // Log dettagliato per debug
+              console.error(`❌ Errore inserimento singolo (riga ${importedCount + errorCount}):`, {
+                error: singleError.message,
+                code: singleError.code,
+                errno: singleError.errno,
+                sqlState: singleError.sqlState,
+                values: values.slice(0, 10) // Mostra solo i primi 10 valori per non intasare il log
+              });
             }
           }
         }
@@ -379,8 +504,9 @@ export async function POST(request: NextRequest) {
       success: true,
       importedRows: importedCount,
       totalRows: data.length,
-      errors: errors.length > 0 ? errors.slice(0, 10) : [],
-      errorCount: errorCount
+      errors: errors.length > 0 ? errors.slice(0, 50) : [], // Mostra fino a 50 errori invece di 10
+      errorCount: errorCount,
+      warning: errorCount > 0 ? `⚠️ ${errorCount} errori durante l'importazione. Controlla i log del server per dettagli.` : null
     });
     
   } catch (error) {

@@ -325,6 +325,7 @@ function FatturazioneTerzistiContent() {
     const ordine = searchParams?.get('ordine');
     const consegna = searchParams?.get('consegna');
     const mese = searchParams?.get('mese');
+    const anno = searchParams?.get('anno');
     
     // Imposta i filtri se presenti
     if (dataDa) initialFilters.dataDa = dataDa;
@@ -337,6 +338,7 @@ function FatturazioneTerzistiContent() {
     if (ordine) initialFilters.ordine = ordine;
     if (consegna) initialFilters.consegna = consegna;
     if (mese) initialFilters.mese = mese;
+    if (anno) initialFilters.anno = anno;
     
     // Imposta i filtri solo se ci sono parametri URL
     if (Object.keys(initialFilters).length > 0) {
@@ -600,8 +602,8 @@ function FatturazioneTerzistiContent() {
             {showFilters && (
               <div className="card-body">
                 {/* Prima riga: Filtri principali */}
-                <div className="row">
-                  <div className="col-md-2">
+                <div className="row mb-3">
+                  <div className="col-md-1">
                     <label className="form-label">Divisione</label>
                     <select
                       className="form-select"
@@ -640,32 +642,44 @@ function FatturazioneTerzistiContent() {
                       ))}
                     </select>
                   </div>
-                  <div className="col-md-2">
+                  <div className="col-md-1">
+                    <label className="form-label">Anno</label>
+                    <select
+                      className="form-select"
+                      value={filters.anno || ''}
+                      onChange={(e) => handleFilterChange('anno', e.target.value)}
+                    >
+                      <option value="">Tutti</option>
+                      {filterOptions?.anni?.map(anno => (
+                        <option key={anno} value={anno}>{anno}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="col-md-1">
                     <label className="form-label">Mese</label>
                     <select
                       className="form-select"
                       value={filters.mese || ''}
                       onChange={(e) => handleFilterChange('mese', e.target.value)}
                     >
-                      <option value="">Tutti i mesi</option>
+                      <option value="">Tutti</option>
                       {filterOptions?.mesi?.map(mese => (
                         <option key={mese} value={mese}>
                           {new Date(2025, parseInt(mese) - 1).toLocaleDateString('it-IT', { 
-                            year: 'numeric', 
                             month: 'long' 
                           })}
                         </option>
                       ))}
                     </select>
                   </div>
-                  <div className="col-md-2">
+                  <div className="col-md-1">
                     <label className="form-label">Trimestre</label>
                     <select
                       className="form-select"
                       value={filters.trimestre || ''}
                       onChange={(e) => handleFilterChange('trimestre', e.target.value)}
                     >
-                      <option value="">Tutti i trimestri</option>
+                      <option value="">Tutti</option>
                       {filterOptions?.trimestri?.map(trimestre => (
                         <option key={trimestre} value={trimestre}>
                           Q{trimestre} 2025
@@ -673,24 +687,6 @@ function FatturazioneTerzistiContent() {
                       ))}
                     </select>
                   </div>
-                  <div className="col-md-2">
-                    <label className="form-label">Settimana</label>
-                    <select
-                      className="form-select"
-                      value={filters.settimana || ''}
-                      onChange={(e) => handleFilterChange('settimana', e.target.value)}
-                    >
-                      <option value="">Tutte le settimane</option>
-                      {filterOptions?.settimane?.map(settimana => (
-                        <option key={settimana} value={settimana}>
-                          Settimana {settimana}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                {/* Seconda riga: Filtri di ricerca */}
-                <div className="row mt-3">
                   <div className="col-md-2">
                     <label className="form-label">Data Da</label>
                     <DateInput
@@ -708,6 +704,24 @@ function FatturazioneTerzistiContent() {
                       placeholder="gg/mm/aaaa"
                       className="form-control"
                     />
+                  </div>
+                </div>
+                {/* Seconda riga: Filtri aggiuntivi */}
+                <div className="row mb-3">
+                  <div className="col-md-2">
+                    <label className="form-label">Settimana</label>
+                    <select
+                      className="form-select"
+                      value={filters.settimana || ''}
+                      onChange={(e) => handleFilterChange('settimana', e.target.value)}
+                    >
+                      <option value="">Tutte le settimane</option>
+                      {filterOptions?.settimane?.map(settimana => (
+                        <option key={settimana} value={settimana}>
+                          Settimana {settimana}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div className="col-md-2">
                     <label className="form-label">Viaggio</label>
@@ -747,6 +761,16 @@ function FatturazioneTerzistiContent() {
                       value={filters.consegna || ''}
                       onChange={(e) => handleFilterChange('consegna', e.target.value)}
                       placeholder="Cerca consegna..."
+                    />
+                  </div>
+                  <div className="col-md-2">
+                    <label className="form-label">Articolo</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={filters.articolo || ''}
+                      onChange={(e) => handleFilterChange('articolo', e.target.value)}
+                      placeholder="Cerca articolo..."
                     />
                   </div>
                 </div>

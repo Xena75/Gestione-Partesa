@@ -50,6 +50,7 @@ export type DeliveryFilters = {
   dataDa?: string;
   dataA?: string;
   mese?: string;
+  anno?: string;
 };
 
 export type DeliverySort = {
@@ -119,8 +120,14 @@ export async function getDeliveryStats(filters?: DeliveryFilters): Promise<Deliv
           queryParams.push(filters.dataA);
         }
         if (filters.mese && filters.mese !== 'Tutti') {
-          conditions.push('mese = ?');
-          queryParams.push(parseInt(filters.mese));
+          // Usa mese_fatturazione se disponibile, altrimenti mese (basato su data_mov_merce)
+          conditions.push('(mese_fatturazione = ? OR (mese_fatturazione IS NULL AND mese = ?))');
+          queryParams.push(parseInt(filters.mese), parseInt(filters.mese));
+        }
+        if (filters.anno && filters.anno !== 'Tutti') {
+          // Usa anno_fatturazione se disponibile, altrimenti anno (basato su data_mov_merce)
+          conditions.push('(anno_fatturazione = ? OR (anno_fatturazione IS NULL AND anno = ?))');
+          queryParams.push(parseInt(filters.anno), parseInt(filters.anno));
         }
 
         if (conditions.length > 0) {
@@ -223,12 +230,14 @@ export async function getDeliveryData(
           queryParams.push(filters.dataA);
         }
         if (filters.mese && filters.mese !== 'Tutti') {
-          conditions.push('mese = ?');
-          queryParams.push(parseInt(filters.mese));
+          // Usa mese_fatturazione se disponibile, altrimenti mese (basato su data_mov_merce)
+          conditions.push('(mese_fatturazione = ? OR (mese_fatturazione IS NULL AND mese = ?))');
+          queryParams.push(parseInt(filters.mese), parseInt(filters.mese));
         }
-        if (filters.mese && filters.mese !== 'Tutti') {
-          conditions.push('mese = ?');
-          queryParams.push(parseInt(filters.mese));
+        if (filters.anno && filters.anno !== 'Tutti') {
+          // Usa anno_fatturazione se disponibile, altrimenti anno (basato su data_mov_merce)
+          conditions.push('(anno_fatturazione = ? OR (anno_fatturazione IS NULL AND anno = ?))');
+          queryParams.push(parseInt(filters.anno), parseInt(filters.anno));
         }
 
         if (conditions.length > 0) {
@@ -346,8 +355,14 @@ export async function getDeliveryGrouped(
           queryParams.push(filters.dataA);
         }
         if (filters.mese && filters.mese !== 'Tutti') {
-          conditions.push('mese = ?');
-          queryParams.push(parseInt(filters.mese));
+          // Usa mese_fatturazione se disponibile, altrimenti mese (basato su data_mov_merce)
+          conditions.push('(mese_fatturazione = ? OR (mese_fatturazione IS NULL AND mese = ?))');
+          queryParams.push(parseInt(filters.mese), parseInt(filters.mese));
+        }
+        if (filters.anno && filters.anno !== 'Tutti') {
+          // Usa anno_fatturazione se disponibile, altrimenti anno (basato su data_mov_merce)
+          conditions.push('(anno_fatturazione = ? OR (anno_fatturazione IS NULL AND anno = ?))');
+          queryParams.push(parseInt(filters.anno), parseInt(filters.anno));
         }
 
         if (conditions.length > 0) {
@@ -435,18 +450,35 @@ export async function getDeliveryFilterOptions(): Promise<{
   bu: string[];
   divisioni: string[];
   mesi: string[];
+  anni: string[];
 }> {
   return await withCache(
-    cacheKeys.FILTERS,
+    `${cacheKeys.FILTERS}:v2`, // Cambiata chiave per invalidare cache esistente
     async () => {
       // Esegui tutte le query in parallelo per migliorare le performance
-      const [depositi, vettori, tipologie, bu, divisioni, mesi] = await Promise.all([
+      // Per mesi e anni: usa mese_fatturazione/anno_fatturazione se disponibili, altrimenti mese/anno
+      const [depositi, vettori, tipologie, bu, divisioni, mesi, anni] = await Promise.all([
         pool.query('SELECT DISTINCT dep FROM fatt_delivery WHERE dep IS NOT NULL AND dep != "" ORDER BY dep'),
         pool.query('SELECT DISTINCT descr_vettore FROM fatt_delivery WHERE descr_vettore IS NOT NULL AND descr_vettore != "" ORDER BY descr_vettore'),
         pool.query('SELECT DISTINCT tipologia FROM fatt_delivery WHERE tipologia IS NOT NULL AND tipologia != "" ORDER BY tipologia'),
         pool.query('SELECT DISTINCT bu FROM fatt_delivery WHERE bu IS NOT NULL AND bu != "" ORDER BY bu'),
         pool.query('SELECT DISTINCT `div` FROM fatt_delivery WHERE `div` IS NOT NULL AND `div` != "" ORDER BY `div`'),
-        pool.query('SELECT DISTINCT mese FROM fatt_delivery WHERE mese IS NOT NULL ORDER BY mese')
+        pool.query(`
+          SELECT DISTINCT COALESCE(mese_fatturazione, mese) as mese 
+          FROM fatt_delivery 
+          WHERE (mese_fatturazione IS NOT NULL OR mese IS NOT NULL)
+          ORDER BY mese
+        `),
+        pool.query(`
+          SELECT COALESCE(anno_fatturazione, anno) as anno
+          FROM fatt_delivery 
+          WHERE (anno_fatturazione IS NOT NULL OR anno IS NOT NULL)
+            AND data_mov_merce IS NOT NULL 
+            AND consegna_num IS NOT NULL 
+          GROUP BY COALESCE(anno_fatturazione, anno)
+          HAVING COUNT(*) > 0 
+          ORDER BY anno DESC
+        `)
       ]);
 
       // Crea array di mesi con nomi
@@ -461,7 +493,8 @@ export async function getDeliveryFilterOptions(): Promise<{
         tipologie: (tipologie[0] as any[]).map(row => row.tipologia),
         bu: (bu[0] as any[]).map(row => row.bu),
         divisioni: (divisioni[0] as any[]).map(row => row.div),
-        mesi: (mesi[0] as any[]).map(row => `${row.mese}-${nomiMesi[row.mese - 1]}`)
+        mesi: (mesi[0] as any[]).map(row => `${row.mese}-${nomiMesi[row.mese - 1]}`),
+        anni: (anni[0] as any[]).map(row => String(row.anno))
       };
     },
     10 * 60 * 1000 // Cache per 10 minuti (i filtri cambiano raramente)
