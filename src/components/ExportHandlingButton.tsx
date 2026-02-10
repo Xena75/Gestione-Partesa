@@ -10,6 +10,7 @@ interface HandlingFilters {
   doc_acq?: string;
   data_mov_m?: string;
   tipo_imb?: string;
+  anno?: string;
   mese?: string;
 }
 

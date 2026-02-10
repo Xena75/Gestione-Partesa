@@ -568,12 +568,20 @@ imp_resi_v              decimal(12,4)  YES        NULL
 imp_doc                 decimal(12,4)  YES        NULL     
 tot_hand                decimal(12,4)  YES        NULL     
 mese                    tinyint(4)     YES        NULL     
+mese_fatturazione       tinyint(4)     YES        NULL     
+anno_fatturazione       smallint(6)    YES        NULL     
 ```
 
 **Note sulla struttura:**
 - **Precisione decimali**: I campi `imp_hf_um`, `imp_resi_v`, `imp_doc`, `tot_hand` sono stati aggiornati a `DECIMAL(12,4)` per supportare fino a 4 decimali (migration: `migrations/increase_handling_decimal_precision.sql`)
 - **Campo source_name**: Utilizzato per tracciare il nome del file Excel di origine durante l'importazione
 - **Campo mese**: Utilizzato per filtrare i dati per mese e per il controllo duplicati durante l'importazione
+- **Campi mese_fatturazione e anno_fatturazione**: Estratti dal nome del file (`source_name`) durante l'importazione per permettere il filtro per mese/anno di fatturazione invece che solo per data_mov_m
+  - Pattern supportati: `Fut_MM_YYYY.xlsx` → estrae mese e anno direttamente; `Futura_Mese.xlsx` → estrae mese dal nome, anno da `data_mov_m` o corrente
+  - Se `source_name` non è disponibile ma `data_mov_m` sì, usa mese e anno da `data_mov_m`
+  - Se né `source_name` né `data_mov_m` sono disponibili, usa il mese esistente e `anno_fatturazione` default a `2025`
+  - Migration: `migrations/add_mese_anno_fatturazione_to_fatt_handling.sql`
+  - Indice: `idx_mese_anno_fatturazione` su `(mese_fatturazione, anno_fatturazione)`
 - **Calcolo dep**: Il campo `dep` viene popolato automaticamente durante l'importazione tramite JOIN con `tab_deposito` usando il campo `div`
 
 **Utilizzo nel progetto:**

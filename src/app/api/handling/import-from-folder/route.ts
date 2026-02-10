@@ -251,15 +251,70 @@ export async function POST(request: NextRequest) {
       }
     }
     
+    // Estrai mese e anno di fatturazione dal nome del file
+    // Pattern supportati:
+    // - Fut_01_2026.xlsx → mese 1, anno 2026
+    // - Futura_Aprile.xlsx → mese 4, anno dalla data_mov_m o corrente
+    const extractFatturazioneFromFileName = (fileName: string, dataMovM?: string | null): { mese: number | null, anno: number | null } => {
+      // Pattern 1: Fut_MM_YYYY.xlsx (con anno esplicito)
+      let match = fileName.match(/Fut_([0-9]{2})_([0-9]{4})/i) || fileName.match(/([0-9]{2})_([0-9]{4})/);
+      if (match) {
+        return {
+          mese: parseInt(match[1]),
+          anno: parseInt(match[2])
+        };
+      }
+      
+      // Pattern 2: Futura_Mese.xlsx (senza anno, usa nome mese)
+      const nomiMesi: Record<string, number> = {
+        'gennaio': 1, 'febbraio': 2, 'marzo': 3, 'aprile': 4,
+        'maggio': 5, 'giugno': 6, 'luglio': 7, 'agosto': 8,
+        'settembre': 9, 'ottobre': 10, 'novembre': 11, 'dicembre': 12
+      };
+      
+      for (const [nomeMese, numeroMese] of Object.entries(nomiMesi)) {
+        if (fileName.toLowerCase().includes(nomeMese.toLowerCase())) {
+          // Se c'è una data_mov_m, usa l'anno da quella
+          let anno: number | null = null;
+          if (dataMovM) {
+            try {
+              const date = new Date(dataMovM);
+              if (!isNaN(date.getTime())) {
+                anno = date.getFullYear();
+              }
+            } catch (e) {
+              // Ignora
+            }
+          }
+          
+          // Se abbiamo l'anno dalla data, restituisci mese e anno
+          if (anno) {
+            return {
+              mese: numeroMese,
+              anno: anno
+            };
+          }
+          // Se non abbiamo l'anno, restituisci solo il mese
+          return {
+            mese: numeroMese,
+            anno: null
+          };
+        }
+      }
+      
+      return { mese: null, anno: null };
+    };
+    
     // Prepara la query di inserimento
     const insertQuery = `
       INSERT INTO fatt_handling (
         source_name, Appalto, BU, em_fatt, rag_soc, \`div\`, dep, mag, TMv,
         tipo_movimento, doc_mat, EsMat, pos, Materiale, descrizione_materiale,
         gr_m, \`comp\`, doc_acq, EsMat_1, Cliente, data_mov_m, quantita, UMO,
-        qta_uma, tipo_imb, t_hf_umv, imp_hf_um, imp_resi_v, imp_doc, tot_hand, Mese
+        qta_uma, tipo_imb, t_hf_umv, imp_hf_um, imp_resi_v, imp_doc, tot_hand, Mese,
+        mese_fatturazione, anno_fatturazione
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     
     // Cache depositi
@@ -287,8 +342,31 @@ export async function POST(request: NextRequest) {
             depositoCache.set(div, deposito);
           }
           
+          // Gestisci source_name: se è una stringa valida usa quella, altrimenti usa il nome del file
+          let sourceNameValue: string | null = null;
+          if (rowData.source_name !== undefined && rowData.source_name !== null) {
+            const sourceNameStr = String(rowData.source_name);
+            // Verifica se è una stringa valida (non contiene caratteri binari)
+            if (sourceNameStr && !sourceNameStr.includes('\x80') && !sourceNameStr.includes('\x00') && sourceNameStr.trim() !== '') {
+              sourceNameValue = sourceNameStr.trim();
+            } else {
+              // Se contiene dati binari o non è valido, usa il nome del file
+              sourceNameValue = fileName;
+            }
+          } else {
+            // Se source_name non è presente, usa il nome del file
+            sourceNameValue = fileName;
+          }
+          
+          // Estrai mese/anno di fatturazione per questo record specifico
+          const dataMovMValue = convertDate(rowData.data_mov_m);
+          const { mese: meseFattRecord, anno: annoFattRecord } = extractFatturazioneFromFileName(
+            sourceNameValue || fileName,
+            dataMovMValue
+          );
+          
           const values = [
-            rowData.source_name || null,
+            sourceNameValue,
             rowData.appalto || null,
             rowData.bu || null,
             rowData.em_fatt || null,
@@ -308,7 +386,7 @@ export async function POST(request: NextRequest) {
             rowData.oda || null,
             convertNumber(rowData.esmat_1),
             rowData.cliente || null,
-            convertDate(rowData.data_mov_m),
+            dataMovMValue,
             convertNumber(rowData.quantita),
             rowData.umo || null,
             convertNumber(rowData.qta_uma),
@@ -318,7 +396,9 @@ export async function POST(request: NextRequest) {
             convertNumber(rowData['Imp.Resi V']),
             convertNumber(rowData['Imp. Doc.']),
             convertNumber(rowData.tot_hand),
-            convertNumber(rowData.mese || rowData.Mese || rowData['Mese'])
+            convertNumber(rowData.mese || rowData.Mese || rowData['Mese']),
+            meseFattRecord,
+            annoFattRecord
           ];
           
           batchValues.push(values);
@@ -331,11 +411,11 @@ export async function POST(request: NextRequest) {
       // Inserisci il batch
       if (batchValues.length > 0 && connection) {
         try {
-          const placeholders = batchValues.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ');
+          const placeholders = batchValues.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ');
           const flatValues = batchValues.flat();
           
           await connection.execute(
-            insertQuery.replace('VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', `VALUES ${placeholders}`),
+            insertQuery.replace('VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', `VALUES ${placeholders}`),
             flatValues
           );
           

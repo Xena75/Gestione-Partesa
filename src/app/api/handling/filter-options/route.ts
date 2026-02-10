@@ -45,8 +45,15 @@ export async function GET(request: NextRequest) {
         .then(([rows]) => ({ key: 'tipiImb', data: (rows as any[]).map(row => row.tipo_imb) }))
         .catch(err => { console.error('Errore query tipiImb:', err); return { key: 'tipiImb', data: [] }; }),
       
-      // Mesi
-      pool.execute('SELECT DISTINCT mese FROM fatt_handling WHERE mese IS NOT NULL AND mese != "" ORDER BY mese')
+      // Mesi - usa mese_fatturazione se disponibile, altrimenti mese
+      pool.execute(`
+        SELECT DISTINCT COALESCE(mese_fatturazione, mese) as mese
+        FROM fatt_handling 
+        WHERE (mese_fatturazione IS NOT NULL OR mese IS NOT NULL)
+        GROUP BY COALESCE(mese_fatturazione, mese)
+        HAVING COUNT(*) > 0 
+        ORDER BY mese ASC
+      `)
         .then(([rows]) => {
           const mesiNomi = [
             '01-Gennaio', '02-Febbraio', '03-Marzo', '04-Aprile',
@@ -57,15 +64,30 @@ export async function GET(request: NextRequest) {
             key: 'mesi',
             data: (rows as any[]).map(row => {
               const mese = row.mese;
-              if (/^\d{1,2}$/.test(mese)) {
-                const meseNum = parseInt(mese);
+              if (/^\d{1,2}$/.test(String(mese))) {
+                const meseNum = parseInt(String(mese));
                 return mesiNomi[meseNum - 1] || mese;
               }
               return mese;
             })
           };
         })
-        .catch(err => { console.error('Errore query mesi:', err); return { key: 'mesi', data: [] }; })
+        .catch(err => { console.error('Errore query mesi:', err); return { key: 'mesi', data: [] }; }),
+      
+      // Anni - usa anno_fatturazione se disponibile, altrimenti YEAR(data_mov_m)
+      pool.execute(`
+        SELECT DISTINCT COALESCE(anno_fatturazione, YEAR(data_mov_m)) as anno
+        FROM fatt_handling 
+        WHERE (anno_fatturazione IS NOT NULL OR data_mov_m IS NOT NULL)
+        GROUP BY COALESCE(anno_fatturazione, YEAR(data_mov_m))
+        HAVING COUNT(*) > 0 
+        ORDER BY anno DESC
+      `)
+        .then(([rows]) => ({
+          key: 'anni',
+          data: (rows as any[]).map(row => String(row.anno))
+        }))
+        .catch(err => { console.error('Errore query anni:', err); return { key: 'anni', data: [] }; })
     ];
     
     // Esegui tutte le query in parallelo usando il pool di connessioni
@@ -80,7 +102,8 @@ export async function GET(request: NextRequest) {
       docAcq: [],
       docMat: [],
       tipiImb: [],
-      mesi: []
+      mesi: [],
+      anni: []
     };
     
     queryResults.forEach(result => {
@@ -101,7 +124,8 @@ export async function GET(request: NextRequest) {
         docAcq: [],
         docMat: [],
         tipiImb: [],
-        mesi: []
+        mesi: [],
+        anni: []
       },
       { status: 500 }
     );

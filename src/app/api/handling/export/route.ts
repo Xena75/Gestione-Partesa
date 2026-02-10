@@ -52,8 +52,14 @@ export async function GET(request: NextRequest) {
       queryParams.push(filters.tipo_imb);
     }
     if (filters.mese && filters.mese !== 'Tutti') {
-      query += ' AND `mese` = ?';
-      queryParams.push(filters.mese);
+      // Usa mese_fatturazione se disponibile, altrimenti mese (basato su data_mov_m)
+      query += ' AND (mese_fatturazione = ? OR (mese_fatturazione IS NULL AND mese = ?))';
+      queryParams.push(parseInt(filters.mese), parseInt(filters.mese));
+    }
+    if (filters.anno && filters.anno !== 'Tutti') {
+      // Usa anno_fatturazione se disponibile, altrimenti YEAR(data_mov_m)
+      query += ' AND (anno_fatturazione = ? OR (anno_fatturazione IS NULL AND YEAR(data_mov_m) = ?))';
+      queryParams.push(parseInt(filters.anno), parseInt(filters.anno));
     }
 
     const [rows] = await connection.execute(query, queryParams);

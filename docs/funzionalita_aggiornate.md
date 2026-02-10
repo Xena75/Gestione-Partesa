@@ -1,7 +1,64 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-**Versione corrente**: v2.43.8  
+**Versione corrente**: v2.43.9  
 **Ultimo aggiornamento**: Gennaio 2026
+
+---
+
+## v2.43.9 - Filtro Anno nella Gestione Handling e Colonne Mese/Anno Fatturazione
+
+**Data implementazione**: Gennaio 2026  
+**Stato**: ✅ Completato e testato
+
+### 🎯 Campi Mese/Anno di Fatturazione per Handling
+
+#### 🆕 Colonne mese_fatturazione e anno_fatturazione
+- **Problema risolto**: I record pagati in un mese ma con `data_mov_m` di un altro mese non venivano inclusi correttamente nei filtri
+- **Soluzione**: Aggiunti campi `mese_fatturazione` e `anno_fatturazione` che vengono estratti dal nome del file (`source_name`) durante l'importazione
+- **Pattern supportati**:
+  - `Fut_01_2026.xlsx` → mese 1, anno 2026 (estratto direttamente dal nome)
+  - `Futura_Aprile.xlsx` → mese 4, anno dalla `data_mov_m` o corrente
+- **Migration**: `migrations/add_mese_anno_fatturazione_to_fatt_handling.sql`
+- **Backup**: Tabella backup creata prima della migration: `fatt_handling_backup_2026_02_10_12_51_32`
+
+#### 📊 Logica di Estrazione
+- **Con anno esplicito**: Estrae mese e anno direttamente dal nome del file (es: `Fut_MM_YYYY.xlsx`)
+- **Senza anno ma con data_mov_m**: Estrae il mese dal nome (es: `Futura_Aprile.xlsx`) e usa l'anno da `data_mov_m`
+- **Senza anno e senza data_mov_m**: Restituisce solo il mese con `anno_fatturazione = NULL`
+- **Nessun pattern riconosciuto**: Restituisce `mese_fatturazione = NULL` e `anno_fatturazione = NULL`
+
+#### 🔍 Query di Filtro Aggiornate
+- **Priorità**: Le query usano `mese_fatturazione`/`anno_fatturazione` quando disponibili, altrimenti `mese`/`YEAR(data_mov_m)`
+- **Filtri dropdown**: Popolati con valori da `mese_fatturazione`/`anno_fatturazione` quando disponibili
+- **Compatibilità**: Funziona con record vecchi (senza i nuovi campi) e nuovi (con i nuovi campi)
+
+#### 🎨 UI Aggiornata
+- **Filtro Anno**: Aggiunto dropdown per filtrare per anno di fatturazione
+- **Posizionamento**: Filtro anno posizionato prima del filtro mese (coerenza con Fatturazione Terzisti)
+- **Layout Ottimizzato**: Filtri organizzati su 2 righe per utilizzare completamente lo spazio disponibile
+  - **Prima riga**: BU (col-md-2), Divisione (col-md-2), Deposito (col-md-2), Tipo Movimento (col-md-3), Tipo Imballo (col-md-3)
+  - **Seconda riga**: Anno (col-md-2), Mese (col-md-2), Data Movimento (col-md-2), Doc. Materiale (col-md-3), Doc. Acquisto (col-md-3)
+
+#### 📁 File Modificati
+- `migrations/add_mese_anno_fatturazione_to_fatt_handling.sql` (creato)
+- `scripts/backup-fatt-handling-before-migration.js` (creato)
+- `src/app/api/handling/import-from-folder/route.ts` (modificato - estrazione mese/anno da nome file, rimosso fallback anno corrente)
+- `src/app/api/handling/import/route.ts` (modificato - estrazione mese/anno da nome file, rimosso fallback anno corrente)
+- `src/app/api/handling/data/route.ts` (modificato - supporto filtro anno)
+- `src/app/api/handling/stats/route.ts` (modificato - supporto filtro anno)
+- `src/app/api/handling/filter-options/route.ts` (modificato - query anni disponibili)
+- `src/app/api/handling/export/route.ts` (modificato - supporto filtro anno nell'export)
+- `src/components/HandlingFilters.tsx` (modificato - aggiunto filtro anno, layout ottimizzato su 2 righe)
+- `src/components/ExportHandlingButton.tsx` (modificato - supporto filtro anno)
+- `docs/database-reference.md` (aggiornato - documentazione colonne)
+- `docs/funzionalita_aggiornate.md` (aggiornato - questa entry)
+
+### ✅ Benefici
+- ✅ Filtro per anno di fatturazione disponibile nella pagina Handling
+- ✅ Coerenza con la logica implementata per Fatturazione Delivery e Terzisti
+- ✅ Query ottimizzate con indice su `(mese_fatturazione, anno_fatturazione)`
+- ✅ Compatibilità con dati esistenti garantita
+- ✅ Export Excel include il filtro anno
 
 ---
 

@@ -20,6 +20,7 @@ interface FilterOptions {
   docMat: string[];
   tipiImb: string[];
   mesi: string[];
+  anni: string[];
 }
 
 export default function HandlingFilters({ onFiltersChange, initialFilters, viewType }: HandlingFiltersProps) {
@@ -36,6 +37,7 @@ export default function HandlingFilters({ onFiltersChange, initialFilters, viewT
     // Converti la data da formato ISO (se presente) a formato italiano per la visualizzazione
     data_mov_m: initialFilters.data_mov_m ? (initialFilters.data_mov_m.includes('/') ? initialFilters.data_mov_m : convertISOToItalian(initialFilters.data_mov_m)) : '',
     tipo_imb: initialFilters.tipo_imb || 'Tutti',
+    anno: initialFilters.anno || 'Tutti',
     mese: initialFilters.mese || 'Tutti'
   });
 
@@ -47,7 +49,8 @@ export default function HandlingFilters({ onFiltersChange, initialFilters, viewT
     docAcq: [],
     docMat: [],
     tipiImb: [],
-    mesi: []
+    mesi: [],
+    anni: []
   });
 
   const [isExpanded, setIsExpanded] = useState(false);
@@ -125,6 +128,7 @@ export default function HandlingFilters({ onFiltersChange, initialFilters, viewT
       doc_mat: '',
       data_mov_m: '',
       tipo_imb: 'Tutti',
+      anno: 'Tutti',
       mese: 'Tutti'
     };
     setFilters(resetFilters);
@@ -177,9 +181,9 @@ export default function HandlingFilters({ onFiltersChange, initialFilters, viewT
       
       {isExpanded && (
         <div className="card-body">
-          {/* Prima riga di filtri - 4 filtri */}
+          {/* Prima riga di filtri - 5 filtri (12 colonne) */}
           <div className="row g-2 mb-2">
-            <div className="col-md-3">
+            <div className="col-md-2">
               <label className="form-label small">BU</label>
               <select
                 className="form-select form-select-sm"
@@ -200,7 +204,7 @@ export default function HandlingFilters({ onFiltersChange, initialFilters, viewT
               </select>
             </div>
 
-            <div className="col-md-3">
+            <div className="col-md-2">
               <label className="form-label small">Divisione</label>
               <select
                 className="form-select form-select-sm"
@@ -221,7 +225,7 @@ export default function HandlingFilters({ onFiltersChange, initialFilters, viewT
               </select>
             </div>
 
-            <div className="col-md-3">
+            <div className="col-md-2">
               <label className="form-label small">Deposito</label>
               <select
                 className="form-select form-select-sm"
@@ -262,50 +266,8 @@ export default function HandlingFilters({ onFiltersChange, initialFilters, viewT
                 )}
               </select>
             </div>
-          </div>
-          
-          {/* Seconda riga di filtri - 5 filtri */}
-          <div className="row g-2">
-            <div className="col-md-3">
-              <label className="form-label small">Doc. Materiale</label>
-              <input
-                type="text"
-                className="form-control form-control-sm"
-                placeholder="Cerca..."
-                value={filters.doc_mat}
-                onChange={(e) => handleInputChange('doc_mat', e.target.value)}
-              />
-            </div>
 
             <div className="col-md-3">
-              <label className="form-label small">Doc. Acquisto</label>
-              <input
-                type="text"
-                className="form-control form-control-sm"
-                placeholder="Cerca..."
-                value={filters.doc_acq}
-                onChange={(e) => handleInputChange('doc_acq', e.target.value)}
-              />
-            </div>
-            
-            <div className="col-md-2">
-              <label className="form-label small">Data Movimento</label>
-              <div style={{ marginBottom: 0 }}>
-                <DateInput
-                  id="data_mov_m"
-                  name="data_mov_m"
-                  value={filters.data_mov_m ? convertItalianToISO(filters.data_mov_m) : ''}
-                  onChange={(isoValue) => {
-                    const italianDate = convertISOToItalian(isoValue);
-                    handleInputChange('data_mov_m', italianDate);
-                  }}
-                  className="form-control-sm"
-                  placeholder="gg/mm/aaaa"
-                />
-              </div>
-            </div>
-
-            <div className="col-md-2">
               <label className="form-label small">Tipo Imballo</label>
               <select
                 className="form-select form-select-sm"
@@ -320,6 +282,30 @@ export default function HandlingFilters({ onFiltersChange, initialFilters, viewT
                   filterOptions.tipiImb.map((tipo) => (
                     <option key={tipo} value={tipo}>
                       {tipo}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+          </div>
+          
+          {/* Seconda riga di filtri - 5 filtri (12 colonne) */}
+          <div className="row g-2">
+            <div className="col-md-2">
+              <label className="form-label small">Anno</label>
+              <select
+                className="form-select form-select-sm"
+                value={filters.anno}
+                onChange={(e) => handleInputChange('anno', e.target.value)}
+                disabled={isLoadingOptions}
+              >
+                <option value="Tutti">Tutti</option>
+                {isLoadingOptions ? (
+                  <option disabled>Caricamento...</option>
+                ) : (
+                  filterOptions.anni.map((anno) => (
+                    <option key={anno} value={anno}>
+                      {anno}
                     </option>
                   ))
                 )}
@@ -345,6 +331,45 @@ export default function HandlingFilters({ onFiltersChange, initialFilters, viewT
                   ))
                 )}
               </select>
+            </div>
+            
+            <div className="col-md-2">
+              <label className="form-label small">Data Movimento</label>
+              <div style={{ marginBottom: 0 }}>
+                <DateInput
+                  id="data_mov_m"
+                  name="data_mov_m"
+                  value={filters.data_mov_m ? convertItalianToISO(filters.data_mov_m) : ''}
+                  onChange={(isoValue) => {
+                    const italianDate = convertISOToItalian(isoValue);
+                    handleInputChange('data_mov_m', italianDate);
+                  }}
+                  className="form-control-sm"
+                  placeholder="gg/mm/aaaa"
+                />
+              </div>
+            </div>
+
+            <div className="col-md-3">
+              <label className="form-label small">Doc. Materiale</label>
+              <input
+                type="text"
+                className="form-control form-control-sm"
+                placeholder="Cerca..."
+                value={filters.doc_mat}
+                onChange={(e) => handleInputChange('doc_mat', e.target.value)}
+              />
+            </div>
+
+            <div className="col-md-3">
+              <label className="form-label small">Doc. Acquisto</label>
+              <input
+                type="text"
+                className="form-control form-control-sm"
+                placeholder="Cerca..."
+                value={filters.doc_acq}
+                onChange={(e) => handleInputChange('doc_acq', e.target.value)}
+              />
             </div>
           </div>
         </div>
