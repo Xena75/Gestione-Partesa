@@ -142,27 +142,27 @@ export async function getTerzistiData(
     const queryParams: any[] = [];
 
     if (filters.divisione) {
-      whereConditions.push('`div` = ?');
+      whereConditions.push('tdt.`div` = ?');
       queryParams.push(filters.divisione);
     }
 
     if (filters.vettore) {
-      whereConditions.push('(Descr_Vettore_Join LIKE ? OR REGEXP_REPLACE(TRIM(Descr_Vettore_Join), \'[[:space:]]+\', \' \') LIKE ?)');
+      whereConditions.push('(tdt.Descr_Vettore_Join LIKE ? OR REGEXP_REPLACE(TRIM(tdt.Descr_Vettore_Join), \'[[:space:]]+\', \' \') LIKE ?)');
       queryParams.push(`%${filters.vettore}%`, `%${filters.vettore}%`);
     }
 
     if (filters.azienda) {
-      whereConditions.push('(Azienda_Vettore LIKE ? OR TRIM(REGEXP_REPLACE(Azienda_Vettore, \'[[:space:]]+\', \' \')) LIKE ?)');
+      whereConditions.push('(tdt.Azienda_Vettore LIKE ? OR TRIM(REGEXP_REPLACE(tdt.Azienda_Vettore, \'[[:space:]]+\', \' \')) LIKE ?)');
       queryParams.push(`%${filters.azienda}%`, `%${filters.azienda}%`);
     }
 
     if (filters.dataDa) {
-      whereConditions.push('data_mov_merce >= ?');
+      whereConditions.push('tdt.data_mov_merce >= ?');
       queryParams.push(filters.dataDa);
     }
 
     if (filters.dataA) {
-      whereConditions.push('data_mov_merce <= ?');
+      whereConditions.push('tdt.data_mov_merce <= ?');
       queryParams.push(filters.dataA);
     }
 
@@ -240,35 +240,35 @@ export async function getTerzistiData(
     const statsQuery = `
       SELECT 
         COUNT(*) as totalRecords,
-        COUNT(DISTINCT consegna_num) as totalConsegne,
-        COUNT(DISTINCT viaggio) as totalViaggi,
-        SUM(colli) as totalColli,
-        SUM(compenso) as totalCompenso,
-        SUM(extra_cons) as totalExtra,
-        SUM(tot_compenso) as totalFatturato,
-        COUNT(DISTINCT Cod_Vettore) as uniqueVettori,
-        COUNT(DISTINCT Azienda_Vettore) as uniqueAziende,
+        COUNT(DISTINCT tdt.consegna_num) as totalConsegne,
+        COUNT(DISTINCT tdt.viaggio) as totalViaggi,
+        SUM(tdt.colli) as totalColli,
+        SUM(tdt.compenso) as totalCompenso,
+        SUM(tdt.extra_cons) as totalExtra,
+        SUM(tdt.tot_compenso) as totalFatturato,
+        COUNT(DISTINCT tdt.Cod_Vettore) as uniqueVettori,
+        COUNT(DISTINCT tdt.Azienda_Vettore) as uniqueAziende,
         CASE 
-          WHEN COUNT(DISTINCT consegna_num) > 0 
-          THEN SUM(colli) / COUNT(DISTINCT consegna_num) 
+          WHEN COUNT(DISTINCT tdt.consegna_num) > 0 
+          THEN SUM(tdt.colli) / COUNT(DISTINCT tdt.consegna_num) 
           ELSE 0 
         END as mediaColliConsegna,
         CASE 
-          WHEN COUNT(DISTINCT viaggio) > 0 
-          THEN SUM(colli) / COUNT(DISTINCT viaggio) 
+          WHEN COUNT(DISTINCT tdt.viaggio) > 0 
+          THEN SUM(tdt.colli) / COUNT(DISTINCT tdt.viaggio) 
           ELSE 0 
         END as mediaColliViaggio,
         CASE 
-          WHEN COUNT(DISTINCT viaggio) > 0 
-          THEN SUM(compenso) / COUNT(DISTINCT viaggio) 
+          WHEN COUNT(DISTINCT tdt.viaggio) > 0 
+          THEN SUM(tdt.compenso) / COUNT(DISTINCT tdt.viaggio) 
           ELSE 0 
         END as mediaCompensoViaggio,
         CASE 
-          WHEN COUNT(DISTINCT consegna_num) > 0 
-          THEN SUM(compenso) / COUNT(DISTINCT consegna_num) 
+          WHEN COUNT(DISTINCT tdt.consegna_num) > 0 
+          THEN SUM(tdt.compenso) / COUNT(DISTINCT tdt.consegna_num) 
           ELSE 0 
         END as mediaFatturatoViaggio
-      FROM tab_delivery_terzisti
+      FROM tab_delivery_terzisti tdt
       ${whereClause}
     `;
 
@@ -327,22 +327,22 @@ export async function getTerzistiStats(filters: TerzistiFilters = {}): Promise<T
     const queryParams: any[] = [];
 
     if (filters.divisione) {
-      whereConditions.push('`div` = ?');
+      whereConditions.push('tdt.`div` = ?');
       queryParams.push(filters.divisione);
     }
 
     if (filters.vettore) {
-      whereConditions.push('(Descr_Vettore_Join LIKE ? OR REGEXP_REPLACE(TRIM(Descr_Vettore_Join), \'[[:space:]]+\', \' \') LIKE ?)');
+      whereConditions.push('(tdt.Descr_Vettore_Join LIKE ? OR REGEXP_REPLACE(TRIM(tdt.Descr_Vettore_Join), \'[[:space:]]+\', \' \') LIKE ?)');
       queryParams.push(`%${filters.vettore}%`, `%${filters.vettore}%`);
     }
 
     if (filters.azienda) {
-      whereConditions.push('(Azienda_Vettore LIKE ? OR TRIM(REGEXP_REPLACE(Azienda_Vettore, \'[[:space:]]+\', \' \')) LIKE ?)');
+      whereConditions.push('(tdt.Azienda_Vettore LIKE ? OR TRIM(REGEXP_REPLACE(tdt.Azienda_Vettore, \'[[:space:]]+\', \' \')) LIKE ?)');
       queryParams.push(`%${filters.azienda}%`, `%${filters.azienda}%`);
     }
 
     if (filters.dataDa) {
-      whereConditions.push('data_mov_merce >= ?');
+      whereConditions.push('tdt.data_mov_merce >= ?');
       queryParams.push(filters.dataDa);
     }
 
