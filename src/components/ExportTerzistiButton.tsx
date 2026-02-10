@@ -72,11 +72,21 @@ export default function ExportTerzistiButton({ filters, disabled = false }: Expo
     if (filters.divisione) activeFilters.push(`Divisione: ${filters.divisione}`);
     if (filters.vettore) activeFilters.push(`Vettore: ${filters.vettore}`);
     if (filters.azienda) activeFilters.push(`Azienda: ${filters.azienda}`);
+    if (filters.anno) activeFilters.push(`Anno: ${filters.anno}`);
+    if (filters.mese) {
+      const monthNames = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
+      const monthName = monthNames[parseInt(filters.mese) - 1] || filters.mese;
+      activeFilters.push(`Mese: ${monthName}`);
+    }
+    if (filters.trimestre) activeFilters.push(`Trimestre: Q${filters.trimestre}`);
+    if (filters.settimana) activeFilters.push(`Settimana: ${filters.settimana}`);
     if (filters.dataDa) activeFilters.push(`Data Da: ${filters.dataDa}`);
     if (filters.dataA) activeFilters.push(`Data A: ${filters.dataA}`);
     if (filters.viaggio) activeFilters.push(`Viaggio: ${filters.viaggio}`);
     if (filters.cliente) activeFilters.push(`Cliente: ${filters.cliente}`);
-    if (filters.mese) activeFilters.push(`Mese: ${filters.mese}`);
+    if (filters.ordine) activeFilters.push(`Ordine: ${filters.ordine}`);
+    if (filters.consegna) activeFilters.push(`Consegna: ${filters.consegna}`);
+    if (filters.articolo) activeFilters.push(`Articolo: ${filters.articolo}`);
     
     return activeFilters.length > 0 ? activeFilters.join(', ') : 'Nessun filtro attivo';
   };

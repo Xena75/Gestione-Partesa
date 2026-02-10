@@ -16,7 +16,13 @@ export async function POST(request: NextRequest) {
       dataA: filters?.dataA || undefined,
       viaggio: filters?.viaggio || undefined,
       cliente: filters?.cliente || undefined,
-      mese: filters?.mese || undefined
+      mese: filters?.mese || undefined,
+      anno: filters?.anno || undefined,
+      trimestre: filters?.trimestre || undefined,
+      settimana: filters?.settimana || undefined,
+      ordine: filters?.ordine || undefined,
+      consegna: filters?.consegna || undefined,
+      articolo: filters?.articolo || undefined
     };
 
     // Recupera i dati filtrati
