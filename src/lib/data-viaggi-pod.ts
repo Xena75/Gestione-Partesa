@@ -19,6 +19,7 @@ export interface ViaggioPod {
   Sett: number | null;
   Giorno: number | null;
   Trimestre: number | null;
+  anno?: number | null;
 }
 
 // Interfaccia per i filtri
@@ -30,6 +31,7 @@ export interface FiltriViaggioPod {
   dataFine?: string | null;
   mese?: number | null;
   trimestre?: number | null;
+  anno?: number | null;
 }
 
 // Interfaccia per le statistiche dei viaggi POD
@@ -103,6 +105,11 @@ export async function getViaggiPodData(
     if (filters.trimestre) {
       whereConditions.push('`Trimestre` = ?');
       queryParams.push(filters.trimestre);
+    }
+    
+    if (filters.anno) {
+      whereConditions.push('YEAR(`Data Inizio`) = ?');
+      queryParams.push(filters.anno);
     }
     
     const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
@@ -347,6 +354,11 @@ export async function getViaggiPodStats(filters: FiltriViaggioPod = {}): Promise
       queryParams.push(filters.trimestre);
     }
     
+    if (filters.anno) {
+      whereConditions.push('YEAR(`Data Inizio`) = ?');
+      queryParams.push(filters.anno);
+    }
+    
     const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
     
     // Query per le statistiche
@@ -410,19 +422,22 @@ export async function getFilterOptionsViaggiPod() {
     const trasportatoreSql = 'SELECT DISTINCT `Nome Trasportatore` FROM viaggi_pod WHERE `Nome Trasportatore` IS NOT NULL AND `Nome Trasportatore` != "" ORDER BY `Nome Trasportatore`';
     const meseSql = 'SELECT DISTINCT `Mese` FROM viaggi_pod WHERE `Mese` IS NOT NULL ORDER BY `Mese`';
     const trimestreSql = 'SELECT DISTINCT `Trimestre` FROM viaggi_pod WHERE `Trimestre` IS NOT NULL ORDER BY `Trimestre`';
+    const annoSql = 'SELECT DISTINCT YEAR(`Data Inizio`) as anno FROM viaggi_pod WHERE `Data Inizio` IS NOT NULL ORDER BY anno DESC';
     
     const [viaggi] = await pool.query(viaggioSql);
     const [magazzini] = await pool.query(magazzinoSql);
     const [trasportatori] = await pool.query(trasportatoreSql);
     const [mesi] = await pool.query(meseSql);
     const [trimestri] = await pool.query(trimestreSql);
+    const [anni] = await pool.query(annoSql);
     
     return {
       viaggi: (viaggi as { Viaggio: string }[]).map(row => row.Viaggio),
       magazzini: (magazzini as { 'Magazzino di partenza': string }[]).map(row => row['Magazzino di partenza']),
       trasportatori: (trasportatori as { 'Nome Trasportatore': string }[]).map(row => row['Nome Trasportatore']),
       mesi: (mesi as { Mese: number }[]).map(row => row.Mese),
-      trimestri: (trimestri as { Trimestre: number }[]).map(row => row.Trimestre)
+      trimestri: (trimestri as { Trimestre: number }[]).map(row => row.Trimestre),
+      anni: (anni as { anno: number }[]).map(row => row.anno).filter(Boolean)
     };
   } catch (error) {
     console.error('Errore nel recuperare le opzioni dei filtri viaggi POD:', error);
@@ -431,7 +446,8 @@ export async function getFilterOptionsViaggiPod() {
       magazzini: [],
       trasportatori: [],
       mesi: [],
-      trimestri: []
+      trimestri: [],
+      anni: []
     };
   }
 }

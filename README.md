@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.43.9
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.43.10
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -6,7 +6,8 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 
 ### 📊 **Gestione Viaggi e Monitoraggio**
 - **Viaggi POD**: Sistema completo per gestione viaggi con Proof of Delivery
-- **Filtri data funzionanti**: Risolti problemi filtri data con formato italiano gg/mm/aaaa ⭐ **NUOVO v2.31.1**
+- **Filtro anno Viaggi POD**: Filtro anno con colonna STORED GENERATED e layout ottimizzato su 2 righe ⭐ **NUOVO v2.43.10**
+- **Filtri data funzionanti**: Risolti problemi filtri data con formato italiano gg/mm/aaaa ⭐ **v2.31.1**
 - **Monitoraggio avanzato**: Tracciamento in tempo reale di tutti i viaggi
 - **Import Excel**: Importazione automatica dati da file Excel con mappatura intelligente
 - **Sincronizzazione database**: Allineamento automatico tra database multipli con periodo esteso a 10 giorni ⭐ **AGGIORNATO v2.43.1**
@@ -73,7 +74,7 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Conversione automatica**: Date Excel (formato seriale) convertite automaticamente in SQL
 - **Match intelligente**: UPDATE dipendenti esistenti tramite codice fiscale, INSERT nuovi
 - **Migration completa**: Script SQL per aggiunta colonne (`migrations/add_employees_extended_fields.sql`)
-- **Script import**: Node.js script per import massivo da Excel (`scripts/import-employees-from-excel.js`)
+- **Import da Excel**: Import massivo dipendenti da file Excel (vedi `docs/ISTRUZIONI-IMPORT-DIPENDENTI.md`)
 - **API robusta**: Risolti errori 500 nell'API PUT `/api/employees/[id]` ⭐ **NUOVO v2.32.1**
 - **Timestamp automatici**: Gestione automatica `updatedAt` per tracciamento modifiche ⭐ **NUOVO v2.32.1**
 - **Interfaccia corretta**: Allineamento perfetto tra database (camelCase) e TypeScript ⭐ **NUOVO v2.32.1**
@@ -110,7 +111,7 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Integrazione calendario**: Eventi ferie visualizzati nel calendario aziendale integrato
 - **Database esteso**: Tabelle `employee_leave_requests` e `employee_leave_balance` ottimizzate
 - **Campo leave_type**: Convertito da ENUM a VARCHAR per supportare tipi personalizzati ⭐ **NUOVO v2.35.5**
- - **Conteggio giorni corretto in dashboard**: Allineata la card "Ferie e Permessi utilizzati" ai giorni approvati dell'anno corrente (2025). Calcolo aggiornato via `scripts/recalculate-leave-balances.js` con filtro `status='approved'` e `YEAR(start_date)=2025` ⭐ **NUOVO v2.35.8**
+ - **Conteggio giorni corretto in dashboard**: Allineata la card "Ferie e Permessi utilizzati" ai giorni approvati dell'anno corrente. Ricalcolo saldi con filtro `status='approved'` e anno corrente ⭐ **NUOVO v2.35.8**
 
 ### 📦 **Sistema Resi e Vuoti Non Fatturati** ⭐ **NUOVO v2.41.0**
 - **Gestione completa**: Sistema integrato per gestione ritiri resi e vuoti non fatturati

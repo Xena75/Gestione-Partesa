@@ -1,7 +1,43 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-**Versione corrente**: v2.43.9  
-**Ultimo aggiornamento**: Gennaio 2026
+**Versione corrente**: v2.43.10  
+**Ultimo aggiornamento**: Marzo 2026
+
+---
+
+## v2.43.10 - Filtro Anno e Layout Ottimizzato Viaggi POD
+
+**Data implementazione**: Marzo 2026  
+**Stato**: ✅ Completato e testato
+
+### 🎯 Filtro Anno nella Pagina Viaggi POD
+
+#### 🆕 Colonna anno STORED GENERATED
+- **Tabella**: `viaggi_pod` nel database `viaggi_db`
+- **Colonna**: `anno` SMALLINT(6) GENERATED ALWAYS AS (YEAR(`Data Inizio`)) STORED
+- **Indice**: `idx_anno` per ottimizzare le query di filtro
+- **Migration**: `migrations/add_anno_to_viaggi_pod.sql`
+- **Script esecuzione**: `scripts/run-migration-add-anno-viaggi-pod.js`
+
+#### 🔍 Filtri Aggiornati
+- **Ordine filtri seconda riga**: Anno, Trimestre, Mese, Data Inizio Da, Data Fine A
+- **Layout su 2 righe**: Prima riga (Trasportatore, Viaggio, Magazzino), seconda riga (Anno, Trimestre, Mese, Data Inizio, Data Fine)
+- **Ottimizzazione spazio**: Ridotti gap (g-2), padding (py-2), input compatti (form-select-sm, form-control-sm)
+- **Larghezze uniformi**: row-cols-md-5 per 5 campi uguali nella seconda riga
+
+#### 📁 File Modificati
+- `migrations/add_anno_to_viaggi_pod.sql` (creato)
+- `scripts/run-migration-add-anno-viaggi-pod.js` (creato)
+- `src/lib/data-viaggi-pod.ts` (modificato - filtro anno)
+- `src/components/FiltriViaggiPod.tsx` (modificato - layout filtri)
+- `src/app/api/viaggi-pod/route.ts` (modificato - parametro anno)
+- `docs/database-reference.md` (aggiornato - colonna anno)
+
+### ✅ Benefici
+- ✅ Filtro anno funzionante nella pagina Viaggi POD
+- ✅ Layout compatto e organizzato su 2 righe
+- ✅ UX migliorata con ordine logico filtri (anno → trimestre → mese → date)
+- ✅ Performance ottimizzate con indice idx_anno
 
 ---
 
@@ -1253,16 +1289,15 @@ const activeEmployees = employeesData.data.filter((emp: any) => emp.active === 1
 
 ### 🔍 Analisi della Causa
 - Il valore mostrato nella card proveniva dal campo `vacation_days_used` nel database
-- Questo campo viene calcolato dallo script `scripts/recalculate-leave-balances.js`
-- Lo script includeva anche richieste vecchie o con status diversi da 'approved'
+- Questo campo viene aggiornato tramite una procedura di ricalcolo saldi
+- La procedura includeva anche richieste vecchie o con status diversi da 'approved'
 - La tabella dello storico mostra solo le ultime 5 richieste recenti (limit=5)
 
 ### ✅ Soluzione Implementata
 
-#### 1. Correzione Script Ricalcolo Saldi (`scripts/recalculate-leave-balances.js`)
-- **Filtro status**: Aggiunto filtro `status = 'approved'` per considerare solo richieste approvate
-- **Anno corrente**: Limitato il calcolo all'anno corrente (2025) con `YEAR(start_date) = 2025`
-- **Dry-run**: Aggiunto stampa dettagliata delle richieste trovate per verifica
+#### 1. Correzione Ricalcolo Saldi
+- **Filtro status**: Filtro `status = 'approved'` per considerare solo richieste approvate
+- **Anno corrente**: Limitato il calcolo all'anno corrente con `YEAR(start_date) = anno_corrente`
 - **Aggiornamento database**: Corretto il valore da 4 a 3 giorni per l'utente vincenzo.cordella
 
 #### 2. Miglioramenti UI Dashboard
@@ -1277,7 +1312,6 @@ const activeEmployees = employeesData.data.filter((emp: any) => emp.active === 1
 - ✅ Trasparenza dati per l'utente
 
 ### 📁 File Modificati
-- `scripts/recalculate-leave-balances.js` - Corretto filtro e logica di calcolo
 - `src/app/autisti/dashboard/page.tsx` - Aggiornato titolo sezione e aggiunto pulsante navigazione
 
 ---
@@ -2011,16 +2045,15 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
 ### 🔍 Analisi della Causa
 - Il valore mostrato nella card proveniva dal campo `vacation_days_used` nel database
-- Questo campo viene calcolato dallo script `scripts/recalculate-leave-balances.js`
-- Lo script includeva anche richieste vecchie o con status diversi da 'approved'
+- Questo campo viene aggiornato tramite una procedura di ricalcolo saldi
+- La procedura includeva anche richieste vecchie o con status diversi da 'approved'
 - La tabella dello storico mostra solo le ultime 5 richieste recenti (limit=5)
 
 ### ✅ Soluzione Implementata
 
-#### 1. Correzione Script Ricalcolo Saldi (`scripts/recalculate-leave-balances.js`)
-- **Filtro status**: Aggiunto filtro `status = 'approved'` per considerare solo richieste approvate
-- **Anno corrente**: Limitato il calcolo all'anno corrente (2025) con `YEAR(start_date) = 2025`
-- **Dry-run**: Aggiunto stampa dettagliata delle richieste trovate per verifica
+#### 1. Correzione Ricalcolo Saldi
+- **Filtro status**: Filtro `status = 'approved'` per considerare solo richieste approvate
+- **Anno corrente**: Limitato il calcolo all'anno corrente con `YEAR(start_date) = anno_corrente`
 - **Aggiornamento database**: Corretto il valore da 4 a 3 giorni per l'utente vincenzo.cordella
 
 #### 2. Miglioramenti UI Dashboard
@@ -2035,5 +2068,4 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 - ✅ Trasparenza dati per l'utente
 
 ### 📁 File Modificati
-- `scripts/recalculate-leave-balances.js` - Corretto filtro e logica di calcolo
 - `src/app/autisti/dashboard/page.tsx` - Aggiornato titolo sezione e aggiunto pulsante navigazione

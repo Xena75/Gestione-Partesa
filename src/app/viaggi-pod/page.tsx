@@ -92,6 +92,7 @@ function ViaggiPodPageContent() {
   const dataFine = searchParams?.get('dataFine');
   const mese = searchParams?.get('mese');
   const trimestre = searchParams?.get('trimestre');
+  const anno = searchParams?.get('anno');
   
   const [data, setData] = useState<{ viaggiPod: ViaggioPod[], totalPages: number, totalRecords: number } | null>(null);
   const [stats, setStats] = useState<{ 
@@ -148,7 +149,7 @@ function ViaggiPodPageContent() {
       .catch(error => {
         console.error('Errore nel caricamento delle statistiche:', error);
       });
-  }, [currentPage, sortBy, sortOrder, viaggio, magazzino, trasportatore, dataInizio, dataFine, mese, trimestre]);
+  }, [currentPage, sortBy, sortOrder, viaggio, magazzino, trasportatore, dataInizio, dataFine, mese, trimestre, anno]);
 
   // Carica le opzioni per i dropdown quando il form viene aperto
   useEffect(() => {

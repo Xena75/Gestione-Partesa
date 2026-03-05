@@ -41,6 +41,9 @@ export default function ViaggiPodStats({ className = '' }: ViaggiPodStatsProps) 
         
         const trimestre = searchParams?.get('trimestre');
         if (trimestre) params.append('trimestre', trimestre);
+        
+        const anno = searchParams?.get('anno');
+        if (anno) params.append('anno', anno);
 
         // Timeout per evitare attese infinite
         const controller = new AbortController();

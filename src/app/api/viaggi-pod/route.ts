@@ -15,7 +15,8 @@ export async function GET(request: NextRequest) {
         dataInizio: searchParams.get('dataInizio'),
         dataFine: searchParams.get('dataFine'),
         mese: searchParams.get('mese') ? Number(searchParams.get('mese')) : undefined,
-        trimestre: searchParams.get('trimestre') ? Number(searchParams.get('trimestre')) : undefined
+        trimestre: searchParams.get('trimestre') ? Number(searchParams.get('trimestre')) : undefined,
+        anno: searchParams.get('anno') ? Number(searchParams.get('anno')) : undefined
       };
       
       const stats = await getViaggiPodStats(filters);
@@ -44,7 +45,8 @@ export async function GET(request: NextRequest) {
       dataInizio: searchParams.get('dataInizio'),
       dataFine: searchParams.get('dataFine'),
       mese: searchParams.get('mese') ? Number(searchParams.get('mese')) : undefined,
-      trimestre: searchParams.get('trimestre') ? Number(searchParams.get('trimestre')) : undefined
+      trimestre: searchParams.get('trimestre') ? Number(searchParams.get('trimestre')) : undefined,
+      anno: searchParams.get('anno') ? Number(searchParams.get('anno')) : undefined
     };
     
     // Rimuovi filtri vuoti

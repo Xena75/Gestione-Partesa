@@ -9,6 +9,7 @@ type FilterOptions = {
   trasportatori: string[];
   mesi: number[];
   trimestri: number[];
+  anni: number[];
 };
 
 type Filters = {
@@ -19,6 +20,7 @@ type Filters = {
   dataFine: string;
   mese: string;
   trimestre: string;
+  anno: string;
 };
 
 // Funzione helper per convertire le date dal formato YYYY-MM-DD al formato gg/mm/aaaa per la visualizzazione
@@ -45,7 +47,7 @@ export default function FiltriViaggiPod() {
   const searchParams = useSearchParams();
   
   const [showFilters, setShowFilters] = useState(false);
-  const [filterOptions, setFilterOptions] = useState<FilterOptions>({ viaggi: [], magazzini: [], trasportatori: [], mesi: [], trimestri: [] });
+  const [filterOptions, setFilterOptions] = useState<FilterOptions>({ viaggi: [], magazzini: [], trasportatori: [], mesi: [], trimestri: [], anni: [] });
   const [filters, setFilters] = useState<Filters>({
     viaggio: searchParams?.get('viaggio') || '',
     magazzino: searchParams?.get('magazzino') || '',
@@ -53,7 +55,8 @@ export default function FiltriViaggiPod() {
     dataInizio: convertDateForDisplay(searchParams?.get('dataInizio') || ''),
     dataFine: convertDateForDisplay(searchParams?.get('dataFine') || ''),
     mese: searchParams?.get('mese') || '',
-    trimestre: searchParams?.get('trimestre') || ''
+    trimestre: searchParams?.get('trimestre') || '',
+    anno: searchParams?.get('anno') || ''
   });
 
   // Carica le opzioni dei filtri
@@ -162,7 +165,8 @@ export default function FiltriViaggiPod() {
       dataInizio: '',
       dataFine: '',
       mese: '',
-      trimestre: ''
+      trimestre: '',
+      anno: ''
     });
     
     // Rimuovi tutti i parametri dei filtri dall'URL
@@ -207,13 +211,13 @@ export default function FiltriViaggiPod() {
           </div>
         </div>
         {showFilters && (
-          <div className="card-body">
-            <div className="row g-3">
-              {/* Prima riga */}
-              <div className="col-md-4">
+          <div className="card-body py-2">
+            {/* Prima riga: Trasportatore, Viaggio, Magazzino */}
+            <div className="row g-2 mb-2">
+              <div className="col-12 col-md-4">
                 <label className="form-label">Nome Trasportatore</label>
                 <select
-                  className="form-select"
+                  className="form-select form-select-sm"
                   value={filters.trasportatore}
                   onChange={(e) => handleFilterChange('trasportatore', e.target.value)}
                 >
@@ -223,22 +227,20 @@ export default function FiltriViaggiPod() {
                   ))}
                 </select>
               </div>
-              
-              <div className="col-md-4">
+              <div className="col-12 col-md-4">
                 <label className="form-label">Viaggio</label>
                 <input
                   type="text"
-                  className="form-control"
+                  className="form-control form-control-sm"
                   placeholder="Inserisci numero viaggio"
                   value={filters.viaggio}
                   onChange={(e) => handleFilterChange('viaggio', e.target.value)}
                 />
               </div>
-              
-              <div className="col-md-4">
+              <div className="col-12 col-md-4">
                 <label className="form-label">Magazzino</label>
                 <select
-                  className="form-select"
+                  className="form-select form-select-sm"
                   value={filters.magazzino}
                   onChange={(e) => handleFilterChange('magazzino', e.target.value)}
                 >
@@ -248,36 +250,40 @@ export default function FiltriViaggiPod() {
                   ))}
                 </select>
               </div>
-              
-              {/* Seconda riga */}
-              <div className="col-md-3">
-                <label className="form-label">Data Inizio Da</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="gg/mm/aaaa"
-                  maxLength={10}
-                  value={filters.dataInizio}
-                  onChange={(e) => handleDateChange('dataInizio', e.target.value)}
-                />
+            </div>
+            {/* Seconda riga: Anno, Trimestre, Mese, Data Inizio, Data Fine */}
+            <div className="row g-2 row-cols-2 row-cols-md-5">
+              <div className="col">
+                <label className="form-label">Anno</label>
+                <select
+                  className="form-select form-select-sm"
+                  value={filters.anno}
+                  onChange={(e) => handleFilterChange('anno', e.target.value)}
+                >
+                  <option value="">Tutti</option>
+                  {filterOptions.anni?.map(anno => (
+                    <option key={anno} value={anno}>{anno}</option>
+                  ))}
+                </select>
               </div>
-              
-              <div className="col-md-3">
-                <label className="form-label">Data Fine A</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="gg/mm/aaaa"
-                  maxLength={10}
-                  value={filters.dataFine}
-                  onChange={(e) => handleDateChange('dataFine', e.target.value)}
-                />
+              <div className="col">
+                <label className="form-label">Trimestre</label>
+                <select
+                  className="form-select form-select-sm"
+                  value={filters.trimestre}
+                  onChange={(e) => handleFilterChange('trimestre', e.target.value)}
+                >
+                  <option value="">Tutti</option>
+                  <option value="1">Q1 (Gen-Mar)</option>
+                  <option value="2">Q2 (Apr-Giu)</option>
+                  <option value="3">Q3 (Lug-Set)</option>
+                  <option value="4">Q4 (Ott-Dic)</option>
+                </select>
               </div>
-              
-              <div className="col-md-3">
+              <div className="col">
                 <label className="form-label">Mese</label>
                 <select
-                  className="form-select"
+                  className="form-select form-select-sm"
                   value={filters.mese}
                   onChange={(e) => handleFilterChange('mese', e.target.value)}
                 >
@@ -296,20 +302,27 @@ export default function FiltriViaggiPod() {
                   <option value="12">Dicembre</option>
                 </select>
               </div>
-              
-              <div className="col-md-3">
-                <label className="form-label">Trimestre</label>
-                <select
-                  className="form-select"
-                  value={filters.trimestre}
-                  onChange={(e) => handleFilterChange('trimestre', e.target.value)}
-                >
-                  <option value="">Tutti</option>
-                  <option value="1">Q1 (Gen-Mar)</option>
-                  <option value="2">Q2 (Apr-Giu)</option>
-                  <option value="3">Q3 (Lug-Set)</option>
-                  <option value="4">Q4 (Ott-Dic)</option>
-                </select>
+              <div className="col">
+                <label className="form-label">Data Inizio Da</label>
+                <input
+                  type="text"
+                  className="form-control form-control-sm"
+                  placeholder="gg/mm/aaaa"
+                  maxLength={10}
+                  value={filters.dataInizio}
+                  onChange={(e) => handleDateChange('dataInizio', e.target.value)}
+                />
+              </div>
+              <div className="col">
+                <label className="form-label">Data Fine A</label>
+                <input
+                  type="text"
+                  className="form-control form-control-sm"
+                  placeholder="gg/mm/aaaa"
+                  maxLength={10}
+                  value={filters.dataFine}
+                  onChange={(e) => handleDateChange('dataFine', e.target.value)}
+                />
               </div>
             </div>
           </div>

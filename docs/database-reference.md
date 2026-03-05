@@ -1015,7 +1015,7 @@ nominativo               varchar(255)   YES        NULL
 
 **Note tecniche:**
 - Tabella migrata e estesa tramite `migrations/add_employees_extended_fields.sql`
-- Import dipendenti tramite script `scripts/import-employees-from-excel.js`
+- Import dipendenti da Excel (vedi `docs/ISTRUZIONI-IMPORT-DIPENDENTI.md`)
 - Supporta gestione completa anagrafica e dati contrattuali
 - Campo `is_driver` per identificare autisti abilitati
 - **Campo `active`**: Stato dipendente (1 = Attivo, 0 = Inattivo) - **v2.36.0**
@@ -1103,9 +1103,8 @@ updated_at     timestamp                                      NO        current_
 
 **Note operative ricalcolo saldi (Gennaio 2025):**
 - Il conteggio dei giorni utilizzati in dashboard deriva da `employee_leave_balance.vacation_days_used`
-- Il valore viene aggiornato tramite lo script `scripts/recalculate-leave-balances.js`
-- Logica aggiornata: considera solo richieste con `status = 'approved'` e dell'anno corrente (`YEAR(start_date) = 2025`)
-- Dry-run disponibile nello script per stampare i dettagli delle richieste approvate/non cancellate per verifica
+- Il valore viene aggiornato tramite una procedura di ricalcolo saldi
+- Logica: considera solo richieste con `status = 'approved'` e dell'anno corrente (`YEAR(start_date) = anno_corrente`)
 - In assenza di `deleted`, non viene applicato filtro di soft-delete (campo non presente in tabella)
 
 #### employee_leave_balance
@@ -2051,7 +2050,7 @@ gestisce correttamente questo aspetto fornendo un valore `new Date()` esplicito.
 **Note:**
 - Aggiornata il 2025-10-23 con import da Excel (30 dipendenti)
 - 13 nuove colonne aggiunte (migration: `add_employees_extended_fields.sql`)
-- Import tramite script: `scripts/import-employees-from-excel.js`
+- Import da Excel (vedi `docs/ISTRUZIONI-IMPORT-DIPENDENTI.md`)
 - **v2.35.5**: Rimossi campi `driver_license_number` e `driver_license_expiry` (Gennaio 2025)
 
 #### Tabella: `travels`
@@ -2542,6 +2541,7 @@ SELECT * FROM backup_schedules WHERE enabled = TRUE;
 - **src/lib/data-viaggi-pod.ts** - Gestione Proof of Delivery
 - **src/app/api/import_viaggi_PoD/execute/route.ts** - Import PoD
 - **src/app/api/import_viaggi_PoD/history/route.ts** - Storico import PoD
+- **Colonna anno**: STORED GENERATED da `YEAR(\`Data Inizio\`)` - Migration: `migrations/add_anno_to_viaggi_pod.sql` - Filtro anno in FiltriViaggiPod
 
 #### Tabella: `maintenance_quotes`
 - **src/lib/data-viaggi.ts** - Gestione preventivi manutenzione
