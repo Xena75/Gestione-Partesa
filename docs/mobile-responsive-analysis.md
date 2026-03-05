@@ -2,9 +2,9 @@
 
 ## 📱 Report di Analisi Mobile/Tablet Responsiveness
 
-**Data Analisi**: $(Get-Date -Format "dd/MM/yyyy HH:mm")  
+**Data Analisi**: 04/03/2026  
 **Branch**: feature/mobile-responsive  
-**Versione**: v2.30.8  
+**Versione**: v2.43.9  
 **Focus**: Dashboard principale (ex test-cards) ora unificata
 
 ---

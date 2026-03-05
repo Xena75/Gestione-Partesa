@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.42.0
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.43.9
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -9,7 +9,7 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Filtri data funzionanti**: Risolti problemi filtri data con formato italiano gg/mm/aaaa ⭐ **NUOVO v2.31.1**
 - **Monitoraggio avanzato**: Tracciamento in tempo reale di tutti i viaggi
 - **Import Excel**: Importazione automatica dati da file Excel con mappatura intelligente
-- **Sincronizzazione database**: Allineamento automatico tra database multipli con periodo esteso a 7 giorni ⭐ **AGGIORNATO v2.36.1**
+- **Sincronizzazione database**: Allineamento automatico tra database multipli con periodo esteso a 10 giorni ⭐ **AGGIORNATO v2.43.1**
 - **Filtri avanzati**: Sistema di filtri per ricerca e analisi dati
 
 ### 💰 **Fatturazione e Gestione Terzisti**

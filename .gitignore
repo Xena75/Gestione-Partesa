@@ -51,6 +51,8 @@ backups/
 backup-ferie-v2.35.0/
 backup-system/
 *.sql
+*_clean.sql
+*.dbml
 *.log
 *.bat
 
