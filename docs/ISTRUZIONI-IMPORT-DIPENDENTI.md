@@ -1,17 +1,19 @@
 # 📋 IMPORT DIPENDENTI - ISTRUZIONI COMPLETE
 
+> **NOTA**: Lo script `import-employees-from-excel.js` non è attualmente presente nel repository. Queste istruzioni descrivono la procedura e la struttura dati per un eventuale script di import. L'import può essere effettuato anche tramite interfaccia web o script custom.
+
 ## 🎯 OBIETTIVO
-Aggiungere 19 nuovi campi alla tabella `employees` e importare i 30 dipendenti dal file `import/dipendenti.xlsx`.
+Aggiungere 19 nuovi campi alla tabella `employees` e importare i dipendenti dal file `import/dipendenti.xlsx`.
 
 ---
 
-## 📂 FILE CREATI
+## 📂 FILE NECESSARI
 
 1. **`migrations/add_employees_extended_fields.sql`**
    - Aggiunge 19 nuove colonne alla tabella `employees`
    - Include campo calcolato `nominativo` (nome + cognome)
 
-2. **`scripts/import-employees-from-excel.js`**
+2. **Script di import** (da creare o da eseguire manualmente)
    - Legge il file Excel
    - UPDATE per dipendenti esistenti (match su `codice_fiscale`)
    - INSERT per nuovi dipendenti
@@ -105,9 +107,9 @@ DESCRIBE employees;
 Importa i 30 dipendenti dal file Excel:
 
 ```powershell
-# Dalla cartella del progetto
+# Dalla cartella del progetto (quando lo script sarà disponibile)
 cd "M:\Progetti\In produzione\gestione-partesa"
-node scripts/import-employees-from-excel.js
+# node scripts/import-employees-from-excel.js
 ```
 
 **Output atteso**:

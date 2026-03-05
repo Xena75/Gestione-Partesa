@@ -23,7 +23,7 @@ const nextConfig = {
     // Esclude la cartella backup dalla compilazione
     config.watchOptions = {
       ...config.watchOptions,
-      ignored: ['**/backup-ferie-v2.35.0/**', '**/node_modules/**']
+      ignored: ['**/node_modules/**']
     };
     
     return config;
