@@ -47,6 +47,7 @@ next-env.d.ts
 backups/
 backup-system/
 *.sql
+!import/Dump/post-import-*.sql
 *_clean.sql
 *.dbml
 *.log
