@@ -1,7 +1,30 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-**Versione corrente**: v2.43.10  
+**Versione corrente**: v2.43.11  
 **Ultimo aggiornamento**: Marzo 2026
+
+---
+
+## v2.43.11 - Import Fatturazione Delivery da upload, sicurezza env e build
+
+**Data implementazione**: Marzo 2026  
+**Stato**: ✅ Build `npm run build` verificata
+
+### 🎯 Import Delivery da file (API + UI)
+- **Nuova route**: `POST /api/delivery/import` — caricamento Excel fatturazione delivery (logica allineata agli import esistenti, `maxDuration` 300s su Vercel)
+- **Pagine**: aggiornamenti modal/upload su `gestione` e `handling` dove previsto
+- **API**: adeguamenti `import-from-folder` e import handling per coerenza con i flussi di import
+
+### 🔒 Repository e segreti
+- **`.gitignore`**: `.env.production` e `.env.development` ignorati; non committare credenziali
+- **Git**: `.env.production` rimosso dal tracking (`git rm --cached`); il file resta in locale per chi lo usa
+
+### 📁 File toccati (principali)
+- `src/app/api/delivery/import/route.ts` (nuovo)
+- `src/app/api/delivery/import-from-folder/route.ts`, `src/app/api/handling/import-from-folder/route.ts`, `src/app/api/handling/import/route.ts`
+- `src/app/gestione/page.tsx`, `src/app/handling/page.tsx`
+- `vercel.json` (funzione `delivery/import`)
+- `.gitignore`, `docs/database-reference.md`, `docs/funzionalita_aggiornate.md`
 
 ---
 

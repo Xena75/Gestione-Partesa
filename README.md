@@ -1,4 +1,4 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.43.10
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.43.11
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
@@ -16,7 +16,7 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 ### 💰 **Fatturazione e Gestione Terzisti**
 - **Fatturazione automatica**: Calcolo automatico compensi e fatturazione terzisti
 - **Export multi-foglio**: Esportazione dati in Excel con fogli multipli
-- **Gestione delivery**: Tracciamento consegne e calcolo compensi
+- **Gestione delivery**: Tracciamento consegne e calcolo compensi; import fatturazione da upload file (`/api/delivery/import`) ⭐ **v2.43.11**
 - **Backup automatico**: Sistema di backup completo per sicurezza dati
 - **Audit trail**: Tracciamento completo di tutte le operazioni
 
@@ -1476,7 +1476,7 @@ WHERE status = 'completed' AND created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)
 - **Documentazione**: `migrazione_bore_to_ngrok.md` e `configurazione_ngrok_mysql.md`
 
 ### 🛠️ **Troubleshooting Comune**
-- **Errori 500 API**: Verificare configurazione database in `.env.production`
+- **Errori 500 API**: Verificare variabili database su **Vercel** (produzione) o in `.env.production` / `.env.local` in locale (file di env con segreti **non** nel repository)
 - **Connessione database**: Controllare che ngrok sia attivo e raggiungibile
 - **Backup dashboard**: Assicurarsi che `MYSQL_HOST` e `MYSQL_PORT` siano corretti
 - **Performance**: Monitorare connessioni TCP e latenza ngrok

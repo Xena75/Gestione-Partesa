@@ -2,14 +2,14 @@
 
 Questo documento contiene la documentazione completa delle tre basi di dati utilizzate nel progetto gestione-partesa.
 
-**CONFIGURAZIONE:** Utilizzare il file `.env.production` per le variabili d'ambiente di produzione.
+**CONFIGURAZIONE:** In produzione (Vercel) impostare le variabili d’ambiente nel dashboard del progetto. In locale si può usare un file `.env.production` (o `.env.local`) **solo sulla propria macchina**: il file **non è più nel repository Git** (vedi `.gitignore`).
 
 ## Database Utilizzati
 
 ### 1. gestionelogistica
 **Porta:** 24345  
 **Host:** 10.tcp.eu.ngrok.io  
-**Variabili d'ambiente (da .env.production):**
+**Variabili d'ambiente** (stessi nomi su Vercel o in `.env.production` locale):
 - `DB_GESTIONE_HOST=10.tcp.eu.ngrok.io`
 - `DB_GESTIONE_PORT=24345`
 - `DB_GESTIONE_NAME=gestionelogistica`
@@ -21,7 +21,7 @@ Questo documento contiene la documentazione completa delle tre basi di dati util
 ### 2. viaggi_db
 **Porta:** 24345  
 **Host:** 10.tcp.eu.ngrok.io  
-**Variabili d'ambiente (da .env.production):**
+**Variabili d'ambiente** (stessi nomi su Vercel o in `.env.production` locale):
 - `DB_VIAGGI_HOST=10.tcp.eu.ngrok.io`
 - `DB_VIAGGI_PORT=24345`
 - `DB_VIAGGI_NAME=viaggi_db`
@@ -33,7 +33,7 @@ Questo documento contiene la documentazione completa delle tre basi di dati util
 ### 3. backup_management
 **Porta:** 24345  
 **Host:** 10.tcp.eu.ngrok.io  
-**Variabili d'ambiente (da .env.production):**
+**Variabili d'ambiente** (stessi nomi su Vercel o in `.env.production` locale):
 - `MYSQL_HOST=10.tcp.eu.ngrok.io`
 - `MYSQL_PORT=24345`
 - `MYSQL_DATABASE=backup_management`
@@ -45,7 +45,7 @@ Questo documento contiene la documentazione completa delle tre basi di dati util
 ## Note Importanti
 
 - Tutti i database utilizzano MySQL/MariaDB
-- **File di configurazione:** Utilizzare `.env.production` per le variabili d'ambiente
+- **File di configurazione:** Variabili su **Vercel** (produzione); opzionale `.env.production` / `.env.local` in locale — **non committare** segreti nel repository
 - **Connessione:** I database sono accessibili tramite tunnel ngrok su porta 24345
 - Le password sono vuote per l'ambiente di produzione
 - Assicurarsi di utilizzare le variabili d'ambiente corrette per ogni database

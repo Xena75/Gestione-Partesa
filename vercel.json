@@ -23,6 +23,10 @@
     "src/app/api/handling/import/route.ts": {
       "maxDuration": 300,
       "memory": 1024
+    },
+    "src/app/api/delivery/import/route.ts": {
+      "maxDuration": 300,
+      "memory": 1024
     }
   },
   "headers": [

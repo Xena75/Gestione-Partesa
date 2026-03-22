@@ -357,7 +357,7 @@ export async function POST(request: NextRequest) {
     let importedCount = 0;
     let errorCount = 0;
     const errors: string[] = [];
-    const batchSize = 1000; // Stessa logica di handling
+    const batchSize = 1000;
     
     // Processa i dati in batch
     for (let i = 0; i < data.length; i += batchSize) {
@@ -457,11 +457,11 @@ export async function POST(request: NextRequest) {
       // Inserisci il batch
       if (batchValues.length > 0 && connection) {
         try {
-          const placeholders = batchValues.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ');
+          const placeholders = batchValues.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ');
           const flatValues = batchValues.flat();
           
           await connection.execute(
-            insertQuery.replace('VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', `VALUES ${placeholders}`),
+            insertQuery.replace('VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', `VALUES ${placeholders}`),
             flatValues
           );
           
@@ -469,7 +469,6 @@ export async function POST(request: NextRequest) {
           console.log(`✅ Batch ${Math.floor(i / batchSize) + 1}: ${batchValues.length} righe importate (totale: ${importedCount}/${data.length})`);
         } catch (error: any) {
           console.error(`❌ Errore inserimento batch, fallback a inserimenti singoli:`, error.message);
-          
           for (const values of batchValues) {
             try {
               await connection.execute(insertQuery, values);
@@ -478,14 +477,9 @@ export async function POST(request: NextRequest) {
               errorCount++;
               const errorMsg = `Riga ${importedCount + errorCount}: ${singleError.message}`;
               errors.push(errorMsg);
-              // Log dettagliato per debug
-              console.error(`❌ Errore inserimento singolo (riga ${importedCount + errorCount}):`, {
-                error: singleError.message,
-                code: singleError.code,
-                errno: singleError.errno,
-                sqlState: singleError.sqlState,
-                values: values.slice(0, 10) // Mostra solo i primi 10 valori per non intasare il log
-              });
+              if (errorCount <= 3) {
+                console.error(`❌ Errore inserimento singolo (riga ${importedCount + errorCount}):`, singleError.message);
+              }
             }
           }
         }

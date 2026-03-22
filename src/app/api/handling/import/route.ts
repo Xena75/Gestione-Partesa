@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
 import pool from '@/lib/db-gestione';
 import type { PoolConnection } from 'mysql2/promise';
+import { verifyUserAccess } from '@/lib/auth';
 
 // Configurazione per file grandi: timeout aumentato
 export const dynamic = 'force-dynamic';
@@ -9,6 +10,14 @@ export const maxDuration = 300; // 5 minuti per file grandi
 export const runtime = 'nodejs'; // Usa Node.js runtime per gestire file grandi
 
 export async function POST(request: NextRequest) {
+  const auth = await verifyUserAccess(request);
+  if (!auth.success) {
+    return NextResponse.json(
+      { error: auth.message || 'Autenticazione richiesta' },
+      { status: 401 }
+    );
+  }
+
   let connection: PoolConnection | null = null;
   
   try {
