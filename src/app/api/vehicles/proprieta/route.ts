@@ -16,7 +16,7 @@ export async function GET() {
     connection = await mysql.createConnection(dbConfig);
     
     const [rows] = await connection.execute(
-      'SELECT DISTINCT proprieta FROM vehicles WHERE proprieta IS NOT NULL AND proprieta != "" ORDER BY proprieta'
+      'SELECT DISTINCT proprieta FROM vehicles WHERE proprieta IS NOT NULL AND proprieta != \'\' ORDER BY proprieta'
     );
     
     return NextResponse.json(rows);

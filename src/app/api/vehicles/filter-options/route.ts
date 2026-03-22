@@ -18,11 +18,11 @@ export async function GET(request: NextRequest) {
 
     // Query per ottenere valori unici per i filtri
     const [proprietaRows] = await connection.execute(
-      'SELECT DISTINCT proprieta FROM vehicles WHERE proprieta IS NOT NULL AND proprieta != "" ORDER BY proprieta'
+      'SELECT DISTINCT proprieta FROM vehicles WHERE proprieta IS NOT NULL AND proprieta != \'\' ORDER BY proprieta'
     );
 
     const [tipoPatentRows] = await connection.execute(
-      'SELECT DISTINCT tipo_patente FROM vehicles WHERE tipo_patente IS NOT NULL AND tipo_patente != "" ORDER BY tipo_patente'
+      'SELECT DISTINCT tipo_patente FROM vehicles WHERE tipo_patente IS NOT NULL AND tipo_patente != \'\' ORDER BY tipo_patente'
     );
 
     const [activeRows] = await connection.execute(

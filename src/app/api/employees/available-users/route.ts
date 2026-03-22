@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
 
     // Recupera gli username già collegati nella tabella employees
     const [linkedUsers] = await viaggiConnection.execute(
-      'SELECT DISTINCT username_login FROM employees WHERE username_login IS NOT NULL AND username_login != ""'
+      'SELECT DISTINCT username_login FROM employees WHERE username_login IS NOT NULL AND username_login != \'\''
     );
 
     const linkedUsernames = new Set(

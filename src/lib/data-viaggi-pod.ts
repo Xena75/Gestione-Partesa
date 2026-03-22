@@ -417,9 +417,9 @@ export async function getViaggiPodStats(filters: FiltriViaggioPod = {}): Promise
 export async function getFilterOptionsViaggiPod() {
   try {
     // Query per ottenere tutti i valori distinti
-    const viaggioSql = 'SELECT DISTINCT `Viaggio` FROM viaggi_pod WHERE `Viaggio` IS NOT NULL AND `Viaggio` != "" ORDER BY `Viaggio`';
-    const magazzinoSql = 'SELECT DISTINCT `Magazzino di partenza` FROM viaggi_pod WHERE `Magazzino di partenza` IS NOT NULL AND `Magazzino di partenza` != "" ORDER BY `Magazzino di partenza`';
-    const trasportatoreSql = 'SELECT DISTINCT `Nome Trasportatore` FROM viaggi_pod WHERE `Nome Trasportatore` IS NOT NULL AND `Nome Trasportatore` != "" ORDER BY `Nome Trasportatore`';
+    const viaggioSql = 'SELECT DISTINCT `Viaggio` FROM viaggi_pod WHERE `Viaggio` IS NOT NULL AND `Viaggio` != \'\' ORDER BY `Viaggio`';
+    const magazzinoSql = 'SELECT DISTINCT `Magazzino di partenza` FROM viaggi_pod WHERE `Magazzino di partenza` IS NOT NULL AND `Magazzino di partenza` != \'\' ORDER BY `Magazzino di partenza`';
+    const trasportatoreSql = 'SELECT DISTINCT `Nome Trasportatore` FROM viaggi_pod WHERE `Nome Trasportatore` IS NOT NULL AND `Nome Trasportatore` != \'\' ORDER BY `Nome Trasportatore`';
     const meseSql = 'SELECT DISTINCT `Mese` FROM viaggi_pod WHERE `Mese` IS NOT NULL ORDER BY `Mese`';
     const trimestreSql = 'SELECT DISTINCT `Trimestre` FROM viaggi_pod WHERE `Trimestre` IS NOT NULL ORDER BY `Trimestre`';
     const annoSql = 'SELECT DISTINCT YEAR(`Data Inizio`) as anno FROM viaggi_pod WHERE `Data Inizio` IS NOT NULL ORDER BY anno DESC';

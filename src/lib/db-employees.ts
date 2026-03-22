@@ -664,7 +664,10 @@ export async function getExpiredDocuments(sortBy: string = 'days_overdue', limit
     } else if (sortField === 'document_type') {
       orderClause = 'ORDER BY ed.document_type, days_overdue DESC';
     }
-    
+
+    // MySQL 8 + prepared statement: LIMIT ? può dare ER_WRONG_ARGUMENTS (1210)
+    const safeLimit = Math.max(1, Math.min(500, Math.trunc(Number(limit)) || 50));
+
     const [documentsRows] = await connection.execute(`
       SELECT 
         ed.*,
@@ -683,8 +686,8 @@ export async function getExpiredDocuments(sortBy: string = 'days_overdue', limit
         AND ed.expiry_date IS NOT NULL
         AND ed.expiry_date < CURDATE()
       ${orderClause}
-      LIMIT ?
-    `, [limit]);
+      LIMIT ${safeLimit}
+    `);
     
     // Conteggio totale documenti scaduti
     const [totalRows] = await connection.execute(`
@@ -1408,7 +1411,7 @@ export async function getDistinctQualifiche(): Promise<string[]> {
   const connection = await getConnection();
   try {
     const [rows] = await connection.execute(
-      'SELECT DISTINCT qualifica FROM employees WHERE qualifica IS NOT NULL AND qualifica != "" ORDER BY qualifica'
+      'SELECT DISTINCT qualifica FROM employees WHERE qualifica IS NOT NULL AND qualifica != \'\' ORDER BY qualifica'
     );
     return (rows as any[]).map(row => row.qualifica).filter(Boolean);
   } finally {
@@ -1421,7 +1424,7 @@ export async function getDistinctCdc(): Promise<string[]> {
   const connection = await getConnection();
   try {
     const [rows] = await connection.execute(
-      'SELECT DISTINCT cdc FROM employees WHERE cdc IS NOT NULL AND cdc != "" ORDER BY cdc'
+      'SELECT DISTINCT cdc FROM employees WHERE cdc IS NOT NULL AND cdc != \'\' ORDER BY cdc'
     );
     return (rows as any[]).map(row => row.cdc).filter(Boolean);
   } finally {
@@ -1434,7 +1437,7 @@ export async function getDistinctCitta(): Promise<string[]> {
   const connection = await getConnection();
   try {
     const [rows] = await connection.execute(
-      'SELECT DISTINCT citta FROM employees WHERE citta IS NOT NULL AND citta != "" ORDER BY citta'
+      'SELECT DISTINCT citta FROM employees WHERE citta IS NOT NULL AND citta != \'\' ORDER BY citta'
     );
     return (rows as any[]).map(row => row.citta).filter(Boolean);
   } finally {
@@ -1447,7 +1450,7 @@ export async function getDistinctTipoContratto(): Promise<string[]> {
   const connection = await getConnection();
   try {
     const [rows] = await connection.execute(
-      'SELECT DISTINCT tipo_contratto FROM employees WHERE tipo_contratto IS NOT NULL AND tipo_contratto != "" ORDER BY tipo_contratto'
+      'SELECT DISTINCT tipo_contratto FROM employees WHERE tipo_contratto IS NOT NULL AND tipo_contratto != \'\' ORDER BY tipo_contratto'
     );
     return (rows as any[]).map(row => row.tipo_contratto).filter(Boolean);
   } finally {
@@ -1460,7 +1463,7 @@ export async function getDistinctCcnl(): Promise<string[]> {
   const connection = await getConnection();
   try {
     const [rows] = await connection.execute(
-      'SELECT DISTINCT ccnl FROM employees WHERE ccnl IS NOT NULL AND ccnl != "" ORDER BY ccnl'
+      'SELECT DISTINCT ccnl FROM employees WHERE ccnl IS NOT NULL AND ccnl != \'\' ORDER BY ccnl'
     );
     return (rows as any[]).map(row => row.ccnl).filter(Boolean);
   } finally {
@@ -1473,7 +1476,7 @@ export async function getDistinctLivello(): Promise<string[]> {
   const connection = await getConnection();
   try {
     const [rows] = await connection.execute(
-      'SELECT DISTINCT livello FROM employees WHERE livello IS NOT NULL AND livello != "" ORDER BY livello'
+      'SELECT DISTINCT livello FROM employees WHERE livello IS NOT NULL AND livello != \'\' ORDER BY livello'
     );
     return (rows as any[]).map(row => row.livello).filter(Boolean);
   } finally {
@@ -1486,7 +1489,7 @@ export async function getDistinctOrarioLavoro(): Promise<string[]> {
   const connection = await getConnection();
   try {
     const [rows] = await connection.execute(
-      'SELECT DISTINCT orario_lavoro FROM employees WHERE orario_lavoro IS NOT NULL AND orario_lavoro != "" ORDER BY orario_lavoro'
+      'SELECT DISTINCT orario_lavoro FROM employees WHERE orario_lavoro IS NOT NULL AND orario_lavoro != \'\' ORDER BY orario_lavoro'
     );
     return (rows as any[]).map(row => row.orario_lavoro).filter(Boolean);
   } finally {
@@ -1499,7 +1502,7 @@ export async function getDistinctCittadinanza(): Promise<string[]> {
   const connection = await getConnection();
   try {
     const [rows] = await connection.execute(
-      'SELECT DISTINCT cittadinanza FROM employees WHERE cittadinanza IS NOT NULL AND cittadinanza != "" ORDER BY cittadinanza'
+      'SELECT DISTINCT cittadinanza FROM employees WHERE cittadinanza IS NOT NULL AND cittadinanza != \'\' ORDER BY cittadinanza'
     );
     return (rows as any[]).map(row => row.cittadinanza).filter(Boolean);
   } finally {
@@ -1511,7 +1514,7 @@ export async function getDistinctLeaveTypes(): Promise<string[]> {
   const connection = await getConnection();
   try {
     const [rows] = await connection.execute(
-      'SELECT DISTINCT leave_type FROM employee_leave_requests WHERE leave_type IS NOT NULL AND leave_type != "" ORDER BY leave_type'
+      'SELECT DISTINCT leave_type FROM employee_leave_requests WHERE leave_type IS NOT NULL AND leave_type != \'\' ORDER BY leave_type'
     );
     return (rows as any[]).map(row => row.leave_type).filter(Boolean);
   } finally {
@@ -1523,7 +1526,7 @@ export async function getDistinctPatente(): Promise<string[]> {
   const connection = await getConnection();
   try {
     const [rows] = await connection.execute(
-      'SELECT DISTINCT patente FROM employees WHERE patente IS NOT NULL AND patente != "" ORDER BY patente'
+      'SELECT DISTINCT patente FROM employees WHERE patente IS NOT NULL AND patente != \'\' ORDER BY patente'
     );
     return (rows as any[]).map(row => row.patente).filter(Boolean);
   } finally {
@@ -1535,7 +1538,7 @@ export async function getDistinctDocumentTypes(): Promise<string[]> {
   const connection = await getConnection();
   try {
     const [rows] = await connection.execute(
-      'SELECT DISTINCT document_type FROM employee_documents WHERE document_type IS NOT NULL AND document_type != "" ORDER BY document_type'
+      'SELECT DISTINCT document_type FROM employee_documents WHERE document_type IS NOT NULL AND document_type != \'\' ORDER BY document_type'
     );
     return (rows as any[]).map(row => row.document_type).filter(Boolean);
   } finally {

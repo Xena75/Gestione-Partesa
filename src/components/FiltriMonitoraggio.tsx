@@ -1,7 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import type { ChangeEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import {
+  handleDateInputChange,
+  italianFilterDateToISO,
+  isoFilterParamToItalianDisplay,
+  isValidItalianFilterDate,
+} from '@/lib/date-utils';
 
 type FilterOptions = {
   depositi: string[];
@@ -26,8 +33,8 @@ export default function FiltriMonitoraggio() {
   const [showFilters, setShowFilters] = useState(false);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({ depositi: [], nominativi: [], targhe: [] });
   const [filters, setFilters] = useState<Filters>({
-    dataDa: searchParams?.get('dataDa') || '',
-    dataA: searchParams?.get('dataA') || '',
+    dataDa: searchParams?.get('dataDa') ? isoFilterParamToItalianDisplay(searchParams.get('dataDa')!) : '',
+    dataA: searchParams?.get('dataA') ? isoFilterParamToItalianDisplay(searchParams.get('dataA')!) : '',
     deposito: searchParams?.get('deposito') || '',
     nominativoId: searchParams?.get('nominativoId') || '',
     numeroViaggio: searchParams?.get('numeroViaggio') || '',
@@ -46,14 +53,35 @@ export default function FiltriMonitoraggio() {
     setFilters(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleFilterDateChange =
+    (field: 'dataDa' | 'dataA') => (e: ChangeEvent<HTMLInputElement>) => {
+      const { formattedValue, newCursorPosition } = handleDateInputChange(
+        e.target.value,
+        e.target.selectionStart ?? 0
+      );
+      setFilters(prev => ({ ...prev, [field]: formattedValue }));
+      setTimeout(() => {
+        e.target.setSelectionRange(newCursorPosition, newCursorPosition);
+      }, 0);
+    };
+
   const applyFilters = () => {
     const params = new URLSearchParams();
-    
-    // Aggiungi solo i filtri non vuoti
+
+    const dataDaIso = filters.dataDa ? italianFilterDateToISO(filters.dataDa) : '';
+    const dataAIso = filters.dataA ? italianFilterDateToISO(filters.dataA) : '';
+
     Object.entries(filters).forEach(([key, value]) => {
-      if (value) {
-        params.set(key, value);
+      if (!value) return;
+      if (key === 'dataDa') {
+        if (dataDaIso) params.set('dataDa', dataDaIso);
+        return;
       }
+      if (key === 'dataA') {
+        if (dataAIso) params.set('dataA', dataAIso);
+        return;
+      }
+      params.set(key, value);
     });
     
     // Mantieni la pagina corrente o vai alla prima
@@ -201,21 +229,33 @@ export default function FiltriMonitoraggio() {
               <div className="col-md-3">
                 <label className="form-label">Data Da</label>
                 <input
-                  type="date"
-                  className="form-control"
+                  type="text"
+                  className={`form-control ${filters.dataDa && !isValidItalianFilterDate(filters.dataDa) ? 'is-invalid' : ''}`}
+                  placeholder="gg/mm/aaaa"
+                  pattern="\d{1,2}/\d{1,2}/\d{4}"
+                  title="Inserisci la data nel formato gg/mm/aaaa"
                   value={filters.dataDa}
-                  onChange={(e) => handleFilterChange('dataDa', e.target.value)}
+                  onChange={handleFilterDateChange('dataDa')}
                 />
+                {filters.dataDa && !isValidItalianFilterDate(filters.dataDa) && (
+                  <div className="invalid-feedback d-block">Formato data non valido. Usa gg/mm/aaaa</div>
+                )}
               </div>
-              
+
               <div className="col-md-3">
                 <label className="form-label">Data A</label>
                 <input
-                  type="date"
-                  className="form-control"
+                  type="text"
+                  className={`form-control ${filters.dataA && !isValidItalianFilterDate(filters.dataA) ? 'is-invalid' : ''}`}
+                  placeholder="gg/mm/aaaa"
+                  pattern="\d{1,2}/\d{1,2}/\d{4}"
+                  title="Inserisci la data nel formato gg/mm/aaaa"
                   value={filters.dataA}
-                  onChange={(e) => handleFilterChange('dataA', e.target.value)}
+                  onChange={handleFilterDateChange('dataA')}
                 />
+                {filters.dataA && !isValidItalianFilterDate(filters.dataA) && (
+                  <div className="invalid-feedback d-block">Formato data non valido. Usa gg/mm/aaaa</div>
+                )}
               </div>
             </div>
           </div>

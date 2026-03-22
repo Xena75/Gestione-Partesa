@@ -1,54 +1,14 @@
 'use client';
 
 import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import type { ChangeEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-
-// Funzioni di utilità per la conversione delle date
-const formatDateToItalian = (isoDate: string): string => {
-  if (!isoDate) return '';
-  const date = new Date(isoDate);
-  if (isNaN(date.getTime())) return '';
-  
-  const day = date.getDate().toString().padStart(2, '0');
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const year = date.getFullYear();
-  
-  return `${day}/${month}/${year}`;
-};
-
-const formatDateToISO = (italianDate: string): string => {
-  if (!italianDate) return '';
-  
-  // Rimuovi spazi e verifica il formato
-  const cleanDate = italianDate.trim();
-  const dateRegex = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
-  const match = cleanDate.match(dateRegex);
-  
-  if (!match) return '';
-  
-  const [, day, month, year] = match;
-  const dayNum = parseInt(day, 10);
-  const monthNum = parseInt(month, 10);
-  const yearNum = parseInt(year, 10);
-  
-  // Validazione base
-  if (dayNum < 1 || dayNum > 31 || monthNum < 1 || monthNum > 12 || yearNum < 1900 || yearNum > 2100) {
-    return '';
-  }
-  
-  // Crea la data e verifica che sia valida
-  const date = new Date(yearNum, monthNum - 1, dayNum);
-  if (date.getDate() !== dayNum || date.getMonth() !== monthNum - 1 || date.getFullYear() !== yearNum) {
-    return '';
-  }
-  
-  return `${yearNum}-${monthNum.toString().padStart(2, '0')}-${dayNum.toString().padStart(2, '0')}`;
-};
-
-const isValidItalianDate = (dateString: string): boolean => {
-  if (!dateString) return true; // Campo vuoto è valido
-  return formatDateToISO(dateString) !== '';
-};
+import {
+  handleDateInputChange,
+  italianFilterDateToISO,
+  isoFilterParamToItalianDisplay,
+  isValidItalianFilterDate,
+} from '@/lib/date-utils';
 
 interface FilterOptions {
   aziendeVettore: string[];
@@ -83,8 +43,8 @@ const FiltriViaggi = forwardRef<FiltriViaggiRef, FiltriViaggiProps>(({ onFilters
   const [haiEffettuatoRitiri, setHaiEffettuatoRitiri] = useState(searchParams?.get('haiEffettuatoRitiri') || '');
   const [mese, setMese] = useState(searchParams?.get('mese') || '');
   const [trimestre, setTrimestre] = useState(searchParams?.get('trimestre') || '');
-  const [dataDa, setDataDa] = useState(searchParams?.get('dataDa') ? formatDateToItalian(searchParams.get('dataDa')!) : '');
-  const [dataA, setDataA] = useState(searchParams?.get('dataA') ? formatDateToItalian(searchParams.get('dataA')!) : '');
+  const [dataDa, setDataDa] = useState(searchParams?.get('dataDa') ? isoFilterParamToItalianDisplay(searchParams.get('dataDa')!) : '');
+  const [dataA, setDataA] = useState(searchParams?.get('dataA') ? isoFilterParamToItalianDisplay(searchParams.get('dataA')!) : '');
   
   // Stati per le opzioni dei filtri
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
@@ -157,11 +117,11 @@ const FiltriViaggi = forwardRef<FiltriViaggiRef, FiltriViaggiProps>(({ onFilters
     if (mese) params.set('mese', mese);
     if (trimestre) params.set('trimestre', trimestre);
     if (dataDa) {
-      const isoDateDa = formatDateToISO(dataDa);
+      const isoDateDa = italianFilterDateToISO(dataDa);
       if (isoDateDa) params.set('dataDa', isoDateDa);
     }
     if (dataA) {
-      const isoDateA = formatDateToISO(dataA);
+      const isoDateA = italianFilterDateToISO(dataA);
       if (isoDateA) params.set('dataA', isoDateA);
     }
     
@@ -226,6 +186,19 @@ const FiltriViaggi = forwardRef<FiltriViaggiRef, FiltriViaggiProps>(({ onFilters
       applyFilters();
     }
   };
+
+  const handleFilterDateChange =
+    (setter: React.Dispatch<React.SetStateAction<string>>) =>
+    (e: ChangeEvent<HTMLInputElement>) => {
+      const { formattedValue, newCursorPosition } = handleDateInputChange(
+        e.target.value,
+        e.target.selectionStart ?? 0
+      );
+      setter(formattedValue);
+      setTimeout(() => {
+        e.target.setSelectionRange(newCursorPosition, newCursorPosition);
+      }, 0);
+    };
 
   if (isLoading) {
     return <div className="text-center">Caricamento opzioni filtri...</div>;
@@ -362,15 +335,15 @@ const FiltriViaggi = forwardRef<FiltriViaggiRef, FiltriViaggiProps>(({ onFilters
         <label className="form-label fw-bold">Data Da</label>
         <input
           type="text"
-          className={`form-control ${dataDa && !isValidItalianDate(dataDa) ? 'is-invalid' : ''}`}
+          className={`form-control ${dataDa && !isValidItalianFilterDate(dataDa) ? 'is-invalid' : ''}`}
           placeholder="gg/mm/aaaa"
           pattern="\d{1,2}/\d{1,2}/\d{4}"
           value={dataDa}
-          onChange={(e) => setDataDa(e.target.value)}
+          onChange={handleFilterDateChange(setDataDa)}
           onKeyPress={handleKeyPress}
           title="Inserisci la data nel formato gg/mm/aaaa"
         />
-        {dataDa && !isValidItalianDate(dataDa) && (
+        {dataDa && !isValidItalianFilterDate(dataDa) && (
           <div className="invalid-feedback">
             Formato data non valido. Usa gg/mm/aaaa
           </div>
@@ -381,15 +354,15 @@ const FiltriViaggi = forwardRef<FiltriViaggiRef, FiltriViaggiProps>(({ onFilters
         <label className="form-label fw-bold">Data A</label>
         <input
           type="text"
-          className={`form-control ${dataA && !isValidItalianDate(dataA) ? 'is-invalid' : ''}`}
+          className={`form-control ${dataA && !isValidItalianFilterDate(dataA) ? 'is-invalid' : ''}`}
           placeholder="gg/mm/aaaa"
           pattern="\d{1,2}/\d{1,2}/\d{4}"
           value={dataA}
-          onChange={(e) => setDataA(e.target.value)}
+          onChange={handleFilterDateChange(setDataA)}
           onKeyPress={handleKeyPress}
           title="Inserisci la data nel formato gg/mm/aaaa"
         />
-        {dataA && !isValidItalianDate(dataA) && (
+        {dataA && !isValidItalianFilterDate(dataA) && (
           <div className="invalid-feedback">
             Formato data non valido. Usa gg/mm/aaaa
           </div>

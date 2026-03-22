@@ -3299,10 +3299,14 @@ export default function ModernDashboard() {
                 <button type="button" className="btn btn-secondary" onClick={() => setIsDocumentsModalOpen(false)}>
                   Chiudi
                 </button>
-                <Link href="/autisti/documenti" className="btn btn-primary" style={{ 
-                  backgroundColor: expiredDocumentsCount > 0 ? '#dc3545' : '#ffc107', 
-                  borderColor: expiredDocumentsCount > 0 ? '#dc3545' : '#ffc107' 
-                }}>
+                <Link
+                  href={user?.role === 'employee' ? '/autisti/documenti' : '/gestione/dipendenti/documenti'}
+                  className="btn btn-primary"
+                  style={{
+                    backgroundColor: expiredDocumentsCount > 0 ? '#dc3545' : '#ffc107',
+                    borderColor: expiredDocumentsCount > 0 ? '#dc3545' : '#ffc107',
+                  }}
+                >
                   <FileText size={16} className="me-1" />
                   Vai alla Gestione Documenti
                 </Link>

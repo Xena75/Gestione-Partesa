@@ -185,6 +185,51 @@ export const convertISOToItalian = (isoDate: string): string => {
 };
 
 /**
+ * Filtri viaggi/monitoraggio: gg/mm/aaaa con 1-2 cifre per giorno e mese → yyyy-mm-dd (query string / API).
+ * Stessa logica precedentemente in FiltriViaggi.
+ */
+export const italianFilterDateToISO = (italianDate: string): string => {
+  if (!italianDate) return '';
+  const cleanDate = italianDate.trim();
+  const dateRegex = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+  const match = cleanDate.match(dateRegex);
+  if (!match) return '';
+  const [, day, month, year] = match;
+  const dayNum = parseInt(day, 10);
+  const monthNum = parseInt(month, 10);
+  const yearNum = parseInt(year, 10);
+  if (dayNum < 1 || dayNum > 31 || monthNum < 1 || monthNum > 12 || yearNum < 1900 || yearNum > 2100) {
+    return '';
+  }
+  const date = new Date(yearNum, monthNum - 1, dayNum);
+  if (date.getDate() !== dayNum || date.getMonth() !== monthNum - 1 || date.getFullYear() !== yearNum) {
+    return '';
+  }
+  return `${yearNum}-${monthNum.toString().padStart(2, '0')}-${dayNum.toString().padStart(2, '0')}`;
+};
+
+/** Campo vuoto = valido; altrimenti deve essere una data gg/mm/aaaa accettata da italianFilterDateToISO */
+export const isValidItalianFilterDate = (dateString: string): boolean => {
+  if (!dateString) return true;
+  return italianFilterDateToISO(dateString) !== '';
+};
+
+/** Parametro URL yyyy-mm-dd → gg/mm/aaaa senza passare da Date (evita shift fuso) */
+export const isoFilterParamToItalianDisplay = (param: string): string => {
+  if (!param?.trim()) return '';
+  const t = param.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(t)) {
+    return convertISOToItalian(t);
+  }
+  const date = new Date(param);
+  if (isNaN(date.getTime())) return '';
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
+/**
  * Valida se una stringa è nel formato italiano dd/mm/yyyy
  */
 export const isValidItalianDate = (dateString: string): boolean => {

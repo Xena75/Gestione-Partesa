@@ -50,7 +50,6 @@ function MonitoraggioPageContent() {
   const mese = searchParams?.get('mese');
   
   const [data, setData] = useState<{ viaggi: Viaggio[], totalPages: number, totalRecords: number } | null>(null);
-  const [stats, setStats] = useState<{ totalRecords: number, totalPages: number, recordsPerPage: number } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -70,19 +69,16 @@ function MonitoraggioPageContent() {
     if (targaMezzoId) params.set('targaMezzoId', targaMezzoId);
     if (mese) params.set('mese', mese);
     
-    // Carica i dati della pagina corrente
+    // Stesse API: totalRecords/totalPages già coerenti con i filtri applicati
     fetch(`/api/monitoraggio?${params.toString()}`)
       .then(res => res.json())
       .then(fetchedData => {
         setData(fetchedData);
         setIsLoading(false);
-      });
-    
-    // Carica le statistiche
-    fetch(`/api/monitoraggio/stats?page=${currentPage}`)
-      .then(res => res.json())
-      .then(fetchedStats => {
-        setStats(fetchedStats);
+      })
+      .catch(() => {
+        setData(null);
+        setIsLoading(false);
       });
   }, [currentPage, sortBy, sortOrder, dataDa, dataA, deposito, nominativoId, numeroViaggio, targaMezzoId, mese]);
 
@@ -90,11 +86,12 @@ function MonitoraggioPageContent() {
     return <div>Caricamento...</div>;
   }
 
-  if (!data || !stats) {
+  if (!data) {
     return <div>Errore nel caricamento dei dati.</div>;
   }
 
-  const { viaggi, totalPages } = data;
+  const { viaggi, totalPages, totalRecords } = data;
+  const recordsInThisPage = viaggi.length;
 
   return (
     <div className="vh-100 d-flex flex-column p-4">
@@ -120,7 +117,7 @@ function MonitoraggioPageContent() {
         <div className="col-md-4">
           <div className="card shadow-sm">
             <div className="card-body text-center">
-              <h2 className="text-primary mb-0">{stats.totalRecords.toLocaleString('it-IT')}</h2>
+              <h2 className="text-primary mb-0">{totalRecords.toLocaleString('it-IT')}</h2>
               <p className="text-muted mb-0">Record Totali</p>
             </div>
           </div>
@@ -128,7 +125,7 @@ function MonitoraggioPageContent() {
         <div className="col-md-4">
           <div className="card shadow-sm">
             <div className="card-body text-center">
-              <h2 className="text-info mb-0">{stats.totalPages}</h2>
+              <h2 className="text-info mb-0">{totalPages}</h2>
               <p className="text-muted mb-0">Pagine Totali</p>
             </div>
           </div>
@@ -136,7 +133,7 @@ function MonitoraggioPageContent() {
         <div className="col-md-4">
           <div className="card shadow-sm">
             <div className="card-body text-center">
-              <h2 className="text-success mb-0">{stats.recordsPerPage}</h2>
+              <h2 className="text-success mb-0">{recordsInThisPage}</h2>
               <p className="text-muted mb-0">Record in questa Pagina</p>
             </div>
           </div>

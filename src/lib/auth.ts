@@ -6,6 +6,20 @@ import pool from './db-auth';
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 const JWT_EXPIRES_IN = '24h';
 
+/** Replica read-only, disco pieno, ecc.: le SELECT possono funzionare ma UPDATE/INSERT/DELETE no */
+function isMysqlWritePreventedError(err: unknown): boolean {
+  const e = err as { errno?: number; code?: string; sqlMessage?: string };
+  if (!e || typeof e !== 'object') return false;
+  if (e.errno === 1290) return true;
+  if (e.code === 'ER_OPTION_PREVENTS_STATEMENT') return true;
+  if (e.code === 'EE_WRITE') return true;
+  const msg = `${e.sqlMessage || ''} ${(err as Error).message || ''}`;
+  if (/read-only/i.test(msg)) return true;
+  if (/No space left on device/i.test(msg)) return true;
+  if (/errno 28/i.test(msg)) return true;
+  return false;
+}
+
 export interface User {
   id: string;
   username: string;
@@ -158,6 +172,12 @@ export async function verifySession(token: string): Promise<User | null> {
         );
         return user;
       } catch (insertError) {
+        if (isMysqlWritePreventedError(insertError)) {
+          console.warn(
+            'Ricreazione sessione DB non possibile (read-only / spazio disco); accesso consentito solo via JWT.'
+          );
+          return user;
+        }
         console.error('Errore ricreazione sessione:', insertError);
         return null;
       }
@@ -168,17 +188,31 @@ export async function verifySession(token: string): Promise<User | null> {
     const expiresAt = new Date(session.expires_at);
     
     if (expiresAt <= now) {
-      // Rimuovi sessione scaduta
-      await pool.execute('DELETE FROM user_sessions WHERE token = ?', [token]);
+      try {
+        await pool.execute('DELETE FROM user_sessions WHERE token = ?', [token]);
+      } catch (delErr) {
+        if (!isMysqlWritePreventedError(delErr)) {
+          console.error('Errore eliminazione sessione scaduta:', delErr);
+        }
+      }
       return null;
     }
 
-    // Estendi la sessione se è valida
     const newExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    await pool.execute(
-      'UPDATE user_sessions SET expires_at = ? WHERE token = ?',
-      [newExpiresAt, token]
-    );
+    try {
+      await pool.execute(
+        'UPDATE user_sessions SET expires_at = ? WHERE token = ?',
+        [newExpiresAt, token]
+      );
+    } catch (updateErr) {
+      if (isMysqlWritePreventedError(updateErr)) {
+        console.warn(
+          'Estensione sessione DB non possibile (read-only / spazio disco); sessione ancora valida fino a expires_at.'
+        );
+      } else {
+        throw updateErr;
+      }
+    }
 
     return user;
   } catch (error) {

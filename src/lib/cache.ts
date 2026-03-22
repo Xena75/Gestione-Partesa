@@ -84,6 +84,9 @@ class SimpleCache {
 // Istanza globale della cache
 export const cache = new SimpleCache();
 
+/** Stessa chiave in MISS paralleli → una sola esecuzione di fetchFn (evita 2× query pesanti) */
+const inflightFetches = new Map<string, Promise<unknown>>();
+
 // Pulisce la cache ogni 10 minuti
 setInterval(() => {
   cache.cleanup();
@@ -109,17 +112,30 @@ export async function withCache<T>(
     return cached;
   }
 
-  console.log(`🔄 Cache MISS per: ${key}, eseguendo query...`);
-  
-  try {
-    const data = await fetchFn();
-    cache.set(key, data, ttl);
-    console.log(`✅ Dati salvati in cache: ${key}`);
-    return data;
-  } catch (error) {
-    console.error(`❌ Errore nel fetch per ${key}:`, error);
-    throw error;
+  const existing = inflightFetches.get(key) as Promise<T> | undefined;
+  if (existing) {
+    console.log(`⏳ Cache JOIN (query già in corso per la stessa chiave): ${key}`);
+    return existing;
   }
+
+  console.log(`🔄 Cache MISS per: ${key}, eseguendo query...`);
+
+  const promise = (async (): Promise<T> => {
+    try {
+      const data = await fetchFn();
+      cache.set(key, data, ttl);
+      console.log(`✅ Dati salvati in cache: ${key}`);
+      return data;
+    } catch (error) {
+      console.error(`❌ Errore nel fetch per ${key}:`, error);
+      throw error;
+    } finally {
+      inflightFetches.delete(key);
+    }
+  })();
+
+  inflightFetches.set(key, promise);
+  return promise;
 }
 
 // Funzione per invalidare cache specifica

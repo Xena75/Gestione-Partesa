@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDeliveryStats, type DeliveryFilters } from '@/lib/data-gestione';
 
+/** Cold start DB + COUNT DISTINCT: 25s non bastano. Max 60s per restare entro il limite tipico Vercel Pro. */
+const STATS_REQUEST_TIMEOUT_MS = 60_000;
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -47,12 +50,11 @@ export async function GET(request: NextRequest) {
     const anno = searchParams.get('anno');
     if (anno) filters.anno = anno;
 
-    // 🚀 OTTIMIZZAZIONE: timeout per evitare blocchi
     const stats = await Promise.race([
       getDeliveryStats(filters),
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout')), 25000)
-      )
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout')), STATS_REQUEST_TIMEOUT_MS)
+      ),
     ]);
 
     return NextResponse.json(stats);

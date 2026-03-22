@@ -177,9 +177,9 @@ export async function getViaggiStats(currentPage: number = 1, recordsPerPage: nu
 export async function getFilterOptions() {
   try {
     // Query per ottenere tutti i valori distinti
-    const depositiSql = 'SELECT DISTINCT deposito FROM travels WHERE deposito IS NOT NULL AND deposito != "" ORDER BY deposito';
-    const nominativiSql = 'SELECT DISTINCT nominativoId FROM travels WHERE nominativoId IS NOT NULL AND nominativoId != "" ORDER BY nominativoId';
-    const targheSql = 'SELECT DISTINCT targaMezzoId FROM travels WHERE targaMezzoId IS NOT NULL AND targaMezzoId != "" ORDER BY targaMezzoId';
+    const depositiSql = 'SELECT DISTINCT deposito FROM travels WHERE deposito IS NOT NULL AND deposito != \'\' ORDER BY deposito';
+    const nominativiSql = 'SELECT DISTINCT nominativoId FROM travels WHERE nominativoId IS NOT NULL AND nominativoId != \'\' ORDER BY nominativoId';
+    const targheSql = 'SELECT DISTINCT targaMezzoId FROM travels WHERE targaMezzoId IS NOT NULL AND targaMezzoId != \'\' ORDER BY targaMezzoId';
     
     const [depositi] = await pool.query(depositiSql);
     const [nominativi] = await pool.query(nominativiSql);

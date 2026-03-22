@@ -75,7 +75,7 @@ const TravelsNotInTabModal: React.FC<TravelsNotInTabModalProps> = ({ isOpen, onC
 
   const handleViewFullPage = () => {
     onClose();
-    router.push('/dashboard/travels-not-in-tab');
+    router.push('/monitoraggio');
   };
 
   const handleToggleExclude = async (travelId: string, currentValue: number) => {
@@ -312,7 +312,7 @@ const TravelsNotInTabModal: React.FC<TravelsNotInTabModalProps> = ({ isOpen, onC
             </button>
             <button type="button" className="btn btn-primary" onClick={handleViewFullPage}>
               <i className="bi bi-arrow-right me-2"></i>
-              Vai alla Pagina Completa
+              Vai al Monitoraggio
             </button>
           </div>
         </div>

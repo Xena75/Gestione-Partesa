@@ -16,6 +16,17 @@ const pool = createPool({
   bigNumberStrings: true
 });
 
+/** MySQL 8 + mysql2: LIMIT ? / OFFSET ? in prepared statement → spesso ER_WRONG_ARGUMENTS (1210) */
+function safePaginationLimitOffset(
+  page: number,
+  limit: number
+): { safeLimit: number; safeOffset: number; safePage: number } {
+  const safeLimit = Math.max(1, Math.min(500, Math.trunc(Number(limit)) || 50));
+  const safePage = Math.max(1, Math.trunc(Number(page)) || 1);
+  const safeOffset = Math.min(50_000_000, Math.max(0, (safePage - 1) * safeLimit));
+  return { safeLimit, safeOffset, safePage };
+}
+
 // Interfaccia per i dati terzisti
 export interface TerzistiData {
   id: number;
@@ -135,8 +146,8 @@ export async function getTerzistiData(
   limit: number = 50
 ): Promise<TerzistiResponse> {
   return withCache(`terzisti:${page}:${JSON.stringify(filters)}:${JSON.stringify(sort)}`, async () => {
-    const offset = (page - 1) * limit;
-    
+    const { safeLimit, safeOffset, safePage } = safePaginationLimitOffset(page, limit);
+
     // Costruisci la query WHERE
     const whereConditions: string[] = [];
     const queryParams: any[] = [];
@@ -226,7 +237,7 @@ export async function getTerzistiData(
       FROM tab_delivery_terzisti tdt
       ${whereClause}
       ORDER BY tdt.${sort.field} ${sort.order}
-      LIMIT ? OFFSET ?
+      LIMIT ${safeLimit} OFFSET ${safeOffset}
     `;
 
     // Query per il conteggio totale
@@ -273,12 +284,12 @@ export async function getTerzistiData(
     `;
 
     try {
-      const [dataResult] = await pool.execute(dataQuery, [...queryParams, limit, offset]);
+      const [dataResult] = await pool.execute(dataQuery, queryParams);
       const [countResult] = await pool.execute(countQuery, queryParams);
       const [statsResult] = await pool.execute(statsQuery, queryParams);
 
       const total = (countResult as any[])[0].total;
-      const totalPages = Math.ceil(total / limit);
+      const totalPages = Math.ceil(total / safeLimit);
 
       const rawStats = (statsResult as any[])[0];
 
@@ -302,8 +313,8 @@ export async function getTerzistiData(
       return {
         data: dataResult as TerzistiData[],
         pagination: {
-          page,
-          limit,
+          page: safePage,
+          limit: safeLimit,
           total,
           totalPages
         },
@@ -553,8 +564,8 @@ export async function getTerzistiGroupedData(
   limit: number = 50
 ): Promise<TerzistiResponse> {
   return withCache(`terzisti-grouped:${page}:${JSON.stringify(filters)}:${JSON.stringify(sort)}`, async () => {
-    const offset = (page - 1) * limit;
-    
+    const { safeLimit, safeOffset, safePage } = safePaginationLimitOffset(page, limit);
+
     // Costruisci la query WHERE
     const whereConditions: string[] = [];
     const queryParams: any[] = [];
@@ -631,32 +642,53 @@ export async function getTerzistiGroupedData(
 
     const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
-    // Query per i dati raggruppati (AGGIORNATA con campi tariffa)
+    // ORDER BY: solo espressioni whitelist (no SQL injection); compatibile ONLY_FULL_GROUP_BY
+    const validOrder = sort.order === 'ASC' ? 'ASC' : 'DESC';
+    const groupedOrderByMap: Record<string, string> = {
+      data_mov_merce: 'MAX(tdt.data_mov_merce)',
+      data_viaggio: 'MAX(tdt.data_viaggio)',
+      div: 'MAX(tdt.`div`)',
+      dep: 'MAX(tdt.dep)',
+      viaggio: 'MAX(tdt.viaggio)',
+      ordine: 'MAX(tdt.ordine)',
+      consegna_num: 'tdt.consegna_num',
+      Azienda_Vettore: 'MAX(tdt.Azienda_Vettore)',
+      Descr_Vettore_Join: 'tdt.Descr_Vettore_Join',
+      tipologia: 'tdt.tipologia',
+      ragione_sociale: 'MAX(tdt.ragione_sociale)',
+      total_colli: 'SUM(tdt.colli)',
+      avg_tariffa_terzista: 'AVG(tdt.tariffa_terzista)',
+      total_extra_cons: 'SUM(tdt.extra_cons)',
+      total_compenso: 'SUM(tdt.tot_compenso)',
+    };
+    const orderExpr = groupedOrderByMap[sort.field] ?? 'MAX(tdt.data_mov_merce)';
+
+    // Query raggruppata: ANY_VALUE/MAX per colonne non in GROUP BY (MySQL 8 only_full_group_by)
     const groupedQuery = `
       SELECT 
-        tdt.\`div\`,
-        tdt.dep,
-        DATE_FORMAT(tdt.data_mov_merce, '%Y-%m-%d') as data_mov_merce,
-        tdt.viaggio,
-        tdt.ordine,
+        ANY_VALUE(tdt.\`div\`) AS \`div\`,
+        ANY_VALUE(tdt.dep) AS dep,
+        DATE_FORMAT(MAX(tdt.data_mov_merce), '%Y-%m-%d') AS data_mov_merce,
+        ANY_VALUE(tdt.viaggio) AS viaggio,
+        ANY_VALUE(tdt.ordine) AS ordine,
         tdt.consegna_num,
         tdt.Descr_Vettore_Join,
-        tdt.Azienda_Vettore,
+        ANY_VALUE(tdt.Azienda_Vettore) AS Azienda_Vettore,
         tdt.tipologia,
-        tdt.ragione_sociale,
-        COUNT(*) as articoli_count,
-        SUM(tdt.colli) as total_colli,
-        SUM(tdt.extra_cons) as total_extra_cons,
-        SUM(tdt.tot_compenso) as total_compenso,
-        DATE_FORMAT(tdt.data_viaggio, '%Y-%m-%d') as data_viaggio,
-        tdt.Id_Tariffa,
-        AVG(tdt.tariffa_terzista) as avg_tariffa_terzista,
-        tdt.ID_fatt
+        ANY_VALUE(tdt.ragione_sociale) AS ragione_sociale,
+        COUNT(*) AS articoli_count,
+        SUM(tdt.colli) AS total_colli,
+        SUM(tdt.extra_cons) AS total_extra_cons,
+        SUM(tdt.tot_compenso) AS total_compenso,
+        DATE_FORMAT(MAX(tdt.data_viaggio), '%Y-%m-%d') AS data_viaggio,
+        ANY_VALUE(tdt.Id_Tariffa) AS Id_Tariffa,
+        AVG(tdt.tariffa_terzista) AS avg_tariffa_terzista,
+        ANY_VALUE(tdt.ID_fatt) AS ID_fatt
       FROM tab_delivery_terzisti tdt
       ${whereClause}
       GROUP BY tdt.consegna_num, tdt.Descr_Vettore_Join, tdt.tipologia
-      ORDER BY tdt.${sort.field} ${sort.order}
-      LIMIT ? OFFSET ?
+      ORDER BY ${orderExpr} ${validOrder}
+      LIMIT ${safeLimit} OFFSET ${safeOffset}
     `;
 
     // Query per il conteggio totale
@@ -706,12 +738,12 @@ export async function getTerzistiGroupedData(
     `;
 
     try {
-      const [groupedResult] = await pool.execute(groupedQuery, [...queryParams, limit, offset]);
+      const [groupedResult] = await pool.execute(groupedQuery, queryParams);
       const [countResult] = await pool.execute(countQuery, queryParams);
       const [statsResult] = await pool.execute(statsQuery, queryParams);
 
       const total = (countResult as any[])[0].total;
-      const totalPages = Math.ceil(total / limit);
+      const totalPages = Math.ceil(total / safeLimit);
 
       const stats: TerzistiStats = {
         totalRecords: total,
@@ -732,8 +764,8 @@ export async function getTerzistiGroupedData(
       return {
         data: groupedResult as any[],
         pagination: {
-          page,
-          limit,
+          page: safePage,
+          limit: safeLimit,
           total,
           totalPages
         },

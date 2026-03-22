@@ -61,6 +61,14 @@ export type DeliverySort = {
 // Definiamo il numero di risultati per pagina
 const ITEMS_PER_PAGE = 50;
 
+/** Allineato a getDeliveryGrouped: senza filtri attivi non scandire tutta la tabella */
+function deliveryHasActiveFilters(filters?: DeliveryFilters): boolean {
+  if (!filters || Object.keys(filters).length === 0) return false;
+  return Object.values(filters).some(
+    (value) => value && value !== 'Tutti' && value !== 'Tutte'
+  );
+}
+
 // Funzione per ottenere statistiche dashboard
 export async function getDeliveryStats(filters?: DeliveryFilters): Promise<DeliveryStats> {
   // Genera chiave cache basata sui filtri
@@ -72,7 +80,16 @@ export async function getDeliveryStats(filters?: DeliveryFilters): Promise<Deliv
       let whereClause = '';
       let queryParams: any[] = [];
 
-      if (filters && Object.keys(filters).length > 0) {
+      const hasFilters = deliveryHasActiveFilters(filters);
+
+      if (!hasFilters) {
+        const threeMonthsAgo = new Date();
+        threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+        const defaultDate = threeMonthsAgo.toISOString().split('T')[0];
+        whereClause = `WHERE data_mov_merce >= ?`;
+        queryParams.push(defaultDate);
+        console.log('🚀 getDeliveryStats: filtro default ultimi 3 mesi (come vista raggruppata)');
+      } else if (filters) {
         const conditions: string[] = [];
         
         if (filters.viaggio) {
@@ -294,8 +311,7 @@ export async function getDeliveryGrouped(
       let queryParams: any[] = [];
 
       // 🚀 OTTIMIZZAZIONE: Se non ci sono filtri, applica un filtro di default per migliorare le performance
-      const hasFilters = filters && Object.keys(filters).length > 0 && 
-        Object.values(filters).some(value => value && value !== 'Tutti' && value !== 'Tutte');
+      const hasFilters = deliveryHasActiveFilters(filters);
 
       if (!hasFilters) {
         // Filtro di default: ultimi 3 mesi per migliorare le performance
@@ -306,10 +322,10 @@ export async function getDeliveryGrouped(
         whereClause = `WHERE data_mov_merce >= ?`;
         queryParams.push(defaultDate);
         console.log('🚀 Applicato filtro di default per performance: ultimi 3 mesi');
-      } else {
+      } else if (filters) {
         // Costruisci WHERE clause per i filtri esistenti
         const conditions: string[] = [];
-        
+
         if (filters.viaggio) {
           conditions.push('viaggio LIKE ?');
           queryParams.push(`%${filters.viaggio}%`);
@@ -458,11 +474,11 @@ export async function getDeliveryFilterOptions(): Promise<{
       // Esegui tutte le query in parallelo per migliorare le performance
       // Per mesi e anni: usa mese_fatturazione/anno_fatturazione se disponibili, altrimenti mese/anno
       const [depositi, vettori, tipologie, bu, divisioni, mesi, anni] = await Promise.all([
-        pool.query('SELECT DISTINCT dep FROM fatt_delivery WHERE dep IS NOT NULL AND dep != "" ORDER BY dep'),
-        pool.query('SELECT DISTINCT descr_vettore FROM fatt_delivery WHERE descr_vettore IS NOT NULL AND descr_vettore != "" ORDER BY descr_vettore'),
-        pool.query('SELECT DISTINCT tipologia FROM fatt_delivery WHERE tipologia IS NOT NULL AND tipologia != "" ORDER BY tipologia'),
-        pool.query('SELECT DISTINCT bu FROM fatt_delivery WHERE bu IS NOT NULL AND bu != "" ORDER BY bu'),
-        pool.query('SELECT DISTINCT `div` FROM fatt_delivery WHERE `div` IS NOT NULL AND `div` != "" ORDER BY `div`'),
+        pool.query('SELECT DISTINCT dep FROM fatt_delivery WHERE dep IS NOT NULL AND dep != \'\' ORDER BY dep'),
+        pool.query('SELECT DISTINCT descr_vettore FROM fatt_delivery WHERE descr_vettore IS NOT NULL AND descr_vettore != \'\' ORDER BY descr_vettore'),
+        pool.query('SELECT DISTINCT tipologia FROM fatt_delivery WHERE tipologia IS NOT NULL AND tipologia != \'\' ORDER BY tipologia'),
+        pool.query('SELECT DISTINCT bu FROM fatt_delivery WHERE bu IS NOT NULL AND bu != \'\' ORDER BY bu'),
+        pool.query('SELECT DISTINCT `div` FROM fatt_delivery WHERE `div` IS NOT NULL AND `div` != \'\' ORDER BY `div`'),
         pool.query(`
           SELECT DISTINCT COALESCE(mese_fatturazione, mese) as mese 
           FROM fatt_delivery 

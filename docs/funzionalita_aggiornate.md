@@ -1,7 +1,35 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-**Versione corrente**: v2.43.11  
+**Versione corrente**: v2.43.12  
 **Ultimo aggiornamento**: Marzo 2026
+
+---
+
+## v2.43.12 - MySQL 8, UX dashboard/monitoraggio, resilienza auth e cache
+
+**Data implementazione**: Marzo 2026  
+**Stato**: ✅ Build `npm run build` verificata (Turbopack; in caso di errore ENOENT su API, ripetere la build)
+
+### 🗄️ Compatibilità MySQL 8 (prepared statements)
+- **`LIMIT ?` / `OFFSET ?`**: con `mysql2` + MySQL 8 possono generare `ER_WRONG_ARGUMENTS` (1210) — sostituiti con interi validati in query per: terzisti raggruppati/dettaglio (`data-terzisti`), `travels-not-in-tab`, `pod-mancanti-preview`, documenti scaduti dipendenti (`db-employees`)
+- **Stringhe SQL**: `!= ""` → `!= ''` (escape `\'\'` nelle stringhe JS) per `document-types` e altre DISTINCT; evita `Unknown column ''` su MySQL
+- **Terzisti vista raggruppata**: `ONLY_FULL_GROUP_BY` — `ANY_VALUE` / `MAX` / `ORDER BY` whitelist
+- **`data-gestione`**: `getDeliveryStats` allineato ai “ultimi 3 mesi” senza filtri (come vista raggruppata); `withCache` deduplica richieste in-flight sulla stessa chiave; timeout stats portato a 60s; fix TypeScript `filters` in `getDeliveryGrouped`
+
+### 🖥️ UI / flussi
+- **Monitoraggio**: filtri data in **gg/mm/aaaa** con barre automatiche; card statistiche da stessa API dei dati (coerenti con i filtri)
+- **Dashboard**: link documenti personale → `/gestione/dipendenti/documenti` per admin (middleware blocca `/autisti/*` ai non-employee)
+- **Modal viaggi non in TAB**: pulsante **Vai al Monitoraggio** → `/monitoraggio`
+
+### 🔐 Autenticazione
+- **`verifySession`**: se il DB è in sola lettura o senza spazio su disco, l’estensione sessione su `user_sessions` può fallire: l’utente resta valido fino a `expires_at` (log di warning)
+
+### 📁 File principali toccati
+- `src/lib/data-terzisti.ts`, `src/lib/data-gestione.ts`, `src/lib/cache.ts`, `src/lib/db-employees.ts`, `src/lib/date-utils.ts`, `src/lib/auth.ts`
+- `src/app/api/dashboard/travels-not-in-tab/route.ts`, `pod-mancanti-preview/route.ts`, `gestione/stats/route.ts`
+- `src/components/FiltriMonitoraggio.tsx`, `FiltriViaggi.tsx`, `TravelsNotInTabModal.tsx`
+- `src/app/monitoraggio/page.tsx`, `src/app/dashboard/page.tsx`
+- API varie: `available-users`, `filter-options`, `vehicles/proprieta`, `handling/filter-options`, `data-viaggi`, `data-viaggi-pod`, `data-gestione`
 
 ---
 

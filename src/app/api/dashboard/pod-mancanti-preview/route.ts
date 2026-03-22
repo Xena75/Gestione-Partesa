@@ -22,11 +22,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Parametri di paginazione
+    // Parametri di paginazione (LIMIT/OFFSET non come ? — MySQL 8 + mysql2 → ER_WRONG_ARGUMENTS 1210)
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const offset = (page - 1) * limit;
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = parseInt(searchParams.get('limit') || '10', 10);
+    const safeLimit = Math.max(1, Math.min(500, Math.trunc(Number(limit)) || 10));
+    const safePage = Math.max(1, Math.trunc(Number(page)) || 1);
+    const safeOffset = Math.min(50_000_000, Math.max(0, (safePage - 1) * safeLimit));
 
     // Query per ottenere i viaggi POD mancanti con paginazione
     const [viaggiPodMancanti] = await poolViaggi.execute(`
@@ -39,8 +41,8 @@ export async function GET(request: NextRequest) {
       LEFT JOIN gestionelogistica.tab_viaggi tv ON vp.\`Viaggio\` = tv.\`Viaggio\`
       WHERE tv.\`Viaggio\` IS NULL
       ORDER BY vp.\`Data Inizio\` DESC
-      LIMIT ? OFFSET ?
-    `, [limit, offset]) as [any[], any];
+      LIMIT ${safeLimit} OFFSET ${safeOffset}
+    `) as [any[], any];
 
     // Query per il conteggio totale
     const [countResult] = await poolViaggi.execute(`
@@ -51,17 +53,17 @@ export async function GET(request: NextRequest) {
     `) as [any[], any];
 
     const total = countResult[0]?.total || 0;
-    const totalPages = Math.ceil(total / limit);
+    const totalPages = Math.ceil(total / safeLimit);
 
     return NextResponse.json({
       data: viaggiPodMancanti,
       pagination: {
-        page,
-        limit,
+        page: safePage,
+        limit: safeLimit,
         total,
         totalPages,
-        hasNext: page < totalPages,
-        hasPrev: page > 1
+        hasNext: safePage < totalPages,
+        hasPrev: safePage > 1
       }
     });
 
