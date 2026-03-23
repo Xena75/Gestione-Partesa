@@ -4,7 +4,7 @@
 
 ### 1.1 Software Requirements
 - **Node.js**: v24.4.1 o superiore
-- **MySQL**: v8.0+ (tramite XAMPP)
+- **MySQL**: v8.0+ (client locale o servizio cloud; vedi `docs/backup-sistema-e-client-mysql.md`)
 - **Windows**: 10/11 (per script backup)
 - **Browser**: Chrome 90+, Firefox 88+, Safari 14+
 
@@ -27,7 +27,7 @@ cd gestione-partesa
 npm install
 
 # 3. Configurazione database
-# Avviare XAMPP e MySQL
+# Verificare raggiungibilità MySQL (cloud o locale)
 # Importare schema database da backup-system/database/
 
 # 4. Configurazione variabili ambiente
@@ -146,7 +146,7 @@ taskkill /PID [PID_NUMBER] /F
 
 **Errore: "Database connection failed"**
 ```bash
-# Verificare XAMPP MySQL attivo
+# Verificare connessione MySQL attiva
 # Controllare credenziali in .env.local
 # Testare connessione manuale
 mysql -u root -p -h localhost

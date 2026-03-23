@@ -43,7 +43,7 @@ graph TD
 ## 2. Technology Description
 
 - **Frontend**: React@18 + Bootstrap@5 + Next.js@14 + TypeScript
-- **Backend**: Next.js API Routes + MySQL (XAMPP)
+- **Backend**: Next.js API Routes + MySQL
 - **Database**: MySQL (viaggi_db) via ngrok tunnel
 - **Storage**: Vercel Blob Storage per documenti
 - **Calendar**: React Big Calendar (estensione esistente)

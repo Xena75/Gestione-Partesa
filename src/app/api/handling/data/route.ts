@@ -1,24 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
-
-const dbConfig = {
-  host: process.env.DB_GESTIONE_HOST || 'localhost',
-  port: parseInt(process.env.DB_GESTIONE_PORT || '3306'),
-  user: process.env.DB_GESTIONE_USER || 'root',
-  password: process.env.DB_GESTIONE_PASS || '',
-  database: process.env.DB_GESTIONE_NAME || 'gestionelogistica'
-};
+import pool from '@/lib/db-gestione';
 
 export async function GET(request: NextRequest) {
-  let connection;
-  
   try {
     const { searchParams } = new URL(request.url);
     
-    // Parametri di paginazione
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '50');
-    const offset = (page - 1) * limit;
+    // Parametri di paginazione (LIMIT/OFFSET come interi: MySQL 8 + prepared statements → ER_WRONG_ARGUMENTS)
+    const rawPage = parseInt(searchParams.get('page') || '1', 10);
+    const rawLimit = parseInt(searchParams.get('limit') || '50', 10);
+    const safeLimit = Math.max(1, Math.min(500, Math.trunc(Number(rawLimit)) || 50));
+    const safePage = Math.max(1, Math.trunc(Number(rawPage)) || 1);
+    const safeOffset = Math.min(50_000_000, Math.max(0, (safePage - 1) * safeLimit));
     
     // Parametri di ordinamento
     const sortField = searchParams.get('sortField') || 'id';
@@ -80,8 +72,6 @@ export async function GET(request: NextRequest) {
     
     const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
     
-    connection = await mysql.createConnection(dbConfig);
-    
     // Query per il conteggio totale in base al tipo di vista
     const countQuery = viewType === 'grouped' 
       ? `
@@ -95,7 +85,7 @@ export async function GET(request: NextRequest) {
         ${whereClause}
       `;
     
-    const [countRows] = await connection.execute(countQuery, queryParams);
+    const [countRows] = await pool.execute(countQuery, queryParams);
     const total = Array.isArray(countRows) ? (countRows[0] as any).total : (countRows as any).total;
     
     // Query per i dati con paginazione e ordinamento, in base al tipo di vista
@@ -111,26 +101,25 @@ export async function GET(request: NextRequest) {
         ${whereClause}
         GROUP BY \`doc_mat\`
         ORDER BY \`${validSortField}\` ${validSortDirection}
-        LIMIT ? OFFSET ?
+        LIMIT ${safeLimit} OFFSET ${safeOffset}
       `
       : `
         SELECT * 
         FROM \`fatt_handling\` 
         ${whereClause}
         ORDER BY \`${validSortField}\` ${validSortDirection}
-        LIMIT ? OFFSET ?
+        LIMIT ${safeLimit} OFFSET ${safeOffset}
       `;
     
-    const dataParams = [...queryParams, limit, offset];
-    const [dataRows] = await connection.execute(dataQuery, dataParams);
+    const [dataRows] = await pool.execute(dataQuery, queryParams);
     
-    const totalPages = Math.ceil(total / limit);
+    const totalPages = Math.ceil(total / safeLimit);
     
     return NextResponse.json({
       data: dataRows,
       total: Number(total),
-      page: page,
-      limit: limit,
+      page: safePage,
+      limit: safeLimit,
       totalPages: totalPages
     });
     
@@ -140,9 +129,5 @@ export async function GET(request: NextRequest) {
       { error: 'Errore interno del server' },
       { status: 500 }
     );
-  } finally {
-    if (connection) {
-      await connection.end();
-    }
   }
 }

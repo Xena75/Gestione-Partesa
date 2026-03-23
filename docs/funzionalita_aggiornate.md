@@ -1,7 +1,27 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-**Versione corrente**: v2.43.12  
+**Versione corrente**: v2.43.13  
 **Ultimo aggiornamento**: Marzo 2026
+
+---
+
+## v2.43.13 - Backup cloud, client MySQL 8, script .bat e documentazione
+
+**Data implementazione**: Marzo 2026  
+**Stato**: ✅ Build `npm run build` verificata in sessione di release
+
+### Backup da dashboard / API
+- **`src/lib/backup-env.ts`**: variabili per `.bat` allineate a `.env.local` (`DB_GESTIONE_*` / `DB_VIAGGI_*` / `MYSQL_*`), `MYSQL_BIN` default client Oracle MySQL 8.4, SSL (`--ssl-mode=REQUIRED` quando serve; override `BACKUP_MYSQLDUMP_SSL_ARGS`)
+- **`src/app/api/backup/execute/route.ts`**: keep-alive connessione metadati durante dump lunghi; finalizzazione job con **nuova** connessione a `backup_management`; parsing dimensione output `Dimensioni totali backup` / `Dimensione totale backup`
+- **`backup-system/scripts`**: default `MYSQL_BIN` senza XAMPP; `if not defined` per non sovrascrivere env; password/SSL/nomi DB su **tutti** i `mysqldump` (fix incremental/differential primo DB: `using password: NO`)
+- **`register-backup.js`**: stessi fallback credenziali + SSL per `mysql2` verso `backup_management`
+
+### Documentazione
+- Nuovo **`docs/backup-sistema-e-client-mysql.md`**; aggiornati **`ISTRUZIONI-BACKUP-AUTOMATICI.md`**, **`database-reference.md`**, **`ISTRUZIONI-IMPORT-DIPENDENTI.md`**, **README**, **`.cursor/rules/gestionepartesa.mdc`**, **`.env.example`** (rimossi riferimenti operativi a XAMPP)
+
+### File principali
+- `src/lib/backup-env.ts`, `src/app/api/backup/execute/route.ts`
+- `backup-system/scripts/backup-full.bat`, `backup-incremental.bat`, `backup-differential.bat`, `register-backup.js`
 
 ---
 

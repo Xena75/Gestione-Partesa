@@ -1,20 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
+import type { ResultSetHeader } from 'mysql2/promise';
+import pool from '@/lib/db-gestione';
 import { verifyUserAccess } from '@/lib/auth';
-
-const dbConfig = {
-  host: process.env.DB_GESTIONE_HOST || '127.0.0.1',
-  port: parseInt(process.env.DB_GESTIONE_PORT || '3306'),
-  user: process.env.DB_GESTIONE_USER || 'root',
-  password: process.env.DB_GESTIONE_PASS || '',
-  database: process.env.DB_GESTIONE_NAME || 'gestionelogistica',
-  charset: 'utf8mb4'
-};
 
 // POST: Inserimento batch di più righe prodotto per una bolla
 export async function POST(request: NextRequest) {
-  let connection: mysql.Connection | null = null;
-  
+  let conn: Awaited<ReturnType<typeof pool.getConnection>> | null = null;
+
   try {
     // Verifica autenticazione
     const authResult = await verifyUserAccess(request);
@@ -42,11 +34,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    connection = await mysql.createConnection(dbConfig);
-    await connection.beginTransaction();
+    conn = await pool.getConnection();
+    await conn.beginTransaction();
 
     // Recupera dati cliente una volta per tutte le righe
-    const [clienteRows] = await connection.execute(
+    const [clienteRows] = await conn.execute(
       `SELECT DISTINCT \`div\`, classe_tariffa, ragione_sociale 
        FROM fatt_delivery 
        WHERE cod_cliente = ? 
@@ -55,7 +47,7 @@ export async function POST(request: NextRequest) {
     ) as [any[], any];
 
     if (!clienteRows || clienteRows.length === 0) {
-      await connection.rollback();
+      await conn.rollback();
       return NextResponse.json(
         { error: `Cliente ${bolla.Cod_Cliente} non trovato in fatt_delivery` },
         { status: 400 }
@@ -81,7 +73,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Recupera dati prodotto - preferisce versione senza spazi quando ci sono duplicati
-      const [prodRows] = await connection.execute(
+      const [prodRows] = await conn.execute(
         `SELECT 
            MAX(classe_prod) as classe_prod,
            MAX(descr_articolo) as descr_articolo
@@ -105,7 +97,7 @@ export async function POST(request: NextRequest) {
       const idTariffa = `${div}-${classe_tariffa}-${classe_prod}`;
 
       // Recupera Tariffa
-      const [tariffaRows] = await connection.execute(
+      const [tariffaRows] = await conn.execute(
         `SELECT Tariffa 
          FROM tab_tariffe 
          WHERE ID_Fatt = ? 
@@ -140,7 +132,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (errors.length > 0) {
-      await connection.rollback();
+      await conn.rollback();
       return NextResponse.json(
         { error: 'Errori di validazione', details: errors },
         { status: 400 }
@@ -148,7 +140,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (values.length === 0) {
-      await connection.rollback();
+      await conn.rollback();
       return NextResponse.json(
         { error: 'Nessuna riga valida da inserire' },
         { status: 400 }
@@ -160,14 +152,14 @@ export async function POST(request: NextRequest) {
     const flatValues = values.flat();
     
     // Inserisci tutte le righe in batch
-    const [result] = await connection.execute(
+    const [result] = await conn.execute(
       `INSERT INTO resi_vuoti_non_fatturati 
        (Riferimento, Data_rif_ddt, ddt, Cod_Cliente, ragione_sociale, VETTORE, Cod_Prod, descr_articolo, Deposito, Colli, Data_Ritiro, ID_TARIFFA, Tariffa, Totale_compenso)
        VALUES ${placeholders}`,
       flatValues
-    ) as [mysql.ResultSetHeader, any];
+    ) as [ResultSetHeader, any];
 
-    await connection.commit();
+    await conn.commit();
 
     return NextResponse.json({
       success: true,
@@ -177,8 +169,12 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-    if (connection) {
-      await connection.rollback();
+    if (conn) {
+      try {
+        await conn.rollback();
+      } catch {
+        /* ignore */
+      }
     }
     console.error('Errore inserimento batch resi vuoti:', error);
     return NextResponse.json(
@@ -186,8 +182,8 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   } finally {
-    if (connection) {
-      await connection.end();
+    if (conn) {
+      conn.release();
     }
   }
 }

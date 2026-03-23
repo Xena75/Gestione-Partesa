@@ -62,7 +62,7 @@ graph TD
 
 - **Frontend**: React@18 + Next.js@15.5.3 + Bootstrap@5.3.2 + TypeScript@5
 - **Backend**: Next.js API Routes + Node.js@24.4.1
-- **Database**: MySQL@8.0+ (via XAMPP) - estensione database viaggi_db esistente
+- **Database**: MySQL@8.0+ — estensione database viaggi_db esistente
 - **File Upload**: Multer per gestione upload preventivi (PDF, immagini)
 - **File Storage**: Sistema locale con organizzazione per veicolo/preventivo
 - **Scheduling**: node-cron per controlli automatici scadenze e scadenza preventivi

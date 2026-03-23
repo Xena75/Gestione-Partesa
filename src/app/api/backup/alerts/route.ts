@@ -18,8 +18,10 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get('limit') || '50');
-    const offset = parseInt(searchParams.get('offset') || '0');
+    const rawLimit = parseInt(searchParams.get('limit') || '50', 10);
+    const rawOffset = parseInt(searchParams.get('offset') || '0', 10);
+    const safeLimit = Math.max(1, Math.min(500, Math.trunc(Number(rawLimit)) || 50));
+    const safeOffset = Math.min(50_000_000, Math.max(0, Math.trunc(Number(rawOffset)) || 0));
     const severity = searchParams.get('severity');
     const alertType = searchParams.get('alert_type');
     const source = searchParams.get('source');
@@ -94,8 +96,8 @@ export async function GET(request: NextRequest) {
             WHEN 'low' THEN 4 
           END,
           created_at DESC 
-        LIMIT ? OFFSET ?
-      `, [...queryParams, limit, offset]);
+        LIMIT ${safeLimit} OFFSET ${safeOffset}
+      `, queryParams);
 
       const alerts = (alertRows as any[]).map(alert => ({
         ...alert,
@@ -130,9 +132,9 @@ export async function GET(request: NextRequest) {
         alerts,
         pagination: {
           total,
-          limit,
-          offset,
-          hasMore: offset + limit < total
+          limit: safeLimit,
+          offset: safeOffset,
+          hasMore: safeOffset + safeLimit < total
         },
         stats
       });

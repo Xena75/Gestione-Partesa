@@ -1,19 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
+import pool from '@/lib/db-gestione';
 import { verifyUserAccess } from '@/lib/auth';
 
-const dbConfig = {
-  host: process.env.DB_GESTIONE_HOST || '127.0.0.1',
-  port: parseInt(process.env.DB_GESTIONE_PORT || '3306'),
-  user: process.env.DB_GESTIONE_USER || 'root',
-  password: process.env.DB_GESTIONE_PASS || '',
-  database: process.env.DB_GESTIONE_NAME || 'gestionelogistica',
-  charset: 'utf8mb4'
-};
-
 export async function GET(request: NextRequest) {
-  let connection: mysql.Connection | null = null;
-  
   try {
     const authResult = await verifyUserAccess(request);
     if (!authResult.success) {
@@ -30,9 +19,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    connection = await mysql.createConnection(dbConfig);
-
-    const [rows] = await connection.execute(
+    const [rows] = await pool.execute(
       `SELECT Tariffa 
        FROM tab_tariffe 
        WHERE ID_Fatt = ? 
@@ -60,10 +47,5 @@ export async function GET(request: NextRequest) {
       { error: error.message || 'Errore durante il lookup' },
       { status: 500 }
     );
-  } finally {
-    if (connection) {
-      await connection.end();
-    }
   }
 }
-

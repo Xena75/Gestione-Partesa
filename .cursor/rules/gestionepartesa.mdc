@@ -84,7 +84,7 @@ Se la porta è occupata → chiedere quale porta usare.
 
 MySQL NON è nel PATH su Windows.
 
-Usare il percorso completo della versione inclusa in XAMPP.
+Usare il percorso completo di `mysql.exe` / `mysqldump.exe` (es. installazione Oracle MySQL 8.x: `C:\Program Files\MySQL\MySQL Server 8.4\bin`), oppure la variabile `MYSQL_BIN` per gli script di backup.
 
 In PowerShell serve l’operatore & per eseguirlo.
 

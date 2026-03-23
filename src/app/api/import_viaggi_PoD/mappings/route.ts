@@ -31,7 +31,7 @@ export async function GET() {
     
     try {
       // Verifica se la tabella esiste
-      const [tableCheck] = await connection.execute('SHOW TABLES LIKE "import_mappings"');
+      const [tableCheck] = await connection.execute("SHOW TABLES LIKE 'import_mappings'");
       const tableExists = Array.isArray(tableCheck) && tableCheck.length > 0;
       
       if (!tableExists) {
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
     
     try {
       // Verifica se la tabella esiste
-      const [tableCheck] = await connection.execute('SHOW TABLES LIKE "import_mappings"');
+      const [tableCheck] = await connection.execute("SHOW TABLES LIKE 'import_mappings'");
       const tableExists = Array.isArray(tableCheck) && tableCheck.length > 0;
       
       if (!tableExists) {

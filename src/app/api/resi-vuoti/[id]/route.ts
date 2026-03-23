@@ -1,22 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
+import pool from '@/lib/db-gestione';
 import { verifyUserAccess } from '@/lib/auth';
-
-const dbConfig = {
-  host: process.env.DB_GESTIONE_HOST || '127.0.0.1',
-  port: parseInt(process.env.DB_GESTIONE_PORT || '3306'),
-  user: process.env.DB_GESTIONE_USER || 'root',
-  password: process.env.DB_GESTIONE_PASS || '',
-  database: process.env.DB_GESTIONE_NAME || 'gestionelogistica',
-  charset: 'utf8mb4'
-};
 
 // PUT: Aggiornamento record esistente
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  let connection: mysql.Connection | null = null;
+  let conn: Awaited<ReturnType<typeof pool.getConnection>> | null = null;
   
   try {
     // Verifica autenticazione
@@ -44,17 +35,17 @@ export async function PUT(
       );
     }
 
-    connection = await mysql.createConnection(dbConfig);
-    await connection.beginTransaction();
+    conn = await pool.getConnection();
+    await conn.beginTransaction();
 
     // Verifica che il record esista
-    const [existingRows] = await connection.execute(
+    const [existingRows] = await conn.execute(
       `SELECT * FROM resi_vuoti_non_fatturati WHERE id = ?`,
       [id]
     ) as [any[], any];
 
     if (!existingRows || existingRows.length === 0) {
-      await connection.rollback();
+      await conn.rollback();
       return NextResponse.json(
         { error: 'Record non trovato' },
         { status: 404 }
@@ -77,7 +68,7 @@ export async function PUT(
     const Cod_Prod = Cod_ProdRaw ? String(Cod_ProdRaw).toUpperCase().trim() : null;
 
     // Recupera dati da fatt_delivery per Cod_Cliente (DISTINCT)
-    const [clienteRows] = await connection.execute(
+    const [clienteRows] = await conn.execute(
       `SELECT DISTINCT \`div\`, classe_tariffa, ragione_sociale 
        FROM fatt_delivery 
        WHERE cod_cliente = ? 
@@ -86,7 +77,7 @@ export async function PUT(
     ) as [any[], any];
 
     if (!clienteRows || clienteRows.length === 0) {
-      await connection.rollback();
+      await conn.rollback();
       return NextResponse.json(
         { error: `Cliente ${Cod_Cliente} non trovato in fatt_delivery` },
         { status: 400 }
@@ -99,14 +90,14 @@ export async function PUT(
 
     // Recupera dati da fatt_delivery per Cod_Prod - preferisce versione senza spazi quando ci sono duplicati
     if (!Cod_Prod) {
-      await connection.rollback();
+      await conn.rollback();
       return NextResponse.json(
         { error: 'Cod_Prod è obbligatorio' },
         { status: 400 }
       );
     }
 
-    const [prodRows] = await connection.execute(
+    const [prodRows] = await conn.execute(
       `SELECT 
          MAX(classe_prod) as classe_prod,
          MAX(descr_articolo) as descr_articolo
@@ -119,7 +110,7 @@ export async function PUT(
     ) as [any[], any];
 
     if (!prodRows || prodRows.length === 0) {
-      await connection.rollback();
+      await conn.rollback();
       return NextResponse.json(
         { error: `Prodotto ${Cod_Prod} non trovato in fatt_delivery` },
         { status: 400 }
@@ -135,7 +126,7 @@ export async function PUT(
     // Se Deposito è fornito nel body, usalo, altrimenti recuperalo da tab_deposito
     let deposito = Deposito || null;
     if (!deposito) {
-      const [depositoRows] = await connection.execute(
+      const [depositoRows] = await conn.execute(
         `SELECT Deposito 
          FROM tab_deposito 
          WHERE \`DIV\` = ? 
@@ -147,7 +138,7 @@ export async function PUT(
     }
 
     // Recupera Tariffa da tab_tariffe
-    const [tariffaRows] = await connection.execute(
+    const [tariffaRows] = await conn.execute(
       `SELECT Tariffa 
        FROM tab_tariffe 
        WHERE ID_Fatt = ? 
@@ -164,7 +155,7 @@ export async function PUT(
     const Cod_Prod_Clean = Cod_Prod ? Cod_Prod.trim().toUpperCase() : null;
     
     // Aggiorna il record
-    await connection.execute(
+    await conn.execute(
       `UPDATE resi_vuoti_non_fatturati 
        SET Riferimento = ?, 
            Data_rif_ddt = ?, 
@@ -201,7 +192,7 @@ export async function PUT(
       ]
     );
 
-    await connection.commit();
+    await conn.commit();
 
     return NextResponse.json({
       success: true,
@@ -217,8 +208,8 @@ export async function PUT(
     });
 
   } catch (error: any) {
-    if (connection) {
-      await connection.rollback();
+    if (conn) {
+      await conn.rollback();
     }
     console.error('Errore aggiornamento resi vuoti:', error);
     return NextResponse.json(
@@ -226,8 +217,8 @@ export async function PUT(
       { status: 500 }
     );
   } finally {
-    if (connection) {
-      await connection.end();
+    if (conn) {
+      conn.release();
     }
   }
 }

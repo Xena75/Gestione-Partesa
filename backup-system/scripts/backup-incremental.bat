@@ -1,16 +1,20 @@
 @echo off
 setlocal enabledelayedexpansion
 
-REM Configurazione MySQL
-set MYSQL_HOST=localhost
-set MYSQL_PORT=3306
-set MYSQL_USER=root
-set MYSQL_PASSWORD=
+if not defined MYSQL_BIN set "MYSQL_BIN=C:\Program Files\MySQL\MySQL Server 8.4\bin"
+if not defined MYSQL_HOST set "MYSQL_HOST=localhost"
+if not defined MYSQL_PORT set "MYSQL_PORT=3306"
+if not defined MYSQL_USER set "MYSQL_USER=root"
+if not defined DB_VIAGGI_NAME set "DB_VIAGGI_NAME=viaggi_db"
+if not defined DB_GESTIONE_NAME set "DB_GESTIONE_NAME=gestionelogistica"
+if not defined MYSQLDUMP_EXTRA_ARGS set "MYSQLDUMP_EXTRA_ARGS="
+if not defined MYSQL_CLIENT_EXTRA_ARGS set "MYSQL_CLIENT_EXTRA_ARGS="
 
-REM Percorsi assoluti
+set MYSQL_P_ARG=
+if defined MYSQL_PASSWORD set MYSQL_P_ARG=-p"%MYSQL_PASSWORD%"
+
 set BACKUP_DIR=M:\Progetti\In produzione\gestione-partesa\backup-system\storage\incremental-backups
 set LOG_DIR=M:\Progetti\In produzione\gestione-partesa\backup-system\logs
-set MYSQL_BIN=C:\xampp\mysql\bin
 
 REM Timestamp
 for /f "tokens=2 delims==" %%a in ('wmic OS Get localdatetime /value') do set "dt=%%a"
@@ -30,7 +34,7 @@ echo [%date% %time%] Inizio backup incrementale
 
 REM Test connessione MySQL
 echo [%date% %time%] Test connessione MySQL... >> "%LOG_FILE%"
-"%MYSQL_BIN%\mysql.exe" -h %MYSQL_HOST% -P %MYSQL_PORT% -u %MYSQL_USER% -e "SELECT 1;" > nul 2>&1
+"%MYSQL_BIN%\mysql.exe" %MYSQL_CLIENT_EXTRA_ARGS% -h %MYSQL_HOST% -P %MYSQL_PORT% -u %MYSQL_USER% %MYSQL_P_ARG% -e "SELECT 1;" > nul 2>&1
 if errorlevel 1 (
     echo [%date% %time%] ERRORE: Impossibile connettersi a MySQL >> "%LOG_FILE%"
     echo ERRORE: Impossibile connettersi a MySQL
@@ -51,7 +55,7 @@ echo [%date% %time%] Backup incrementale viaggi_db... >> "%LOG_FILE%"
 echo Backup incrementale viaggi_db...
 set BACKUP_FILE_1=%BACKUP_DIR%\viaggi_db_inc_%timestamp%.sql
 
-"%MYSQL_BIN%\mysqldump.exe" -h %MYSQL_HOST% -P %MYSQL_PORT% -u %MYSQL_USER% --single-transaction --routines --triggers viaggi_db > "%BACKUP_FILE_1%" 2>> "%LOG_FILE%"
+"%MYSQL_BIN%\mysqldump.exe" %MYSQLDUMP_EXTRA_ARGS% -h %MYSQL_HOST% -P %MYSQL_PORT% -u %MYSQL_USER% %MYSQL_P_ARG% --single-transaction --routines --triggers %DB_VIAGGI_NAME% > "%BACKUP_FILE_1%" 2>> "%LOG_FILE%"
 if errorlevel 1 (
     echo [%date% %time%] ERRORE: Backup incrementale viaggi_db fallito >> "%LOG_FILE%"
     echo ERRORE: Backup incrementale viaggi_db fallito
@@ -61,9 +65,9 @@ if errorlevel 1 (
 REM Backup gestionelogistica
 echo [%date% %time%] Backup incrementale gestionelogistica... >> "%LOG_FILE%"
 echo Backup incrementale gestionelogistica...
-set BACKUP_FILE_2=%BACKUP_DIR%\gestionelogistica_inc_%timestamp%.sql
+set BACKUP_FILE_2=%BACKUP_DIR%\%DB_GESTIONE_NAME%_inc_%timestamp%.sql
 
-"%MYSQL_BIN%\mysqldump.exe" -h %MYSQL_HOST% -P %MYSQL_PORT% -u %MYSQL_USER% --single-transaction --routines --triggers gestionelogistica > "%BACKUP_FILE_2%" 2>> "%LOG_FILE%"
+"%MYSQL_BIN%\mysqldump.exe" %MYSQLDUMP_EXTRA_ARGS% -h %MYSQL_HOST% -P %MYSQL_PORT% -u %MYSQL_USER% %MYSQL_P_ARG% --single-transaction --routines --triggers %DB_GESTIONE_NAME% > "%BACKUP_FILE_2%" 2>> "%LOG_FILE%"
 if errorlevel 1 (
     echo [%date% %time%] ERRORE: Backup incrementale gestionelogistica fallito >> "%LOG_FILE%"
     echo ERRORE: Backup incrementale gestionelogistica fallito

@@ -9,7 +9,9 @@ const pool = mysql.createPool({
   database: process.env.DB_GESTIONE_NAME || 'gestionelogistica',
   // 🚀 OTTIMIZZAZIONI PERFORMANCE
   waitForConnections: true,
-  connectionLimit: 20, // Aumentato per gestire più richieste simultanee
+  // Limite conservativo: su DB gestito (es. DO ~75 conn. totali) con Vercel multi-istanza
+  // evitare 20 × N istanze; pool riutilizza connessioni per route migrate da createConnection.
+  connectionLimit: 12,
   queueLimit: 0,
   dateStrings: true, // Mantiene le date come stringhe
   // 🚀 NUOVE OPZIONI PER PERFORMANCE E STABILITÀ

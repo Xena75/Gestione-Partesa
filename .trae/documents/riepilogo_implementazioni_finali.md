@@ -395,7 +395,7 @@ BACKUP_PATH=M:\Progetti\In produzione\gestione-partesa\backup-system
 
 * ✅ Next.js server su porta 3001
 
-* ✅ MySQL server via XAMPP
+* ✅ MySQL (cloud / client 8+)
 
 * ✅ Windows Task Scheduler per backup
 

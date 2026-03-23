@@ -20,8 +20,10 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const jobId = searchParams.get('job_id');
-    const limit = parseInt(searchParams.get('limit') || '50');
-    const offset = parseInt(searchParams.get('offset') || '0');
+    const rawLimit = parseInt(searchParams.get('limit') || '50', 10);
+    const rawOffset = parseInt(searchParams.get('offset') || '0', 10);
+    const safeLimit = Math.max(1, Math.min(500, Math.trunc(Number(rawLimit)) || 50));
+    const safeOffset = Math.min(50_000_000, Math.max(0, Math.trunc(Number(rawOffset)) || 0));
     const status = searchParams.get('status');
     const backupType = searchParams.get('backup_type');
     const dateFrom = searchParams.get('date_from');
@@ -126,8 +128,8 @@ export async function GET(request: NextRequest) {
         FROM backup_jobs 
         ${whereClause}
         ORDER BY start_time DESC 
-        LIMIT ? OFFSET ?
-      `, [...queryParams, limit, offset]);
+        LIMIT ${safeLimit} OFFSET ${safeOffset}
+      `, queryParams);
 
       const jobs = (jobRows as any[]).map(job => {
         let databases = [];
@@ -159,9 +161,9 @@ export async function GET(request: NextRequest) {
         jobs,
         pagination: {
           total,
-          limit,
-          offset,
-          hasMore: offset + limit < total
+          limit: safeLimit,
+          offset: safeOffset,
+          hasMore: safeOffset + safeLimit < total
         }
       });
 

@@ -1,20 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
+import type { ResultSetHeader } from 'mysql2/promise';
+import pool from '@/lib/db-gestione';
 import { verifyUserAccess } from '@/lib/auth';
-
-const dbConfig = {
-  host: process.env.DB_GESTIONE_HOST || '127.0.0.1',
-  port: parseInt(process.env.DB_GESTIONE_PORT || '3306'),
-  user: process.env.DB_GESTIONE_USER || 'root',
-  password: process.env.DB_GESTIONE_PASS || '',
-  database: process.env.DB_GESTIONE_NAME || 'gestionelogistica',
-  charset: 'utf8mb4'
-};
 
 // POST: Inserimento manuale
 export async function POST(request: NextRequest) {
-  let connection: mysql.Connection | null = null;
-  
+  let conn: Awaited<ReturnType<typeof pool.getConnection>> | null = null;
+
   try {
     // Verifica autenticazione
     const authResult = await verifyUserAccess(request);
@@ -32,8 +24,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    connection = await mysql.createConnection(dbConfig);
-    await connection.beginTransaction();
+    conn = await pool.getConnection();
+    await conn.beginTransaction();
 
     const {
       Riferimento,
@@ -50,7 +42,7 @@ export async function POST(request: NextRequest) {
     const Cod_Prod = Cod_ProdRaw ? String(Cod_ProdRaw).toUpperCase().trim() : null;
 
     // Recupera dati da fatt_delivery per Cod_Cliente (DISTINCT)
-    const [clienteRows] = await connection.execute(
+    const [clienteRows] = await conn.execute(
       `SELECT DISTINCT \`div\`, classe_tariffa, ragione_sociale 
        FROM fatt_delivery 
        WHERE cod_cliente = ? 
@@ -59,7 +51,7 @@ export async function POST(request: NextRequest) {
     ) as [any[], any];
 
     if (!clienteRows || clienteRows.length === 0) {
-      await connection.rollback();
+      await conn.rollback();
       return NextResponse.json(
         { error: `Cliente ${Cod_Cliente} non trovato in fatt_delivery` },
         { status: 400 }
@@ -72,14 +64,14 @@ export async function POST(request: NextRequest) {
 
     // Recupera dati da fatt_delivery per Cod_Prod - preferisce versione senza spazi quando ci sono duplicati
     if (!Cod_Prod) {
-      await connection.rollback();
+      await conn.rollback();
       return NextResponse.json(
         { error: 'Cod_Prod è obbligatorio' },
         { status: 400 }
       );
     }
 
-    const [prodRows] = await connection.execute(
+    const [prodRows] = await conn.execute(
       `SELECT 
          MAX(classe_prod) as classe_prod,
          MAX(descr_articolo) as descr_articolo
@@ -92,7 +84,7 @@ export async function POST(request: NextRequest) {
     ) as [any[], any];
 
     if (!prodRows || prodRows.length === 0) {
-      await connection.rollback();
+      await conn.rollback();
       return NextResponse.json(
         { error: `Prodotto ${Cod_Prod} non trovato in fatt_delivery` },
         { status: 400 }
@@ -106,7 +98,7 @@ export async function POST(request: NextRequest) {
     const idTariffa = `${div}-${classe_tariffa}-${classe_prod}`;
 
     // Recupera Deposito da tab_deposito
-    const [depositoRows] = await connection.execute(
+    const [depositoRows] = await conn.execute(
       `SELECT Deposito 
        FROM tab_deposito 
        WHERE \`DIV\` = ? 
@@ -117,7 +109,7 @@ export async function POST(request: NextRequest) {
     const deposito = depositoRows && depositoRows.length > 0 ? depositoRows[0].Deposito : null;
 
     // Recupera Tariffa da tab_tariffe
-    const [tariffaRows] = await connection.execute(
+    const [tariffaRows] = await conn.execute(
       `SELECT Tariffa 
        FROM tab_tariffe 
        WHERE ID_Fatt = ? 
@@ -134,7 +126,7 @@ export async function POST(request: NextRequest) {
     const Cod_Prod_Clean = Cod_Prod ? Cod_Prod.trim().toUpperCase() : null;
     
     // Inserisci nella tabella
-    const [result] = await connection.execute(
+    const [result] = await conn.execute(
       `INSERT INTO resi_vuoti_non_fatturati 
        (Riferimento, Data_rif_ddt, ddt, Cod_Cliente, ragione_sociale, VETTORE, Cod_Prod, descr_articolo, Deposito, Colli, Data_Ritiro, ID_TARIFFA, Tariffa, Totale_compenso)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -154,9 +146,9 @@ export async function POST(request: NextRequest) {
         tariffa,
         totaleCompenso
       ]
-    ) as [mysql.ResultSetHeader, any];
+    ) as [ResultSetHeader, any];
 
-    await connection.commit();
+    await conn.commit();
 
     return NextResponse.json({
       success: true,
@@ -173,8 +165,12 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-    if (connection) {
-      await connection.rollback();
+    if (conn) {
+      try {
+        await conn.rollback();
+      } catch {
+        /* ignore */
+      }
     }
     console.error('Errore inserimento resi vuoti:', error);
     return NextResponse.json(
@@ -182,16 +178,14 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   } finally {
-    if (connection) {
-      await connection.end();
+    if (conn) {
+      conn.release();
     }
   }
 }
 
 // GET: Lista record (per visualizzazione)
 export async function GET(request: NextRequest) {
-  let connection: mysql.Connection | null = null;
-  
   try {
     // Verifica autenticazione
     const authResult = await verifyUserAccess(request);
@@ -200,9 +194,11 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '50');
-    const offset = (page - 1) * limit;
+    const rawPage = parseInt(searchParams.get('page') || '1', 10);
+    const rawLimit = parseInt(searchParams.get('limit') || '50', 10);
+    const safeLimit = Math.max(1, Math.min(500, Math.trunc(Number(rawLimit)) || 50));
+    const safePage = Math.max(1, Math.trunc(Number(rawPage)) || 1);
+    const safeOffset = Math.min(50_000_000, Math.max(0, (safePage - 1) * safeLimit));
     const sortBy = searchParams.get('sortBy') || 'created_at';
     const sortOrder = (searchParams.get('sortOrder') as 'ASC' | 'DESC') || 'DESC';
 
@@ -216,8 +212,6 @@ export async function GET(request: NextRequest) {
     const vettore = searchParams.get('vettore');
     const dataDa = searchParams.get('dataDa');
     const dataA = searchParams.get('dataA');
-
-    connection = await mysql.createConnection(dbConfig);
 
     // Costruisci WHERE clause
     const whereConditions: string[] = [];
@@ -276,10 +270,7 @@ export async function GET(request: NextRequest) {
 
     // Conta totale record con filtri
     const countQuery = `SELECT COUNT(*) as total FROM resi_vuoti_non_fatturati ${whereClause}`;
-    const [countResult] = await connection.execute(
-      countQuery,
-      queryParams
-    ) as [any[], any];
+    const [countResult] = await pool.execute(countQuery, queryParams) as [any[], any];
     const total = countResult[0].total;
 
     // Calcola statistiche totali con filtri
@@ -290,10 +281,7 @@ export async function GET(request: NextRequest) {
       FROM resi_vuoti_non_fatturati 
       ${whereClause}
     `;
-    const [statsResult] = await connection.execute(
-      statsQuery,
-      queryParams
-    ) as [any[], any];
+    const [statsResult] = await pool.execute(statsQuery, queryParams) as [any[], any];
     
     const stats = {
       totale_colli: statsResult[0].totale_colli || 0,
@@ -305,21 +293,18 @@ export async function GET(request: NextRequest) {
       SELECT * FROM resi_vuoti_non_fatturati 
       ${whereClause}
       ORDER BY ${safeSortBy} ${safeSortOrder}
-      LIMIT ? OFFSET ?
+      LIMIT ${safeLimit} OFFSET ${safeOffset}
     `;
-    const [rows] = await connection.execute(
-      dataQuery,
-      [...queryParams, limit, offset]
-    );
+    const [rows] = await pool.execute(dataQuery, queryParams);
 
     return NextResponse.json({
       success: true,
       data: rows,
       pagination: {
-        page,
-        limit,
+        page: safePage,
+        limit: safeLimit,
         total,
-        totalPages: Math.ceil(total / limit)
+        totalPages: Math.ceil(total / safeLimit)
       },
       stats: stats
     });
@@ -330,10 +315,6 @@ export async function GET(request: NextRequest) {
       { error: error.message || 'Errore durante il recupero dei dati' },
       { status: 500 }
     );
-  } finally {
-    if (connection) {
-      await connection.end();
-    }
   }
 }
 

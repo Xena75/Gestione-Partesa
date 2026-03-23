@@ -322,9 +322,20 @@ async function executeImport(fileId: string, mapping: Record<string, string>, bl
     // Calcola durata
     const duration = Math.round((Date.now() - startTime) / 1000);
 
-    // Risultato finale
+    const rowLevelErrors = errors.filter((e) => /^Riga \d+:/.test(e));
+    const success = rowLevelErrors.length === 0;
+
+    let resultMessage: string;
+    if (!success) {
+      resultMessage = `Importazione completata con errori: ${importedRows}/${totalRows} righe importate (${rowLevelErrors.length} riga/e non importate).`;
+    } else if (duplicates.length > 0) {
+      resultMessage = `Importazione completata. ${importedRows} righe importate, ${duplicates.length} righe duplicate saltate.`;
+    } else {
+      resultMessage = `Importazione completata. ${importedRows} righe importate.`;
+    }
+
     const result = {
-      success: errors.length === 0 || (errors.length === 1 && duplicates.length > 0), // Successo se solo duplicati
+      success,
       totalRows,
       importedRows,
       skippedRows: duplicates.length,
@@ -333,16 +344,20 @@ async function executeImport(fileId: string, mapping: Record<string, string>, bl
       errors,
       sessionId,
       duration,
-      message: duplicates.length > 0 
-        ? `Importazione completata. ${importedRows} righe importate, ${duplicates.length} righe duplicate saltate.`
-        : `Importazione completata. ${importedRows} righe importate.`
+      message: resultMessage
     };
 
-    // Salva il risultato
-    console.log('✅ Importazione completata con successo!', result);
-    const finalMessage = duplicates.length > 0 
-      ? `Importazione completata: ${importedRows} righe importate, ${duplicates.length} duplicate saltate`
-      : 'Importazione completata con successo';
+    if (success) {
+      console.log('✅ Importazione completata con successo!', result);
+    } else {
+      console.log('⚠️ Importazione terminata con errori su alcune righe:', result);
+    }
+
+    const finalMessage = success
+      ? duplicates.length > 0
+        ? `Importazione completata: ${importedRows} righe importate, ${duplicates.length} duplicate saltate`
+        : 'Importazione completata con successo'
+      : `Completata con errori: ${importedRows}/${totalRows} righe importate (${rowLevelErrors.length} errore/i)`;
     await updateProgress(fileId, 100, finalMessage, true, result);
 
     // Scrivi log nei system_logs se l'importazione è riuscita

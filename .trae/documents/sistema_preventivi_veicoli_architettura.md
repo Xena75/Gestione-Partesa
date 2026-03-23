@@ -48,7 +48,7 @@ graph TD
 
 - **Frontend**: React@18 + Next.js@15.5.3 + TypeScript@5 + Bootstrap@5.3.2
 - **Backend**: Next.js API Routes + Node.js@24.4.1
-- **Database**: MySQL@8.0+ (via XAMPP)
+- **Database**: MySQL@8.0+
 - **File Upload**: multer + react-dropzone per gestione documenti
 - **Date Handling**: date-fns per formattazione italiana (dd/mm/yyyy)
 - **State Management**: React useState/useEffect + Context API

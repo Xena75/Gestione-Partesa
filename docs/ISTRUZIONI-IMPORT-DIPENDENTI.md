@@ -74,7 +74,8 @@ Prima di iniziare, fai un backup di sicurezza:
 ```powershell
 # Dalla cartella del progetto
 cd "M:\Progetti\In produzione\gestione-partesa"
-C:\xampp\mysql\bin\mysqldump -u root -p viaggi_db > backups/viaggi_db_before_employees_import.sql
+# Esempio: adatta MYSQL_BIN e credenziali (es. client MySQL 8.4)
+& "C:\Program Files\MySQL\MySQL Server 8.4\bin\mysqldump.exe" -h HOST -P PORTA -u USER -p viaggi_db > backups/viaggi_db_before_employees_import.sql
 ```
 
 ---
@@ -84,7 +85,7 @@ Aggiungi le nuove colonne alla tabella:
 
 ```powershell
 # Metodo 1: Da riga di comando
-$env:PATH = "C:\xampp\mysql\bin;$env:PATH"
+$env:PATH = "C:\Program Files\MySQL\MySQL Server 8.4\bin;$env:PATH"
 Get-Content migrations/add_employees_extended_fields.sql | mysql -u root -p viaggi_db
 
 # Metodo 2: Da phpMyAdmin

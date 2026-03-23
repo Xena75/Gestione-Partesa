@@ -72,15 +72,18 @@ export default function HandlingFilters({ onFiltersChange, initialFilters, viewT
     }
   }, [viewType]);
 
-  // Carica le opzioni dei filtri immediatamente quando il componente viene montato
+  // Carica opzioni filtri dopo idle / breve delay: lascia priorità a stats + tabella (stesso DB)
   useEffect(() => {
+    let cancelled = false;
+
     const fetchFilterOptions = async () => {
       try {
         setIsLoadingOptions(true);
         const params = new URLSearchParams();
         params.set('viewType', viewType);
-        
+
         const response = await fetch(`/api/handling/filter-options?${params}`);
+        if (cancelled) return;
         if (response.ok) {
           const data = await response.json();
           setFilterOptions(data);
@@ -88,11 +91,29 @@ export default function HandlingFilters({ onFiltersChange, initialFilters, viewT
       } catch (error) {
         console.error('Errore nel caricamento delle opzioni filtri:', error);
       } finally {
-        setIsLoadingOptions(false);
+        if (!cancelled) setIsLoadingOptions(false);
       }
     };
 
-    fetchFilterOptions();
+    const run = () => {
+      if (!cancelled) void fetchFilterOptions();
+    };
+
+    let idleId: number | undefined;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    if (typeof requestIdleCallback !== 'undefined') {
+      idleId = requestIdleCallback(run, { timeout: 1200 });
+    } else {
+      timeoutId = setTimeout(run, 400);
+    }
+
+    return () => {
+      cancelled = true;
+      if (idleId !== undefined && typeof cancelIdleCallback !== 'undefined') {
+        cancelIdleCallback(idleId);
+      }
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
+    };
   }, [viewType]);
 
   // Salva lo stato di espansione

@@ -582,6 +582,7 @@ anno_fatturazione       smallint(6)    YES        NULL
   - Se né `source_name` né `data_mov_m` sono disponibili, usa il mese esistente e `anno_fatturazione` default a `2025`
   - Migration: `migrations/add_mese_anno_fatturazione_to_fatt_handling.sql`
   - Indice: `idx_mese_anno_fatturazione` su `(mese_fatturazione, anno_fatturazione)`
+- **Performance (opzionale)**: script `migrations/fatt_handling_performance_indexes.sql` — indici compositi per filtri Handling (`bu`, `div`, `dep`, `data_mov_m`) e `(doc_mat, id)`; eseguire solo dopo `SHOW INDEX` e backup, per evitare duplicati.
 - **Calcolo dep**: Il campo `dep` viene popolato automaticamente durante l'importazione tramite JOIN con `tab_deposito` usando il campo `div`
 
 **Utilizzo nel progetto:**
@@ -1832,14 +1833,16 @@ Le strutture delle tabelle del database `backup_management` sono state verificat
 ### Connessione ai Database
 
 ```powershell
+# Sostituisci il percorso con la tua installazione client MySQL (es. Oracle MySQL 8.4)
+$mysql = "C:\Program Files\MySQL\MySQL Server 8.4\bin\mysql.exe"
 # Database gestionelogistica
-& "C:\xampp\mysql\bin\mysql.exe" -u root -p gestionelogistica
+& $mysql -h HOST -P PORTA -u USER -p gestionelogistica
 
-# Database viaggi_db  
-& "C:\xampp\mysql\bin\mysql.exe" -u root -p viaggi_db
+# Database viaggi_db
+& $mysql -h HOST -P PORTA -u USER -p viaggi_db
 
 # Database backup_management
-& "C:\xampp\mysql\bin\mysql.exe" -u root -p backup_management
+& $mysql -h HOST -P PORTA -u USER -p backup_management
 ```
 
 ### Query di Test Rapide
@@ -1862,7 +1865,7 @@ SELECT * FROM backup_logs ORDER BY created_at DESC LIMIT 5;
 
 ## 📝 Note Importanti
 
-1. **XAMPP MySQL**: Usare sempre il percorso completo `C:\xampp\mysql\bin\mysql.exe`
+1. **Client MySQL su Windows**: MySQL spesso non è nel PATH; usare il percorso completo di `mysql.exe` (es. `C:\Program Files\MySQL\MySQL Server 8.4\bin\mysql.exe`) o DBeaver/altro client
 2. **PowerShell**: Usare l'operatore `&` per eseguire comandi MySQL
 3. **Porte**: 
    - Database remoti (viaggi_db, gestionelogistica): porta configurata in ngrok

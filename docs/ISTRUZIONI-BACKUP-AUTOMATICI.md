@@ -15,8 +15,9 @@ Configura **Windows Task Scheduler** per eseguire automaticamente i backup dei d
 ## ⚙️ PREREQUISITI
 
 ✅ **Windows 10/11**  
-✅ **MySQL/XAMPP installato** (`C:\xampp\mysql\bin`)  
-✅ **Node.js installato** (per registrazione backup nel database)  
+✅ **Client MySQL 8+** (cartella `bin` con `mysqldump.exe` / `mysql.exe`, es. `C:\Program Files\MySQL\MySQL Server 8.4\bin`) — necessario per dump verso server MySQL 8 / cloud  
+✅ **Variabili ambiente** per host remoto: stesse chiavi usate dall’app (`DB_GESTIONE_*`, `DB_VIAGGI_*`, `MYSQL_*`, `MYSQL_BIN`) in `.env.local` o impostate sul task (vedi `docs/backup-sistema-e-client-mysql.md`)  
+✅ **Node.js installato** (per `register-backup.js`)  
 ✅ **Permessi Amministratore**
 
 ---
@@ -187,20 +188,19 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 **Soluzione**: I backup locali con Task Scheduler NON avranno questo errore
 
-### **❌ "MySQL non trovato"**
+### **❌ "MySQL non trovato" / mysqldump assente**
 
-**Verifica**: Controlla che MySQL sia installato in `C:\xampp\mysql\bin`
+**Verifica**: Esiste `mysqldump.exe` nella cartella indicata da `MYSQL_BIN` (default progetto: `C:\Program Files\MySQL\MySQL Server 8.4\bin`).
 
-Se è in un percorso diverso, modifica i file `.bat`:
-1. Apri `backup-system\scripts\backup-full.bat`
-2. Cambia `set MYSQL_BIN=C:\xampp\mysql\bin` con il tuo percorso
-3. Ripeti per `backup-incremental.bat` e `backup-differential.bat`
+Se il client è altrove:
+1. Imposta `MYSQL_BIN` in `.env.local` (per backup avviati da Next.js) **oppure**
+2. Nei `.bat` il default si applica solo se `MYSQL_BIN` non è già definito nell’ambiente del task schedulato.
 
 ### **❌ Task non si avvia automaticamente**
 
 **Verifica**:
 1. Il PC deve essere **acceso** all'orario schedulato
-2. MySQL/XAMPP deve essere **in esecuzione**
+2. Il **server MySQL di destinazione** (cloud) deve essere raggiungibile; in locale non serve MySQL in ascolto sulla macchina solo per eseguire `mysqldump`
 3. Controlla i log in `backup-system\logs\`
 
 ---
@@ -242,11 +242,11 @@ Se hai problemi:
 ## 📝 NOTE IMPORTANTI
 
 ⚠️ **Il PC deve essere ACCESO** per eseguire i backup automatici  
-⚠️ **MySQL/XAMPP deve essere IN ESECUZIONE**  
 ⚠️ **Non ibernare il PC** negli orari schedulati  
+💡 **Documentazione tecnica backup + env**: `docs/backup-sistema-e-client-mysql.md`  
 💡 Suggerimento: Configura il PC per non andare in sleep di notte
 
 ---
 
-*Ultimo aggiornamento: Ottobre 2025*
+*Ultimo aggiornamento: marzo 2026*
 

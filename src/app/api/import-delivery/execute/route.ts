@@ -1,43 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
-import mysql from 'mysql2/promise';
+import type { PoolConnection } from 'mysql2/promise';
+import pool from '@/lib/db-gestione';
 import { readFile } from 'fs/promises';
-import { join } from 'path';
 
+import { updateImportProgress, getImportProgress } from '@/lib/import-progress-db';
 
-// Configurazione database gestionelogistica con timeout estesi
-const dbConfig = {
-  host: process.env.DB_GESTIONE_HOST || 'localhost',
-  user: process.env.DB_GESTIONE_USER || 'root',
-  password: process.env.DB_GESTIONE_PASS || '',
-  database: process.env.DB_GESTIONE_NAME || 'gestionelogistica',
-  port: parseInt(process.env.DB_GESTIONE_PORT || '3306'),
-  // Configurazioni per connessioni lunghe
-  acquireTimeout: 60000, // 60 secondi per acquisire connessione
-  timeout: 60000, // 60 secondi timeout query
-  reconnect: true, // Riconnessione automatica
-  keepAliveInitialDelay: 0,
-  enableKeepAlive: true
-};
-
-// Importa la Map condivisa del progresso
-import { updateImportProgress, cleanupImportProgress, getImportProgress } from '@/lib/import-progress-db';
-
-// Funzione per verificare e riconnettere la connessione se necessario
-async function ensureConnection(connection: mysql.Connection | null): Promise<mysql.Connection> {
-  if (!connection) {
-    console.log('🔄 Riconnessione al database...');
-    return await mysql.createConnection(dbConfig);
+async function ensureConnection(conn: PoolConnection | null): Promise<PoolConnection> {
+  if (conn) {
+    try {
+      await conn.ping();
+      return conn;
+    } catch {
+      try {
+        conn.release();
+      } catch {
+        /* ignore */
+      }
+    }
   }
-  
-  // Verifica se la connessione è ancora attiva
-  try {
-    await connection.ping();
-    return connection;
-  } catch (error) {
-    console.log('🔄 Connessione persa, riconnessione al database...');
-    return await mysql.createConnection(dbConfig);
-  }
+  console.log('🔄 Acquisizione connessione dal pool gestione...');
+  return pool.getConnection();
 }
 
 export async function POST(request: NextRequest) {
@@ -85,7 +68,7 @@ export async function POST(request: NextRequest) {
 
 async function executeDeliveryImport(fileId: string, mapping: Record<string, string>, blobUrl: string, originalName?: string) {
   const startTime = Date.now();
-  let connection: mysql.Connection | null = null;
+  let connection: PoolConnection | null = null;
   
   // Timeout di 2 ore per file grandi
   const timeout = 2 * 60 * 60 * 1000; // 2 ore
@@ -106,7 +89,7 @@ async function executeDeliveryImport(fileId: string, mapping: Record<string, str
     
     // Connessione al database
     await updateImportProgress(fileId, 5, 'Connessione al database...');
-    connection = await mysql.createConnection(dbConfig);
+    connection = await pool.getConnection();
     console.log('✅ Connesso al database gestionelogistica');
 
     // Leggi il file Excel
@@ -220,7 +203,7 @@ async function executeDeliveryImport(fileId: string, mapping: Record<string, str
     console.log(`❌ Importazione fallita per ${fileId}, progresso mantenuto per il frontend`);
   } finally {
     if (connection) {
-      await connection.end();
+      connection.release();
     }
   }
 }
@@ -253,7 +236,7 @@ function prepareInsertQuery(mapping: Record<string, string>): string {
 }
 
 async function processBatch(
-  connection: mysql.Connection, 
+  connection: PoolConnection,
   batch: (string | number | null)[][], 
   headers: string[], 
   mapping: Record<string, string>, 

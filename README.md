@@ -1856,8 +1856,8 @@ WHERE status = 'completed' AND created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)
 
 #### 🗄️ **Gestione Database**
 - **Database multipli**: Supporto `viaggi_db` e `gestionelogistica`
-- **Connessioni MySQL**: Configurazione XAMPP con utente root
-- **Percorsi assoluti**: Paths Windows corretti senza dipendenze esterne
+- **Connessioni MySQL**: Credenziali e host da `.env` / `.env.local`; client `mysqldump` consigliato **MySQL 8+** su Windows per cloud (vedi `docs/backup-sistema-e-client-mysql.md`)
+- **Percorsi assoluti**: Paths Windows corretti (`MYSQL_BIN` per i `.bat` di backup)
 - **Registrazione backup**: Tracking nel database `backup_management`
 - **Verifica integrità**: Controlli automatici dimensioni e validità file
 

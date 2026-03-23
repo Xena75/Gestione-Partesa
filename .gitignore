@@ -31,6 +31,7 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files — segreti solo su Vercel / PC locale, non in repository
+.env
 .env*.local
 .env.production
 .env.development

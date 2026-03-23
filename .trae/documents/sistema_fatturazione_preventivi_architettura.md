@@ -45,7 +45,7 @@ graph TD
 
 * Backend: Next.js API Routes + Node.js
 
-* Database: MySQL (via XAMPP)
+* Database: MySQL 8+
 
 * File Storage: Vercel Blob / Local File System
 

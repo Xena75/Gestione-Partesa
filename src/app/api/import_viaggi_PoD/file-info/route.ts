@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,15 +19,36 @@ export async function GET(request: NextRequest) {
 
     console.log('🔍 File Info - Richiesta per fileId:', fileId, 'blobUrl:', blobUrl);
 
-    // Ottieni il file da Vercel Blob Storage
-    const response = await fetch(blobUrl);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch file: ${response.status}`);
+    let buffer: Buffer;
+    let filename: string;
+
+    if (blobUrl.startsWith('file:')) {
+      const filePath = fileURLToPath(blobUrl);
+      try {
+        buffer = await fs.readFile(filePath);
+      } catch {
+        console.log('❌ File non trovato per fileId:', fileId);
+        return NextResponse.json(
+          {
+            error: 'File non trovato. Il file potrebbe essere scaduto o non essere stato caricato correttamente.',
+            fileId,
+            suggestion: 'Ricarica il file e riprova.'
+          },
+          { status: 404 }
+        );
+      }
+      filename = path.basename(filePath);
+    } else {
+      const response = await fetch(blobUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch file: ${response.status}`);
+      }
+      const arrayBuffer = await response.arrayBuffer();
+      buffer = Buffer.from(arrayBuffer);
+      filename = blobUrl.split('/').pop() || 'unknown';
     }
-    const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    
-    if (!buffer) {
+
+    if (!buffer?.length) {
       console.log('❌ File non trovato per fileId:', fileId);
       return NextResponse.json(
         { 
@@ -35,8 +59,6 @@ export async function GET(request: NextRequest) {
         { status: 404 }
       );
     }
-
-    const filename = blobUrl.split('/').pop() || 'unknown';
     console.log('✅ File letto dal filesystem:', filename);
 
     // Leggi il file Excel

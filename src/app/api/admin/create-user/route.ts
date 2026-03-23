@@ -1,16 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import mysql from 'mysql2/promise';
+import type { ResultSetHeader } from 'mysql2/promise';
+import pool from '@/lib/db-gestione';
 import { getTokenFromRequest, verifyToken } from '@/lib/auth';
-
-// Configurazione database
-const dbConfig = {
-  host: process.env.DB_GESTIONE_HOST || 'localhost',
-  user: process.env.DB_GESTIONE_USER || 'root',
-  password: process.env.DB_GESTIONE_PASS || '',
-  database: process.env.DB_GESTIONE_NAME || 'gestionelogistica',
-  port: parseInt(process.env.DB_GESTIONE_PORT || '3306')
-};
 
 // Funzione per verificare il token JWT e il ruolo admin
 async function verifyAdminToken(request: NextRequest) {
@@ -82,77 +74,63 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Connessione al database
-    const connection = await mysql.createConnection(dbConfig);
+    // Verifica se la colonna 'active' esiste, altrimenti la crea
+    const [columns] = await pool.execute(
+      "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'active'"
+    );
 
-    try {
-      // Verifica se la colonna 'active' esiste, altrimenti la crea
-      const [columns] = await connection.execute(
-        "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'active'"
+    if ((columns as any[]).length === 0) {
+      await pool.execute(
+        'ALTER TABLE users ADD COLUMN active TINYINT(1) DEFAULT 1 NOT NULL'
       );
-      
-      if ((columns as any[]).length === 0) {
-        // Aggiungi la colonna active se non esiste
-        await connection.execute(
-          'ALTER TABLE users ADD COLUMN active TINYINT(1) DEFAULT 1 NOT NULL'
-        );
-        console.log('Colonna "active" aggiunta alla tabella users');
-      }
-
-      // Verifica se l'username esiste già (solo utenti attivi)
-      const [existingUsers] = await connection.execute(
-        'SELECT id FROM users WHERE username = ? AND active = 1',
-        [username.trim()]
-      );
-
-      if (Array.isArray(existingUsers) && existingUsers.length > 0) {
-        return NextResponse.json(
-          { success: false, error: 'Username già esistente' },
-          { status: 409 }
-        );
-      }
-
-      // Verifica se l'email esiste già (solo utenti attivi)
-      const [existingEmails] = await connection.execute(
-        'SELECT id FROM users WHERE email = ? AND active = 1',
-        [email.trim()]
-      );
-
-      if (Array.isArray(existingEmails) && existingEmails.length > 0) {
-        return NextResponse.json(
-          { success: false, error: 'Email già esistente' },
-          { status: 409 }
-        );
-      }
-
-      // Hash della password
-      const saltRounds = 12;
-      const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-      // Inserimento nuovo utente (con active = 1 di default)
-      const [result] = await connection.execute(
-        'INSERT INTO users (username, password_hash, email, role, active, created_at) VALUES (?, ?, ?, ?, 1, NOW())',
-        [username.trim(), hashedPassword, email.trim(), role]
-      );
-
-      const insertResult = result as mysql.ResultSetHeader;
-      const newUserId = insertResult.insertId;
-
-      // Recupera i dati dell'utente creato (senza password)
-      const [newUser] = await connection.execute(
-        'SELECT id, username, email, role, created_at FROM users WHERE id = ?',
-        [newUserId]
-      );
-
-      return NextResponse.json({
-        success: true,
-        message: 'Utente creato con successo',
-        user: Array.isArray(newUser) ? newUser[0] : null
-      });
-
-    } finally {
-      await connection.end();
+      console.log('Colonna "active" aggiunta alla tabella users');
     }
+
+    const [existingUsers] = await pool.execute(
+      'SELECT id FROM users WHERE username = ? AND active = 1',
+      [username.trim()]
+    );
+
+    if (Array.isArray(existingUsers) && existingUsers.length > 0) {
+      return NextResponse.json(
+        { success: false, error: 'Username già esistente' },
+        { status: 409 }
+      );
+    }
+
+    const [existingEmails] = await pool.execute(
+      'SELECT id FROM users WHERE email = ? AND active = 1',
+      [email.trim()]
+    );
+
+    if (Array.isArray(existingEmails) && existingEmails.length > 0) {
+      return NextResponse.json(
+        { success: false, error: 'Email già esistente' },
+        { status: 409 }
+      );
+    }
+
+    const saltRounds = 12;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    const [result] = await pool.execute(
+      'INSERT INTO users (username, password_hash, email, role, active, created_at) VALUES (?, ?, ?, ?, 1, NOW())',
+      [username.trim(), hashedPassword, email.trim(), role]
+    );
+
+    const insertResult = result as ResultSetHeader;
+    const newUserId = insertResult.insertId;
+
+    const [newUser] = await pool.execute(
+      'SELECT id, username, email, role, created_at FROM users WHERE id = ?',
+      [newUserId]
+    );
+
+    return NextResponse.json({
+      success: true,
+      message: 'Utente creato con successo',
+      user: Array.isArray(newUser) ? newUser[0] : null
+    });
 
   } catch (error) {
     console.error('Errore nella creazione utente:', error);
@@ -175,46 +153,34 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Connessione al database
-    const connection = await mysql.createConnection(dbConfig);
+    const [columns] = await pool.execute(
+      "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'active'"
+    );
 
-    try {
-      // Verifica se la colonna 'active' esiste, altrimenti la crea
-      const [columns] = await connection.execute(
-        "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'active'"
+    let hasActiveColumn = (columns as any[]).length > 0;
+
+    if (!hasActiveColumn) {
+      await pool.execute(
+        'ALTER TABLE users ADD COLUMN active TINYINT(1) DEFAULT 1 NOT NULL'
       );
-      
-      let hasActiveColumn = (columns as any[]).length > 0;
-      
-      if (!hasActiveColumn) {
-        // Aggiungi la colonna active se non esiste
-        await connection.execute(
-          'ALTER TABLE users ADD COLUMN active TINYINT(1) DEFAULT 1 NOT NULL'
-        );
-        console.log('Colonna "active" aggiunta alla tabella users');
-        hasActiveColumn = true;
-      }
-
-      // Recupera tutti gli utenti (senza password), includendo anche quelli disattivati
-      const query = hasActiveColumn 
-        ? 'SELECT id, username, email, role, active, created_at FROM users ORDER BY active DESC, created_at DESC'
-        : 'SELECT id, username, email, role, created_at FROM users ORDER BY created_at DESC';
-      
-      const [users] = await connection.execute(query);
-      
-      // Se il campo active non esiste, aggiungilo agli oggetti restituiti con valore 1 (attivo)
-      const usersWithActive = hasActiveColumn 
-        ? users 
-        : (users as any[]).map((user: any) => ({ ...user, active: 1 }));
-
-      return NextResponse.json({
-        success: true,
-        users: usersWithActive
-      });
-
-    } finally {
-      await connection.end();
+      console.log('Colonna "active" aggiunta alla tabella users');
+      hasActiveColumn = true;
     }
+
+    const query = hasActiveColumn
+      ? 'SELECT id, username, email, role, active, created_at FROM users ORDER BY active DESC, created_at DESC'
+      : 'SELECT id, username, email, role, created_at FROM users ORDER BY created_at DESC';
+
+    const [users] = await pool.execute(query);
+
+    const usersWithActive = hasActiveColumn
+      ? users
+      : (users as any[]).map((user: any) => ({ ...user, active: 1 }));
+
+    return NextResponse.json({
+      success: true,
+      users: usersWithActive
+    });
 
   } catch (error) {
     console.error('Errore nel recupero utenti:', error);

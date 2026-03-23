@@ -6,6 +6,7 @@ import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import { backupDbConfig } from '@/lib/db-backup';
+import { buildBackupChildProcessEnv } from '@/lib/backup-env';
 
 interface BackupRequest {
   backup_type: 'full' | 'incremental' | 'differential';
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
     try {
       // Verifica se ci sono già job in esecuzione (limite concorrenza)
       const [runningJobs] = await connection.execute(
-        'SELECT COUNT(*) as running_count FROM backup_jobs WHERE status = "running"'
+        `SELECT COUNT(*) as running_count FROM backup_jobs WHERE status = 'running'`
       );
 
       const maxParallelJobs = 2;
@@ -126,7 +127,7 @@ export async function POST(request: NextRequest) {
       if (!fs.existsSync(scriptPath)) {
         // Aggiorna job come fallito
         await connection.execute(
-          'UPDATE backup_jobs SET status = "failed", end_time = NOW(), error_message = ? WHERE id = ?',
+          `UPDATE backup_jobs SET status = 'failed', end_time = NOW(), error_message = ? WHERE id = ?`,
           [`Script di backup non trovato: ${scriptPath}`, jobId]
         );
 
@@ -191,16 +192,17 @@ async function executeBackupScript(
       stdio: ['pipe', 'pipe', 'pipe'],
       env: {
         ...process.env,
-        MYSQL_HOST: process.env.MYSQL_HOST || 'localhost',
-        MYSQL_PORT: process.env.MYSQL_PORT || '3306',
-        MYSQL_USER: process.env.MYSQL_USER || 'root',
-        MYSQL_PASSWORD: process.env.MYSQL_PASSWORD || '',
-        MYSQL_BIN: 'C:\\xampp\\mysql\\bin'
+        ...buildBackupChildProcessEnv()
       }
     });
 
     let output = '';
     let errorOutput = '';
+
+    const keepAliveMs = 45_000;
+    const keepAliveTimer = setInterval(() => {
+      connection.execute('SELECT 1').catch(() => {});
+    }, keepAliveMs);
 
     backupProcess.stdout.on('data', async (data) => {
       output += data.toString();
@@ -231,68 +233,122 @@ async function executeBackupScript(
     });
 
     backupProcess.on('close', async (code) => {
+      clearInterval(keepAliveTimer);
       const endTime = new Date();
-      const startTimeResult = await connection.execute(
-        'SELECT start_time FROM backup_jobs WHERE id = ?',
-        [jobId]
-      );
-      
-      const startTime = new Date((startTimeResult[0] as any[])[0].start_time);
-      const durationSeconds = Math.floor((endTime.getTime() - startTime.getTime()) / 1000);
+      let finalizeConn: mysql.Connection | null = null;
+      try {
+        finalizeConn = await mysql.createConnection(backupDbConfig);
+        const [rows] = await finalizeConn.execute(
+          'SELECT start_time FROM backup_jobs WHERE id = ?',
+          [jobId]
+        );
+        const row0 = (rows as mysql.RowDataPacket[])[0];
+        const startTime = new Date(row0.start_time);
+        const durationSeconds = Math.floor(
+          (endTime.getTime() - startTime.getTime()) / 1000
+        );
 
-      if (code === 0) {
-        // Backup completato con successo
-        console.log(`Backup ${jobUuid} completato con successo`);
-        
-        // Estrai informazioni dal log per aggiornare il database
-        const sizeMatch = output.match(/Dimensione totale backup: (\d+) bytes/);
-        const totalSize = sizeMatch ? parseInt(sizeMatch[1]) : 0;
+        if (code === 0) {
+          console.log(`Backup ${jobUuid} completato con successo`);
 
-        await connection.execute(`
+          const sizeMatch = output.match(
+            /Dimensioni totali backup: (\d+) bytes|Dimensione totale backup: (\d+) bytes/
+          );
+          const totalSize = sizeMatch
+            ? parseInt(sizeMatch[1] || sizeMatch[2], 10)
+            : 0;
+
+          await finalizeConn.execute(
+            `
           UPDATE backup_jobs 
           SET status = 'completed', end_time = ?, duration_seconds = ?, 
               file_size_bytes = ?, progress_percentage = 100
           WHERE id = ?
-        `, [endTime, durationSeconds, totalSize, jobId]);
+        `,
+            [endTime, durationSeconds, totalSize, jobId]
+          );
 
-        // Log completamento
-        await connection.execute(`
+          await finalizeConn.execute(
+            `
           INSERT INTO backup_activity_log (job_id, activity_type, user_id, details)
           VALUES (?, 'job_completed', 'system', ?)
-        `, [jobId, JSON.stringify({ duration_seconds: durationSeconds, file_size_bytes: totalSize })]);
+        `,
+            [
+              jobId,
+              JSON.stringify({
+                duration_seconds: durationSeconds,
+                file_size_bytes: totalSize
+              })
+            ]
+          );
+        } else {
+          console.error(`Backup ${jobUuid} fallito con codice ${code}`);
 
-      } else {
-        // Backup fallito
-        console.error(`Backup ${jobUuid} fallito con codice ${code}`);
-        
-        await connection.execute(`
+          await finalizeConn.execute(
+            `
           UPDATE backup_jobs 
           SET status = 'failed', end_time = ?, duration_seconds = ?, 
               error_message = ?, progress_percentage = 0
           WHERE id = ?
-        `, [endTime, durationSeconds, errorOutput || `Processo terminato con codice ${code}`, jobId]);
+        `,
+            [
+              endTime,
+              durationSeconds,
+              errorOutput || `Processo terminato con codice ${code}`,
+              jobId
+            ]
+          );
 
-        // Log errore
-        await connection.execute(`
+          await finalizeConn.execute(
+            `
           INSERT INTO backup_activity_log (job_id, activity_type, user_id, details)
           VALUES (?, 'job_failed', 'system', ?)
-        `, [jobId, JSON.stringify({ error_code: code, error_output: errorOutput })]);
+        `,
+            [
+              jobId,
+              JSON.stringify({ error_code: code, error_output: errorOutput })
+            ]
+          );
+        }
+      } catch (finalizeErr) {
+        console.error(`Backup ${jobUuid} errore finalizzazione DB:`, finalizeErr);
+      } finally {
+        try {
+          await finalizeConn?.end();
+        } catch {
+          /* ignore */
+        }
+        try {
+          await connection.end();
+        } catch {
+          /* ignore */
+        }
       }
-
-      // Chiudi connessione
-      await connection.end();
     });
 
     backupProcess.on('error', async (error) => {
+      clearInterval(keepAliveTimer);
       console.error(`Errore nell'esecuzione backup ${jobUuid}:`, error);
-      
-      await connection.execute(`
+
+      try {
+        const c = await mysql.createConnection(backupDbConfig);
+        await c.execute(
+          `
         UPDATE backup_jobs 
         SET status = 'failed', end_time = NOW(), error_message = ?
         WHERE id = ?
-      `, [error.message, jobId]);
-
-      await connection.end();
+      `,
+          [error.message, jobId]
+        );
+        await c.end();
+      } catch (e) {
+        console.error('backup spawn error DB update failed:', e);
+      }
+      try {
+        await connection.end();
+      } catch {
+        /* ignore */
+      }
     });
 
   } catch (error) {

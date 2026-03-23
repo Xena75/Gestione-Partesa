@@ -1,18 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
-import mysql from 'mysql2/promise';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
+import pool from '@/lib/db-gestione';
 import { verifyUserAccess } from '@/lib/auth';
-
-const dbConfig = {
-  host: process.env.DB_GESTIONE_HOST || '127.0.0.1',
-  port: parseInt(process.env.DB_GESTIONE_PORT || '3306'),
-  user: process.env.DB_GESTIONE_USER || 'root',
-  password: process.env.DB_GESTIONE_PASS || '',
-  database: process.env.DB_GESTIONE_NAME || 'gestionelogistica',
-  charset: 'utf8mb4'
-};
 
 // Funzione per convertire seriale Excel in data SQL
 function convertExcelDateToSQL(excelSerial: number): string | null {
@@ -35,8 +26,8 @@ function convertExcelDateToSQL(excelSerial: number): string | null {
 }
 
 export async function POST(request: NextRequest) {
-  let connection: mysql.Connection | null = null;
-  
+  let conn: Awaited<ReturnType<typeof pool.getConnection>> | null = null;
+
   try {
     // Verifica autenticazione
     const authResult = await verifyUserAccess(request);
@@ -91,9 +82,8 @@ export async function POST(request: NextRequest) {
     
     console.log(`📊 Righe da importare: ${rows.length}`);
 
-    // Connessione al database
-    connection = await mysql.createConnection(dbConfig);
-    await connection.beginTransaction();
+    conn = await pool.getConnection();
+    await conn.beginTransaction();
 
     let imported = 0;
     let errors: string[] = [];
@@ -134,7 +124,7 @@ export async function POST(request: NextRequest) {
 
           // Recupera dati da fatt_delivery per Cod_Cliente (DISTINCT)
           // Nota: div è una parola riservata, quindi va quotata con backtick
-          const [clienteRows] = await connection.execute(
+          const [clienteRows] = await conn.execute(
             `SELECT DISTINCT \`div\`, classe_tariffa, ragione_sociale 
              FROM fatt_delivery 
              WHERE cod_cliente = ? 
@@ -152,7 +142,7 @@ export async function POST(request: NextRequest) {
           const ragione_sociale = clienteRows[0].ragione_sociale || null;
 
           // Recupera dati da fatt_delivery per Cod_Prod - preferisce versione senza spazi quando ci sono duplicati
-          const [prodRows] = await connection.execute(
+          const [prodRows] = await conn.execute(
             `SELECT 
                MAX(classe_prod) as classe_prod,
                MAX(descr_articolo) as descr_articolo
@@ -177,7 +167,7 @@ export async function POST(request: NextRequest) {
 
           // Recupera Deposito da tab_deposito
           // Nota: DIV è una parola riservata, quindi va quotata con backtick
-          const [depositoRows] = await connection.execute(
+          const [depositoRows] = await conn.execute(
             `SELECT Deposito 
              FROM tab_deposito 
              WHERE \`DIV\` = ? 
@@ -188,7 +178,7 @@ export async function POST(request: NextRequest) {
           const deposito = depositoRows && depositoRows.length > 0 ? depositoRows[0].Deposito : null;
 
           // Recupera Tariffa da tab_tariffe
-          const [tariffaRows] = await connection.execute(
+          const [tariffaRows] = await conn.execute(
             `SELECT Tariffa 
              FROM tab_tariffe 
              WHERE ID_Fatt = ? 
@@ -230,7 +220,7 @@ export async function POST(request: NextRequest) {
 
       // Inserisci batch
       if (values.length > 0) {
-        await connection.query(
+        await conn.query(
           `INSERT INTO resi_vuoti_non_fatturati 
            (Riferimento, Data_rif_ddt, ddt, Cod_Cliente, ragione_sociale, VETTORE, Cod_Prod, descr_articolo, Deposito, Colli, Data_Ritiro, ID_TARIFFA, Tariffa, Totale_compenso)
            VALUES ?`,
@@ -241,7 +231,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    await connection.commit();
+    await conn.commit();
 
     return NextResponse.json({
       success: true,
@@ -251,8 +241,8 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-    if (connection) {
-      await connection.rollback();
+    if (conn) {
+      await conn.rollback();
     }
     console.error('Errore durante l\'import:', error);
     return NextResponse.json(
@@ -260,8 +250,8 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   } finally {
-    if (connection) {
-      await connection.end();
+    if (conn) {
+      conn.release();
     }
   }
 }

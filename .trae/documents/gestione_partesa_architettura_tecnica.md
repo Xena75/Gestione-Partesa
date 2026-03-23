@@ -30,7 +30,7 @@ graph TD
     end
     
     subgraph "External Services"
-        M[XAMPP MySQL Server]
+        M[MySQL Server / cloud]
     end
 ```
 
@@ -40,7 +40,7 @@ graph TD
 
 * **Backend**: Next.js API Routes + Node.js\@24.4.1
 
-* **Database**: MySQL\@8.0+ (via XAMPP) + Dual Database Architecture
+* **Database**: MySQL\@8.0+ (cloud / client) + Dual Database Architecture
 
 * **Database Tunneling**: ngrok TCP tunnel a pagamento (porta 3306) - sostituisce bore tunnel dismesso
 

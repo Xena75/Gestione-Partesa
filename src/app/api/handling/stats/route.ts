@@ -1,17 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
-
-const dbConfig = {
-  host: process.env.DB_GESTIONE_HOST || 'localhost',
-  port: parseInt(process.env.DB_GESTIONE_PORT || '3306'),
-  user: process.env.DB_GESTIONE_USER || 'root',
-  password: process.env.DB_GESTIONE_PASS || '',
-  database: process.env.DB_GESTIONE_NAME || 'gestionelogistica'
-};
+import pool from '@/lib/db-gestione';
 
 export async function GET(request: NextRequest) {
-  let connection;
-  
   try {
     const { searchParams } = new URL(request.url);
     
@@ -61,8 +51,6 @@ export async function GET(request: NextRequest) {
     
     const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
     
-    connection = await mysql.createConnection(dbConfig);
-    
     // Query per le statistiche
     const statsQuery = `
       SELECT 
@@ -77,7 +65,7 @@ export async function GET(request: NextRequest) {
       ${whereClause}
     `;
     
-    const [rows] = await connection.execute(statsQuery, queryParams);
+    const [rows] = await pool.execute(statsQuery, queryParams);
     const stats = Array.isArray(rows) ? rows[0] as any : rows as any;
 
     return NextResponse.json({
@@ -96,9 +84,5 @@ export async function GET(request: NextRequest) {
       { error: 'Errore interno del server' },
       { status: 500 }
     );
-  } finally {
-    if (connection) {
-      await connection.end();
-    }
   }
 }
