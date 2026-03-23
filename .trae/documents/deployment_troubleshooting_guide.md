@@ -255,8 +255,8 @@ ab -n 100 -c 10 http://localhost:3001/dashboard
 # Monitoraggio log applicazione
 tail -f .next/server.log
 
-# Monitoraggio log MySQL
-tail -f /xampp/mysql/data/mysql_error.log
+# Monitoraggio log MySQL (adatta al datadir del server, es. Linux o cloud managed)
+# tail -f /var/log/mysql/error.log
 
 # Monitoraggio log backup
 tail -f backup-system/logs/backup.log
