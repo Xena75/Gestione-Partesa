@@ -1,17 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
+import pool from '@/lib/db-viaggi';
 
-const pool = mysql.createPool({
-  host: process.env.DB_VIAGGI_HOST || 'localhost',
-  port: parseInt(process.env.DB_VIAGGI_PORT || '3306'),
-  user: process.env.DB_VIAGGI_USER || 'root',
-  password: process.env.DB_VIAGGI_PASS || '',
-  database: process.env.DB_VIAGGI_NAME || 'viaggi_db',
-  charset: 'utf8mb4',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-});
+/** mysql2 su alcuni server restituisce chiavi con casing diverso; normalizza per il client. */
+function normalizePartRow(row: Record<string, unknown>) {
+  const r = row as Record<string, string | number | null | undefined>;
+  const pick = (a: string, b: string) =>
+    (r[a] !== undefined && r[a] !== null ? r[a] : r[b]) as string | number | null | undefined;
+  return {
+    id: Number(pick('id', 'ID')),
+    codice: (pick('codice', 'CODICE') as string | null | undefined) ?? null,
+    descrizione: String(pick('descrizione', 'DESCRIZIONE') ?? ''),
+    categoria: (pick('categoria', 'CATEGORIA') as string | null | undefined) ?? null,
+    tipo: String(pick('tipo', 'TIPO') ?? 'Ricambio'),
+    um: String(pick('um', 'UM') ?? 'NR')
+  };
+}
 
 // GET - Ricerca/autocompletamento pezzi
 export async function GET(request: NextRequest) {
@@ -20,7 +23,8 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const q = searchParams.get('q') || ''; // Query di ricerca
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const rawLimit = parseInt(searchParams.get('limit') || '20', 10);
+    const limitSafe = Math.min(100, Math.max(1, Number.isNaN(rawLimit) ? 20 : rawLimit));
     const categoriesOnly = searchParams.get('categories_only') === 'true';
     
     connection = await pool.getConnection();
@@ -36,9 +40,9 @@ export async function GET(request: NextRequest) {
 
       connection.release();
 
-      const categories = (rows as any[])
-        .map(row => row.categoria)
-        .filter((cat, index, self) => self.indexOf(cat) === index); // Rimuovi duplicati
+      const categories = (rows as Record<string, unknown>[])
+        .map((row) => (row.categoria ?? row.CATEGORIA) as string)
+        .filter((cat, index, self) => cat && self.indexOf(cat) === index);
 
       return NextResponse.json({
         success: true,
@@ -59,21 +63,24 @@ export async function GET(request: NextRequest) {
     `;
     const params: any[] = [];
     
-    // Se c'è una query di ricerca, cerca nella descrizione
+    // Ricerca su descrizione e codice (stesso pattern usato in molti cataloghi cloud)
     if (q.trim()) {
-      query += ' AND descrizione LIKE ?';
-      params.push(`%${q.trim()}%`);
+      const like = `%${q.trim()}%`;
+      query += ' AND (descrizione LIKE ? OR codice LIKE ?)';
+      params.push(like, like);
     }
     
-    query += ' ORDER BY descrizione ASC LIMIT ?';
-    params.push(limit);
+    // LIMIT come letterale intero: su alcuni MySQL cloud LIMIT ? in prepared stmt dà ER_WRONG_ARGUMENTS
+    query += ` ORDER BY descrizione ASC LIMIT ${limitSafe}`;
     
     const [rows] = await connection.execute(query, params);
     connection.release();
-    
+
+    const data = (rows as Record<string, unknown>[]).map(normalizePartRow);
+
     return NextResponse.json({
       success: true,
-      data: rows
+      data
     });
     
   } catch (error) {
@@ -156,10 +163,12 @@ export async function POST(request: NextRequest) {
     );
     
     connection.release();
-    
+
+    const inserted = Array.isArray(newPart) ? newPart[0] : null;
+
     return NextResponse.json({
       success: true,
-      data: Array.isArray(newPart) ? newPart[0] : null,
+      data: inserted ? normalizePartRow(inserted as Record<string, unknown>) : null,
       message: 'Pezzo aggiunto con successo'
     });
     

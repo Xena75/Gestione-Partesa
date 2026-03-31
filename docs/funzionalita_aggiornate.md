@@ -1,7 +1,30 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-**Versione corrente**: v2.43.13  
+**Versione corrente**: v2.43.14  
 **Ultimo aggiornamento**: Marzo 2026
+
+---
+
+## v2.43.14 - MySQL cloud (TLS), catalogo pezzi e autocompletamento righe preventivo
+
+**Data implementazione**: Marzo 2026  
+**Stato**: ✅ Build `npm run build` verificata in sessione di release
+
+### 🗄️ Connessione `viaggi_db` / DigitalOcean
+- **`src/lib/db-viaggi.ts`**: TLS opzionale con `DB_VIAGGI_SSL=true`; in modalità TLS il default è **non** verificare la catena CA lato Node (`rejectUnauthorized: false`) per evitare `HANDSHAKE_SSL_ERROR` su provider come DigitalOcean; verifica stretta con `DB_VIAGGI_SSL_REJECT_UNAUTHORIZED=true` se si usa un trust store/CA adeguato; `charset utf8mb4` e fallback coerenti su host/porta/credenziali.
+
+### 📦 API catalogo ricambi (`parts_catalog`)
+- **`src/app/api/parts-catalog/route.ts`**: uso del **pool condiviso** `@/lib/db-viaggi` (stessa configurazione SSL delle altre API sul DB viaggi); normalizzazione campi in risposta (chiavi coerenti per il client); ricerca `LIKE` su **descrizione e codice**; **`LIMIT`** come intero validato nella stringa SQL (evita `ER_WRONG_ARGUMENTS` / `Incorrect arguments to mysqld_stmt_execute` su MySQL gestito con prepared statement).
+
+### 🖥️ UI inserimento manuale righe preventivo
+- **`src/components/ManualQuoteEntryModal.tsx`**: posizionamento dropdown autocompletamento con **retry** se il ref dell’input non è ancora pronto (righe nuove); **suggerimenti** anche dalle **altre righe** già compilate nel modal oltre all’anagrafica.
+
+### Documentazione / env
+- **`.env.example`**: nota su `DB_VIAGGI_SSL` e `DB_VIAGGI_SSL_REJECT_UNAUTHORIZED`.
+- **`docs/database-reference.md`**, **`README.md`**: allineati a questa versione.
+
+### File principali
+- `src/lib/db-viaggi.ts`, `src/app/api/parts-catalog/route.ts`, `src/components/ManualQuoteEntryModal.tsx`
 
 ---
 

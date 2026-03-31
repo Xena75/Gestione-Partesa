@@ -2159,6 +2159,10 @@ COMMENT='Anagrafica ricambi/servizi/manodopera per autocompletamento rapido';
 - **Funzionalità**: Autocompletamento rapido nell'inserimento righe preventivo
 - **Pre-compilazione**: Selezione pezzo precompila codice, categoria, tipo, UM
 
+**Connessione applicativa (runtime, non schema):**
+- Pool condiviso: `src/lib/db-viaggi` — variabili `DB_VIAGGI_HOST`, `DB_VIAGGI_PORT`, `DB_VIAGGI_USER`, `DB_VIAGGI_PASS`, `DB_VIAGGI_NAME`; per MySQL cloud con TLS obbligatorio: `DB_VIAGGI_SSL=true` (su provider tipo DigitalOcean la verifica CA lato Node è disattivata di default; opzionale `DB_VIAGGI_SSL_REJECT_UNAUTHORIZED=true` se si configura il trust delle CA).
+- GET ricerca: filtro `LIKE` su `descrizione` e `codice`; limite risultati validato (max 100); risposta con campi normalizzati per il client.
+
 **Migration:**
 - `migrations/create_parts_catalog_table.sql` - Creazione tabella con dati iniziali
 

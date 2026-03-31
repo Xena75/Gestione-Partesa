@@ -497,43 +497,96 @@ export default function ManualQuoteEntryModal({
     setDropdownPosition({ top, left, width });
   }, []);
 
-  // Cerca pezzi nell'anagrafica per autocompletamento
-  const searchParts = useCallback(async (query: string, itemIndex: number) => {
-    if (!query || query.trim().length < 2) {
-      setPartsSuggestions([]);
-      setActiveSearchIndex(null);
-      setDropdownPosition(null);
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/parts-catalog?q=${encodeURIComponent(query.trim())}&limit=10`);
-      const data = await response.json();
-      
-      // Mostra sempre il dropdown se c'è una query (anche senza risultati)
-      setActiveSearchIndex(itemIndex);
-      
-      // Calcola la posizione del dropdown dopo un breve delay per assicurarsi che il DOM sia aggiornato
-      setTimeout(() => {
-        calculateDropdownPosition(itemIndex);
-      }, 10);
-      
-      if (data.success && data.data && data.data.length > 0) {
-        setPartsSuggestions(data.data);
+  /** Se il ref dell'input non è ancora montato (es. riga appena aggiunta), riprova finché non è disponibile. */
+  const scheduleDropdownPosition = useCallback(
+    (itemIndex: number, attempt = 0) => {
+      const maxAttempts = 12;
+      const run = () => {
+        const input = inputRefs.current[itemIndex];
+        if (input) {
+          calculateDropdownPosition(itemIndex);
+          return;
+        }
+        if (attempt < maxAttempts) {
+          requestAnimationFrame(() => scheduleDropdownPosition(itemIndex, attempt + 1));
+        }
+      };
+      if (attempt === 0) {
+        requestAnimationFrame(run);
       } else {
-        // Nessun risultato trovato, ma mostra comunque il dropdown per permettere l'aggiunta
-        setPartsSuggestions([]);
+        run();
       }
-    } catch (err) {
-      console.error('Errore ricerca pezzi:', err);
-      // In caso di errore, mostra comunque il dropdown per permettere l'aggiunta manuale
-      setPartsSuggestions([]);
-      setActiveSearchIndex(itemIndex);
-      setTimeout(() => {
-        calculateDropdownPosition(itemIndex);
-      }, 10);
-    }
-  }, [calculateDropdownPosition]);
+    },
+    [calculateDropdownPosition]
+  );
+
+  // Cerca pezzi nell'anagrafica per autocompletamento (+ righe già compilate nel modal)
+  const searchParts = useCallback(
+    async (query: string, itemIndex: number) => {
+      if (!query || query.trim().length < 2) {
+        setPartsSuggestions([]);
+        setActiveSearchIndex(null);
+        setDropdownPosition(null);
+        return;
+      }
+
+      const qNorm = query.trim().toLowerCase();
+
+      const mergeLocalRowMatches = (apiRows: typeof partsSuggestions) => {
+        const tipoRev: { [key: string]: string } = {
+          ricambio: 'Ricambio',
+          servizio: 'Servizio',
+          manodopera: 'Manodopera'
+        };
+        const seen = new Set(
+          apiRows.map((p) => (p.descrizione || '').trim().toLowerCase())
+        );
+        const local: typeof partsSuggestions = [];
+        items.forEach((it, idx) => {
+          if (idx === itemIndex) return;
+          const desc = (it.description || '').trim();
+          if (desc.length < 2 || !desc.toLowerCase().includes(qNorm)) return;
+          const key = desc.toLowerCase();
+          if (seen.has(key)) return;
+          seen.add(key);
+          local.push({
+            id: -(100000 + idx),
+            codice: it.code,
+            descrizione: desc,
+            categoria: it.part_category,
+            tipo: tipoRev[it.category || 'ricambio'] || 'Ricambio',
+            um: it.unit || 'NR'
+          });
+        });
+        return [...local, ...apiRows];
+      };
+
+      try {
+        const response = await fetch(
+          `/api/parts-catalog?q=${encodeURIComponent(query.trim())}&limit=10`
+        );
+        const data = await response.json();
+
+        setActiveSearchIndex(itemIndex);
+
+        let rows: typeof partsSuggestions = [];
+        if (data.success && data.data && data.data.length > 0) {
+          rows = mergeLocalRowMatches(data.data);
+        } else {
+          rows = mergeLocalRowMatches([]);
+        }
+        setPartsSuggestions(rows);
+
+        scheduleDropdownPosition(itemIndex);
+      } catch (err) {
+        console.error('Errore ricerca pezzi:', err);
+        setPartsSuggestions(mergeLocalRowMatches([]));
+        setActiveSearchIndex(itemIndex);
+        scheduleDropdownPosition(itemIndex);
+      }
+    },
+    [calculateDropdownPosition, items, scheduleDropdownPosition]
+  );
 
   // Seleziona un pezzo dall'autocompletamento e precompila i campi
   const selectPart = (part: { codice?: string; descrizione: string; categoria?: string; tipo: string; um: string }, itemIndex: number) => {
