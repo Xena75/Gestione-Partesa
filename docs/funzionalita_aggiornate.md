@@ -5,7 +5,7 @@
 
 ---
 
-## v2.43.15 - Viaggi (performance, export), anagrafica tab_vettori
+## v2.43.15 - Viaggi, Handling, Monitoraggio export, Terzisti, anagrafica vettori, config upload
 
 **Data implementazione**: Aprile 2026  
 **Stato**: Build e deploy verificati in sessione di release
@@ -16,18 +16,39 @@
 - **Caricamento dati**: `useEffect` con dipendenza `searchParams.toString()`; **AbortController** sulle fetch parallele per evitare race (tabella vs card statistiche).
 - **Export Excel**: `GET /api/viaggi/export` (stessi criteri della lista; max 100k righe); componente `ExportViaggiTabButton`; uso di `getTabViaggiRowsForExport` e helper condivisi (`buildTabViaggiWhereFromFilters`, normalizzazione ordinamento) in `src/lib/data-viaggi-tab.ts`.
 
+### 📦 Handling (`fatt_handling`)
+- **Modulo condiviso** `src/lib/handling-filters-where.ts`: costruzione WHERE allineata tra **`/api/handling/data`**, **`/api/handling/export`**, **`/api/handling/filter-options`**, **`/api/handling/stats`**.
+- **Senza filtri** che restringono l’insieme: vincolo **`data_mov_m >= ultimi 3 mesi`** (stessa logica “performance” della Gestione Delivery).
+- **UI**: banner informativo in `HandlingTable` quando vale la finestra predefinita.
+
+### 📊 Monitoraggio (`travels` in `viaggi_db`)
+- **Export Excel**: `GET /api/monitoraggio/export` — stessi filtri/ordinamento della pagina; usa `getViaggiRowsForExport` in `src/lib/data-viaggi.ts` (fino a 100k righe di default, parametro `maxRows` plafonato); `maxDuration` 300s.
+- **Pagina** `/monitoraggio`: pulsante **Export Excel** che chiama l’API con la query string corrente.
+
+### 💶 Fatturazione terzisti (`fatt_delivery` / vista terzisti)
+- **Export API** (`/api/terzisti/export`): export fino a **250.000** righe per query (`getTerzistiData` con `maxRowsPerQuery`), in linea con dataset grandi.
+- **`src/lib/data-terzisti.ts`**: paginazione **sicura per MySQL 8** (`LIMIT`/`OFFSET` come interi validati in query, evita `ER_WRONG_ARGUMENTS` su prepared statement).
+- **Import** (`/api/terzisti/import`): l’`INSERT` **non** popola più `compenso` e `tot_compenso` (colonne **STORED GENERATED** in `tab_delivery_terzisti` — calcolate da MySQL).
+- **Pagina** `/fatturazione-terzisti`: allineamenti su azioni toolbar (export, viste raggruppata/dettaglio).
+
+### ⚙️ Next.js / upload
+- **`next.config.ts`**: `experimental.middlewareClientMaxBodySize: '50mb'` per evitare troncamento upload verso Route Handler in dev/proxy; coerente con `serverActions.bodySizeLimit` e `MAX_FILE_SIZE` per import grandi.
+
 ### 👷 Anagrafica vettori (`gestionelogistica.tab_vettori`)
 - **Pagina** `/gestione/tab-vettori`: elenco con ricerca e paginazione, creazione e modifica (incluso aggiornamento **Cod_Vettore** con controllo unicità).
 - **API**: `GET`/`POST` `/api/gestione/tab-vettori`, `GET`/`PUT` `/api/gestione/tab-vettori/[codVettore]`; logica in `src/lib/data-tab-vettori.ts` (pool `db-gestione`).
 - **Dashboard**: link nella card Viaggi verso l’anagrafica vettori.
 
 ### Documentazione
-- Aggiornati **`docs/database-reference.md`** (sezioni `tab_vettori`, `tab_viaggi`), **`README.md`**, questo file.
+- Aggiornati **`docs/database-reference.md`** (`tab_vettori`, `tab_viaggi`, `fatt_handling`, `travels`, `tab_delivery_terzisti` dove applicabile), **`README.md`**, questo file.
 
-### File principali
-- `src/lib/data-viaggi-tab.ts`, `src/app/api/viaggi/route.ts`, `stats/route.ts`, `filters/route.ts`, `export/route.ts`
-- `src/app/viaggi/page.tsx`, `src/components/ExportViaggiTabButton.tsx`
-- `src/lib/data-tab-vettori.ts`, `src/app/api/gestione/tab-vettori/route.ts`, `[codVettore]/route.ts`, `src/app/gestione/tab-vettori/page.tsx`, `src/app/dashboard/page.tsx`
+### File principali (sintesi)
+- Viaggi: `src/lib/data-viaggi-tab.ts`, `src/app/api/viaggi/*`, `src/app/viaggi/page.tsx`, `ExportViaggiTabButton.tsx`
+- Handling: `src/lib/handling-filters-where.ts`, `src/app/api/handling/data|export|filter-options|stats/route.ts`, `HandlingTable.tsx`, `HandlingFilters.tsx`
+- Monitoraggio: `src/app/api/monitoraggio/export/route.ts`, `src/lib/data-viaggi.ts`, `src/app/monitoraggio/page.tsx`
+- Terzisti: `src/lib/data-terzisti.ts`, `src/app/api/terzisti/export/route.ts`, `import/route.ts`, `src/app/fatturazione-terzisti/page.tsx`
+- Vettori: `src/lib/data-tab-vettori.ts`, `src/app/api/gestione/tab-vettori/*`, `src/app/gestione/tab-vettori/page.tsx`, `src/app/dashboard/page.tsx`
+- Config: `next.config.ts`
 
 ---
 

@@ -8,6 +8,10 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Performance lista `/viaggi`**: senza filtri nell’URL, elenco, statistiche e opzioni filtro usano gli **ultimi 3 mesi** sulla colonna `Data` (allineato a Delivery/Handling); con filtri attivi si usa l’intero criterio selezionato; banner informativo in pagina ⭐ **v2.43.15**
 - **Export Excel viaggi (`tab_viaggi`)**: pulsante **Export Excel** su `/viaggi`; `GET /api/viaggi/export` con gli stessi parametri query della vista (max 100k righe) ⭐ **v2.43.15**
 - **Anagrafica vettori**: pagina **`/gestione/tab-vettori`** per CRUD su **`gestionelogistica.tab_vettori`** (codici vettore e nominativi); API `/api/gestione/tab-vettori`; link dalla dashboard sezione Viaggi ⭐ **v2.43.15**
+- **Handling — finestra default 3 mesi**: senza filtri restrittivi, liste/export/stat/opzioni filtro su **`data_mov_m`** limitate agli ultimi 3 mesi (`handling-filters-where.ts`); banner in tabella ⭐ **v2.43.15**
+- **Monitoraggio — export Excel**: `GET /api/monitoraggio/export` su tabella **`travels`** con filtri della pagina; pulsante in `/monitoraggio` ⭐ **v2.43.15**
+- **Terzisti**: export fino a 250k righe; paginazione compatibile MySQL 8; import senza inserimento in colonne GENERATED `compenso` / `tot_compenso` ⭐ **v2.43.15**
+- **Upload grandi file**: `next.config` — `middlewareClientMaxBodySize` 50MB (dev/proxy verso API) ⭐ **v2.43.15**
 - **Viaggi POD**: Sistema completo per gestione viaggi con Proof of Delivery
 - **Filtro anno Viaggi POD**: Filtro anno con colonna STORED GENERATED e layout ottimizzato su 2 righe ⭐ **NUOVO v2.43.10**
 - **Filtri data funzionanti**: Risolti problemi filtri data con formato italiano gg/mm/aaaa ⭐ **v2.31.1**

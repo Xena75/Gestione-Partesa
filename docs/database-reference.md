@@ -587,9 +587,9 @@ anno_fatturazione       smallint(6)    YES        NULL
 
 **Utilizzo nel progetto:**
 - **Pagine**: `/handling` - Visualizzazione e gestione dati handling
-- **API**: `/api/handling/import` - Endpoint per importazione dati da Excel
+- **API**: `/api/handling/import` (import Excel); `/api/handling/data`, `/api/handling/export`, `/api/handling/filter-options`, `/api/handling/stats` — WHERE costruita in modo condiviso (`src/lib/handling-filters-where.ts`); **senza filtri** che restringono l’insieme si applica **`data_mov_m` ≥ ultimi 3 mesi** (performance, allineato alla Gestione Delivery)
 - **Funzionalità**: Importazione Excel, esportazione Excel, filtri avanzati
-- **Componenti**: `HandlingFilters.tsx`, `ExportHandlingButton.tsx`
+- **Componenti**: `HandlingFilters.tsx`, `ExportHandlingButton.tsx`, `HandlingTable.tsx` (banner finestra default)
 
 #### import_mappings
 ```sql
@@ -753,6 +753,7 @@ anno                 smallint(6)    YES   MUL  NULL                 STORED GENER
   - `compenso` = `colli × tariffa_terzista`
   - `tot_compenso` = `compenso + extra_cons`
 - **Indici**: `idx_anno` per migliorare le performance delle query di filtro per anno ⭐ **NUOVO v2.43.7**
+- **Import**: l’endpoint `/api/terzisti/import` **non** inserisce valori nelle colonne GENERATED `compenso` e `tot_compenso` (MySQL le calcola da `colli`, `tariffa_terzista`, `extra_cons`) ⭐ **v2.43.15**
 
 #### tab_deposito
 ```sql
@@ -1478,11 +1479,11 @@ mese                     tinyint(4)   YES       NULL                 STORED GENE
 - **Migration**: `migrations/add_exclude_from_pending_to_travels.sql`
 
 **Utilizzo nel progetto:**
-- **Pagine**: Sistema di monitoraggio viaggi
-- **API**: `/api/viaggi/sync-tab-viaggi` per sincronizzazione con tab_viaggi
-- **Componenti**: `data-viaggi.ts` per gestione dati
+- **Pagine**: `/monitoraggio` — lista viaggi da `travels`; export Excel tramite `GET /api/monitoraggio/export` (stessi filtri della pagina; dati da `getViaggiRowsForExport` in `src/lib/data-viaggi.ts`)
+- **API**: `/api/viaggi/sync-tab-viaggi` per sincronizzazione con `gestionelogistica.tab_viaggi`
+- **Componenti**: `data-viaggi.ts` per gestione dati ed export monitoraggio
 - **Dashboard**: Statistiche viaggi escludono automaticamente i viaggi con `exclude_from_pending = 1`
-- **Funzionalità**: Monitoraggio viaggi in tempo reale, sincronizzazione dati
+- **Funzionalità**: Monitoraggio viaggi in tempo reale, sincronizzazione dati, export `.xlsx`
 - **Dashboard**: Statistiche viaggi, calcolo KPI performance
 
 #### vehicle_documents
