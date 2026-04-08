@@ -2,65 +2,24 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db-gestione';
 import * as XLSX from 'xlsx';
 import { convertItalianToISO } from '@/lib/date-utils';
+import { buildHandlingWhereParts } from '@/lib/handling-filters-where';
 
 export async function GET(request: NextRequest) {
   let connection;
   
   try {
-    const { searchParams } = new URL(request.url);
-    const filters: any = {};
-    for (const [key, value] of searchParams.entries()) {
-      filters[key] = value;
+    const { searchParams: rawParams } = new URL(request.url);
+    const searchParams = new URLSearchParams(rawParams);
+    const dataMov = searchParams.get('data_mov_m');
+    if (dataMov && dataMov.includes('/')) {
+      searchParams.set('data_mov_m', convertItalianToISO(dataMov));
     }
+
+    const { conditions, params: queryParams } = buildHandlingWhereParts(searchParams);
 
     connection = await pool.getConnection();
 
-    let query = 'SELECT * FROM `fatt_handling` WHERE 1=1';
-    const queryParams: (string | number)[] = [];
-
-    if (filters.bu && filters.bu !== 'Tutti') {
-      query += ' AND `bu` = ?';
-      queryParams.push(filters.bu);
-    }
-    if (filters.div && filters.div !== 'Tutte') {
-      query += ' AND `div` = ?';
-      queryParams.push(filters.div);
-    }
-    if (filters.dep && filters.dep !== 'Tutti') {
-      query += ' AND `dep` = ?';
-      queryParams.push(filters.dep);
-    }
-    if (filters.tipo_movimento && filters.tipo_movimento !== 'Tutti') {
-      query += ' AND `tipo_movimento` = ?';
-      queryParams.push(filters.tipo_movimento);
-    }
-    if (filters.doc_acq) {
-      query += ' AND `doc_acq` LIKE ?';
-      queryParams.push(`%${filters.doc_acq}%`);
-    }
-    if (filters.data_mov_m) {
-      // Converti la data da formato italiano (gg/mm/aaaa) a formato ISO (yyyy-mm-dd) se necessario
-      let dateValue = filters.data_mov_m;
-      if (dateValue.includes('/')) {
-        dateValue = convertItalianToISO(dateValue);
-      }
-      query += ' AND DATE(`data_mov_m`) = ?';
-      queryParams.push(dateValue);
-    }
-    if (filters.tipo_imb && filters.tipo_imb !== 'Tutti') {
-      query += ' AND `tipo_imb` = ?';
-      queryParams.push(filters.tipo_imb);
-    }
-    if (filters.mese && filters.mese !== 'Tutti') {
-      // Usa mese_fatturazione se disponibile, altrimenti mese (basato su data_mov_m)
-      query += ' AND (mese_fatturazione = ? OR (mese_fatturazione IS NULL AND mese = ?))';
-      queryParams.push(parseInt(filters.mese), parseInt(filters.mese));
-    }
-    if (filters.anno && filters.anno !== 'Tutti') {
-      // Usa anno_fatturazione se disponibile, altrimenti YEAR(data_mov_m)
-      query += ' AND (anno_fatturazione = ? OR (anno_fatturazione IS NULL AND YEAR(data_mov_m) = ?))';
-      queryParams.push(parseInt(filters.anno), parseInt(filters.anno));
-    }
+    const query = `SELECT * FROM \`fatt_handling\` WHERE ${conditions.join(' AND ')}`;
 
     const [rows] = await connection.execute(query, queryParams);
     

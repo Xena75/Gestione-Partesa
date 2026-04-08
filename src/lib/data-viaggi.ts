@@ -200,70 +200,129 @@ export async function getFilterOptions() {
   }
 }
 
+export type ViaggiListFilters = {
+  dataDa?: string;
+  dataA?: string;
+  deposito?: string;
+  nominativoId?: string;
+  numeroViaggio?: string;
+  targaMezzoId?: string;
+  mese?: string;
+};
+
+function buildViaggiWhereClause(filters: ViaggiListFilters): {
+  whereClause: string;
+  queryParams: (string | number)[];
+} {
+  const whereConditions: string[] = [];
+  const queryParams: (string | number)[] = [];
+
+  if (filters.dataDa) {
+    whereConditions.push('data_viaggio >= ?');
+    queryParams.push(filters.dataDa);
+  }
+
+  if (filters.dataA) {
+    whereConditions.push('data_viaggio <= ?');
+    queryParams.push(filters.dataA);
+  }
+
+  if (filters.deposito) {
+    whereConditions.push('deposito = ?');
+    queryParams.push(filters.deposito);
+  }
+
+  if (filters.nominativoId) {
+    whereConditions.push('nominativoId = ?');
+    queryParams.push(filters.nominativoId);
+  }
+
+  if (filters.numeroViaggio) {
+    whereConditions.push('numeroViaggio LIKE ?');
+    queryParams.push(`%${filters.numeroViaggio}%`);
+  }
+
+  if (filters.targaMezzoId) {
+    whereConditions.push('targaMezzoId = ?');
+    queryParams.push(filters.targaMezzoId);
+  }
+
+  if (filters.mese) {
+    whereConditions.push('mese = ?');
+    queryParams.push(filters.mese);
+  }
+
+  const whereClause =
+    whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+  return { whereClause, queryParams };
+}
+
+const VIAGGI_ALLOWED_SORT = [
+  'numeroViaggio',
+  'deposito',
+  'nominativoId',
+  'dataOraInizioViaggio',
+  'dataOraFineViaggio',
+  'targaMezzoId',
+  'haiEffettuatoRitiri',
+  'mese',
+] as const;
+
+function normalizeViaggiSort(
+  sortBy: string,
+  sortOrder: 'ASC' | 'DESC'
+): { field: string; order: 'ASC' | 'DESC' } {
+  const allowed = VIAGGI_ALLOWED_SORT as readonly string[];
+  const validSortBy = allowed.includes(sortBy) ? sortBy : 'dataOraInizioViaggio';
+  const validSortOrder = sortOrder === 'ASC' || sortOrder === 'DESC' ? sortOrder : 'DESC';
+  return { field: validSortBy, order: validSortOrder };
+}
+
+/** Export Excel: stessi filtri della lista, fino a maxRows righe (default 100k). */
+export async function getViaggiRowsForExport(
+  sortBy: string,
+  sortOrder: 'ASC' | 'DESC',
+  filters: ViaggiListFilters,
+  maxRows: number = 100_000
+): Promise<Viaggio[]> {
+  try {
+    const { whereClause, queryParams } = buildViaggiWhereClause(filters);
+    const { field, order } = normalizeViaggiSort(sortBy, sortOrder);
+    const cap = Math.max(1, Math.min(250_000, Math.trunc(maxRows) || 100_000));
+
+    const dataSql = `
+      SELECT 
+        id, deposito, numeroViaggio, nominativoId, affiancatoDaId, totaleColli,
+        dataOraInizioViaggio, dataOraFineViaggio, targaMezzoId, kmIniziali, kmFinali,
+        kmAlRifornimento, litriRiforniti, euroLitro, haiEffettuatoRitiri, exclude_from_pending,
+        updatedAt, createdAt, kmEffettivi, oreEffettive, mese
+      FROM travels 
+      ${whereClause}
+      ORDER BY ${field} ${order}
+      LIMIT ?
+    `;
+
+    const [rows] = await pool.query(dataSql, [...queryParams, cap]);
+    return rows as Viaggio[];
+  } catch (error) {
+    console.error('Errore export viaggi:', error);
+    return [];
+  }
+}
+
 // --- FUNZIONE PER FILTRARE I VIAGGI CON ORDINAMENTO ---
 export async function getViaggiFiltrati(
   currentPage: number = 1, 
   recordsPerPage: number = 20,
   sortBy: string = 'dataOraInizioViaggio',
   sortOrder: 'ASC' | 'DESC' = 'DESC',
-  filters: {
-    dataDa?: string;
-    dataA?: string;
-    deposito?: string;
-    nominativoId?: string;
-    numeroViaggio?: string;
-    targaMezzoId?: string;
-    mese?: string;
-  }
+  filters: ViaggiListFilters
 ): Promise<{ viaggi: Viaggio[], totalPages: number, totalRecords: number }> {
   try {
     const offset = (currentPage - 1) * recordsPerPage;
     
-    // Validiamo i campi di ordinamento permessi
-    const allowedSortFields = ['numeroViaggio', 'deposito', 'nominativoId', 'dataOraInizioViaggio', 'dataOraFineViaggio', 'targaMezzoId', 'haiEffettuatoRitiri', 'mese'];
-    const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'dataOraInizioViaggio';
-    const validSortOrder = sortOrder === 'ASC' || sortOrder === 'DESC' ? sortOrder : 'DESC';
-    
-    // Costruiamo la query WHERE dinamicamente
-    const whereConditions: string[] = [];
-    const queryParams: (string | number)[] = [];
-    
-    if (filters.dataDa) {
-      whereConditions.push('data_viaggio >= ?');
-      queryParams.push(filters.dataDa);
-    }
-    
-    if (filters.dataA) {
-      whereConditions.push('data_viaggio <= ?');
-      queryParams.push(filters.dataA);
-    }
-    
-    if (filters.deposito) {
-      whereConditions.push('deposito = ?');
-      queryParams.push(filters.deposito);
-    }
-    
-    if (filters.nominativoId) {
-      whereConditions.push('nominativoId = ?');
-      queryParams.push(filters.nominativoId);
-    }
-    
-    if (filters.numeroViaggio) {
-      whereConditions.push('numeroViaggio LIKE ?');
-      queryParams.push(`%${filters.numeroViaggio}%`);
-    }
-    
-    if (filters.targaMezzoId) {
-      whereConditions.push('targaMezzoId = ?');
-      queryParams.push(filters.targaMezzoId);
-    }
-    
-    if (filters.mese) {
-      whereConditions.push('mese = ?');
-      queryParams.push(filters.mese);
-    }
-    
-    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+    const { field: validSortBy, order: validSortOrder } = normalizeViaggiSort(sortBy, sortOrder);
+    const { whereClause, queryParams } = buildViaggiWhereClause(filters);
     
     // Query per ottenere i dati filtrati
     const dataSql = `

@@ -815,11 +815,12 @@ Id_Tariffa        varchar(10)  YES        2
 ```
 
 **Utilizzo nel progetto:**
-- **Pagine**: Sistema gestione vettori/trasportatori
-- **API**: `/api/terzisti/import` per gestione fatturazione terzisti
+- **Pagine**: `/gestione/tab-vettori` — gestione amministrativa record (ricerca, creazione, modifica codice e anagrafica); sincronizzazioni viaggi leggono da questa tabella (`/api/viaggi/sync-tab-viaggi`, `/api/viaggi/sync-tab-terzisti`)
+- **API**: `GET`/`POST` `/api/gestione/tab-vettori`, `GET`/`PUT` `/api/gestione/tab-vettori/[codVettore]`; libreria `src/lib/data-tab-vettori.ts` (pool `db-gestione`)
+- **API**: `/api/terzisti/import` per gestione fatturazione terzisti (JOIN su `Descr_Vettore`)
 - **Componenti**: Gestione anagrafica vettori
-- **Funzionalità**: Gestione trasportatori, fatturazione terzisti
-- **Dashboard**: Statistiche per vettore, performance trasportatori
+- **Funzionalità**: Gestione trasportatori, fatturazione terzisti, assegnazione **Cod_Vettore** a descrizioni/nominativi
+- **Dashboard**: Link rapido “Anagrafica vettori (tab_vettori)” nella sezione Viaggi
 
 #### tab_viaggi
 ```sql
@@ -862,12 +863,12 @@ Giorno                   varchar(255) YES        NULL
 ```
 
 **Utilizzo nel progetto:**
-- **Pagine**: `/viaggi` - Gestione e visualizzazione viaggi
-- **API**: `/api/viaggi/data`, `/api/viaggi/sync-tab-viaggi` per sincronizzazione
-- **Componenti**: `ViaggioTab` interface, pagine di modifica viaggi
-- **Funzionalità**: Gestione viaggi, sincronizzazione con travels e viaggi_pod
+- **Pagine**: `/viaggi` — lista e statistiche; **senza filtri in URL** le query su `tab_viaggi` si limitano agli **ultimi 3 mesi** sulla colonna `Data` (vedi `getDefaultTabViaggiMinData` in `src/lib/data-viaggi-tab.ts`); con filtri attivi si applica solo il criterio scelto; export Excel `GET /api/viaggi/export` con gli stessi criteri della vista (limite righe lato server)
+- **API**: `/api/viaggi`, `/api/viaggi/stats`, `/api/viaggi/filters`, `/api/viaggi/export`, `/api/viaggi/sync-tab-viaggi`
+- **Componenti**: `ViaggioTab` interface, `ExportViaggiTabButton`, pagine di modifica viaggi
+- **Funzionalità**: Gestione viaggi, sincronizzazione con `travels` e `viaggi_pod` (DB `viaggi_db`), JOIN anagrafica vettori da `gestionelogistica.tab_vettori`
 - **Dashboard**: Statistiche viaggi, monitoraggio performance
-- **Sync**: Sincronizzazione automatica da database viaggi_db
+- **Sync**: Sincronizzazione automatica da database `viaggi_db` verso `tab_viaggi` in `gestionelogistica`
 
 #### user_sessions
 ```sql

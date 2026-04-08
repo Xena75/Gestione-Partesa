@@ -1,6 +1,10 @@
 // src/app/api/viaggi/stats/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { getViaggiStats, getTotalsByFilters } from '@/lib/data-viaggi-tab';
+import {
+  getViaggiStats,
+  getTotalsByFilters,
+  getDefaultTabViaggiMinData,
+} from '@/lib/data-viaggi-tab';
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,11 +34,9 @@ export async function GET(request: NextRequest) {
     
     let stats;
     if (hasActiveFilters) {
-      // Statistiche con filtri applicati
       stats = await getTotalsByFilters(filters);
     } else {
-      // Statistiche generali
-      stats = await getViaggiStats(recordsPerPage);
+      stats = await getViaggiStats(recordsPerPage, getDefaultTabViaggiMinData(3));
     }
     return NextResponse.json(stats);
     

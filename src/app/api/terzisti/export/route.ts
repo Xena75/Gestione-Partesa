@@ -27,7 +27,13 @@ export async function POST(request: NextRequest) {
 
     // Recupera i dati filtrati
     const [dataResult, statsResult] = await Promise.all([
-      getTerzistiData(validFilters, { field: 'data_viaggio', order: 'DESC' }, 1, 20000), // Limite alto per export completo (20k record)
+      getTerzistiData(
+        validFilters,
+        { field: 'data_mov_merce', order: 'ASC' },
+        1,
+        250_000,
+        { maxRowsPerQuery: 250_000 }
+      ),
       includeStats ? getTerzistiStats(validFilters) : null
     ]);
 

@@ -37,6 +37,9 @@ function FatturazioneTerzistiContent() {
   const [loading, setLoading] = useState(true);
   const [loadingStats, setLoadingStats] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importMese, setImportMese] = useState('1');
+  const [importAnno, setImportAnno] = useState(String(new Date().getFullYear()));
   const [error, setError] = useState<string | null>(null);
   
   // State per paginazione
@@ -197,43 +200,31 @@ function FatturazioneTerzistiContent() {
     return [];
   };
 
-  // Gestione import dati
-  const handleImportData = async () => {
+  const openImportModal = () => {
+    const now = new Date();
+    setImportMese(String(now.getMonth() + 1));
+    setImportAnno(String(now.getFullYear()));
+    setError(null);
+    setShowImportModal(true);
+  };
+
+  const executeImportFromModal = async () => {
+    const meseNum = parseInt(importMese, 10);
+    const annoNum = parseInt(importAnno, 10);
+
+    if (isNaN(meseNum) || meseNum < 1 || meseNum > 12) {
+      alert('Il mese deve essere tra 1 e 12');
+      return;
+    }
+
+    if (isNaN(annoNum) || annoNum < 2020 || annoNum > 2030) {
+      alert('L\'anno deve essere tra 2020 e 2030');
+      return;
+    }
+
     try {
       setImporting(true);
       setError(null);
-
-      // Chiedi mese e anno all'utente
-      const mese = prompt('Inserisci il mese (1-12):');
-      const anno = prompt('Inserisci l\'anno (es. 2025):');
-
-      if (!mese || !anno) {
-        alert('❌ Mese e anno sono obbligatori');
-        setImporting(false);
-        return;
-      }
-
-      const meseNum = parseInt(mese);
-      const annoNum = parseInt(anno);
-
-      if (isNaN(meseNum) || meseNum < 1 || meseNum > 12) {
-        alert('❌ Mese deve essere un numero tra 1 e 12');
-        setImporting(false);
-        return;
-      }
-
-      if (isNaN(annoNum) || annoNum < 2020 || annoNum > 2030) {
-        alert('❌ Anno deve essere un numero tra 2020 e 2030');
-        setImporting(false);
-        return;
-      }
-
-      // Conferma
-      const conferma = confirm(`Vuoi importare i dati per ${meseNum}/${annoNum}?`);
-      if (!conferma) {
-        setImporting(false);
-        return;
-      }
 
       const response = await fetch('/api/terzisti/import', {
         method: 'POST',
@@ -254,10 +245,10 @@ function FatturazioneTerzistiContent() {
       const result = await response.json();
       console.log('Import completato:', result);
 
-      // Ricarica i dati dopo l'import
       await loadData();
       await loadStats();
 
+      setShowImportModal(false);
       alert(`✅ Import dati completato con successo per ${meseNum}/${annoNum}!\n\nRecord importati: ${result.insertedCount}\nRecord totali: ${result.totalRecords}`);
 
     } catch (err) {
@@ -414,7 +405,7 @@ function FatturazioneTerzistiContent() {
               <button
                 type="button"
                 className="btn btn-success"
-                onClick={handleImportData}
+                onClick={openImportModal}
                 disabled={importing}
               >
                 {importing ? (
@@ -1161,6 +1152,94 @@ function FatturazioneTerzistiContent() {
           )}
         </div>
       </div>
+
+      {showImportModal && (
+        <div
+          className="modal show d-block"
+          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+          tabIndex={-1}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="terzistiImportModalTitle"
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title" id="terzistiImportModalTitle">
+                  Importa dati per mese/anno
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  aria-label="Chiudi"
+                  onClick={() => !importing && setShowImportModal(false)}
+                  disabled={importing}
+                />
+              </div>
+              <div className="modal-body">
+                <p className="text-muted small mb-3">Seleziona mese e anno del periodo da importare.</p>
+                <div className="row g-3">
+                  <div className="col-md-6">
+                    <label htmlFor="terzisti-import-mese" className="form-label">Mese</label>
+                    <select
+                      id="terzisti-import-mese"
+                      className="form-select"
+                      value={importMese}
+                      onChange={(e) => setImportMese(e.target.value)}
+                      disabled={importing}
+                    >
+                      {[
+                        'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
+                        'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'
+                      ].map((nome, i) => (
+                        <option key={nome} value={String(i + 1)}>{nome}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="col-md-6">
+                    <label htmlFor="terzisti-import-anno" className="form-label">Anno</label>
+                    <input
+                      id="terzisti-import-anno"
+                      type="number"
+                      className="form-control"
+                      min={2020}
+                      max={2030}
+                      value={importAnno}
+                      onChange={(e) => setImportAnno(e.target.value)}
+                      disabled={importing}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowImportModal(false)}
+                  disabled={importing}
+                >
+                  Annulla
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-success"
+                  onClick={() => void executeImportFromModal()}
+                  disabled={importing}
+                >
+                  {importing ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                      Import in corso…
+                    </>
+                  ) : (
+                    'Importa'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

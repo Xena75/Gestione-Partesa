@@ -6,6 +6,7 @@ import Link from 'next/link';
 import FiltriViaggi, { FiltriViaggiRef } from '@/components/FiltriViaggi';
 import SortableHeader from '@/components/SortableHeader';
 import ImageButton from '@/components/ImageButton';
+import ExportViaggiTabButton from '@/components/ExportViaggiTabButton';
 
 // Tipo per i dati della tabella tab_viaggi
 interface ViaggioTab {
@@ -82,6 +83,19 @@ function ViaggiPageContent() {
   const trimestre = searchParams?.get('trimestre');
   const dataDa = searchParams?.get('dataDa');
   const dataA = searchParams?.get('dataA');
+
+  const hasAnyViaggiFilter =
+    !!aziendaVettore ||
+    !!nominativo ||
+    !!trasportatore ||
+    !!numeroViaggio ||
+    !!targa ||
+    !!magazzino ||
+    !!haiEffettuatoRitiri ||
+    !!mese ||
+    !!trimestre ||
+    !!dataDa ||
+    !!dataA;
   
   const [data, setData] = useState<{ viaggi: ViaggioTab[], totalPages: number, totalRecords: number } | null>(null);
   const [stats, setStats] = useState<Statistiche | null>(null);
@@ -106,56 +120,76 @@ function ViaggiPageContent() {
     }
   }, []); // Solo al primo caricamento
 
+  const searchQueryKey = searchParams?.toString() ?? '';
+
   useEffect(() => {
-    
-    setIsLoading(true);
-    
-    // Costruisci l'URL con i parametri dei filtri e ordinamento
+    const sp = new URLSearchParams(searchQueryKey);
+
+    const page = Number(sp.get('page')) || 1;
+    const sortByParam = sp.get('sortBy') || 'Data';
+    const sortOrderParam = (sp.get('sortOrder') as 'ASC' | 'DESC') || 'DESC';
+
     const params = new URLSearchParams();
-    params.set('page', currentPage.toString());
-    params.set('sortBy', sortBy);
-    params.set('sortOrder', sortOrder);
-    
-    if (aziendaVettore) params.set('aziendaVettore', aziendaVettore);
-    if (nominativo) params.set('nominativo', nominativo);
-    if (trasportatore) params.set('trasportatore', trasportatore);
-    if (numeroViaggio) params.set('numeroViaggio', numeroViaggio);
-    if (targa) params.set('targa', targa);
-    if (magazzino) params.set('magazzino', magazzino);
-    if (haiEffettuatoRitiri) params.set('haiEffettuatoRitiri', haiEffettuatoRitiri);
-    if (mese) params.set('mese', mese);
-    if (trimestre) params.set('trimestre', trimestre);
-    if (dataDa) params.set('dataDa', dataDa);
-    if (dataA) params.set('dataA', dataA);
-    
-    
-    // Carica i dati della pagina corrente
-    fetch(`/api/viaggi?${params.toString()}`)
+    params.set('page', String(page));
+    params.set('sortBy', sortByParam);
+    params.set('sortOrder', sortOrderParam);
+
+    const av = sp.get('aziendaVettore');
+    const nom = sp.get('nominativo');
+    const trs = sp.get('trasportatore');
+    const nv = sp.get('numeroViaggio');
+    const tg = sp.get('targa');
+    const mz = sp.get('magazzino');
+    const her = sp.get('haiEffettuatoRitiri');
+    const ms = sp.get('mese');
+    const trq = sp.get('trimestre');
+    const dd = sp.get('dataDa');
+    const da = sp.get('dataA');
+
+    if (av) params.set('aziendaVettore', av);
+    if (nom) params.set('nominativo', nom);
+    if (trs) params.set('trasportatore', trs);
+    if (nv) params.set('numeroViaggio', nv);
+    if (tg) params.set('targa', tg);
+    if (mz) params.set('magazzino', mz);
+    if (her) params.set('haiEffettuatoRitiri', her);
+    if (ms) params.set('mese', ms);
+    if (trq) params.set('trimestre', trq);
+    if (dd) params.set('dataDa', dd);
+    if (da) params.set('dataA', da);
+
+    const qs = params.toString();
+    const ac = new AbortController();
+
+    setIsLoading(true);
+    setIsLoadingStats(true);
+
+    fetch(`/api/viaggi?${qs}`, { signal: ac.signal })
       .then(res => res.json())
       .then(fetchedData => {
         setData(fetchedData);
         setIsLoading(false);
-
       })
       .catch(error => {
+        if ((error as Error).name === 'AbortError') return;
         console.error('Errore nel caricamento viaggi:', error);
         setIsLoading(false);
       });
-    
-    // Carica le statistiche
-    setIsLoadingStats(true);
-    fetch(`/api/viaggi/stats?${params.toString()}`)
+
+    fetch(`/api/viaggi/stats?${qs}`, { signal: ac.signal })
       .then(res => res.json())
       .then(fetchedStats => {
         setStats(fetchedStats);
         setIsLoadingStats(false);
       })
       .catch(error => {
+        if ((error as Error).name === 'AbortError') return;
         console.error('Errore nel caricamento delle statistiche:', error);
         setIsLoadingStats(false);
       });
 
-  }, [currentPage, sortBy, sortOrder, aziendaVettore, nominativo, trasportatore, numeroViaggio, targa, magazzino, haiEffettuatoRitiri, mese, trimestre, dataDa, dataA]);
+    return () => ac.abort();
+  }, [searchQueryKey]);
 
 
 
@@ -304,11 +338,26 @@ function ViaggiPageContent() {
                >
                  {isSyncing ? '⏳ Sincronizzando...' : '🔄 Sincronizza Dati Dipendente'}
                </button>
+
+               <ExportViaggiTabButton
+                 searchQueryKey={searchQueryKey}
+                 disabled={isSyncing || isSyncingTerzisti}
+               />
+
           <Link href="/" className="btn btn-outline-secondary">
             ← Torna alla Dashboard
           </Link>
         </div>
       </div>
+
+      {!hasAnyViaggiFilter && (
+        <div className="alert alert-info mb-4" role="status">
+          <i className="bi bi-info-circle me-2" aria-hidden="true"></i>
+          <strong>Performance:</strong> senza filtri, elenco e statistiche si limitano agli{' '}
+          <strong>ultimi 3 mesi</strong> (campo Data). Per l&apos;intero storico imposta{' '}
+          <strong>Data da</strong> / <strong>Data a</strong> o altri filtri.
+        </div>
+      )}
       
       {/* Dashboard Statistiche */}
       <div className="row mb-4">

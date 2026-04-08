@@ -1,7 +1,33 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-**Versione corrente**: v2.43.14  
-**Ultimo aggiornamento**: Marzo 2026
+**Versione corrente**: v2.43.15  
+**Ultimo aggiornamento**: Aprile 2026
+
+---
+
+## v2.43.15 - Viaggi (performance, export), anagrafica tab_vettori
+
+**Data implementazione**: Aprile 2026  
+**Stato**: Build e deploy verificati in sessione di release
+
+### 🚚 Pagina `/viaggi` (`tab_viaggi` in `gestionelogistica`)
+- **Filtro predefinito ultimi 3 mesi** sulla colonna `Data` quando non ci sono parametri di filtro nell’URL: riduce lo scan su liste, statistiche e `SELECT DISTINCT` per i dropdown (`getDefaultTabViaggiMinData`, `minData` in `getViaggiData`, `getViaggiStats`, `getDistinctValues`).
+- **Banner** informativo se la vista è senza filtri (spiegazione + uso di Data da / Data a per lo storico completo).
+- **Caricamento dati**: `useEffect` con dipendenza `searchParams.toString()`; **AbortController** sulle fetch parallele per evitare race (tabella vs card statistiche).
+- **Export Excel**: `GET /api/viaggi/export` (stessi criteri della lista; max 100k righe); componente `ExportViaggiTabButton`; uso di `getTabViaggiRowsForExport` e helper condivisi (`buildTabViaggiWhereFromFilters`, normalizzazione ordinamento) in `src/lib/data-viaggi-tab.ts`.
+
+### 👷 Anagrafica vettori (`gestionelogistica.tab_vettori`)
+- **Pagina** `/gestione/tab-vettori`: elenco con ricerca e paginazione, creazione e modifica (incluso aggiornamento **Cod_Vettore** con controllo unicità).
+- **API**: `GET`/`POST` `/api/gestione/tab-vettori`, `GET`/`PUT` `/api/gestione/tab-vettori/[codVettore]`; logica in `src/lib/data-tab-vettori.ts` (pool `db-gestione`).
+- **Dashboard**: link nella card Viaggi verso l’anagrafica vettori.
+
+### Documentazione
+- Aggiornati **`docs/database-reference.md`** (sezioni `tab_vettori`, `tab_viaggi`), **`README.md`**, questo file.
+
+### File principali
+- `src/lib/data-viaggi-tab.ts`, `src/app/api/viaggi/route.ts`, `stats/route.ts`, `filters/route.ts`, `export/route.ts`
+- `src/app/viaggi/page.tsx`, `src/components/ExportViaggiTabButton.tsx`
+- `src/lib/data-tab-vettori.ts`, `src/app/api/gestione/tab-vettori/route.ts`, `[codVettore]/route.ts`, `src/app/gestione/tab-vettori/page.tsx`, `src/app/dashboard/page.tsx`
 
 ---
 

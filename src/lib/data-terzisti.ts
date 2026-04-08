@@ -19,9 +19,11 @@ const pool = createPool({
 /** MySQL 8 + mysql2: LIMIT ? / OFFSET ? in prepared statement → spesso ER_WRONG_ARGUMENTS (1210) */
 function safePaginationLimitOffset(
   page: number,
-  limit: number
+  limit: number,
+  maxRowsPerQuery: number = 500
 ): { safeLimit: number; safeOffset: number; safePage: number } {
-  const safeLimit = Math.max(1, Math.min(500, Math.trunc(Number(limit)) || 50));
+  const cap = Math.max(1, Math.min(250_000, Math.trunc(Number(maxRowsPerQuery)) || 500));
+  const safeLimit = Math.max(1, Math.min(cap, Math.trunc(Number(limit)) || 50));
   const safePage = Math.max(1, Math.trunc(Number(page)) || 1);
   const safeOffset = Math.min(50_000_000, Math.max(0, (safePage - 1) * safeLimit));
   return { safeLimit, safeOffset, safePage };
@@ -136,6 +138,11 @@ export interface TerzistiResponse {
   stats: TerzistiStats;
 }
 
+export type GetTerzistiDataOptions = {
+  /** Default API 500; export usa un tetto più alto per non troncare il mese */
+  maxRowsPerQuery?: number;
+};
+
 /**
  * Ottiene i dati terzisti con filtri, ordinamento e paginazione
  */
@@ -143,10 +150,14 @@ export async function getTerzistiData(
   filters: TerzistiFilters = {},
   sort: TerzistiSort = { field: 'data_mov_merce', order: 'DESC' },
   page: number = 1,
-  limit: number = 50
+  limit: number = 50,
+  options?: GetTerzistiDataOptions
 ): Promise<TerzistiResponse> {
-  return withCache(`terzisti:${page}:${JSON.stringify(filters)}:${JSON.stringify(sort)}`, async () => {
-    const { safeLimit, safeOffset, safePage } = safePaginationLimitOffset(page, limit);
+  const maxRows = options?.maxRowsPerQuery ?? 500;
+  return withCache(
+    `terzisti:${page}:${JSON.stringify(filters)}:${JSON.stringify(sort)}:${limit}:cap${maxRows}`,
+    async () => {
+    const { safeLimit, safeOffset, safePage } = safePaginationLimitOffset(page, limit, maxRows);
 
     // Costruisci la query WHERE
     const whereConditions: string[] = [];

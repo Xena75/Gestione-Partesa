@@ -24,6 +24,8 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: '50mb',
     },
+    // Dev/proxy: evita troncamento upload verso Route Handlers (default ~10MB) → FormData corrotto
+    middlewareClientMaxBodySize: '50mb',
   },
 
   // 🔧 CONFIGURAZIONE PRELOAD per eliminare warning CSS

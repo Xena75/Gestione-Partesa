@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db-gestione';
+import { buildHandlingWhereParts } from '@/lib/handling-filters-where';
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,48 +30,9 @@ export async function GET(request: NextRequest) {
     const validSortField = allowedSortFields.includes(sortField) ? sortField : 'id';
     const validSortDirection = ['asc', 'desc'].includes(sortDirection.toLowerCase()) ? sortDirection.toLowerCase() : 'asc';
     
-    // Costruisci la query WHERE basata sui filtri
-    const whereConditions: string[] = [];
-    const queryParams: any[] = [];
-    
-    // Filtri disponibili
-    const filters = {
-      bu: searchParams.get('bu'),
-      div: searchParams.get('div'),
-      dep: searchParams.get('dep'),
-      tipo_movimento: searchParams.get('tipo_movimento'),
-      doc_acq: searchParams.get('doc_acq'),
-      data_mov_m: searchParams.get('data_mov_m'),
-      tipo_imb: searchParams.get('tipo_imb'),
-      mese: searchParams.get('mese'),
-      anno: searchParams.get('anno')
-    };
-    
-    // Aggiungi condizioni WHERE per ogni filtro
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value && value !== 'Tutti' && value !== 'Tutte' && value !== '') {
-        if (key === 'doc_acq') {
-          whereConditions.push(`\`${key}\` LIKE ?`);
-          queryParams.push(`%${value}%`);
-        } else if (key === 'data_mov_m') {
-          whereConditions.push(`DATE(\`${key}\`) = ?`);
-          queryParams.push(value);
-        } else if (key === 'mese') {
-          // Usa mese_fatturazione se disponibile, altrimenti mese (basato su data_mov_m)
-          whereConditions.push('(mese_fatturazione = ? OR (mese_fatturazione IS NULL AND mese = ?))');
-          queryParams.push(parseInt(value), parseInt(value));
-        } else if (key === 'anno') {
-          // Usa anno_fatturazione se disponibile, altrimenti YEAR(data_mov_m)
-          whereConditions.push('(anno_fatturazione = ? OR (anno_fatturazione IS NULL AND YEAR(data_mov_m) = ?))');
-          queryParams.push(parseInt(value), parseInt(value));
-        } else {
-          whereConditions.push(`\`${key}\` = ?`);
-          queryParams.push(value);
-        }
-      }
-    });
-    
-    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+    const { conditions: whereConditions, params: queryParams } =
+      buildHandlingWhereParts(searchParams);
+    const whereClause = `WHERE ${whereConditions.join(' AND ')}`;
     
     // Query per il conteggio totale in base al tipo di vista
     const countQuery = viewType === 'grouped' 

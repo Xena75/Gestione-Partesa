@@ -51,6 +51,38 @@ function MonitoraggioPageContent() {
   
   const [data, setData] = useState<{ viaggi: Viaggio[], totalPages: number, totalRecords: number } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportExcel = async () => {
+    const params = new URLSearchParams(searchParams?.toString() || '');
+    params.delete('page');
+    setExporting(true);
+    try {
+      const res = await fetch(`/api/monitoraggio/export?${params.toString()}`, {
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as { error?: string }).error || 'Export non riuscito');
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const cd = res.headers.get('Content-Disposition');
+      const m = cd?.match(/filename="?([^";]+)"?/i);
+      a.download = m?.[1] || `Monitoraggio_viaggi_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+      alert(e instanceof Error ? e.message : 'Errore durante l\'export Excel');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   useEffect(() => {
     setIsLoading(true);
@@ -97,7 +129,23 @@ function MonitoraggioPageContent() {
     <div className="vh-100 d-flex flex-column p-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1>📊 Monitoraggio Viaggi</h1>
-        <div className="d-flex gap-2">
+        <div className="d-flex gap-2 flex-wrap">
+          <button
+            type="button"
+            className="btn btn-info text-dark"
+            onClick={() => void handleExportExcel()}
+            disabled={exporting || isLoading}
+            title="Esporta tutti i viaggi coerenti con i filtri attuali (max 100.000 righe)"
+          >
+            {exporting ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                Export…
+              </>
+            ) : (
+              <>📊 Export Excel</>
+            )}
+          </button>
           <a 
             href="https://gestione-viaggi.vercel.app/" 
             target="_blank" 

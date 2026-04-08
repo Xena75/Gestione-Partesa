@@ -2579,6 +2579,12 @@ export default function ModernDashboard() {
                       Viaggi POD
                     </Link>
                   </div>
+                  <div className="col-12">
+                    <Link href="/gestione/tab-vettori" className="btn btn-outline-secondary btn-action btn-sm w-100">
+                      <Truck size={16} className="me-1" />
+                      Anagrafica vettori (tab_vettori)
+                    </Link>
+                  </div>
                   <div className="col-6">
                     <button 
                       onClick={handleSyncTerzisti}

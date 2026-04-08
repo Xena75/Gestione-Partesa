@@ -158,6 +158,7 @@ export async function POST(request: NextRequest) {
       
       try {
         // Prepara i valori per l'inserimento batch (AGGIORNATI con tariffa dinamica)
+        // compenso e tot_compenso sono colonne GENERATED (STORED): calcolate da MySQL da colli/tariffa/extra_cons — non inseribili
         const values = batch.map(record => [
           record.id, // ID da fatt_delivery per controllo duplicati
           record.div,
@@ -175,9 +176,7 @@ export async function POST(request: NextRequest) {
           record.colli,
           record.peso,
           record.volume,
-          record.compenso,
           record.extra_cons,
-          record.tot_compenso,
           record.cod_cliente,
           record.ragione_sociale,
           record.classe_prod,
@@ -195,7 +194,7 @@ export async function POST(request: NextRequest) {
           INSERT IGNORE INTO tab_delivery_terzisti (
             id, \`div\`, bu, dep, data_mov_merce, viaggio, ordine, consegna_num,
             Cod_Vettore, descr_vettore, tipologia, cod_articolo, descr_articolo,
-            colli, peso, volume, compenso, extra_cons, tot_compenso,
+            colli, peso, volume, extra_cons,
             cod_cliente, ragione_sociale, classe_prod, classe_tariffa,
             Descr_Vettore_Join, Tipo_Vettore, Azienda_Vettore, data_viaggio,
             Id_Tariffa, tariffa_terzista, ID_fatt

@@ -1,6 +1,10 @@
 // src/app/api/viaggi/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { getViaggiData, getViaggiFiltrati } from '@/lib/data-viaggi-tab';
+import {
+  getViaggiData,
+  getViaggiFiltrati,
+  getDefaultTabViaggiMinData,
+} from '@/lib/data-viaggi-tab';
 
 export async function GET(request: NextRequest) {
   try {
@@ -42,11 +46,12 @@ export async function GET(request: NextRequest) {
     
     let result;
     if (hasActiveFilters) {
-      // Usa la funzione con filtri
       result = await getViaggiFiltrati(page, recordsPerPage, sortBy, sortOrder, filters);
     } else {
-      // Usa la funzione senza filtri
-      result = await getViaggiData(page, recordsPerPage, sortBy, sortOrder);
+      const minData = getDefaultTabViaggiMinData(3);
+      result = await getViaggiData(page, recordsPerPage, sortBy, sortOrder, {
+        minData,
+      });
     }
     
     return NextResponse.json(result);

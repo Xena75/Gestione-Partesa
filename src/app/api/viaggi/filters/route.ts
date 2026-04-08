@@ -1,10 +1,10 @@
 // src/app/api/viaggi/filters/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { getDistinctValues } from '@/lib/data-viaggi-tab';
+import { getDistinctValues, getDefaultTabViaggiMinData } from '@/lib/data-viaggi-tab';
 
 export async function GET(_request: NextRequest) {
   try {
-    // Recupera tutti i valori distinti per i filtri
+    const minData = getDefaultTabViaggiMinData(3);
     const [
       aziendeVettore,
       trasportatori,
@@ -13,12 +13,12 @@ export async function GET(_request: NextRequest) {
       mesi,
       trimestri
     ] = await Promise.all([
-      getDistinctValues('Azienda_Vettore'),
-      getDistinctValues('Nome Trasportatore'),
-      getDistinctValues('Targa'),
-      getDistinctValues('Magazzino di partenza'),
-      getDistinctValues('Mese'),
-      getDistinctValues('Trimestre')
+      getDistinctValues('Azienda_Vettore', minData),
+      getDistinctValues('Nome Trasportatore', minData),
+      getDistinctValues('Targa', minData),
+      getDistinctValues('Magazzino di partenza', minData),
+      getDistinctValues('Mese', minData),
+      getDistinctValues('Trimestre', minData)
     ]);
     
     const filterOptions = {

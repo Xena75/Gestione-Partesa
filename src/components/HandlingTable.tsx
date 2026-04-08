@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import React from 'react';
+import { handlingFiltersShowDefaultWindowBanner } from '@/lib/handling-filters-where';
 
 interface HandlingTableProps {
   filters: Record<string, any>;
@@ -244,6 +245,13 @@ export default function HandlingTable({ filters, viewType }: HandlingTableProps)
   
   return (
     <div className="card">
+      {handlingFiltersShowDefaultWindowBanner(filters) && (
+        <div className="alert alert-info mb-0 rounded-0 border-0 border-bottom">
+          <i className="bi bi-info-circle me-2"></i>
+          <strong>Performance:</strong> senza filtri su periodo o anagrafica vengono caricati solo i movimenti degli{' '}
+          <strong>ultimi 3 mesi</strong> (data movimento). Usa i filtri per altri periodi.
+        </div>
+      )}
       <div className="card-header d-flex justify-content-between align-items-center">
         <h6 className="mb-0">Dati Handling ({formatNumber(totalRecords)} record)</h6>
         <div className="d-flex align-items-center gap-2">

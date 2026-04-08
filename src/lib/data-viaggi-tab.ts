@@ -49,6 +49,13 @@ export interface Statistiche {
   trasportiMese: number;
 }
 
+/** Ultimi N mesi sulla colonna `Data` (stesso criterio della Gestione Delivery) — riduce scan su tab_viaggi. */
+export function getDefaultTabViaggiMinData(monthsBack: number = 3): string {
+  const d = new Date();
+  d.setMonth(d.getMonth() - monthsBack);
+  return d.toISOString().split('T')[0];
+}
+
 // Tipo per i filtri
 export interface FiltriViaggi {
   aziendaVettore?: string | null;
@@ -64,32 +71,125 @@ export interface FiltriViaggi {
   dataA?: string | null;
 }
 
+export type GetViaggiDataOptions = {
+  /** Se valorizzato (es. ultimi 3 mesi), restringe con `WHERE Data >= ?` */
+  minData?: string | null;
+};
+
+export const TAB_VIAGGI_ALLOWED_SORT_FIELDS = [
+  'Data', 'Viaggio', 'Nome Trasportatore', 'Nominativo', 'Tipo Patente',
+  'Ore', 'Colli', 'Peso (Kg)', 'Ordini', 'Toccate',
+  'Targa', 'Magazzino di partenza', 'Km Iniziali Viaggio', 'Km Finali Viaggio', 'Km Viaggio',
+] as const;
+
+export function normalizeTabViaggiSortField(sortBy: string): string {
+  return (TAB_VIAGGI_ALLOWED_SORT_FIELDS as readonly string[]).includes(sortBy)
+    ? sortBy
+    : 'Data';
+}
+
+export function normalizeTabViaggiSortOrder(sortOrder: string | null | undefined): 'ASC' | 'DESC' {
+  const o = (sortOrder ?? 'DESC').toString().toUpperCase();
+  return o === 'ASC' ? 'ASC' : 'DESC';
+}
+
+export function hasActiveTabViaggiFilters(filters: FiltriViaggi): boolean {
+  return Object.values(filters).some((v) => v !== null && v !== '');
+}
+
+/** Stessa logica WHERE di `getViaggiFiltrati` (filtri da query string). */
+export function buildTabViaggiWhereFromFilters(filters: FiltriViaggi): {
+  whereClause: string;
+  queryParams: (string | number)[];
+} {
+  const whereConditions: string[] = [];
+  const queryParams: (string | number)[] = [];
+
+  if (filters.aziendaVettore) {
+    whereConditions.push('`Azienda_Vettore` = ?');
+    queryParams.push(filters.aziendaVettore);
+  }
+
+  if (filters.nominativo) {
+    whereConditions.push('`Nominativo` LIKE ?');
+    queryParams.push(`%${filters.nominativo}%`);
+  }
+
+  if (filters.trasportatore) {
+    whereConditions.push('`Nome Trasportatore` = ?');
+    queryParams.push(filters.trasportatore);
+  }
+
+  if (filters.numeroViaggio) {
+    whereConditions.push('`Viaggio` LIKE ?');
+    queryParams.push(`%${filters.numeroViaggio}%`);
+  }
+
+  if (filters.targa) {
+    whereConditions.push('`Targa` = ?');
+    queryParams.push(filters.targa);
+  }
+
+  if (filters.magazzino) {
+    whereConditions.push('`Magazzino di partenza` = ?');
+    queryParams.push(filters.magazzino);
+  }
+
+  if (filters.haiEffettuatoRitiri !== null && filters.haiEffettuatoRitiri !== '') {
+    const ritiriValue = filters.haiEffettuatoRitiri === 'true' ? 1 : 0;
+    whereConditions.push('haiEffettuatoRitiri = ?');
+    queryParams.push(ritiriValue);
+  }
+
+  if (filters.mese) {
+    whereConditions.push('`Mese` = ?');
+    queryParams.push(Number(filters.mese));
+  }
+
+  if (filters.trimestre) {
+    whereConditions.push('`Trimestre` = ?');
+    queryParams.push(Number(filters.trimestre));
+  }
+
+  if (filters.dataDa) {
+    whereConditions.push('`Data` >= ?');
+    queryParams.push(filters.dataDa);
+  }
+
+  if (filters.dataA) {
+    whereConditions.push('`Data` <= ?');
+    queryParams.push(filters.dataA);
+  }
+
+  const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+  return { whereClause, queryParams };
+}
+
 // --- FUNZIONE PER LEGGERE I VIAGGI CON PAGINAZIONE E ORDINAMENTO ---
 export async function getViaggiData(
   currentPage: number = 1, 
   recordsPerPage: number = 20,
   sortBy: string = 'Data',
-  sortOrder: 'ASC' | 'DESC' = 'DESC'
+  sortOrder: 'ASC' | 'DESC' = 'DESC',
+  options?: GetViaggiDataOptions
 ): Promise<{ viaggi: ViaggioTab[], totalPages: number, totalRecords: number }> {
   try {
     const offset = (currentPage - 1) * recordsPerPage;
+    const minData = options?.minData;
+    const dateWhere = minData ? 'WHERE `Data` >= ?' : '';
+    const dateParams: (string | number)[] = minData ? [minData] : [];
     
-    // Validiamo i campi di ordinamento permessi (tutte le 15 colonne principali)
-    const allowedSortFields = [
-      'Data', 'Viaggio', 'Nome Trasportatore', 'Nominativo', 'Tipo Patente',
-      'Ore', 'Colli', 'Peso (Kg)', 'Ordini', 'Toccate',
-      'Targa', 'Magazzino di partenza', 'Km Iniziali Viaggio', 'Km Finali Viaggio', 'Km Viaggio'
-    ];
-    const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'Data';
-    const validSortOrder = sortOrder === 'ASC' || sortOrder === 'DESC' ? sortOrder : 'DESC';
+    const validSortBy = normalizeTabViaggiSortField(sortBy);
+    const validSortOrder = normalizeTabViaggiSortOrder(sortOrder);
     
     // Query per ottenere i dati della pagina corrente
     const dataSql = `
       SELECT * FROM tab_viaggi 
+      ${dateWhere}
       ORDER BY \`${validSortBy}\` ${validSortOrder}
       LIMIT ? OFFSET ?
     `;
-    const [rows] = await pool.query(dataSql, [recordsPerPage, offset]);
+    const [rows] = await pool.query(dataSql, [...dateParams, recordsPerPage, offset]);
     
     // Converti i valori numerici di haiEffettuatoRitiri in boolean
     const viaggiConvertiti = (rows as any[]).map(viaggio => ({
@@ -98,8 +198,8 @@ export async function getViaggiData(
     }));
     
     // Query per contare il numero totale di record
-    const countSql = 'SELECT COUNT(*) as total FROM tab_viaggi';
-    const [countResult] = await pool.query(countSql);
+    const countSql = `SELECT COUNT(*) as total FROM tab_viaggi ${dateWhere}`;
+    const [countResult] = await pool.query(countSql, dateParams);
     const totalRecords = (countResult as { total: number }[])[0].total;
     const totalPages = Math.ceil(totalRecords / recordsPerPage);
     
@@ -128,79 +228,11 @@ export async function getViaggiFiltrati(
 ): Promise<{ viaggi: ViaggioTab[], totalPages: number, totalRecords: number }> {
   try {
     const offset = (currentPage - 1) * recordsPerPage;
-    
-    // Validiamo i campi di ordinamento permessi
-    const allowedSortFields = [
-      'Data', 'Viaggio', 'Nome Trasportatore', 'Nominativo', 'Tipo Patente',
-      'Ore', 'Colli', 'Peso (Kg)', 'Ordini', 'Toccate',
-      'Targa', 'Magazzino di partenza', 'Km Iniziali Viaggio', 'Km Finali Viaggio', 'Km Viaggio'
-    ];
-    const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'Data';
-    const validSortOrder = sortOrder === 'ASC' || sortOrder === 'DESC' ? sortOrder : 'DESC';
-    
-    // Costruiamo la query WHERE dinamicamente
-    const whereConditions: string[] = [];
-    const queryParams: (string | number)[] = [];
-    
-    if (filters.aziendaVettore) {
-      whereConditions.push('`Azienda_Vettore` = ?');
-      queryParams.push(filters.aziendaVettore);
-    }
-    
-    if (filters.nominativo) {
-      whereConditions.push('`Nominativo` LIKE ?');
-      queryParams.push(`%${filters.nominativo}%`);
-    }
-    
-    if (filters.trasportatore) {
-      whereConditions.push('`Nome Trasportatore` = ?');
-      queryParams.push(filters.trasportatore);
-    }
-    
-    if (filters.numeroViaggio) {
-      whereConditions.push('`Viaggio` LIKE ?');
-      queryParams.push(`%${filters.numeroViaggio}%`);
-    }
-    
-    if (filters.targa) {
-      whereConditions.push('`Targa` = ?');
-      queryParams.push(filters.targa);
-    }
-    
-    if (filters.magazzino) {
-      whereConditions.push('`Magazzino di partenza` = ?');
-      queryParams.push(filters.magazzino);
-    }
-    
-    if (filters.haiEffettuatoRitiri !== null && filters.haiEffettuatoRitiri !== '') {
-      console.log('📊 DB - Filtro haiEffettuatoRitiri ricevuto:', filters.haiEffettuatoRitiri, typeof filters.haiEffettuatoRitiri);
-      const ritiriValue = filters.haiEffettuatoRitiri === 'true' ? 1 : 0;
-      console.log('📊 DB - Valore convertito per query:', ritiriValue);
-      whereConditions.push('haiEffettuatoRitiri = ?');
-      queryParams.push(ritiriValue);
-    }
-    
-    if (filters.mese) {
-      whereConditions.push('`Mese` = ?');
-      queryParams.push(Number(filters.mese));
-    }
-    
-    if (filters.trimestre) {
-      whereConditions.push('`Trimestre` = ?');
-      queryParams.push(Number(filters.trimestre));
-    }
-    
-    if (filters.dataDa) {
-      whereConditions.push('`Data` >= ?');
-      queryParams.push(filters.dataDa);
-    }
-    
-    if (filters.dataA) {
-      whereConditions.push('`Data` <= ?');
-      queryParams.push(filters.dataA);
-    }
-    
-    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+    const validSortBy = normalizeTabViaggiSortField(sortBy);
+    const validSortOrder = normalizeTabViaggiSortOrder(sortOrder);
+
+    const { whereClause, queryParams } = buildTabViaggiWhereFromFilters(filters);
     
     // Query per ottenere i dati filtrati
     const dataSql = `
@@ -245,28 +277,45 @@ export async function getViaggiFiltrati(
 }
 
 // --- FUNZIONE PER OTTENERE LE STATISTICHE DEI VIAGGI ---
-export async function getViaggiStats(recordsPerPage: number = 20): Promise<Statistiche> {
+export async function getViaggiStats(
+  recordsPerPage: number = 20,
+  minData?: string | null
+): Promise<Statistiche> {
   try {
+    const dateWhere = minData ? 'WHERE `Data` >= ?' : '';
+    const dateParams: (string | number)[] = minData ? [minData] : [];
+
     // Statistiche generali
-    const [totalResult] = await pool.query('SELECT COUNT(*) as total FROM tab_viaggi');
+    const [totalResult] = await pool.query(
+      `SELECT COUNT(*) as total FROM tab_viaggi ${dateWhere}`,
+      dateParams
+    );
     const totalRecords = (totalResult as { total: number }[])[0].total;
     const totalPages = Math.ceil(totalRecords / recordsPerPage);
     
     // Calcola totali aggregati
-    const [totalsResult] = await pool.query(`
+    const [totalsResult] = await pool.query(
+      `
       SELECT 
         SUM(COALESCE(\`Km Viaggio\`, 0)) as totalKm,
         SUM(COALESCE(\`Colli\`, 0)) as totalColli,
         COUNT(*) as totalTrasporti
       FROM tab_viaggi
-    `);
+      ${dateWhere}
+    `,
+      dateParams
+    );
     const totals = (totalsResult as any[])[0];
     
     // Calcola viaggi del mese corrente
     const currentMonth = new Date().getMonth() + 1;
+    const monthWhere = minData
+      ? 'WHERE `Mese` = ? AND `Data` >= ?'
+      : 'WHERE `Mese` = ?';
+    const monthParams = minData ? [currentMonth, minData] : [currentMonth];
     const [monthResult] = await pool.query(
-      'SELECT COUNT(*) as count FROM tab_viaggi WHERE `Mese` = ?',
-      [currentMonth]
+      `SELECT COUNT(*) as count FROM tab_viaggi ${monthWhere}`,
+      monthParams
     );
     const trasportiMese = (monthResult as { count: number }[])[0].count;
     
@@ -421,8 +470,53 @@ export async function getTotalsByFilters(filters: FiltriViaggi): Promise<Statist
   }
 }
 
+/** Export Excel: stessi criteri della lista (filtri o ultimi 3 mesi), max `cap` righe. */
+export async function getTabViaggiRowsForExport(
+  sortBy: string,
+  sortOrderRaw: string | null | undefined,
+  filters: FiltriViaggi,
+  maxRows: number = 100_000
+): Promise<Record<string, unknown>[]> {
+  try {
+    const validSortBy = normalizeTabViaggiSortField(sortBy);
+    const validSortOrder = normalizeTabViaggiSortOrder(sortOrderRaw);
+    const cap = Math.max(1, Math.min(250_000, Math.trunc(maxRows) || 100_000));
+
+    const hasFilters = hasActiveTabViaggiFilters(filters);
+
+    let dataSql: string;
+    let execParams: (string | number)[];
+
+    if (hasFilters) {
+      const { whereClause, queryParams } = buildTabViaggiWhereFromFilters(filters);
+      dataSql = `
+      SELECT * FROM tab_viaggi
+      ${whereClause}
+      ORDER BY \`${validSortBy}\` ${validSortOrder}
+      LIMIT ?
+    `;
+      execParams = [...queryParams, cap];
+    } else {
+      const minData = getDefaultTabViaggiMinData(3);
+      dataSql = `
+      SELECT * FROM tab_viaggi
+      WHERE \`Data\` >= ?
+      ORDER BY \`${validSortBy}\` ${validSortOrder}
+      LIMIT ?
+    `;
+      execParams = [minData, cap];
+    }
+
+    const [rows] = await pool.query(dataSql, execParams);
+    return rows as Record<string, unknown>[];
+  } catch (error) {
+    console.error('Errore export tab_viaggi:', error);
+    return [];
+  }
+}
+
 // --- FUNZIONE PER OTTENERE VALORI DISTINTI PER I FILTRI ---
-export async function getDistinctValues(column: string): Promise<any[]> {
+export async function getDistinctValues(column: string, minData?: string | null): Promise<any[]> {
   try {
     // Whitelist di colonne consentite per sicurezza
     const allowedColumns = [
@@ -433,8 +527,10 @@ export async function getDistinctValues(column: string): Promise<any[]> {
       throw new Error('Colonna non consentita per i filtri');
     }
     
-    const sql = `SELECT DISTINCT \`${column}\` FROM tab_viaggi WHERE \`${column}\` IS NOT NULL ORDER BY \`${column}\``;
-    const [rows] = await pool.query(sql);
+    const dateClause = minData ? ' AND `Data` >= ?' : '';
+    const params: (string | number)[] = minData ? [minData] : [];
+    const sql = `SELECT DISTINCT \`${column}\` FROM tab_viaggi WHERE \`${column}\` IS NOT NULL${dateClause} ORDER BY \`${column}\``;
+    const [rows] = await pool.query(sql, params);
     
     return (rows as any[]).map(row => row[column]);
   } catch (error) {

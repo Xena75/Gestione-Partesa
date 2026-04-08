@@ -79,7 +79,7 @@ export default function HandlingFilters({ onFiltersChange, initialFilters, viewT
     const fetchFilterOptions = async () => {
       try {
         setIsLoadingOptions(true);
-        const params = new URLSearchParams();
+        const params = new URLSearchParams(searchParams?.toString() ?? '');
         params.set('viewType', viewType);
 
         const response = await fetch(`/api/handling/filter-options?${params}`);
@@ -114,7 +114,7 @@ export default function HandlingFilters({ onFiltersChange, initialFilters, viewT
       }
       if (timeoutId !== undefined) clearTimeout(timeoutId);
     };
-  }, [viewType]);
+  }, [viewType, searchParams]);
 
   // Salva lo stato di espansione
   useEffect(() => {

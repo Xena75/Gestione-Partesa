@@ -1,10 +1,13 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.43.14
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.43.15
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
 ## 🎯 **FUNZIONALITÀ PRINCIPALI**
 
 ### 📊 **Gestione Viaggi e Monitoraggio**
+- **Performance lista `/viaggi`**: senza filtri nell’URL, elenco, statistiche e opzioni filtro usano gli **ultimi 3 mesi** sulla colonna `Data` (allineato a Delivery/Handling); con filtri attivi si usa l’intero criterio selezionato; banner informativo in pagina ⭐ **v2.43.15**
+- **Export Excel viaggi (`tab_viaggi`)**: pulsante **Export Excel** su `/viaggi`; `GET /api/viaggi/export` con gli stessi parametri query della vista (max 100k righe) ⭐ **v2.43.15**
+- **Anagrafica vettori**: pagina **`/gestione/tab-vettori`** per CRUD su **`gestionelogistica.tab_vettori`** (codici vettore e nominativi); API `/api/gestione/tab-vettori`; link dalla dashboard sezione Viaggi ⭐ **v2.43.15**
 - **Viaggi POD**: Sistema completo per gestione viaggi con Proof of Delivery
 - **Filtro anno Viaggi POD**: Filtro anno con colonna STORED GENERATED e layout ottimizzato su 2 righe ⭐ **NUOVO v2.43.10**
 - **Filtri data funzionanti**: Risolti problemi filtri data con formato italiano gg/mm/aaaa ⭐ **v2.31.1**
