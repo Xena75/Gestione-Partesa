@@ -30,63 +30,63 @@ export default function HandlingStats({ filters, viewType }: HandlingStatsProps)
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     const controller = new AbortController();
-    const signal = controller.signal;
-    
+
     const fetchStats = async () => {
       try {
-        if (signal.aborted) return;
-        
         setIsLoading(true);
         setError(null);
-        
+
         const params = new URLSearchParams();
         Object.entries(filters).forEach(([key, value]) => {
           if (value && value !== '' && value !== 'Tutti' && value !== 'Tutte') {
             params.set(key, value);
           }
         });
-        
-        // Aggiungi il parametro viewType
         params.set('viewType', viewType);
-        
-        const timeoutId = setTimeout(() => {
-          if (!signal.aborted) {
-            controller.abort();
-          }
-        }, 30000);
-        
+
+        const timeoutMs = 120000;
+        const timeoutId = window.setTimeout(() => {
+          controller.abort();
+        }, timeoutMs);
+
         const response = await fetch(`/api/handling/stats?${params}`, {
-          signal
+          signal: controller.signal,
         });
-        
-        clearTimeout(timeoutId);
-        
+
+        window.clearTimeout(timeoutId);
+
+        if (cancelled) return;
+
         if (!response.ok) {
           throw new Error(`Errore HTTP: ${response.status}`);
         }
-        
+
         const data = await response.json();
-        if (!signal.aborted) {
+        if (!cancelled) {
           setStats(data);
         }
-      } catch (error: any) {
-        if (!signal.aborted && error.name !== 'AbortError') {
+      } catch (error: unknown) {
+        if (cancelled) return;
+        const name = error instanceof Error ? error.name : '';
+        if (name === 'AbortError') {
+          setError('Timeout: la richiesta ha impiegato troppo tempo');
+        } else {
           console.error('Errore nel caricamento delle statistiche:', error);
           setError('Errore nel caricamento delle statistiche');
-        } else if (error.name === 'AbortError' && !signal.aborted) {
-          setError('Timeout: la richiesta ha impiegato troppo tempo');
         }
       } finally {
-        if (!signal.aborted) {
+        if (!cancelled) {
           setIsLoading(false);
         }
       }
     };
 
-    fetchStats();
-    
+    void fetchStats();
+
     return () => {
+      cancelled = true;
       controller.abort();
     };
   }, [filters, viewType]);

@@ -1,7 +1,33 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-**Versione corrente**: v2.43.15  
-**Ultimo aggiornamento**: Aprile 2026
+**Versione corrente**: v2.43.16  
+**Ultimo aggiornamento**: Maggio 2026
+
+---
+
+## v2.43.16 - Statistiche Handling/Delivery: timeout, caricamento e URL
+
+**Data implementazione**: Maggio 2026  
+**Stato**: Build `npm run build` verificata in sessione di release
+
+### 📊 Card statistiche Handling (`HandlingStats.tsx`)
+- **Fix caricamento infinito**: dopo timeout (AbortController) o cleanup del componente, `setIsLoading(false)` non veniva eseguito perché legato a `signal.aborted`; ora si usa un flag **`cancelled`** sul cleanup dell’effetto.
+- **Timeout client** portato a **120 secondi** (query `/api/handling/stats` può essere lenta su dataset grandi).
+
+### 📄 Pagina `/handling` (`page.tsx`)
+- **`router.replace`** solo se la query string è **cambiata** rispetto agli `searchParams` attuali, per evitare sostituzioni ridondanti dell’URL che riattivavano fetch e competizione sulle risorse.
+
+### 📊 Card statistiche Delivery (`DeliveryStats.tsx`)
+- **Timeout 120 secondi**, cleanup con **`cancelled`** + abort alla distruzione.
+- **Niente `console.error` sul solo timeout** (evita rumore / overlay dev Next.js); messaggio utente con **alert Bootstrap** in caso di timeout o errore HTTP.
+
+### Documentazione
+- Aggiornati **`README.md`** (versione titolo), **`package.json`**, questo file.
+
+### File principali
+- `src/components/HandlingStats.tsx`
+- `src/app/handling/page.tsx`
+- `src/components/DeliveryStats.tsx`
 
 ---
 

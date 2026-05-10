@@ -53,9 +53,11 @@ function HandlingContent() {
     // Aggiungi il parametro viewType all'URL
     params.set('viewType', viewType);
     
-    const newUrl = params.toString() ? `?${params.toString()}` : '/handling';
-    router.replace(newUrl, { scroll: false });
-  }, [activeFilters, viewType, router]);
+    const query = params.toString();
+    const current = searchParams?.toString() ?? '';
+    if (query === current) return;
+    router.replace(query ? `/handling?${query}` : '/handling', { scroll: false });
+  }, [activeFilters, viewType, searchParams]);
 
   const handleFiltersChange = (newFilters: any) => {
     setActiveFilters(newFilters);

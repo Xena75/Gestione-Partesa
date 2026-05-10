@@ -12,81 +12,108 @@ export default function DeliveryStats({ className = '' }: DeliveryStatsProps) {
   const searchParams = useSearchParams();
   const [stats, setStats] = useState<DeliveryStatsType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+    const controller = new AbortController();
+
     const fetchStats = async () => {
       try {
         setIsLoading(true);
-        
-        // Costruisci l'URL con tutti i parametri dei filtri
+        setError(null);
+
         const params = new URLSearchParams();
-        
+
         const viaggio = searchParams?.get('viaggio');
         if (viaggio) params.append('viaggio', viaggio);
-        
+
         const ordine = searchParams?.get('ordine');
         if (ordine) params.append('ordine', ordine);
-        
+
         const bu = searchParams?.get('bu');
         if (bu) params.append('bu', bu);
-        
+
         const divisione = searchParams?.get('divisione');
         if (divisione) params.append('divisione', divisione);
-        
+
         const deposito = searchParams?.get('deposito');
         if (deposito) params.append('deposito', deposito);
-        
+
         const vettore = searchParams?.get('vettore');
         if (vettore) params.append('vettore', vettore);
-        
+
         const tipologia = searchParams?.get('tipologia');
         if (tipologia) params.append('tipologia', tipologia);
-        
+
         const codCliente = searchParams?.get('codCliente');
         if (codCliente) params.append('codCliente', codCliente);
-        
+
         const cliente = searchParams?.get('cliente');
         if (cliente) params.append('cliente', cliente);
-        
+
         const dataDa = searchParams?.get('dataDa');
         if (dataDa) params.append('dataDa', dataDa);
-        
+
         const dataA = searchParams?.get('dataA');
         if (dataA) params.append('dataA', dataA);
-        
+
         const mese = searchParams?.get('mese');
         if (mese) params.append('mese', mese);
-        
+
         const anno = searchParams?.get('anno');
         if (anno) params.append('anno', anno);
 
-        // 🚀 OTTIMIZZAZIONE: timeout per evitare attese infinite
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 secondi timeout
-        
+        const timeoutMs = 120000;
+        const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+
         const response = await fetch(`/api/gestione/stats?${params.toString()}`, {
-          signal: controller.signal
+          signal: controller.signal,
         });
-        
-        clearTimeout(timeoutId);
-        
-        if (response.ok) {
-          const data = await response.json();
+
+        window.clearTimeout(timeoutId);
+
+        if (cancelled) return;
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (!cancelled) {
           setStats(data);
         }
-      } catch (error) {
-        if (error instanceof Error && error.name === 'AbortError') {
-          console.error('Timeout nel recuperare le statistiche');
+      } catch (err: unknown) {
+        if (cancelled) return;
+        if (err instanceof Error && err.name === 'AbortError') {
+          setError('Timeout: le statistiche hanno impiegato troppo tempo. Riprova o restringi i filtri.');
         } else {
-          console.error('Errore nel recuperare le statistiche:', error);
+          console.error('Errore nel recuperare le statistiche:', err);
+          setError('Impossibile caricare le statistiche.');
         }
       } finally {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
     };
 
-    fetchStats();
+    void fetchStats();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
   }, [searchParams]);
+
+  if (error && !isLoading) {
+    return (
+      <div className={`alert alert-warning mb-4 ${className}`} role="alert">
+        <i className="bi bi-exclamation-triangle me-2" aria-hidden="true" />
+        {error}
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
