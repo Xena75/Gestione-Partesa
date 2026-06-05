@@ -497,11 +497,12 @@ anno_fatturazione  smallint(6)    YES   MUL  NULL
 ```
 
 **Utilizzo nel progetto:**
-- **Pagine**: `/delivery` - Visualizzazione e gestione delivery
-- **API**: `/api/delivery/data` per recupero dati delivery
+- **Pagine**: `/delivery` - Visualizzazione e gestione delivery; `/delivery/analytics` - **pivot dinamica + drill-down** (v2.43.19)
+- **API**: `/api/delivery/data` per recupero dati delivery; **`/api/delivery/analytics`** per pivot/KPI/dettaglio (branch `?meta=1`, pivot, `?detail=1`)
 - **Componenti**: `DeliveryTable.tsx` per visualizzazione tabellare
 - **Funzionalità**: Gestione fatturazione delivery, analisi performance, reportistica
-- **Analytics**: `DeliveryCharts.tsx` per grafici e statistiche
+- **Analytics**: `DeliveryCharts.tsx` per grafici e statistiche; `src/app/delivery/analytics/page.tsx` per pivot dinamica
+- **Colonne usate da `/api/delivery/analytics`**: dimensioni (`descr_vettore`, `cod_vettore`, `bu`, `dep`, `div`, `tipologia`, `descr_classe_prod`, `mese`, `anno`, `settimana`, `WEEKDAY(data_mov_merce)`); misure/aggregati (`colli`, `compenso`, `tot_compenso`, `COUNT(DISTINCT consegna_num)`, `COUNT(DISTINCT ordine)`, `COUNT(DISTINCT cod_vettore)`, `COUNT(DISTINCT viaggio)`); dettaglio righe (`data_mov_merce`, `viaggio`, `ordine`, `consegna_num`, `ragione_sociale`)
 
 **Note importanti:**
 - **Campi generati**: `mese`, `anno`, `settimana`, `ID_fatt` sono calcolati automaticamente da `data_mov_merce`

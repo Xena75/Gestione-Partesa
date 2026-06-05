@@ -1,7 +1,46 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-**Versione corrente**: v2.43.18  
-**Ultimo aggiornamento**: Maggio 2026
+**Versione corrente**: v2.43.19  
+**Ultimo aggiornamento**: Giugno 2026
+
+---
+
+## v2.43.19 - Delivery Analytics: pivot dinamica su `fatt_delivery` + drill-down dettaglio
+
+**Data implementazione**: Giugno 2026  
+**Stato**: Implementazione funzionalità
+
+### 📊 Pagina `/delivery/analytics`
+- **Pivot dinamica**: dimensioni di **Righe** e **Colonne** selezionabili tra **Vettore, BU, Deposito, Divisione, Tipologia, Classe prodotto, Mese, Anno, Settimana, Giorno settimana** (scambio automatico se si seleziona la stessa dimensione su righe e colonne).
+- **Base temporale**: `data_mov_merce` con campi generati `mese`/`anno`/`settimana`; **Giorno settimana** ricavato da `WEEKDAY(data_mov_merce)` (Lun→Dom).
+- **Misura dinamica**: N° righe (`COUNT`), Colli, Compenso (€), Tot. compenso (€) (`SUM`), **Consegne distinte**, **Ordini distinti**, **Vettori distinti** (`COUNT(DISTINCT)`).
+  - Per le misure **distinte** le righe/colonne **Totale** sono **nascoste** (somma non additiva).
+- **Card KPI** in cima che reagiscono ai filtri (formattazione valuta per i compensi).
+- **Filtri**: **Anno**, **Mese**, e menu **a discesa** compatti con ricerca/checkbox per **BU**, **Deposito**, **Tipologia**, **Vettore** (quest'ultimo con modalità **Includi / Escludi**).
+- **Ordinamento**: intestazioni cliccabili (default crescente sulle righe).
+
+### 🔎 Drill-down dettaglio (clic su riga o cella)
+- **Clic sull'etichetta di riga** o sulla **cella Totale** → dettaglio dell'**intera riga** (tutto il periodo filtrato).
+- **Clic su una cella valore** → dettaglio limitato anche alla **colonna** (es. solo quel mese/giorno).
+- Il dettaglio è **dinamico per misura**:
+  - **Misure distinte** → elenco dei **valori distinti** con aggregati (Viaggi, Consegne, Ordini, N° righe, Colli, Compenso, Tot. compenso a seconda della misura).
+  - **Altre misure** → elenco delle **righe grezze** (Data, Viaggio, Ordine, Consegna, Cliente, Vettore, BU, Deposito, Tipologia, Colli, Compenso, Tot. compenso).
+- **Ordinamento crescente** sul primo campo; **paginazione** (50 per pagina); sezione **espandibile sotto la tabella**, con pulsante Chiudi; si chiude automaticamente al cambio filtri/dimensioni.
+
+### 🔌 API `GET /api/delivery/analytics`
+- **Autenticazione** con `verifyUserAccess`, pool **`db-gestione`** (database `gestionelogistica`), tabella **`fatt_delivery`**.
+- **Branch `?meta=1`**: opzioni filtri (`anni`, `bu`, `depositi`, `tipologie`, `vettori`, `measures`, `dimensioni`).
+- **Parametri pivot**: `rowDim`, `colDim`, `measure`, `anno`, `mese`, `bu`/`dep`/`tipologia` (multipli, `IN`), `vettore` (multiplo) con `vettoreMode` = `include`/`exclude`.
+- **Branch `?detail=1`**: `rowDim`+`rowValue`, opzionali `colDim`+`colValue`, `measure`, `page`, `limit`; restituisce `mode` (`rows`/`distinct`), `rows`, `total`, `page`, `totalPages`.
+- **Sicurezza**: misure/dimensioni/aggregazioni da **whitelist**, valori con placeholder, `LIMIT/OFFSET` interi validati.
+
+### 🏠 Dashboard
+- Il bottone della card Analytics ora collega a **`/delivery/analytics`** (era "Performance Analytics (WIP)").
+
+### File principali
+- `src/app/api/delivery/analytics/route.ts` (nuovo)
+- `src/app/delivery/analytics/page.tsx` (nuovo)
+- `src/app/dashboard/page.tsx` (bottone card Analytics)
 
 ---
 

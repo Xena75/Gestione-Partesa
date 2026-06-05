@@ -1,10 +1,11 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.43.18
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.43.19
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
 ## 🎯 **FUNZIONALITÀ PRINCIPALI**
 
 ### 📊 **Gestione Viaggi e Monitoraggio**
+- **Delivery Analytics (pivot dinamica + drill-down)**: pagina `/delivery/analytics` su `gestionelogistica.fatt_delivery` con **righe/colonne selezionabili** (Vettore, BU, Deposito, Divisione, Tipologia, Classe prodotto, Mese, Anno, Settimana, Giorno settimana); **misura dinamica** (N° righe, Colli, Compenso, Tot. compenso, Consegne/Ordini/Vettori distinti); **card KPI** reattive ai filtri; dropdown con ricerca per **BU/Deposito/Tipologia/Vettore** (Includi/Escludi); **drill-down**: clic su riga o cella per il dettaglio (righe grezze o valori distinti, con Viaggi distinti, ordinato e paginato); API `GET /api/delivery/analytics` (con branch `detail`); link dalla card Analytics in dashboard ⭐ **NUOVO v2.43.19**
 - **Viaggi Analytics (pivot dinamica)**: pagina `/viaggi/analytics` su `gestionelogistica.tab_viaggi` con **righe/colonne selezionabili** tra Trasportatore, Mese, Giorno settimana, Magazzino; **misura dinamica** (N° viaggi, Trasportatori distinti, Colli, Peso, Km, Km Viaggio, Ordini, Toccate, Ore PoD, Litri, Costo rifornimento); **card KPI** reattive ai filtri; filtri **Anno/Mese/Tipo vettore** e dropdown con ricerca per **Trasportatore** (Includi/Escludi) e **Magazzino**; intestazioni ordinabili; API `GET /api/viaggi/analytics`; link dalla card Analytics in dashboard ⭐ **NUOVO v2.43.18**
 - **Performance lista `/viaggi`**: senza filtri nell’URL, elenco, statistiche e opzioni filtro usano gli **ultimi 3 mesi** sulla colonna `Data` (allineato a Delivery/Handling); con filtri attivi si usa l’intero criterio selezionato; banner informativo in pagina ⭐ **v2.43.15**
 - **Export Excel viaggi (`tab_viaggi`)**: pulsante **Export Excel** su `/viaggi`; `GET /api/viaggi/export` con gli stessi parametri query della vista (max 100k righe) ⭐ **v2.43.15**

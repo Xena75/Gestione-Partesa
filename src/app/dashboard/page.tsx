@@ -2147,14 +2147,10 @@ export default function ModernDashboard() {
                     </Link>
                   </div>
                   <div className="col-6">
-                    <button 
-                      className="btn btn-outline-secondary btn-action btn-sm w-100 opacity-50" 
-                      disabled 
-                      title="Funzionalità in sviluppo"
-                    >
-                      <Construction size={16} className="me-1" />
-                      Performance Analytics (WIP)
-                    </button>
+                    <Link href="/delivery/analytics" className="btn btn-outline-primary btn-action btn-sm w-100">
+                      <BarChart3 size={16} className="me-1" />
+                      Delivery Analytics
+                    </Link>
                   </div>
                   <div className="col-6">
                     <button 
