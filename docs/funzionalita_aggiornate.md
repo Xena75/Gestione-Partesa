@@ -1,7 +1,70 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-**Versione corrente**: v2.43.16  
+**Versione corrente**: v2.43.18  
 **Ultimo aggiornamento**: Maggio 2026
+
+---
+
+## v2.43.18 - Viaggi Analytics: pivot dinamica su `tab_viaggi`
+
+**Data implementazione**: Maggio 2026  
+**Stato**: Implementazione funzionalità
+
+### 📊 Pagina `/viaggi/analytics`
+- **Pivot dinamica**: dimensioni di **Righe** e **Colonne** selezionabili tra **Trasportatore, Mese, Giorno settimana, Magazzino di partenza** (se si seleziona la stessa dimensione su righe e colonne, i due valori si scambiano automaticamente).
+- **Giorno settimana** ricavato da `WEEKDAY(Data)` con ordine **Lun→Dom**; **Mese** con etichette Gen…Dic.
+- **Misura dinamica**: N° viaggi (`COUNT`), **Trasportatori (distinti)** (`COUNT(DISTINCT)`), Colli, Peso (Kg), Km, Km Viaggio, Ordini, Toccate, Ore PoD, Litri Riforniti, Costo rifornimento (`SUM`).
+  - Per **Trasportatori (distinti)** le righe/colonne **Totale** sono **nascoste** (la somma di conteggi distinti non è additiva).
+- **Card KPI** in cima (Viaggi, Trasportatori, Colli, Peso, Km, Ordini, Toccate, Ore PoD) che **reagiscono ai filtri**.
+- **Filtri**: **Anno**, **Mese** (Tutti i mesi o singolo mese — utile con colonne = Giorno settimana), **Tipo vettore**, **Trasportatore** e **Magazzino**.
+  - **Trasportatore** e **Magazzino**: menu **a discesa** compatti con **ricerca** e **checkbox** multi-selezione.
+  - **Trasportatore**: modalità **Includi / Escludi** (`IN` / `NOT IN`).
+- **Ordinamento**: tutte le intestazioni sono **cliccabili** (default **crescente** sulla colonna delle righe); ordinamento numerico per Mese/Giorno, alfabetico per le dimensioni testuali; si resetta al cambio dimensioni.
+- **Layout**: filtri compatti su due righe (4 per riga su schermi grandi), tabella responsive con prima colonna sticky, formattazione numerica italiana. Solo Bootstrap, nessuna nuova dipendenza.
+
+### 🔌 API `GET /api/viaggi/analytics`
+- **Autenticazione** con `verifyUserAccess`, pool **`db-gestione`** (database `gestionelogistica`).
+- **Branch `?meta=1`**: opzioni filtri (`anni`, `magazzini`, `trasportatori`, `tipiVettore`, `measures`, `dimensioni`).
+- **Parametri pivot**: `rowDim`, `colDim` (whitelist dimensioni), `measure` (whitelist), `anno`, `mese`, `magazzino` (multiplo, `IN`), `trasportatore` (multiplo) con `trasportatoreMode` = `include`/`exclude`, `tipoVettore`.
+- **Aggregazione**: `GROUP BY` sulle due dimensioni scelte; KPI calcolati con lo stesso `WHERE`.
+- **Sicurezza**: misure, aggregazioni e dimensioni da **whitelist** (nessun SQL dinamico non controllato), parametri con placeholder.
+
+### 🏠 Dashboard
+- Il bottone **"Viaggi Analytics (WIP)"** della card Analytics è ora **attivo** e collega a `/viaggi/analytics`.
+
+### Documentazione
+- **`docs/database-reference.md`**: aggiunto endpoint `/api/viaggi/analytics` alla tabella `tab_viaggi`.
+- **`README.md`** (titolo versione **v2.43.18**), **`package.json`**, questo file.
+
+### File principali
+- `src/app/api/viaggi/analytics/route.ts` (nuovo)
+- `src/app/viaggi/analytics/page.tsx` (nuovo)
+- `src/app/dashboard/page.tsx` (bottone card Analytics)
+
+---
+
+## v2.43.17 - Creazione veicolo: `id` allineato alla targa e a `travels.targaMezzoId`
+
+**Data implementazione**: Maggio 2026  
+**Stato**: Allineamento API e database documentato
+
+### Problema
+- Inserimenti tramite **`POST /api/vehicles`** fallivano con MySQL **`ER_NO_DEFAULT_FOR_FIELD`** sulla colonna **`vehicles.id`**, perché **`id`** (VARCHAR PK) non ha default e non era incluso nell’INSERT.
+
+### Comportamento
+- **`POST /api/vehicles`**: dopo validazione, **`normalizedTarga`** = trim + **`toUpperCase()`**; **`id`** e **`targa`** sono entrambi impostati a **`normalizedTarga`**.
+- **Controllo duplicati**: `WHERE targa = ? OR id = ?` con il valore normalizzato, per evitare collisioni sulla chiave primaria.
+- **Risposta JSON**: **`vehicleId`** = stringa **`normalizedTarga`** (non `insertId`, non affidabile per PK VARCHAR).
+
+### Integrazione dati viaggi
+- Le query sul database **`viaggi_db`** joinano **`travels.targaMezzoId`** con **`vehicles.id`**; questo richiede che l’identificativo mezzo in anagrafica coincida con quello nei viaggi. La convenzione sopra lo garantisce per i nuovi veicoli creati dall’app.
+
+### Documentazione
+- **`docs/database-reference.md`**: nota sulla tabella **`vehicles`** (`id`, relazione con `targaMezzoId`).
+- **`README.md`** (titolo versione **v2.43.17**), **`package.json`**, questo file.
+
+### File principali
+- `src/app/api/vehicles/route.ts`
 
 ---
 

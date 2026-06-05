@@ -97,11 +97,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const normalizedTarga = String(targa).trim().toUpperCase();
+
     const connection = await mysql.createConnection(dbConfig);
 
-    // Verifica se la targa esiste già
-    const checkQuery = 'SELECT id FROM vehicles WHERE targa = ?';
-    const [existingVehicle] = await connection.execute(checkQuery, [targa]);
+    // id è la chiave usata nei join con travels.targaMezzoId: deve coincidere con la targa normalizzata
+    const checkQuery = 'SELECT id FROM vehicles WHERE targa = ? OR id = ?';
+    const [existingVehicle] = await connection.execute(checkQuery, [normalizedTarga, normalizedTarga]);
 
     if (Array.isArray(existingVehicle) && existingVehicle.length > 0) {
       await connection.end();
@@ -114,6 +116,7 @@ export async function POST(request: NextRequest) {
     // Inserimento nuovo veicolo
     const insertQuery = `
       INSERT INTO vehicles (
+        id,
         targa,
         marca,
         modello,
@@ -129,11 +132,12 @@ export async function POST(request: NextRequest) {
         active,
         createdAt,
         updatedAt
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())
     `;
 
-    const [result] = await connection.execute(insertQuery, [
-      targa.toUpperCase(),
+    await connection.execute(insertQuery, [
+      normalizedTarga,
+      normalizedTarga,
       marca,
       modello,
       proprieta,
@@ -152,7 +156,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
       success: true, 
       message: 'Veicolo creato con successo',
-      vehicleId: (result as any).insertId
+      vehicleId: normalizedTarga
     });
 
   } catch (error) {

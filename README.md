@@ -1,10 +1,11 @@
-# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.43.16
+# 🚚 Gestione Partesa - Sistema di Gestione Logistica v2.43.18
 
 Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, sviluppato con Next.js 15, TypeScript e MySQL.
 
 ## 🎯 **FUNZIONALITÀ PRINCIPALI**
 
 ### 📊 **Gestione Viaggi e Monitoraggio**
+- **Viaggi Analytics (pivot dinamica)**: pagina `/viaggi/analytics` su `gestionelogistica.tab_viaggi` con **righe/colonne selezionabili** tra Trasportatore, Mese, Giorno settimana, Magazzino; **misura dinamica** (N° viaggi, Trasportatori distinti, Colli, Peso, Km, Km Viaggio, Ordini, Toccate, Ore PoD, Litri, Costo rifornimento); **card KPI** reattive ai filtri; filtri **Anno/Mese/Tipo vettore** e dropdown con ricerca per **Trasportatore** (Includi/Escludi) e **Magazzino**; intestazioni ordinabili; API `GET /api/viaggi/analytics`; link dalla card Analytics in dashboard ⭐ **NUOVO v2.43.18**
 - **Performance lista `/viaggi`**: senza filtri nell’URL, elenco, statistiche e opzioni filtro usano gli **ultimi 3 mesi** sulla colonna `Data` (allineato a Delivery/Handling); con filtri attivi si usa l’intero criterio selezionato; banner informativo in pagina ⭐ **v2.43.15**
 - **Export Excel viaggi (`tab_viaggi`)**: pulsante **Export Excel** su `/viaggi`; `GET /api/viaggi/export` con gli stessi parametri query della vista (max 100k righe) ⭐ **v2.43.15**
 - **Anagrafica vettori**: pagina **`/gestione/tab-vettori`** per CRUD su **`gestionelogistica.tab_vettori`** (codici vettore e nominativi); API `/api/gestione/tab-vettori`; link dalla dashboard sezione Viaggi ⭐ **v2.43.15**
@@ -50,6 +51,7 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Responsive completo**: Adattamento perfetto a tutti i dispositivi e risoluzioni
 
 ### 🚗 **Gestione Veicoli e Manutenzioni**
+- **Creazione veicolo (`POST /api/vehicles`)**: la chiave `id` in tabella **`vehicles`** coincide con la **targa normalizzata** (trim + maiuscolo), come **`travels.targaMezzoId`** nei join (`viaggi_db`) ⭐ **v2.43.17**
 - **Tracciamento completo**: Gestione anagrafica veicoli con dati manutenzione
 - **Scadenze manutenzioni**: Monitoraggio km e date tagliandi/revisioni
 - **Filtri intelligenti**: Ricerca rapida per marca, modello, proprietà, tipo patente

@@ -865,7 +865,7 @@ Giorno                   varchar(255) YES        NULL
 
 **Utilizzo nel progetto:**
 - **Pagine**: `/viaggi` — lista e statistiche; **senza filtri in URL** le query su `tab_viaggi` si limitano agli **ultimi 3 mesi** sulla colonna `Data` (vedi `getDefaultTabViaggiMinData` in `src/lib/data-viaggi-tab.ts`); con filtri attivi si applica solo il criterio scelto; export Excel `GET /api/viaggi/export` con gli stessi criteri della vista (limite righe lato server)
-- **API**: `/api/viaggi`, `/api/viaggi/stats`, `/api/viaggi/filters`, `/api/viaggi/export`, `/api/viaggi/sync-tab-viaggi`
+- **API**: `/api/viaggi`, `/api/viaggi/stats`, `/api/viaggi/filters`, `/api/viaggi/export`, `/api/viaggi/sync-tab-viaggi`, **`/api/viaggi/analytics`** (pivot Trasportatore × Mese con misura dinamica)
 - **Componenti**: `ViaggioTab` interface, `ExportViaggiTabButton`, pagine di modifica viaggi
 - **Funzionalità**: Gestione viaggi, sincronizzazione con `travels` e `viaggi_pod` (DB `viaggi_db`), JOIN anagrafica vettori da `gestionelogistica.tab_vettori`
 - **Dashboard**: Statistiche viaggi, monitoraggio performance
@@ -1588,9 +1588,15 @@ updatedAt             datetime(3)  NO        current_timestamp(3)             on
 note                  text         YES       NULL                             
 ```
 
+**Chiave primaria `id` e colonna `targa`:**
+
+- **`id`** non è `AUTO_INCREMENT`: il valore va fornito in inserimento.
+- **Convenzione applicativa (allineamento con `viaggi_db.travels`)**: nei join si usa `travels.targaMezzoId = vehicles.id`. Per i veicoli **creati da applicazione**, `POST /api/vehicles` imposta **`id`** uguale a **`targa`** dopo normalizzazione (**trim + maiuscolo**), così i viaggi e le dashboard che joinano su `targaMezzoId` risolvono correttamente il mezzo.
+- Possono esistere in archivio record storici con `id` diverso dalla targa (migrazioni o sistemi esterni); il codice di creazione garantisce comunque **`id`** e **`targa`** univoci rispetto a duplicati su entrambi i campi.
+
 **Utilizzo nel progetto:**
 - **Pagine**: Sistema gestione veicoli
-- **API**: `/api/dashboard-stats` per statistiche veicoli, `/api/vehicles/revisions/automation` per controllo revisioni tachigrafo
+- **API**: `/api/dashboard-stats` per statistiche veicoli; **`POST /api/vehicles`** crea righe con `id` uguale a targa normalizzata; `/api/vehicles/revisions/automation` per controllo revisioni tachigrafo
 - **Componenti**: Gestione flotta veicoli
 - **Funzionalità**: Monitoraggio veicoli, manutenzione, documenti, **revisioni tachigrafo automatiche**
 - **Dashboard**: Statistiche flotta, controllo scadenze
