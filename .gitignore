@@ -70,3 +70,6 @@ tmp/
 
 # Archivio file obsoleti
 archive/
+
+# Documentazione IDE Trae (obsoleta)
+.trae/
