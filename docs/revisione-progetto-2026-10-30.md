@@ -89,9 +89,9 @@ Intervento: definire visibilità e autorizzazione per documenti dipendenti, cont
 
 ### 8. Alto — configurazioni Next duplicate, limite upload dichiarato non applicato
 
-La prova con il loader Next effettivamente installato seleziona `next.config.js`. Le impostazioni di `next.config.ts`, tra cui limite middleware 50 MB, serverActions 50 MB e serverExternalPackages, non sono attive. Il limite middleware caricato è 10 MB.
+**Stato (nov 2026):** risolto — rimosso `next.config.ts`; resta solo `next.config.js` (quella già caricata dal loader). Gli import pesanti sono stati spostati in un'altra app.
 
-Intervento: consolidare in una sola configurazione e ricontrollare i limiti effettivi di ogni ambiente. La sola configurazione Next non dimostra che l'hosting accetti upload da 50 MB.
+All'epoca della revisione: il loader selezionava `next.config.js`; le impostazioni del `.ts` (50 MB, serverExternalPackages) non erano attive.
 
 ### 9. Alto — importazioni fragili tra filesystem, risposta HTTP e serverless
 

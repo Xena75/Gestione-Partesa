@@ -15,7 +15,7 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Handling — finestra default 3 mesi**: senza filtri restrittivi, liste/export/stat/opzioni filtro su **`data_mov_m`** limitate agli ultimi 3 mesi (`handling-filters-where.ts`); banner in tabella ⭐ **v2.43.15**
 - **Monitoraggio — export Excel**: `GET /api/monitoraggio/export` su tabella **`travels`** con filtri della pagina; pulsante in `/monitoraggio` ⭐ **v2.43.15**
 - **Terzisti**: export fino a 250k righe; paginazione compatibile MySQL 8; import senza inserimento in colonne GENERATED `compenso` / `tot_compenso` ⭐ **v2.43.15**
-- **Upload grandi file**: `next.config` — `middlewareClientMaxBodySize` 50MB (dev/proxy verso API) ⭐ **v2.43.15**
+- **Config Next**: unica `next.config.js` (rimosso duplicato `next.config.ts`)
 - **Viaggi POD**: Sistema completo per gestione viaggi con Proof of Delivery
 - **Filtro anno Viaggi POD**: Filtro anno con colonna STORED GENERATED e layout ottimizzato su 2 righe ⭐ **NUOVO v2.43.10**
 - **Filtri data funzionanti**: Risolti problemi filtri data con formato italiano gg/mm/aaaa ⭐ **v2.31.1**

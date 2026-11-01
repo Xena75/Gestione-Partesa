@@ -159,8 +159,8 @@
 - **Import** (`/api/terzisti/import`): l’`INSERT` **non** popola più `compenso` e `tot_compenso` (colonne **STORED GENERATED** in `tab_delivery_terzisti` — calcolate da MySQL).
 - **Pagina** `/fatturazione-terzisti`: allineamenti su azioni toolbar (export, viste raggruppata/dettaglio).
 
-### ⚙️ Next.js / upload
-- **`next.config.ts`**: `experimental.middlewareClientMaxBodySize: '50mb'` per evitare troncamento upload verso Route Handler in dev/proxy; coerente con `serverActions.bodySizeLimit` e `MAX_FILE_SIZE` per import grandi.
+### ⚙️ Next.js / config
+- **Config unica**: `next.config.js` (rimosso il duplicato `next.config.ts`, non caricato da Next). Gli import pesanti non sono più in questa app; non si espongono limiti body da 50 MB.
 
 ### 👷 Anagrafica vettori (`gestionelogistica.tab_vettori`)
 - **Pagina** `/gestione/tab-vettori`: elenco con ricerca e paginazione, creazione e modifica (incluso aggiornamento **Cod_Vettore** con controllo unicità).
@@ -176,7 +176,7 @@
 - Monitoraggio: `src/app/api/monitoraggio/export/route.ts`, `src/lib/data-viaggi.ts`, `src/app/monitoraggio/page.tsx`
 - Terzisti: `src/lib/data-terzisti.ts`, `src/app/api/terzisti/export/route.ts`, `import/route.ts`, `src/app/fatturazione-terzisti/page.tsx`
 - Vettori: `src/lib/data-tab-vettori.ts`, `src/app/api/gestione/tab-vettori/*`, `src/app/gestione/tab-vettori/page.tsx`, `src/app/dashboard/page.tsx`
-- Config: `next.config.ts`
+- Config: `next.config.js`
 
 ---
 
