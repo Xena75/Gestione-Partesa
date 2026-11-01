@@ -2576,7 +2576,7 @@ SELECT * FROM backup_schedules WHERE enabled = TRUE;
 - **src/lib/data-viaggi-pod.ts** - Gestione Proof of Delivery
 - **src/app/api/import_viaggi_PoD/execute/route.ts** - Import PoD
 - **src/app/api/import_viaggi_PoD/history/route.ts** - Storico import PoD
-- **Colonna anno**: STORED GENERATED da `YEAR(\`Data Inizio\`)` - Migration: `migrations/add_anno_to_viaggi_pod.sql` - Filtro anno in FiltriViaggiPod
+- **Colonna anno**: STORED GENERATED da `YEAR(\`Data Inizio\`)` — Filtro anno in FiltriViaggiPod
 
 #### Tabella: `maintenance_quotes`
 - **src/lib/data-viaggi.ts** - Gestione preventivi manutenzione
