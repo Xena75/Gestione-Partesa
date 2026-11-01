@@ -2,52 +2,71 @@
 
 Questo documento contiene la documentazione completa delle tre basi di dati utilizzate nel progetto gestione-partesa.
 
-**CONFIGURAZIONE:** In produzione (Vercel) impostare le variabili d’ambiente nel dashboard del progetto. In locale si può usare un file `.env.production` (o `.env.local`) **solo sulla propria macchina**: il file **non è più nel repository Git** (vedi `.gitignore`).
+## Infrastruttura MySQL (aggiornato novembre 2026)
+
+Il server MySQL è **centralizzato su Proxmox** (non più sul precedente provider cloud come endpoint primario).
+
+Sullo stesso MySQL convivono tre database logici:
+
+| Database | Variabili | Uso principale |
+|----------|-----------|----------------|
+| `gestionelogistica` | `DB_GESTIONE_*` | Delivery, handling, terzisti, `tab_viaggi`, resi-vuoti, fatturazione |
+| `viaggi_db` | `DB_VIAGGI_*` | Monitoraggio travels, dipendenti, veicoli, preventivi, import PoD |
+| `backup_management` | `MYSQL_*` (host/user allineati al server) | Job/schedulazioni backup |
+
+### Accesso
+
+| Ambiente | Host | Porta | Note |
+|----------|------|-------|------|
+| **Locale (LAN)** | `192.168.0.11` | `3306` | Preferito in `.env.local` sul PC in rete |
+| **Esterno / Vercel** | `10.tcp.eu.ngrok.io` | `21187` | Tunnel TCP ngrok verso MySQL su Proxmox |
+
+Se cambia endpoint o porta del tunnel ngrok, aggiornare le Environment Variables su **Vercel** (e il riferimento in `.env.example`).
+
+**CONFIGURAZIONE:** In produzione impostare le variabili nel dashboard Vercel. In locale usare `.env.local` (o `.env.production`) **solo sulla propria macchina**. I file con segreti **non vanno in Git** (vedi `.gitignore` e `.env.example` con soli placeholder).
 
 ## Database Utilizzati
 
 ### 1. gestionelogistica
-**Porta:** 24345  
-**Host:** 10.tcp.eu.ngrok.io  
-**Variabili d'ambiente** (stessi nomi su Vercel o in `.env.production` locale):
-- `DB_GESTIONE_HOST=10.tcp.eu.ngrok.io`
-- `DB_GESTIONE_PORT=24345`
+**Variabili d'ambiente** (obbligatorie):
+- `DB_GESTIONE_HOST` — es. `192.168.0.11` (locale) o `10.tcp.eu.ngrok.io` (Vercel)
+- `DB_GESTIONE_PORT` — es. `3306` (locale) o `21187` (ngrok)
+- `DB_GESTIONE_USER` — da Environment Variables (non in repository)
+- `DB_GESTIONE_PASS` — da Environment Variables (non in repository)
 - `DB_GESTIONE_NAME=gestionelogistica`
-- `DB_GESTIONE_USER=root`
-- `DB_GESTIONE_PASS=` (vuota)
+
+Pool principale: `src/lib/db-gestione.ts`.
 
 **Descrizione:** Database principale per la gestione logistica, fatturazione e delivery.
 
 ### 2. viaggi_db
-**Porta:** 24345  
-**Host:** 10.tcp.eu.ngrok.io  
-**Variabili d'ambiente** (stessi nomi su Vercel o in `.env.production` locale):
-- `DB_VIAGGI_HOST=10.tcp.eu.ngrok.io`
-- `DB_VIAGGI_PORT=24345`
+**Variabili d'ambiente** (obbligatorie):
+- `DB_VIAGGI_HOST` — stesso host del server MySQL Proxmox (LAN o ngrok)
+- `DB_VIAGGI_PORT` — stessa porta (LAN `3306` / ngrok `21187`)
+- `DB_VIAGGI_USER` — da Environment Variables (non in repository)
+- `DB_VIAGGI_PASS` — da Environment Variables (non in repository)
 - `DB_VIAGGI_NAME=viaggi_db`
-- `DB_VIAGGI_USER=root`
-- `DB_VIAGGI_PASS=` (vuota)
+
+Pool principale: `src/lib/db-viaggi.ts` (SSL opzionale via `DB_VIAGGI_SSL`; di solito non necessario su LAN/ngrok TCP).
 
 **Descrizione:** Database dedicato alla gestione dei viaggi, veicoli, manutenzioni e **dipendenti/autisti**.
 
 ### 3. backup_management
-**Porta:** 24345  
-**Host:** 10.tcp.eu.ngrok.io  
-**Variabili d'ambiente** (stessi nomi su Vercel o in `.env.production` locale):
-- `MYSQL_HOST=10.tcp.eu.ngrok.io`
-- `MYSQL_PORT=24345`
+**Variabili d'ambiente**:
+- `MYSQL_HOST` / `MYSQL_PORT` — stesso server Proxmox (LAN o ngrok)
+- `MYSQL_USER` / `MYSQL_PASSWORD` — da Environment Variables
 - `MYSQL_DATABASE=backup_management`
-- `MYSQL_USER=root`
-- `MYSQL_PASSWORD=` (vuota)
+
+Nota: alcune route backup usano host/user da `DB_GESTIONE_*` con database fisso `backup_management` (`src/lib/db-backup.ts`).
 
 **Descrizione:** Database per la gestione dei backup automatici e schedulati.
 
 ## Note Importanti
 
-- Tutti i database utilizzano MySQL/MariaDB
-- **File di configurazione:** Variabili su **Vercel** (produzione); opzionale `.env.production` / `.env.local` in locale — **non committare** segreti nel repository
-- **Connessione:** I database sono accessibili tramite tunnel ngrok su porta 24345
-- Le password sono vuote per l'ambiente di produzione
+- Tutti i database utilizzano MySQL 8 su Proxmox
+- **Segreti:** mai password/token nel repository; usare Vercel Env + `.env.local` locale
+- **Due canali di accesso:** LAN per sviluppo; ngrok TCP per Vercel
+- Modificando host/porta del tunnel, aggiornare **tutte** le env (`DB_GESTIONE_*`, `DB_VIAGGI_*`, e se usate `MYSQL_*`)
 - Assicurarsi di utilizzare le variabili d'ambiente corrette per ogni database
 - Prima di creare nuove query o funzionalità, consultare sempre questo documento per verificare la struttura delle tabelle
 
@@ -920,14 +939,14 @@ updated_at timestamp   NO        current_timestamp()  on update current_timestam
 ## Database: viaggi_db
 
 ### Configurazione
-- **Host**: localhost
-- **Porta**: 3306
-- **Database**: viaggi_db
+- **Server**: MySQL su Proxmox (vedi sezione Infrastruttura in cima al documento)
+- **Database**: `viaggi_db`
 - **Variabili d'ambiente**:
-  - `VIAGGI_DB_HOST`
-  - `VIAGGI_DB_USER`
-  - `VIAGGI_DB_PASSWORD`
-  - `VIAGGI_DB_NAME`
+  - `DB_VIAGGI_HOST`
+  - `DB_VIAGGI_PORT`
+  - `DB_VIAGGI_USER`
+  - `DB_VIAGGI_PASS`
+  - `DB_VIAGGI_NAME`
 
 ### 📊 Metriche di Efficienza Viaggi (v2.31.0)
 **Nuove metriche calcolate client-side nella pagina `/viaggi`:**
@@ -1616,8 +1635,8 @@ updated_at  timestamp    NO        current_timestamp()  on update current_timest
 ## Database: backup_management
 
 ### Configurazione
-- **Host**: localhost
-- **Porta**: 3306
+- **Server**: MySQL su Proxmox (LAN `192.168.0.11:3306` / Vercel via ngrok `10.tcp.eu.ngrok.io:21187`)
+- **Host / Porta**: da `MYSQL_HOST` / `MYSQL_PORT` (o host condiviso `DB_GESTIONE_*` in `db-backup.ts`)
 - **Database**: backup_management
 - **Variabili d'ambiente**:
   - `BACKUP_DB_HOST`

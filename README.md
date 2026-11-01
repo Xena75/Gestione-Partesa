@@ -47,7 +47,7 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Trend intelligenti**: Calcolo automatico trend percentuali su dati storici
 - **Design moderno**: Interfaccia Bootstrap con gradients, animazioni e hover effects
 - **API dedicata**: Endpoint `/api/dashboard-stats` per statistiche aggregate
-- **Multi-database**: Connessioni ai 3 database (gestionelogistica, viaggi_db, backup_management)
+- **Multi-database (MySQL su Proxmox)**: `gestionelogistica` (`DB_GESTIONE_*`), `viaggi_db` (`DB_VIAGGI_*`), `backup_management` (`MYSQL_*`); in locale LAN `192.168.0.11:3306`, da Vercel tunnel ngrok TCP (vedi `docs/database-reference.md` e `.env.example`)
 - **Performance ottimizzate**: Query SQL ottimizzate per caricamento rapido
 - **Responsive completo**: Adattamento perfetto a tutti i dispositivi e risoluzioni
 
@@ -236,7 +236,7 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Configurazioni centralizzate**: Gestione configurazioni sistema
 - **Autenticazione sicura**: Sistema di login con JWT e controllo sessioni
 - **Backup e recovery**: Sistema completo di backup e ripristino dati
-- **Connessione database sicura**: Migrazione da bore.pub a ngrok per stabilità e sicurezza
+- **Connessione database**: MySQL centralizzato su Proxmox; accesso esterno via tunnel TCP ngrok; credenziali solo in Environment Variables (non in Git)
 
 ### 💼 **Sistema Preventivi Veicoli** ⭐ **AGGIORNATO**
 - **Workflow completo**: Creazione, modifica, approvazione e gestione preventivi
