@@ -2,9 +2,9 @@
 import mysql from 'mysql2/promise';
 
 /**
- * TLS per MySQL gestito in cloud: DB_VIAGGI_SSL=true
- * DigitalOcean (e altri) usano catene non nel trust store locale → default rejectUnauthorized=false.
- * In produzione con CA nota: DB_VIAGGI_SSL_REJECT_UNAUTHORIZED=true
+ * TLS opzionale: DB_VIAGGI_SSL=true
+ * Su LAN / tunnel TCP (ngrok → Proxmox) di solito non serve.
+ * Con TLS, default rejectUnauthorized=false; verifica stretta: DB_VIAGGI_SSL_REJECT_UNAUTHORIZED=true
  */
 function buildSsl(): { rejectUnauthorized: boolean } | undefined {
   const raw = (process.env.DB_VIAGGI_SSL || '').trim().toLowerCase();

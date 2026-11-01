@@ -2,7 +2,7 @@
 
 **Ultimo aggiornamento:** marzo 2026
 
-Documentazione tecnica allineata al codice attuale: script `.bat`, API `POST /api/backup/execute`, variabili ambiente e client `mysqldump` per database remoti (es. DigitalOcean, MySQL 8, `caching_sha2_password`).
+Documentazione tecnica allineata al codice attuale: script `.bat`, API `POST /api/backup/execute`, variabili ambiente e client `mysqldump` per MySQL 8 su Proxmox (LAN o tunnel ngrok; `caching_sha2_password` se applicabile).
 
 ---
 
@@ -24,9 +24,8 @@ Next.js carica `.env.local` in `process.env`. L’API backup passa allo `spawn` 
 | `DB_VIAGGI_*` | Fallback se mancano le chiavi gestione |
 | `MYSQL_*` | Ulteriore fallback (es. stesso cluster del metadati `backup_management`) |
 | `MYSQL_BIN` | Cartella `bin` del client MySQL (**obbligatorio** impostarla in locale se non si usa il default in codice) |
-| `BACKUP_MYSQL_SSL` | `1` / `true` per forzare SSL su `mysqldump`/`mysql` |
-| `BACKUP_MYSQLDUMP_SSL_ARGS` | Stringa extra (es. `--ssl-mode=REQUIRED` o opzioni CA). Se valorizzata, sostituisce il default automatico |
-| Porta `25060` (tipica DO) | Attiva automaticamente `--ssl-mode=REQUIRED` se `BACKUP_MYSQLDUMP_SSL_ARGS` è vuota |
+| `BACKUP_MYSQL_SSL` | `1` / `true` per forzare SSL su `mysqldump`/`mysql` (di solito non serve su Proxmox LAN/ngrok) |
+| `BACKUP_MYSQLDUMP_SSL_ARGS` | Stringa extra (es. `--ssl-mode=REQUIRED` o opzioni CA). Se valorizzata, ha priorità su `BACKUP_MYSQL_SSL` |
 
 Il database **`backup_management`** (metadati job) usa la stessa logica di fallback in `register-backup.js` per connettersi con `mysql2`.
 

@@ -64,7 +64,7 @@ Sistema completo per la gestione di viaggi, consegne e fatturazione logistica, s
 - **Upload documenti**: Sistema drag-and-drop per allegati preventivi con Vercel Blob Storage (anche in locale) ⭐ **AGGIORNATO v2.40.0**
 - **Campo IVA% avanzato**: Supporto per "Esclusa art. 15" nel campo IVA% dei preventivi ⭐ **NUOVO v2.40.0**
 - **Upload documenti veicoli**: Sistema completo upload documenti con supporto tipi personalizzati e Vercel Blob Storage ⭐ **NUOVO v2.39.0**
-- **Anagrafica ricambi**: Catalogo ricambi con autocompletamento; compatibile **MySQL cloud** (TLS `DB_VIAGGI_SSL`, pool `db-viaggi`, ricerca su descrizione/codice) ⭐ **AGGIORNATO v2.43.14** / base **v2.38.0**
+- **Anagrafica ricambi**: Catalogo ricambi con autocompletamento; pool `db-viaggi` (TLS opzionale `DB_VIAGGI_SSL`), ricerca su descrizione/codice ⭐ **AGGIORNATO v2.43.14** / base **v2.38.0**
 - **Dashboard veicoli**: Card statistiche veicoli attivi/non attivi e preventivi in attesa ⭐ **NUOVO v2.38.0**
 - **Gestione righe preventivo**: Inserimento manuale righe dettaglio preventivo con formattazione italiana ⭐ **NUOVO v2.37.0**
 - **Luoghi intervento**: Select editabile con possibilità di aggiungere nuovi luoghi dal database ⭐ **NUOVO v2.37.0**

@@ -2,7 +2,8 @@
  * Variabili per script backup (.bat / register-backup.js) allineate a .env.local:
  * DB_GESTIONE_*, DB_VIAGGI_*, MYSQL_* (backup_management).
  * Next.js carica .env.local in process.env in sviluppo; in produzione usare le stesse chiavi su Vercel/host che lancia i .bat.
- * SSL cloud: default --ssl-mode=REQUIRED (MySQL 8.4+). Client vecchi: BACKUP_MYSQLDUMP_SSL_ARGS=--ssl o altro.
+ * SSL: solo se BACKUP_MYSQL_SSL=true/1 oppure BACKUP_MYSQLDUMP_SSL_ARGS valorizzato.
+ * Su MySQL Proxmox in LAN / ngrok di solito non serve SSL.
  */
 
 function stripQuotes(v: string | undefined): string {
@@ -38,12 +39,11 @@ export function buildBackupChildProcessEnv(): Record<string, string> {
 
   const sslExplicit =
     process.env.BACKUP_MYSQL_SSL === '1' || process.env.BACKUP_MYSQL_SSL === 'true';
-  const sslByPort = port === '25060';
   const sslCustom = stripQuotes(process.env.BACKUP_MYSQLDUMP_SSL_ARGS);
   const sslArgs =
     sslCustom !== ''
       ? sslCustom
-      : sslExplicit || sslByPort
+      : sslExplicit
         ? '--ssl-mode=REQUIRED'
         : '';
 

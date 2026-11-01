@@ -2188,7 +2188,7 @@ COMMENT='Anagrafica ricambi/servizi/manodopera per autocompletamento rapido';
 - **Pre-compilazione**: Selezione pezzo precompila codice, categoria, tipo, UM
 
 **Connessione applicativa (runtime, non schema):**
-- Pool condiviso: `src/lib/db-viaggi` — variabili `DB_VIAGGI_HOST`, `DB_VIAGGI_PORT`, `DB_VIAGGI_USER`, `DB_VIAGGI_PASS`, `DB_VIAGGI_NAME`; per MySQL cloud con TLS obbligatorio: `DB_VIAGGI_SSL=true` (su provider tipo DigitalOcean la verifica CA lato Node è disattivata di default; opzionale `DB_VIAGGI_SSL_REJECT_UNAUTHORIZED=true` se si configura il trust delle CA).
+- Pool condiviso: `src/lib/db-viaggi` — variabili `DB_VIAGGI_HOST`, `DB_VIAGGI_PORT`, `DB_VIAGGI_USER`, `DB_VIAGGI_PASS`, `DB_VIAGGI_NAME`; TLS opzionale con `DB_VIAGGI_SSL=true` (di solito non necessario su Proxmox LAN/ngrok); verifica CA stretta con `DB_VIAGGI_SSL_REJECT_UNAUTHORIZED=true` se configurato.
 - GET ricerca: filtro `LIKE` su `descrizione` e `codice`; limite risultati validato (max 100); risposta con campi normalizzati per il client.
 
 **Migration:**

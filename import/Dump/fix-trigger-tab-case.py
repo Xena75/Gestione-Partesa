@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Trigger con nome tabella in PascalCase mentre CREATE TABLE usa snake_case minuscolo:
-su MySQL Linux (DigitalOcean) i nomi sono case-sensitive → ERROR 1146.
+su MySQL Linux i nomi sono case-sensitive → ERROR 1146.
 
 Sostituisce nelle righe trigger: ON TabellaErrata → ON `tabella_corretta`
 """
