@@ -1,5 +1,11 @@
 # Database Reference
 
+**Verifica diretta: 1 novembre 2026 — MySQL 8.4.13, 59 tabelle (22 gestionelogistica, 28 viaggi_db, 9 backup_management), 756 colonne, 24 colonne generate, 27 relazioni FK, 12 trigger e 2 routine visibili.**
+
+Lettura dei soli metadati tramite account applicativo esistente, in sessione/transazione READ ONLY; nessun record aziendale esportato. I blocchi struttura e gli indici verificati riportano il server corrente. Dettaglio completo, inclusi nullability, default, tipi, charset/collation, generazione, indici, vincoli CHECK, regole FK e corpi dei trigger: [snapshot metadati senza dati](database-schema-verificato-2026-11-01.json). Le routine sono censite per nome/tipo, non per definizione. Lo snapshot non è una migration DDL eseguibile.
+
+Le note di evoluzione e gli esempi applicativi mantengono il contesto storico: per lo schema corrente prevalgono i blocchi verificati e lo snapshot. Nessuna operazione sullo schema è stata eseguita.
+
 Questo documento contiene la documentazione completa delle tre basi di dati utilizzate nel progetto gestione-partesa.
 
 ## Infrastruttura MySQL (aggiornato novembre 2026)
@@ -426,28 +432,35 @@ Quando i dati venivano caricati per la modifica, includevano `company_name` che 
 ### Database: gestionelogistica
 
 #### db_consegne
-```sql
-Field                    Type           Null  Key  Default  Extra
-Ordine                   varchar(50)    NO    PRI  NULL     
-Consegna_Num             varchar(50)    YES        NULL     
-Data_UM                  datetime       YES        NULL     
-Fattura_Num              varchar(50)    YES        NULL     
-Bolla_Num                varchar(50)    YES        NULL     
-Viaggio                  varchar(50)    YES        NULL     
-Data_Trasporto           datetime       YES        NULL     
-Cod_Vettore              double         YES        NULL     
-Descr_Vettore            varchar(200)   YES        NULL     
-Cod_Cliente              varchar(50)    YES        NULL     
-Ragione_Sociale          varchar(200)   YES        NULL     
-Cod_Articolo             varchar(50)    NO    PRI  NULL     
-Descr_Articolo           varchar(200)   YES        NULL     
-Stato_movimento_merci    varchar(50)    YES        NULL     
-Riga_ordine              varchar(50)    YES        NULL     
-UM                       varchar(10)    YES        NULL     
-Colli                    decimal(10,2)  YES        NULL     
-UM1                      varchar(10)    YES        NULL     
-ID_Consegna              varchar(100)   YES   UNI  NULL     STORED GENERATED
+```text
+Colonna | Tipo | Null | Default | Extra
+Ordine | varchar(50) | NO | NULL |
+Consegna_Num | varchar(50) | YES | NULL |
+Data_UM | datetime | YES | NULL |
+Fattura_Num | varchar(50) | YES | NULL |
+Bolla_Num | varchar(50) | YES | NULL |
+Viaggio | varchar(50) | YES | NULL |
+Data_Trasporto | datetime | YES | NULL |
+Cod_Vettore | double | YES | NULL |
+Descr_Vettore | varchar(200) | YES | NULL |
+Cod_Cliente | varchar(50) | YES | NULL |
+Ragione_Sociale | varchar(200) | YES | NULL |
+Cod_Articolo | varchar(50) | NO | NULL |
+Descr_Articolo | varchar(200) | YES | NULL |
+Stato_movimento_merci | varchar(50) | YES | NULL |
+Riga_ordine | varchar(50) | YES | NULL |
+UM | varchar(10) | YES | NULL |
+Colli | decimal(10,2) | YES | NULL |
+UM1 | varchar(10) | YES | NULL |
+ID_Consegna | varchar(100) | YES | NULL | STORED GENERATED
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_id_consegna` UNIQUE (`ID_Consegna`).
+- `PRIMARY` UNIQUE (`Ordine`, `Cod_Articolo`).
+
+**Espressioni generate rilevate:**
+- `ID_Consegna`: ``concat(`Ordine`,_utf8mb4\'_\',`Cod_Articolo`)``.
 
 **Utilizzo nel progetto:**
 - **Pagine**: Dashboard principale, gestione consegne
@@ -456,15 +469,18 @@ ID_Consegna              varchar(100)   YES   UNI  NULL     STORED GENERATED
 - **Funzionalità**: Tracciamento consegne, reportistica, analisi performance
 
 #### delivery_mappings
-```sql
-Field         Type        Null  Key  Default              Extra
-id            int(11)     NO    PRI  NULL                 auto_increment
-name          varchar(255) NO        NULL                 
-description   text        YES        NULL                 
-mapping_data  longtext    NO        NULL                 
-created_at    timestamp   NO        current_timestamp()  
-updated_at    timestamp   NO        current_timestamp()  on update current_timestamp()
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+name | varchar(255) | NO | NULL |
+description | text | YES | NULL |
+mapping_data | longtext | NO | NULL |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+updated_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `PRIMARY` UNIQUE (`id`).
 
 **Utilizzo nel progetto:**
 - **Pagine**: `/import_delivery` - Import dati delivery
@@ -473,47 +489,75 @@ updated_at    timestamp   NO        current_timestamp()  on update current_times
 - **Funzionalità**: Mapping colonne CSV per import dati delivery
 
 #### fatt_delivery
-```sql
-Field              Type           Null  Key  Default              Extra
-id                 int(11)        NO    PRI  NULL                 auto_increment
-source_name        varchar(255)   YES        NULL                 
-appalto            varchar(255)   YES        NULL                 
-ordine             varchar(100)   YES   MUL  NULL                 
-cod_vettore        double         YES   MUL  NULL                 
-descr_vettore      varchar(255)   YES   MUL  NULL                 
-viaggio            varchar(100)   YES   MUL  NULL                 
-consegna_num       varchar(100)   YES   MUL  NULL                 
-cod_cliente        varchar(100)   YES   MUL  NULL                 
-ragione_sociale    varchar(255)   YES   MUL  NULL                 
-cod_articolo       varchar(100)   YES   MUL  NULL                 
-descr_articolo     varchar(255)   YES        NULL                 
-gr_stat            varchar(100)   YES        NULL                 
-descr_gruppo_st    varchar(255)   YES        NULL                 
-classe_prod        varchar(100)   YES        NULL                 
-descr_classe_prod  varchar(255)   YES        NULL                 
-classe_tariffa     varchar(100)   YES        NULL                 
-anomalia           text           YES        NULL                 
-data_mov_merce     datetime       YES   MUL  NULL                 
-colli              int(11)        YES        NULL                 
-tariffa            decimal(10,2)  YES        NULL                 
-tariffa_vuoti      decimal(10,2)  YES        NULL                 
-compenso           decimal(12,2)  YES        NULL                 
-tr_cons            int(11)        YES        NULL                 
-tot_compenso       decimal(12,2)  YES        NULL                 
-bu                 varchar(50)    YES   MUL  NULL                 
-div                varchar(50)    YES        NULL                 
-dep                varchar(50)    YES        NULL                 
-tipologia          varchar(100)   YES   MUL  NULL                 
-cod_em_fat         varchar(20)    YES        NULL                 
-emittente_fattura  varchar(255)   YES        NULL                 
-oda                varchar(20)    YES        NULL                 
-mese               tinyint(4)     YES   MUL  NULL                 STORED GENERATED
-settimana          tinyint(4)     YES        NULL                 STORED GENERATED
-ID_fatt            varchar(255)   YES        NULL                 STORED GENERATED
-anno               smallint(6)    YES        NULL                 STORED GENERATED
-mese_fatturazione  tinyint(4)     YES   MUL  NULL                 
-anno_fatturazione  smallint(6)    YES   MUL  NULL                 
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+source_name | varchar(255) | YES | NULL |
+appalto | varchar(255) | YES | NULL |
+ordine | varchar(100) | YES | NULL |
+cod_vettore | double | YES | NULL |
+descr_vettore | varchar(255) | YES | NULL |
+viaggio | varchar(100) | YES | NULL |
+consegna_num | varchar(100) | YES | NULL |
+cod_cliente | varchar(100) | YES | NULL |
+ragione_sociale | varchar(255) | YES | NULL |
+cod_articolo | varchar(100) | YES | NULL |
+descr_articolo | varchar(255) | YES | NULL |
+gr_stat | varchar(100) | YES | NULL |
+descr_gruppo_st | varchar(255) | YES | NULL |
+classe_prod | varchar(100) | YES | NULL |
+descr_classe_prod | varchar(255) | YES | NULL |
+classe_tariffa | varchar(100) | YES | NULL |
+anomalia | text | YES | NULL |
+data_mov_merce | datetime | YES | NULL |
+colli | int | YES | NULL |
+tariffa | decimal(10,2) | YES | NULL |
+tariffa_vuoti | decimal(10,2) | YES | NULL |
+compenso | decimal(12,2) | YES | NULL |
+tr_cons | int | YES | NULL |
+tot_compenso | decimal(12,2) | YES | NULL |
+bu | varchar(50) | YES | NULL |
+div | varchar(50) | YES | NULL |
+dep | varchar(50) | YES | NULL |
+tipologia | varchar(100) | YES | NULL |
+cod_em_fat | varchar(20) | YES | NULL |
+emittente_fattura | varchar(255) | YES | NULL |
+oda | varchar(20) | YES | NULL |
+mese_fatturazione | tinyint | YES | NULL |
+anno_fatturazione | smallint | YES | NULL |
+ID_fatt | varchar(255) | YES | NULL | STORED GENERATED
+mese | tinyint | YES | NULL | STORED GENERATED
+settimana | tinyint | YES | NULL | STORED GENERATED
+anno | smallint | YES | NULL | STORED GENERATED
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_bu_div` (`bu`, `div`).
+- `idx_cod_articolo` (`cod_articolo`).
+- `idx_cod_cliente` (`cod_cliente`).
+- `idx_cod_vettore` (`cod_vettore`).
+- `idx_consegna_count` (`consegna_num`, `tipologia`, `dep`).
+- `idx_consegna_num_tipologia` (`consegna_num`, `tipologia`).
+- `idx_data_mov_merce` (`data_mov_merce`).
+- `idx_data_tipologia` (`data_mov_merce`, `tipologia`).
+- `idx_grouped_main` (`consegna_num`, `tipologia`, `data_mov_merce`).
+- `idx_grouped_secondary` (`viaggio`, `dep`, `descr_vettore`).
+- `idx_grouped_tertiary` (`ordine`, `cod_cliente`, `bu`).
+- `idx_mese_anno_fatturazione` (`mese_fatturazione`, `anno_fatturazione`).
+- `idx_ordine` (`ordine`).
+- `idx_ragione_sociale` (`ragione_sociale`).
+- `idx_tipologia_dep` (`tipologia`, `dep`).
+- `idx_unique_delivery` UNIQUE (`consegna_num`, `cod_articolo`, `id`).
+- `idx_vettore_tipologia` (`descr_vettore`, `tipologia`).
+- `idx_viaggio_consegna` (`viaggio`, `consegna_num`).
+- `idx_viaggio_tipologia` (`viaggio`, `tipologia`).
+- `PRIMARY` UNIQUE (`id`).
+
+**Espressioni generate rilevate:**
+- `ID_fatt`: ``concat(ifnull(`div`,_utf8mb4\'\'),_utf8mb4\'-\',ifnull(`classe_tariffa`,_utf8mb4\'\'),_utf8mb4\'-\',ifnull(`classe_prod`,_utf8mb4\'\'))``.
+- `mese`: ``month(`data_mov_merce`)``.
+- `settimana`: ``week(`data_mov_merce`,1)``.
+- `anno`: ``year(`data_mov_merce`)``.
 
 **Utilizzo nel progetto:**
 - **Pagine**: `/delivery` - Visualizzazione e gestione delivery; `/delivery/analytics` - **pivot dinamica + drill-down** (v2.43.19)
@@ -531,66 +575,81 @@ anno_fatturazione  smallint(6)    YES   MUL  NULL
 - **Filtri**: Le query di filtro usano `mese_fatturazione`/`anno_fatturazione` quando disponibili, altrimenti `mese`/`anno`
 
 #### fatt_extra_navette
-```sql
-Field               Type           Null  Key  Default              Extra
-id                  int(11)        NO    PRI  NULL                 auto_increment
-source_name         varchar(255)   YES        NULL                 
-categoria           varchar(100)   YES        NULL                 
-bu                  varchar(100)   YES        NULL                 
-div                 varchar(100)   YES        NULL                 
-dep                 varchar(100)   YES        NULL                 
-appalto             varchar(255)   YES   MUL  NULL                 
-data_mov            datetime       YES   MUL  NULL                 
-causale             varchar(255)   YES        NULL                 
-vettore             varchar(255)   YES   MUL  NULL                 
-quantita            decimal(13,3)  YES        NULL                 
-costo_unitario      decimal(12,2)  YES        NULL                 
-costo_totale        decimal(12,2)  YES        NULL                 
-ods                 varchar(20)    YES        NULL                 
-note                varchar(255)   YES        NULL                 
-tipologia           varchar(100)   YES        NULL                 
-cliente             varchar(255)   YES   MUL  NULL                 
-operatore_logistico varchar(255)   YES        NULL                 
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+source_name | varchar(255) | YES | NULL |
+categoria | varchar(100) | YES | NULL |
+bu | varchar(100) | YES | NULL |
+div | varchar(100) | YES | NULL |
+dep | varchar(100) | YES | NULL |
+appalto | varchar(255) | YES | NULL |
+data_mov | datetime | YES | NULL |
+causale | varchar(255) | YES | NULL |
+vettore | varchar(255) | YES | NULL |
+quantita | decimal(13,3) | YES | NULL |
+costo_unitario | decimal(12,2) | YES | NULL |
+costo_totale | decimal(12,2) | YES | NULL |
+ods | varchar(20) | YES | NULL |
+note | varchar(255) | YES | NULL |
+tipologia | varchar(100) | YES | NULL |
+cliente | varchar(255) | YES | NULL |
+operatore_logistico | varchar(255) | YES | NULL |
 ```
 
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_appalto` (`appalto`).
+- `idx_cliente` (`cliente`).
+- `idx_data_mov` (`data_mov`).
+- `idx_vettore` (`vettore`).
+- `PRIMARY` UNIQUE (`id`).
+
 #### fatt_handling
-```sql
-Field                   Type           Null  Key  Default  Extra
-id                      int(11)        NO    PRI  NULL     auto_increment
-source_name             varchar(255)   YES        NULL     
-appalto                 varchar(255)   YES        NULL     
-bu                      varchar(50)    YES        NULL     
-em_fatt                 varchar(20)    YES        NULL     
-rag_soc                 varchar(255)   YES        NULL     
-div                     varchar(50)    YES        NULL     
-dep                     varchar(100)   YES        NULL     
-mag                     int(11)        YES   MUL  NULL     
-tmv                     int(11)        YES        NULL     
-tipo_movimento          varchar(100)   YES        NULL     
-doc_mat                 int(11)        YES   MUL  NULL     
-esmat                   int(11)        YES        NULL     
-pos                     int(11)        YES        NULL     
-materiale               varchar(100)   YES        NULL     
-descrizione_materiale   varchar(255)   YES        NULL     
-gr_m                    varchar(50)    YES        NULL     
-comp                    int(11)        YES        NULL     
-doc_acq                 varchar(20)    YES        NULL     
-esmat_1                 int(11)        YES        NULL     
-cliente                 varchar(20)    YES   MUL  NULL     
-data_mov_m              datetime       YES   MUL  NULL     
-quantita                decimal(13,3)  YES        NULL     
-umo                     varchar(20)    YES        NULL     
-qta_uma                 decimal(13,3)  YES        NULL     
-tipo_imb                varchar(50)    YES        NULL     
-t_hf_umv                int(11)        YES        NULL     
-imp_hf_um               decimal(12,4)  YES        NULL     
-imp_resi_v              decimal(12,4)  YES        NULL     
-imp_doc                 decimal(12,4)  YES        NULL     
-tot_hand                decimal(12,4)  YES        NULL     
-mese                    tinyint(4)     YES        NULL     
-mese_fatturazione       tinyint(4)     YES        NULL     
-anno_fatturazione       smallint(6)    YES        NULL     
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+source_name | varchar(255) | YES | NULL |
+appalto | varchar(255) | YES | NULL |
+bu | varchar(50) | YES | NULL |
+em_fatt | varchar(20) | YES | NULL |
+rag_soc | varchar(255) | YES | NULL |
+div | varchar(50) | YES | NULL |
+dep | varchar(100) | YES | NULL |
+mag | int | YES | NULL |
+tmv | int | YES | NULL |
+tipo_movimento | varchar(100) | YES | NULL |
+doc_mat | int | YES | NULL |
+esmat | int | YES | NULL |
+pos | int | YES | NULL |
+materiale | varchar(100) | YES | NULL |
+descrizione_materiale | varchar(255) | YES | NULL |
+gr_m | varchar(50) | YES | NULL |
+comp | int | YES | NULL |
+doc_acq | varchar(20) | YES | NULL |
+esmat_1 | int | YES | NULL |
+cliente | varchar(20) | YES | NULL |
+data_mov_m | datetime | YES | NULL |
+quantita | decimal(13,3) | YES | NULL |
+umo | varchar(20) | YES | NULL |
+qta_uma | decimal(13,3) | YES | NULL |
+tipo_imb | varchar(50) | YES | NULL |
+t_hf_umv | int | YES | NULL |
+imp_hf_um | decimal(12,4) | YES | NULL |
+imp_resi_v | decimal(12,4) | YES | NULL |
+imp_doc | decimal(12,4) | YES | NULL |
+tot_hand | decimal(12,4) | YES | NULL |
+mese | tinyint | YES | NULL |
+mese_fatturazione | tinyint | YES | NULL |
+anno_fatturazione | smallint | YES | NULL |
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_cliente` (`cliente`).
+- `idx_data_mov_m` (`data_mov_m`).
+- `idx_doc_mat` (`doc_mat`).
+- `idx_mag` (`mag`).
+- `idx_mese_anno_fatturazione` (`mese_fatturazione`, `anno_fatturazione`).
+- `PRIMARY` UNIQUE (`id`).
 
 **Note sulla struttura:**
 - **Precisione decimali**: I campi `imp_hf_um`, `imp_resi_v`, `imp_doc`, `tot_hand` sono stati aggiornati a `DECIMAL(12,4)` per supportare fino a 4 decimali (migration: `migrations/increase_handling_decimal_precision.sql`)
@@ -612,40 +671,56 @@ anno_fatturazione       smallint(6)    YES        NULL
 - **Componenti**: `HandlingFilters.tsx`, `ExportHandlingButton.tsx`, `HandlingTable.tsx` (banner finestra default)
 
 #### import_mappings
-```sql
-Field         Type        Null  Key  Default              Extra
-id            int(11)     NO    PRI  NULL                 auto_increment
-name          varchar(255) NO   UNI  NULL                 
-description   text        YES        NULL                 
-mapping_data  longtext    NO        NULL                 
-created_at    timestamp   NO        current_timestamp()  
-updated_at    timestamp   NO        current_timestamp()  on update current_timestamp()
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+name | varchar(255) | NO | NULL |
+description | text | YES | NULL |
+mapping_data | longtext | NO | NULL |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+updated_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_mapping_name` (`name`).
+- `name` UNIQUE (`name`).
+- `PRIMARY` UNIQUE (`id`).
 
 #### import_progress
-```sql
-Field         Type         Null  Key  Default              Extra
-id            int(11)      NO    PRI  NULL                 auto_increment
-file_id       varchar(255) NO    UNI  NULL                 
-progress      int(11)      NO        0                    
-current_step  varchar(500) NO                             
-completed     tinyint(1)   NO        0                    
-result        longtext     YES        NULL                 
-created_at    timestamp    NO    MUL  current_timestamp()  
-updated_at    timestamp    NO        current_timestamp()  on update current_timestamp()
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+file_id | varchar(255) | NO | NULL |
+progress | int | NO | 0 |
+current_step | varchar(500) | NO |  |
+completed | tinyint(1) | NO | 0 |
+result | longtext | YES | NULL |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+updated_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
 ```
 
+**Indici verificati sul server (1 novembre 2026):**
+- `file_id` UNIQUE (`file_id`).
+- `idx_created_at` (`created_at`).
+- `idx_file_id` (`file_id`).
+- `PRIMARY` UNIQUE (`id`).
+
 #### system_config
-```sql
-Field       Type                                              Null  Key  Default              Extra
-id          int(11)                                           NO    PRI  NULL                 auto_increment
-category    enum('general','backup','notifications','security') NO   MUL  NULL                 
-key         varchar(100)                                      NO        NULL                 
-value       text                                              NO        NULL                 
-description text                                              YES        NULL                 
-updated_by  varchar(100)                                      YES        NULL                 
-updated_at  datetime                                          NO        current_timestamp()  on update current_timestamp()
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+category | enum('general','backup','notifications','security') | NO | NULL |
+key | varchar(100) | NO | NULL |
+value | text | NO | NULL |
+description | text | YES | NULL |
+updated_by | varchar(100) | YES | NULL |
+updated_at | datetime | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_category` (`category`).
+- `PRIMARY` UNIQUE (`id`).
+- `unique_config` UNIQUE (`category`, `key`).
 
 **Utilizzo nel progetto:**
 - **Pagine**: Sistema configurazione generale
@@ -655,17 +730,24 @@ updated_at  datetime                                          NO        current_
 - **Dashboard**: Controllo configurazioni attive
 
 #### system_logs
-```sql
-Field      Type                                           Null  Key  Default              Extra
-id         int(11)                                        NO    PRI  NULL                 auto_increment
-timestamp  datetime                                       NO    MUL  current_timestamp()  
-type       enum('access','backup','error','import','system') NO MUL  NULL                 
-user       varchar(100)                                   NO    MUL  NULL                 
-action     varchar(255)                                   NO        NULL                 
-details    text                                           YES        NULL                 
-ip_address varchar(45)                                    YES        NULL                 
-status     enum('success','error','warning')              NO    MUL  success              
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+timestamp | datetime | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+type | enum('access','backup','error','import','system') | NO | NULL |
+user | varchar(100) | NO | NULL |
+action | varchar(255) | NO | NULL |
+details | text | YES | NULL |
+ip_address | varchar(45) | YES | NULL |
+status | enum('success','error','warning') | NO | success |
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_status` (`status`).
+- `idx_timestamp` (`timestamp`).
+- `idx_type` (`type`).
+- `idx_user` (`user`).
+- `PRIMARY` UNIQUE (`id`).
 
 **Utilizzo nel progetto:**
 - **Pagine**: Sistema logging e audit
@@ -675,93 +757,126 @@ status     enum('success','error','warning')              NO    MUL  success
 - **Dashboard**: Monitoraggio log, controllo errori
 
 #### tab_bu
-```sql
-Field        Type         Null  Key  Default  Extra
-ID_BU        int(11)      NO    PRI  NULL     auto_increment
-BU           varchar(50)  NO        NULL     
-Localita_BU  varchar(100) YES        NULL     
+```text
+Colonna | Tipo | Null | Default | Extra
+ID_BU | int | NO | NULL | auto_increment
+BU | varchar(50) | NO | NULL |
+Localita_BU | varchar(100) | YES | NULL |
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `PRIMARY` UNIQUE (`ID_BU`).
 
 #### tab_classe_zona
-```sql
-Field             Type         Null  Key  Default  Extra
-Cod_Cliente       varchar(50)  NO    PRI  NULL     
-Div               varchar(100) YES        NULL     
-Ragione_Sociale   varchar(200) YES        NULL     
-Ragione_Sociale2  varchar(200) YES        NULL     
-Insegna           varchar(200) YES        NULL     
-Classe_Tariffa    varchar(50)  YES        NULL     
-Luogo_di_consegna varchar(200) YES        NULL     
-Via               varchar(200) YES        NULL     
-Localita          varchar(100) YES        NULL     
-CAP               varchar(10)  YES        NULL     
-PR                varchar(2)   YES        NULL     
-Telefono          varchar(20)  YES        NULL     
-Nome_Agente       varchar(100) YES        NULL     
-Canale            varchar(50)  YES        NULL     
-Sottocanale       varchar(50)  YES        NULL     
-Dest_Nome         varchar(200) YES        NULL     
-Dest_Via          varchar(200) YES        NULL     
-Dest_Civico       int(11)      YES        NULL     
-Dest_Citta        varchar(100) YES        NULL     
-Dest_Cap          varchar(10)  YES        NULL     
-Consegnare_in     varchar(200) YES        NULL     
+```text
+Colonna | Tipo | Null | Default | Extra
+Cod_Cliente | varchar(50) | NO | NULL |
+Div | varchar(100) | YES | NULL |
+Ragione_Sociale | varchar(200) | YES | NULL |
+Ragione_Sociale2 | varchar(200) | YES | NULL |
+Insegna | varchar(200) | YES | NULL |
+Classe_Tariffa | varchar(50) | YES | NULL |
+Luogo_di_consegna | varchar(200) | YES | NULL |
+Via | varchar(200) | YES | NULL |
+Localita | varchar(100) | YES | NULL |
+CAP | varchar(10) | YES | NULL |
+PR | varchar(2) | YES | NULL |
+Telefono | varchar(20) | YES | NULL |
+Nome_Agente | varchar(100) | YES | NULL |
+Canale | varchar(50) | YES | NULL |
+Sottocanale | varchar(50) | YES | NULL |
+Dest_Nome | varchar(200) | YES | NULL |
+Dest_Via | varchar(200) | YES | NULL |
+Dest_Civico | int | YES | NULL |
+Dest_Citta | varchar(100) | YES | NULL |
+Dest_Cap | varchar(10) | YES | NULL |
+Consegnare_in | varchar(200) | YES | NULL |
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `PRIMARY` UNIQUE (`Cod_Cliente`).
 
 #### tab_classi_prodotto
-```sql
-Field              Type         Null  Key  Default  Extra
-Classe_Prod        varchar(50)  NO    PRI  NULL     
-Descr_Classe_Prod  varchar(200) NO        NULL     
+```text
+Colonna | Tipo | Null | Default | Extra
+Classe_Prod | varchar(50) | NO | NULL |
+Descr_Classe_Prod | varchar(200) | NO | NULL |
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `PRIMARY` UNIQUE (`Classe_Prod`).
 
 #### tab_classi_tariffa
-```sql
-Field                Type         Null  Key  Default  Extra
-Classe_Tariffa       varchar(50)  NO    PRI  NULL     
-Descr_Classe_Tariffa varchar(200) NO        NULL     
+```text
+Colonna | Tipo | Null | Default | Extra
+Classe_Tariffa | varchar(50) | NO | NULL |
+Descr_Classe_Tariffa | varchar(200) | NO | NULL |
 ```
 
+**Indici verificati sul server (1 novembre 2026):**
+- `PRIMARY` UNIQUE (`Classe_Tariffa`).
+
 #### tab_delivery_terzisti
-```sql
-Field                Type           Null  Key  Default              Extra
-id                   int(11)        NO    PRI  NULL                 auto_increment
-div                  varchar(100)   YES   MUL  NULL                 
-bu                   varchar(100)   YES        NULL                 
-dep                  varchar(100)   YES        NULL                 
-viaggio              varchar(100)   YES   MUL  NULL                 
-data_viaggio         datetime       YES   MUL  NULL                 
-ordine               varchar(100)   YES        NULL                 
-consegna_num         varchar(100)   YES   MUL  NULL                 
-data_mov_merce       datetime       YES   MUL  NULL                 
-cod_cliente          varchar(100)   YES        NULL                 
-ragione_sociale      varchar(255)   YES        NULL                 
-Cod_Vettore          double         YES   MUL  NULL                 
-descr_vettore        varchar(100)   YES        NULL                 
-Tipo_Vettore         varchar(100)   YES   MUL  NULL                 
-Azienda_Vettore      varchar(100)   YES   MUL  NULL                 
-Id_Tariffa           varchar(10)    YES        2                    
-tipologia            varchar(100)   YES   MUL  NULL                 
-ID_fatt              varchar(50)    YES        NULL                 
-cod_articolo         varchar(100)   YES        NULL                 
-descr_articolo       varchar(255)   YES        NULL                 
-colli                int(11)        YES        NULL                 
-tariffa_terzista     decimal(10,2)  YES        0.00                 
-extra_cons           decimal(10,2)  YES        0.00                 
-classe_prod          varchar(100)   YES        NULL                 
-classe_tariffa       varchar(100)   YES        NULL                 
-Descr_Vettore_Join   varchar(100)   YES        NULL                 
-compenso             decimal(10,2)  YES        NULL                 STORED GENERATED
-tot_compenso         decimal(10,2)  YES        NULL                 STORED GENERATED
-peso                 decimal(10,2)  YES        NULL                 
-volume               decimal(10,2)  YES        NULL                 
-updated_at           timestamp      NO        current_timestamp()  on update current_timestamp()
-created_at           timestamp      NO        current_timestamp()  
-mese                 int(11)        YES        NULL                 STORED GENERATED
-trimestre            int(11)        YES        NULL                 STORED GENERATED
-settimana            int(11)        YES        NULL                 STORED GENERATED
-anno                 smallint(6)    YES   MUL  NULL                 STORED GENERATED
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+div | varchar(100) | YES | NULL |
+bu | varchar(100) | YES | NULL |
+dep | varchar(100) | YES | NULL |
+viaggio | varchar(100) | YES | NULL |
+data_viaggio | datetime | YES | NULL |
+ordine | varchar(100) | YES | NULL |
+consegna_num | varchar(100) | YES | NULL |
+data_mov_merce | datetime | YES | NULL |
+cod_cliente | varchar(100) | YES | NULL |
+ragione_sociale | varchar(255) | YES | NULL |
+Cod_Vettore | double | YES | NULL |
+descr_vettore | varchar(100) | YES | NULL |
+tipo_vettore | varchar(100) | YES | NULL |
+Azienda_Vettore | varchar(100) | YES | NULL |
+Id_Tariffa | varchar(10) | YES | 2 |
+tipologia | varchar(100) | YES | NULL |
+ID_fatt | varchar(50) | YES | NULL |
+cod_articolo | varchar(100) | YES | NULL |
+descr_articolo | varchar(255) | YES | NULL |
+colli | int | YES | NULL |
+tariffa_terzista | decimal(10,2) | YES | 0.00 |
+extra_cons | decimal(10,2) | YES | 0.00 |
+classe_prod | varchar(100) | YES | NULL |
+classe_tariffa | varchar(100) | YES | NULL |
+Descr_Vettore_Join | varchar(100) | YES | NULL |
+peso | decimal(10,2) | YES | NULL |
+volume | decimal(10,2) | YES | NULL |
+updated_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+compenso | decimal(10,2) | YES | NULL | STORED GENERATED
+tot_compenso | decimal(10,2) | YES | NULL | STORED GENERATED
+mese | int | YES | NULL | STORED GENERATED
+trimestre | int | YES | NULL | STORED GENERATED
+settimana | int | YES | NULL | STORED GENERATED
+anno | smallint | YES | NULL | STORED GENERATED
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_azienda_vettore` (`Azienda_Vettore`).
+- `idx_cod_vettore` (`Cod_Vettore`).
+- `idx_consegna_num` (`consegna_num`).
+- `idx_data_mov_merce` (`data_mov_merce`).
+- `idx_data_viaggio` (`data_viaggio`).
+- `idx_div` (`div`).
+- `idx_tipo_vettore` (`tipo_vettore`).
+- `idx_tipologia` (`tipologia`).
+- `idx_unique_terzisti` UNIQUE (`consegna_num`, `tipologia`, `cod_articolo`, `id`).
+- `idx_viaggio` (`viaggio`).
+- `PRIMARY` UNIQUE (`id`).
+
+**Espressioni generate rilevate:**
+- `compenso`: ``(`colli` * `tariffa_terzista`)``.
+- `tot_compenso`: ``(`compenso` + ifnull(`extra_cons`,0))``.
+- `mese`: ``month(`data_viaggio`)``.
+- `trimestre`: ``quarter(`data_viaggio`)``.
+- `settimana`: ``week(`data_viaggio`,1)``.
+- `anno`: ``year(`data_viaggio`)``.
 
 **Note importanti:**
 - **Campi generati da `data_viaggio`**: `mese`, `trimestre`, `settimana`, `anno` sono calcolati automaticamente da `data_viaggio`:
@@ -776,25 +891,37 @@ anno                 smallint(6)    YES   MUL  NULL                 STORED GENER
 - **Import**: l’endpoint `/api/terzisti/import` **non** inserisce valori nelle colonne GENERATED `compenso` e `tot_compenso` (MySQL le calcola da `colli`, `tariffa_terzista`, `extra_cons`) ⭐ **v2.43.15**
 
 #### tab_deposito
-```sql
-Field          Type         Null  Key  Default  Extra
-ID_div         int(11)      NO    PRI  NULL     auto_increment
-DIV            varchar(50)  NO    MUL  NULL     
-Deposito       varchar(100) NO    UNI  NULL     
-Indirizzo_Div  varchar(200) YES        NULL     
-Cap_DIV        varchar(10)  YES        NULL     
-Citta_Div      varchar(100) YES        NULL     
-PR_Div         varchar(2)   YES        NULL     
+```text
+Colonna | Tipo | Null | Default | Extra
+ID_div | int | NO | NULL | auto_increment
+DIV | varchar(50) | NO | NULL |
+Deposito | varchar(100) | NO | NULL |
+Indirizzo_Div | varchar(200) | YES | NULL |
+Cap_DIV | varchar(10) | YES | NULL |
+Citta_Div | varchar(100) | YES | NULL |
+PR_Div | varchar(2) | YES | NULL |
 ```
 
+**Indici verificati sul server (1 novembre 2026):**
+- `Deposito` UNIQUE (`Deposito`).
+- `idx_tab_deposito_div` (`DIV`).
+- `PRIMARY` UNIQUE (`ID_div`).
+
 #### tab_prodotti
-```sql
-Field           Type         Null  Key  Default  Extra
-Cod_Articolo    varchar(50)  NO    PRI  NULL     
-Descr_Articolo  varchar(200) YES        NULL     
-UM              varchar(10)  YES        NULL     
-Classe_Prod     varchar(50)  YES   MUL  NULL     
+```text
+Colonna | Tipo | Null | Default | Extra
+Cod_Articolo | varchar(50) | NO | NULL |
+Descr_Articolo | varchar(200) | YES | NULL |
+UM | varchar(10) | YES | NULL |
+Classe_Prod | varchar(50) | YES | NULL |
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `Classe_Prod` (`Classe_Prod`).
+- `PRIMARY` UNIQUE (`Cod_Articolo`).
+
+**Chiavi esterne verificate:**
+- `tab_prodotti_ibfk_1`: `Classe_Prod` → `gestionelogistica.tab_classi_prodotto.Classe_Prod` (UPDATE NO ACTION, DELETE NO ACTION).
 
 **Utilizzo nel progetto:**
 - **Pagine**: Sistema gestione prodotti
@@ -804,30 +931,40 @@ Classe_Prod     varchar(50)  YES   MUL  NULL
 - **Dashboard**: Statistiche prodotti per classe
 
 #### tab_tariffe
-```sql
-Field                 Type           Null  Key  Default  Extra
-ID_Fatt               varchar(50)    YES        NULL     
-Divisione             varchar(50)    NO    PRI  NULL     
-Classe_Prod           varchar(50)    NO    PRI  NULL     
-Classe_Tariffa        varchar(50)    NO    PRI  NULL     
-Descr_Classe_Prod     varchar(200)   YES        NULL     
-Descr_Classe_Tariffa  varchar(200)   YES        NULL     
-Tariffa               decimal(10,2)  YES        NULL     
-Tariffa_2             decimal(10,2)  YES        NULL     
-Tariffa_3             decimal(10,2)  YES        NULL     
+```text
+Colonna | Tipo | Null | Default | Extra
+ID_Fatt | varchar(50) | YES | NULL |
+Divisione | varchar(50) | NO | NULL |
+Classe_Prod | varchar(50) | NO | NULL |
+Classe_Tariffa | varchar(50) | NO | NULL |
+Descr_Classe_Prod | varchar(200) | YES | NULL |
+Descr_Classe_Tariffa | varchar(200) | YES | NULL |
+Tariffa | decimal(10,2) | YES | NULL |
+Tariffa_2 | decimal(10,2) | YES | NULL |
+Tariffa_3 | decimal(10,2) | YES | NULL |
 ```
 
+**Indici verificati sul server (1 novembre 2026):**
+- `PRIMARY` UNIQUE (`Divisione`, `Classe_Prod`, `Classe_Tariffa`).
+
 #### tab_vettori
-```sql
-Field             Type         Null  Key  Default  Extra
-Cod_Vettore       double       NO    PRI  0        
-Descr_Vettore     varchar(200) YES        NULL     
-Tipo_Vettore      varchar(50)  YES        NULL     
-Azienda_Vettore   varchar(200) YES        NULL     
-Nome_Vettore      varchar(255) YES        NULL     
-Cognome_Vettore   varchar(100) YES        NULL     
-Cellulare_Vettore varchar(20)  YES        NULL     
+```text
+Colonna | Tipo | Null | Default | Extra
+Cod_Vettore | double | NO | 0 |
+Descr_Vettore | varchar(200) | YES | NULL |
+Tipo_Vettore | varchar(50) | YES | NULL |
+Azienda_Vettore | varchar(200) | YES | NULL |
+Nome_Vettore | varchar(255) | YES | NULL |
+Cognome_Vettore | varchar(100) | YES | NULL |
+Cellulare_Vettore | varchar(20) | YES | NULL |
+Email_Vettore | varchar(100) | YES | NULL |
+Data_Modifica | datetime | YES | NULL |
+Targa_Mezzo | varchar(191) | YES | NULL |
+Id_Tariffa | varchar(10) | YES | 2 |
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `PRIMARY` UNIQUE (`Cod_Vettore`).
 
 Email_Vettore     varchar(100) YES        NULL     
 Data_Modifica     datetime     YES        NULL     
@@ -844,44 +981,51 @@ Id_Tariffa        varchar(10)  YES        2
 - **Dashboard**: Link rapido “Anagrafica vettori (tab_vettori)” nella sezione Viaggi
 
 #### tab_viaggi
-```sql
-Field                    Type         Null  Key  Default  Extra
-Magazzino di partenza    varchar(255) YES        NULL     
-Viaggio                  varchar(191) NO    PRI  NULL     
-Data                     date         YES        NULL     
-Nome Trasportatore       varchar(255) YES        NULL     
-Data Inizio              time         YES        NULL     
-Data Fine                time         YES        NULL     
-Ore PoD                  double       YES        NULL     
-Tipo_Vettore             varchar(50)  YES        NULL     
-Azienda_Vettore          varchar(255) YES        NULL     
-Cognome_Vettore          varchar(100) YES        NULL     
-Nome_Vettore             varchar(100) YES        NULL     
-Nominativo               varchar(243) YES        NULL     
-Ora Inizio               time         YES        NULL     
-Ora Fine                 time         YES        NULL     
-Ore                      double       YES        NULL     
-Colli                    double       YES        NULL     
-Peso (Kg)                double       YES        NULL     
-Km                       double       YES        NULL     
-Targa                    varchar(255) YES        NULL     
-Tipo Patente             varchar(255) YES        NULL     
-Km Iniziali Viaggio      double       YES        NULL     
-Km Finali Viaggio        double       YES        NULL     
-Km Viaggio               double       YES        NULL     
-Km al Rifornimento       double       YES        NULL     
-Litri Riforniti          double       YES        NULL     
-?/lt                     double       YES        NULL     
-euro_rifornimento        decimal(10,2) YES       NULL     STORED GENERATED
-Toccate                  double       YES        NULL     
-Ordini                   double       YES        NULL     
-haiEffettuatoRitiri      tinyint(1)   YES        NULL     
-travelId                 varchar(191) YES   MUL  NULL     STORED GENERATED
-Mese                     double       YES        NULL     
-Trimestre                double       YES        NULL     
-Sett                     double       YES        NULL     
-Giorno                   varchar(255) YES        NULL     
+```text
+Colonna | Tipo | Null | Default | Extra
+Magazzino di partenza | varchar(255) | YES | NULL |
+Viaggio | varchar(191) | NO | NULL |
+Data | date | YES | NULL |
+Nome Trasportatore | varchar(255) | YES | NULL |
+Data Inizio | time | YES | NULL |
+Data Fine | time | YES | NULL |
+Ore PoD | double | YES | NULL |
+Tipo_Vettore | varchar(50) | YES | NULL |
+Azienda_Vettore | varchar(255) | YES | NULL |
+Cognome_Vettore | varchar(100) | YES | NULL |
+Nome_Vettore | varchar(100) | YES | NULL |
+Nominativo | varchar(243) | YES | NULL |
+Ora Inizio | time | YES | NULL |
+Ora Fine | time | YES | NULL |
+Ore | double | YES | NULL |
+Colli | double | YES | NULL |
+Peso (Kg) | double | YES | NULL |
+Km | double | YES | NULL |
+Targa | varchar(255) | YES | NULL |
+Tipo Patente | varchar(255) | YES | NULL |
+Km Iniziali Viaggio | double | YES | NULL |
+Km Finali Viaggio | double | YES | NULL |
+Km Viaggio | double | YES | NULL |
+Km al Rifornimento | double | YES | NULL |
+Litri Riforniti | double | YES | NULL |
+€/lt | double | YES | NULL |
+Toccate | double | YES | NULL |
+Ordini | double | YES | NULL |
+haiEffettuatoRitiri | tinyint(1) | YES | NULL |
+Mese | double | YES | NULL |
+Trimestre | double | YES | NULL |
+Sett | double | YES | NULL |
+Giorno | varchar(255) | YES | NULL |
+euro_rifornimento | decimal(10,2) | YES | NULL | STORED GENERATED
+travelId | varchar(191) | YES | NULL | STORED GENERATED
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `PRIMARY` UNIQUE (`Viaggio`).
+
+**Espressioni generate rilevate:**
+- `euro_rifornimento`: ``(`Litri Riforniti` * `â¬/lt`)``.
+- `travelId`: ``concat(_utf8mb4\'Viaggio - \',`Viaggio`)``.
 
 **Utilizzo nel progetto:**
 - **Pagine**: `/viaggi` — lista e statistiche; **senza filtri in URL** le query su `tab_viaggi` si limitano agli **ultimi 3 mesi** sulla colonna `Data` (vedi `getDefaultTabViaggiMinData` in `src/lib/data-viaggi-tab.ts`); con filtri attivi si applica solo il criterio scelto; export Excel `GET /api/viaggi/export` con gli stessi criteri della vista (limite righe lato server)
@@ -892,27 +1036,40 @@ Giorno                   varchar(255) YES        NULL
 - **Sync**: Sincronizzazione automatica da database `viaggi_db` verso `tab_viaggi` in `gestionelogistica`
 
 #### user_sessions
-```sql
-Field      Type        Null  Key  Default              Extra
-id         varchar(36) NO    PRI  uuid()               
-user_id    varchar(36) NO    MUL  NULL                 
-token      text        NO        NULL                 
-expires_at timestamp   NO    MUL  current_timestamp()  on update current_timestamp()
-created_at timestamp   NO        current_timestamp()  
-updated_at timestamp   NO        current_timestamp()  on update current_timestamp()
+```text
+Colonna | Tipo | Null | Default | Extra
+id | varchar(36) | NO | uuid() | DEFAULT_GENERATED
+user_id | varchar(36) | NO | NULL |
+token | text | NO | NULL |
+expires_at | timestamp | NO | NULL |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+updated_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
 ```
 
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_token_expires` (`expires_at`).
+- `idx_user_id` (`user_id`).
+- `PRIMARY` UNIQUE (`id`).
+
+**Chiavi esterne verificate:**
+- `user_sessions_ibfk_1`: `user_id` → `gestionelogistica.users.id` (UPDATE NO ACTION, DELETE CASCADE).
+
 #### users
-```sql
-Field         Type                    Null  Key  Default              Extra
-id            varchar(36)             NO    PRI  uuid()               
-username      varchar(50)             NO    UNI  NULL                 
-password_hash varchar(255)            NO        NULL                 
-email         varchar(100)            YES        NULL                 
-role          enum('admin','user')    YES        user                 
-created_at    timestamp               NO        current_timestamp()  
-updated_at    timestamp               NO        current_timestamp()  on update current_timestamp()
+```text
+Colonna | Tipo | Null | Default | Extra
+id | varchar(36) | NO | uuid() | DEFAULT_GENERATED
+username | varchar(50) | NO | NULL |
+password_hash | varchar(255) | NO | NULL |
+email | varchar(100) | YES | NULL |
+role | enum('admin','user','employee') | YES | user |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+updated_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
+active | tinyint(1) | NO | 1 |
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `PRIMARY` UNIQUE (`id`).
+- `username` UNIQUE (`username`).
 
 **Utilizzo nel progetto:**
 - **Autenticazione**: Sistema di login e gestione utenti
@@ -921,15 +1078,23 @@ updated_at    timestamp               NO        current_timestamp()  on update c
 - **Middleware**: Controllo accessi e autorizzazioni
 
 #### user_sessions
-```sql
-Field      Type        Null  Key  Default              Extra
-id         varchar(36) NO    PRI  uuid()               
-user_id    varchar(36) NO    MUL  NULL                 
-token      text        NO        NULL                 
-expires_at timestamp   NO    MUL  current_timestamp()  on update current_timestamp()
-created_at timestamp   NO        current_timestamp()  
-updated_at timestamp   NO        current_timestamp()  on update current_timestamp()
+```text
+Colonna | Tipo | Null | Default | Extra
+id | varchar(36) | NO | uuid() | DEFAULT_GENERATED
+user_id | varchar(36) | NO | NULL |
+token | text | NO | NULL |
+expires_at | timestamp | NO | NULL |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+updated_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_token_expires` (`expires_at`).
+- `idx_user_id` (`user_id`).
+- `PRIMARY` UNIQUE (`id`).
+
+**Chiavi esterne verificate:**
+- `user_sessions_ibfk_1`: `user_id` → `gestionelogistica.users.id` (UPDATE NO ACTION, DELETE CASCADE).
 
 **Utilizzo nel progetto:**
 - **Sessioni**: Gestione token di sessione utente
@@ -962,24 +1127,39 @@ updated_at timestamp   NO        current_timestamp()  on update current_timestam
 ### Tabelle
 
 #### automation_logs
-```sql
-Field       Type         Null  Key  Default              Extra
-id          int(11)      NO    PRI  NULL                 auto_increment
-action      varchar(255) NO        NULL                 
-status      varchar(50)  NO        NULL                 
-message     text         YES        NULL                 
-created_at  timestamp    NO        current_timestamp()  
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+operation_type | enum('trigger_insert','cron_check','manual_insert','error') | NO | NULL |
+vehicle_id | varchar(191) | NO | NULL |
+schedule_type | varchar(50) | YES | NULL |
+old_schedule_id | int | YES | NULL |
+new_schedule_id | int | YES | NULL |
+calculated_due_date | date | YES | NULL |
+license_type | varchar(10) | YES | NULL |
+message | text | YES | NULL |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
 ```
 
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_automation_logs_created_at` (`created_at`).
+- `idx_automation_logs_operation_type` (`operation_type`).
+- `idx_automation_logs_vehicle_id` (`vehicle_id`).
+- `PRIMARY` UNIQUE (`id`).
+
 #### categories
-```sql
-Field       Type         Null  Key  Default              Extra
-id          int(11)      NO    PRI  NULL                 auto_increment
-name        varchar(100) NO    UNI  NULL                 
-description text         YES        NULL                 
-created_at  timestamp    NO        current_timestamp()  
-updated_at  timestamp    NO        current_timestamp()  on update current_timestamp()
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+name | varchar(100) | NO | NULL |
+active | tinyint(1) | YES | 1 |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+updated_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `name` UNIQUE (`name`).
+- `PRIMARY` UNIQUE (`id`).
 
 **Utilizzo nel progetto:**
 - **Pagine**: Sistema gestione dipendenti
@@ -991,43 +1171,52 @@ updated_at  timestamp    NO        current_timestamp()  on update current_timest
 #### employees
 **Descrizione:** Tabella estesa per la gestione completa di dipendenti e autisti (29 campi).
 
-```sql
-Field                    Type           Null  Key  Default              Extra
-id                       varchar(50)    NO    PRI  NULL                 
-nome                     varchar(100)   NO        NULL                 
-cognome                  varchar(100)   NO        NULL                 
-email                    varchar(150)   NO    UNI  NULL                 
-cellulare                varchar(20)    YES        NULL                 
-cod_fiscale              varchar(16)    YES        NULL                 
-cdc                      varchar(50)    YES        NULL                 
-indirizzo                varchar(255)   YES        NULL                 
-cap                      varchar(10)    YES        NULL                 
-citta                    varchar(100)   YES        NULL                 
-luogo_nascita            varchar(100)   YES        NULL                 
-data_nascita             date           YES        NULL                 
-cittadinanza             varchar(50)    YES        NULL                 
-titolo_studio            varchar(100)   YES        NULL                 
-qualifica                varchar(100)   YES        NULL                 
-tipo_contratto           varchar(50)    YES        NULL                 
-ccnl                     varchar(100)   YES        NULL                 
-livello                  varchar(20)    YES        NULL                 
-orario_lavoro            varchar(50)    YES        NULL                 
-data_assunzione          date           YES        NULL                 
-is_driver                tinyint(1)     NO        0                    
-patente                  varchar(20)    YES        NULL                 
-email_aziendale          varchar(150)   YES        NULL                 
-profile_image            varchar(255)   YES        NULL                 
-password_hash            varchar(255)   YES        NULL                 
-last_login               timestamp      YES        NULL                 
-active                   tinyint(1)     NO        1                    
-created_at               timestamp      NO        current_timestamp()  
-updated_at               timestamp      NO        current_timestamp()  on update current_timestamp()
-company_id               int(11)        YES   MUL  NULL                 
-data_dimissioni          date           YES        NULL                 
-permesso_soggiorno       varchar(100)   YES        NULL                 
-username_login           varchar(50)    YES   UNI  NULL                 
-nominativo               varchar(255)   YES        NULL                 
+```text
+Colonna | Tipo | Null | Default | Extra
+id | varchar(191) | NO | NULL |
+nominativo | varchar(191) | NO | NULL |
+cdc | varchar(191) | YES | NULL |
+cognome | varchar(191) | YES | NULL |
+nome | varchar(191) | YES | NULL |
+cod_fiscale | varchar(16) | YES | NULL |
+email | varchar(191) | YES | NULL |
+email_aziendale | varchar(255) | YES | NULL |
+cellulare | varchar(20) | YES | NULL |
+indirizzo | varchar(255) | YES | NULL |
+cap | varchar(10) | YES | NULL |
+citta | varchar(100) | YES | NULL |
+qualifica | varchar(191) | YES | NULL |
+tipo_contratto | varchar(50) | YES | NULL |
+ccnl | varchar(100) | YES | NULL |
+orario_lavoro | varchar(50) | YES | NULL |
+data_assunzione | date | YES | NULL |
+data_dimissioni | date | YES | NULL |
+active | tinyint(1) | NO | 1 |
+updatedAt | datetime(3) | NO | NULL |
+createdAt | datetime(3) | NO | CURRENT_TIMESTAMP(3) | DEFAULT_GENERATED
+patente | varchar(100) | YES | NULL |
+foto_url | varchar(500) | YES | NULL |
+cittadinanza | varchar(100) | YES | NULL |
+permesso_soggiorno | varchar(100) | YES | NULL |
+titolo_studio | varchar(100) | YES | NULL |
+luogo_nascita | varchar(150) | YES | NULL |
+data_nascita | date | YES | NULL |
+livello | varchar(10) | YES | NULL |
+is_driver | tinyint(1) | YES | 0 |
+company_id | int | NO | NULL |
+username_login | varchar(255) | YES | NULL |
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `employees_email_key` UNIQUE (`email`).
+- `idx_employees_active` (`active`).
+- `idx_employees_company_id` (`company_id`).
+- `idx_employees_is_driver` (`is_driver`).
+- `idx_employees_username_login` (`username_login`).
+- `PRIMARY` UNIQUE (`id`).
+
+**Chiavi esterne verificate:**
+- `fk_employees_company`: `company_id` → `viaggi_db.companies.id` (UPDATE CASCADE, DELETE NO ACTION).
 
 **Utilizzo nel progetto:**
 - **Pagine**: `/gestione/dipendenti` - Sistema gestione dipendenti e autisti
@@ -1051,21 +1240,33 @@ nominativo               varchar(255)   YES        NULL
 #### employee_documents
 **Descrizione:** Gestione documenti e allegati per ogni dipendente con controllo scadenze.
 
-```sql
-Field         Type         Null  Key  Default              Extra
-id            int(11)      NO    PRI  NULL                 auto_increment
-employee_id   varchar(191) NO    MUL  NULL                 
-document_type varchar(100) NO    MUL  NULL                 
-document_name varchar(255) NO        NULL                 
-file_path     varchar(500) NO        NULL                 
-expiry_date   date         YES   MUL  NULL                 
-upload_date   timestamp    NO        current_timestamp()  
-uploaded_by   varchar(191) YES        NULL                 
-notes         text         YES        NULL                 
-is_active     tinyint(1)   NO        1                    
-created_at    timestamp    NO        current_timestamp()  
-updated_at    timestamp    NO        current_timestamp()  on update current_timestamp()
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+employee_id | varchar(191) | NO | NULL |
+document_type | varchar(100) | NO | NULL |
+document_name | varchar(255) | NO | NULL |
+file_name | varchar(255) | NO | NULL |
+file_path | varchar(500) | NO | NULL |
+file_size | int | NO | 0 |
+file_type | varchar(100) | NO |  |
+issue_date | date | YES | NULL |
+expiry_date | date | YES | NULL |
+status | enum('valido','scaduto','in_scadenza','da_rinnovare') | NO | valido |
+uploaded_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+uploaded_by | varchar(191) | YES | NULL |
+notes | text | YES | NULL |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+updated_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_employee_documents_employee_id` (`employee_id`).
+- `idx_employee_documents_expiry` (`expiry_date`).
+- `idx_employee_documents_issue_date` (`issue_date`).
+- `idx_employee_documents_status` (`status`).
+- `idx_employee_documents_type` (`document_type`).
+- `PRIMARY` UNIQUE (`id`).
 
 **Utilizzo nel progetto:**
 - **Pagine**: `/gestione/dipendenti/[id]/documenti` - Gestione documenti dipendente
@@ -1082,25 +1283,31 @@ updated_at    timestamp    NO        current_timestamp()  on update current_time
 #### employee_leave_requests
 **Descrizione:** Sistema gestione richieste ferie, permessi e congedi dipendenti con supporto ore/giorni.
 
-```sql
-Field          Type                                           Null  Key  Default              Extra
-id             int(11)                                        NO    PRI  NULL                 auto_increment
-employee_id    varchar(191)                                   NO    MUL  NULL                 
-leave_type     enum('ferie','permesso','malattia','congedo')  NO        NULL                 
-start_date     date                                           NO    MUL  NULL                 
-end_date       date                                           NO    MUL  NULL                 
-days_requested int(11)                                        NO        NULL                 
-hours_requested decimal(5,2)                                  YES       NULL                 
-reason         text                                           YES        NULL                 
-status         enum('pending','approved','rejected')          NO    MUL  pending              
-approved_by    varchar(191)                                   YES        NULL                 
-approved_at    timestamp                                      YES        NULL                 
-notes          text                                           YES        NULL                 
-attachment_url varchar(500)                                   YES        NULL                 
-check_modulo   tinyint(1)                                     YES       0                     
-created_at     timestamp                                      NO        current_timestamp()  
-updated_at     timestamp                                      NO        current_timestamp()  on update current_timestamp()
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+employee_id | varchar(191) | NO | NULL |
+leave_type | varchar(100) | NO | NULL |
+start_date | date | NO | NULL |
+end_date | date | NO | NULL |
+days_requested | int | NO | NULL |
+hours_requested | decimal(5,2) | YES | NULL |
+reason | text | YES | NULL |
+status | enum('pending','approved','rejected') | YES | pending |
+approved_by | varchar(191) | YES | NULL |
+approved_at | timestamp | YES | NULL |
+notes | text | YES | NULL |
+attachment_url | varchar(500) | YES | NULL |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+updated_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
+check_modulo | tinyint(1) | YES | 0 |
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_employee_leave_requests_dates` (`start_date`, `end_date`).
+- `idx_employee_leave_requests_employee_id` (`employee_id`).
+- `idx_employee_leave_requests_status` (`status`).
+- `PRIMARY` UNIQUE (`id`).
 
 **Logica Richieste:**
 - **Ferie**: Richieste in giorni (days_requested), conversione automatica in ore (1 giorno = 8 ore)
@@ -1133,22 +1340,27 @@ updated_at     timestamp                                      NO        current_
 #### employee_leave_balance
 **Descrizione:** Bilancio annuale ferie e permessi per ogni dipendente con gestione ore e giorni.
 
-```sql
-Field                      Type         Null  Key  Default              Extra
-id                         int(11)      NO    PRI  NULL                 auto_increment
-employee_id                varchar(191) NO    UNI  NULL                 
-year                       int(11)      NO    MUL  NULL                 
-vacation_days_total        int(11)      NO        26                   
-vacation_days_used         int(11)      NO        0                    
-vacation_days_remaining    int(11)      NO        26                   
-vacation_hours_remaining   decimal(5,2) YES       NULL                 
-ex_holiday_hours_remaining decimal(5,2) YES       NULL                 
-rol_hours_remaining        decimal(5,2) YES       NULL                 
-sick_days_used             int(11)      NO        0                    
-personal_days_used         int(11)      NO        0                    
-last_updated               timestamp    NO        current_timestamp()  on update current_timestamp()
-created_at                 timestamp    NO        current_timestamp()  
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+employee_id | varchar(191) | NO | NULL |
+year | int | NO | NULL |
+month | int | NO | 1 |
+vacation_days_total | int | YES | 26 |
+vacation_days_used | int | YES | 0 |
+vacation_hours_remaining | decimal(5,2) | YES | 0.00 |
+ex_holiday_hours_remaining | decimal(5,2) | YES | 0.00 |
+rol_hours_remaining | decimal(5,2) | YES | 0.00 |
+sick_days_used | int | YES | 0 |
+personal_days_used | int | YES | 0 |
+last_updated | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_employee_leave_balance_employee_year_month` (`employee_id`, `year`, `month`).
+- `PRIMARY` UNIQUE (`id`).
+- `unique_employee_year` UNIQUE (`employee_id`, `year`).
 
 **Sistema Gestione Ferie - Logica di Funzionamento:**
 - **Ferie**: Gestite in giorni (vacation_days_*) e ore (vacation_hours_remaining)
@@ -1173,7 +1385,7 @@ created_at                 timestamp    NO        current_timestamp()
 - **Dashboard**: Statistiche utilizzo ferie, saldi disponibili
 
 **Indici di performance:**
-- `idx_employee_leave_balance_employee_year` - Ricerca per dipendente e anno
+- `unique_employee_year` UNIQUE su `(employee_id, year)`; `idx_employee_leave_balance_employee_year_month` su `(employee_id, year, month)`, verificati sul server. Il mese è informativo: il vincolo consente un solo saldo per dipendente e anno.
 
 **Note tecniche tabelle gestione dipendenti:**
 - Tabelle create tramite `migrations/create_employee_management_tables.sql`
@@ -1190,26 +1402,35 @@ created_at                 timestamp    NO        current_timestamp()
 - Campo opzionale: `attachment_url VARCHAR(500) NULL`
 
 #### import_mappings
-```sql
-Field        Type         Null  Key  Default              Extra
-id           int(11)      NO    PRI  NULL                 auto_increment
-name         varchar(100) NO        NULL                 
-description  text         YES        NULL                 
-mapping_data json         NO        NULL                 
-created_at   timestamp    NO        current_timestamp()  
-updated_at   timestamp    NO        current_timestamp()  on update current_timestamp()
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+name | varchar(255) | NO | NULL |
+description | text | YES | NULL |
+mapping_data | longtext | NO | NULL |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+updated_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
 ```
 
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_mapping_name` (`name`).
+- `name` UNIQUE (`name`).
+- `PRIMARY` UNIQUE (`id`).
+
 #### intervention_types
-```sql
-Field       Type         Null  Key  Default              Extra
-id          int(11)      NO    PRI  NULL                 auto_increment
-name        varchar(100) NO    UNI  NULL                 
-description text         YES        NULL                 
-active      tinyint(1)   YES        1                    
-created_at  timestamp    NO        current_timestamp()  
-updated_at  timestamp    NO        current_timestamp()  on update current_timestamp()
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+name | varchar(100) | NO | NULL |
+description | text | YES | NULL |
+active | tinyint(1) | YES | 1 |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+updated_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `name` UNIQUE (`name`).
+- `PRIMARY` UNIQUE (`id`).
 
 **Utilizzo nel progetto:**
 - **Pagine**: Sistema gestione tipi intervento
@@ -1219,22 +1440,59 @@ updated_at  timestamp    NO        current_timestamp()  on update current_timest
 - **Dashboard**: Controllo tipi intervento disponibili
 
 #### maintenance_quotes
-```sql
-Field         Type           Null  Key  Default              Extra
-id            int(11)        NO    PRI  NULL                 auto_increment
-vehicle_id    int(11)        NO    MUL  NULL                 
-supplier_id   int(11)        NO    MUL  NULL                 
-quote_number  varchar(50)    NO    UNI  NULL                 
-description   text           NO        NULL                 
-amount        decimal(10,2)  NO        NULL                 
-quote_date    date           NO        NULL                 
-valid_until   date           YES        NULL                 
-status        enum('pending','approved','rejected','expired') NO  NULL
-invoice_status enum('not_invoiced','invoiced','partial','not_applicable') NO not_invoiced
-notes         text           YES        NULL                 
-created_at    timestamp      NO        current_timestamp()  
-updated_at    timestamp      NO        current_timestamp()  on update current_timestamp()
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+schedule_id | int | YES | NULL |
+vehicle_id | varchar(191) | NO | NULL |
+supplier_id | int | NO | NULL |
+amount | decimal(10,2) | NO | NULL |
+description | text | NO | NULL |
+valid_until | date | NO | NULL |
+status | enum('pending','approved','rejected','expired','converted') | YES | pending |
+notes | text | YES | NULL |
+scheduled_date | date | YES | NULL |
+quote_number | varchar(50) | YES | NULL |
+quote_date | date | YES | NULL |
+created_by | varchar(36) | YES | NULL |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+approved_by | varchar(36) | YES | NULL |
+approved_at | timestamp | YES | NULL |
+updated_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
+intervention_type | int | NO | NULL |
+invoice_number | varchar(100) | YES | NULL |
+invoice_date | date | YES | NULL |
+invoice_amount | decimal(10,2) | YES | NULL |
+invoice_status | enum('not_invoiced','invoiced','partial','not_applicable') | NO | not_invoiced |
+invoice_notes | text | YES | NULL |
+invoice_document_path | varchar(500) | YES | NULL |
+vehicle_km | int | YES | NULL |
+intervention_location | varchar(255) | YES | NULL |
+intervention_date | date | YES | NULL |
+taxable_amount | decimal(10,2) | YES | NULL |
+tax_amount | decimal(10,2) | YES | NULL |
+tax_rate | decimal(5,2) | YES | 22.00 |
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `fk_intervention_type` (`intervention_type`).
+- `idx_maintenance_quotes_intervention_date` (`intervention_date`).
+- `idx_maintenance_quotes_invoice_amount` (`invoice_amount`).
+- `idx_maintenance_quotes_invoice_date` (`invoice_date`).
+- `idx_maintenance_quotes_invoice_status` (`invoice_status`).
+- `idx_maintenance_quotes_schedule_id` (`schedule_id`).
+- `idx_maintenance_quotes_status` (`status`).
+- `idx_maintenance_quotes_supplier_id` (`supplier_id`).
+- `idx_maintenance_quotes_valid_until` (`valid_until`).
+- `idx_maintenance_quotes_vehicle_id` (`vehicle_id`).
+- `idx_maintenance_quotes_vehicle_km` (`vehicle_km`).
+- `PRIMARY` UNIQUE (`id`).
+
+**Chiavi esterne verificate:**
+- `fk_intervention_type`: `intervention_type` → `viaggi_db.intervention_types.id` (UPDATE NO ACTION, DELETE NO ACTION).
+- `maintenance_quotes_ibfk_1`: `schedule_id` → `viaggi_db.vehicle_schedules.id` (UPDATE NO ACTION, DELETE CASCADE).
+- `maintenance_quotes_ibfk_2`: `vehicle_id` → `viaggi_db.vehicles.id` (UPDATE NO ACTION, DELETE CASCADE).
+- `maintenance_quotes_ibfk_3`: `supplier_id` → `viaggi_db.suppliers.id` (UPDATE NO ACTION, DELETE NO ACTION).
 
 **Utilizzo nel progetto:**
 - **Pagine**: `/vehicles/quotes` - Gestione preventivi veicoli
@@ -1250,50 +1508,57 @@ updated_at    timestamp      NO        current_timestamp()  on update current_ti
 - `not_applicable`: Preventivo rifiutato, fatturazione non applicabile
 
 #### notification_settings
-```sql
-Field        Type                                    Null  Key  Default              Extra
-id           int(11)                                 NO    PRI  NULL                 auto_increment
-user_id      int(11)                                 YES   MUL  NULL                 
-event_type   varchar(50)                             NO        NULL                 
-notification_type enum('email','sms','push','all')  NO        email                
-is_enabled   tinyint(1)                              NO        1                    
-created_at   timestamp                               NO        current_timestamp()  
-updated_at   timestamp                               NO        current_timestamp()  on update current_timestamp()
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+user_id | int | NO | NULL |
+email_enabled | tinyint(1) | YES | 1 |
+reminder_days | longtext | YES | NULL |
+schedule_types | longtext | YES | NULL |
+updated_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
 ```
 
+**Indici verificati sul server (1 novembre 2026):**
+- `PRIMARY` UNIQUE (`id`).
+- `unique_user_settings` UNIQUE (`user_id`).
+
 #### pending_revisions
-```sql
-Field       Type         Null  Key  Default              Extra
-id          int(11)      NO    PRI  NULL                 auto_increment
-table_name  varchar(100) NO        NULL                 
-record_id   int(11)      NO        NULL                 
-old_data    json         YES        NULL                 
-new_data    json         NO        NULL                 
-revision_type enum('update','delete') NO NULL
-requested_by int(11)     YES   MUL  NULL                 
-requested_at timestamp   NO        current_timestamp()  
-status      enum('pending','approved','rejected') NO pending
-reviewed_by int(11)      YES   MUL  NULL                 
-reviewed_at timestamp    YES        NULL                 
-notes       text         YES        NULL                 
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+vehicle_id | varchar(191) | NO | NULL |
+next_revision_date | date | NO | NULL |
+calculated_priority | enum('high','medium','low') | NO | NULL |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+processed | tinyint(1) | YES | 0 |
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_processed` (`processed`).
+- `idx_vehicle_id` (`vehicle_id`).
+- `PRIMARY` UNIQUE (`id`).
 
 #### quote_documents
 Gestisce gli allegati dei preventivi di manutenzione veicoli.
 
 **Struttura:**
-```sql
-CREATE TABLE quote_documents (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    quote_id INT NOT NULL,
-    file_name VARCHAR(255) NOT NULL,
-    file_path VARCHAR(500) NOT NULL,
-    file_size INT,
-    file_type VARCHAR(50),
-    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (quote_id) REFERENCES maintenance_quotes(id) ON DELETE CASCADE
-);
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+quote_id | int | NO | NULL |
+file_name | varchar(255) | NO | NULL |
+file_path | varchar(500) | NO | NULL |
+file_type | varchar(50) | NO | NULL |
+file_size | int | NO | NULL |
+uploaded_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_quote_documents_quote_id` (`quote_id`).
+- `PRIMARY` UNIQUE (`id`).
+
+**Chiavi esterne verificate:**
+- `quote_documents_ibfk_1`: `quote_id` → `viaggi_db.maintenance_quotes.id` (UPDATE NO ACTION, DELETE CASCADE).
 
 **Campi:**
 ```sql
@@ -1316,27 +1581,37 @@ uploaded_at   timestamp    NO        current_timestamp()
 #### maintenance_quote_items
 **Tabella per gestione righe dettaglio preventivo** ⭐ **NUOVO v2.37.0**
 
-```sql
-CREATE TABLE maintenance_quote_items (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  quote_id INT NOT NULL,
-  item_code VARCHAR(255) NULL COMMENT 'Codice pezzo (opzionale)',
-  part_description VARCHAR(500) NOT NULL COMMENT 'Descrizione pezzo/servizio',
-  item_category ENUM('Ricambio', 'Manodopera', 'Servizio') NOT NULL DEFAULT 'Ricambio',
-  part_category VARCHAR(255) NULL COMMENT 'Categoria del pezzo (es: Filtri, Freni, ecc.)' ⭐ **NUOVO v2.38.0**,
-  quantity DECIMAL(10,2) NOT NULL DEFAULT 1,
-  unit_of_measure VARCHAR(10) NOT NULL DEFAULT 'NR',
-  unit_price DECIMAL(10,2) NOT NULL DEFAULT 0,
-  discount_percent DECIMAL(5,2) DEFAULT 0,
-  total_price DECIMAL(10,2) NOT NULL DEFAULT 0,
-  tax_rate DECIMAL(5,2) NOT NULL DEFAULT 22,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (quote_id) REFERENCES maintenance_quotes(id) ON DELETE CASCADE,
-  INDEX idx_quote_id (quote_id),
-  INDEX idx_part_description (part_description)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+quote_id | int | NO | NULL |
+part_id | int | YES | NULL |
+part_name | varchar(255) | NO | NULL |
+part_code | varchar(50) | YES | NULL |
+part_description | text | YES | NULL |
+supplier_part_code | varchar(100) | YES | NULL |
+quantity | decimal(10,2) | NO | 1.00 |
+unit | varchar(10) | NO | NR |
+unit_price | decimal(10,2) | NO | NULL |
+discount_percent | decimal(5,2) | YES | 0.00 |
+total_price | decimal(10,2) | NO | NULL |
+vat_rate | decimal(5,2) | NO | 22.00 |
+item_category | enum('ricambio','manodopera','servizio','altro') | YES | ricambio |
+part_category | varchar(255) | YES | NULL |
+notes | text | YES | NULL |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+updated_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_quote_items_category` (`item_category`).
+- `idx_quote_items_part` (`part_id`).
+- `idx_quote_items_quote` (`quote_id`).
+- `PRIMARY` UNIQUE (`id`).
+
+**Chiavi esterne verificate:**
+- `maintenance_quote_items_ibfk_1`: `quote_id` → `viaggi_db.maintenance_quotes.id` (UPDATE NO ACTION, DELETE CASCADE).
+- `maintenance_quote_items_ibfk_2`: `part_id` → `viaggi_db.vehicle_parts.id` (UPDATE NO ACTION, DELETE SET NULL).
 
 **Campi:**
 - `id`: ID univoco riga
@@ -1365,16 +1640,19 @@ CREATE TABLE maintenance_quote_items (
 #### intervention_locations
 **Tabella per gestione luoghi di intervento manutenzione** ⭐ **NUOVO v2.37.0**
 
-```sql
-CREATE TABLE IF NOT EXISTS intervention_locations (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(255) NOT NULL UNIQUE,
-  description TEXT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  INDEX idx_name (name)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+name | varchar(255) | NO | NULL |
+description | text | YES | NULL |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+updated_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_name` (`name`).
+- `name` UNIQUE (`name`).
+- `PRIMARY` UNIQUE (`id`).
 
 **Campi:**
 ```sql
@@ -1402,35 +1680,49 @@ updated_at    timestamp    NO        current_timestamp()  on update current_time
 - `text/plain` - File di testo
 
 #### schedule_notifications
-```sql
-Field         Type                                           Null  Key  Default              Extra
-id            int(11)                                        NO    PRI  NULL                 auto_increment
-schedule_id   int(11)                                        NO    MUL  NULL                 
-notification_type enum('maintenance_due','inspection_due','document_expiry') NO NULL
-notification_date datetime                                   NO        NULL                 
-message       text                                           YES        NULL                 
-is_sent       tinyint(1)                                     NO        0                    
-sent_at       timestamp                                      YES        NULL                 
-created_at    timestamp                                      NO        current_timestamp()  
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+schedule_id | int | NO | NULL |
+user_id | int | YES | NULL |
+notification_type | enum('email','dashboard','sms') | NO | NULL |
+status | enum('pending','sent','failed') | YES | pending |
+sent_at | timestamp | YES | NULL |
+error_message | text | YES | NULL |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
 ```
 
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_schedule_notifications_schedule_id` (`schedule_id`).
+- `idx_schedule_notifications_status` (`status`).
+- `PRIMARY` UNIQUE (`id`).
+
+**Chiavi esterne verificate:**
+- `schedule_notifications_ibfk_1`: `schedule_id` → `viaggi_db.vehicle_schedules.id` (UPDATE NO ACTION, DELETE CASCADE).
+
 #### suppliers
-```sql
-Field       Type         Null  Key  Default              Extra
-id          int(11)      NO    PRI  NULL                 auto_increment
-name        varchar(200) NO        NULL                 
-contact_person varchar(100) YES    NULL                 
-email       varchar(150) YES        NULL                 
-phone       varchar(20)  YES        NULL                 
-address     text         YES        NULL                 
-city        varchar(100) YES        NULL                 
-postal_code varchar(20)  YES        NULL                 
-country     varchar(100) YES        NULL                 
-tax_id      varchar(50)  YES        NULL                 
-is_active   tinyint(1)   NO        1                    
-created_at  timestamp    NO        current_timestamp()  
-updated_at  timestamp    NO        current_timestamp()  on update current_timestamp()
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+name | varchar(255) | NO | NULL |
+email | varchar(255) | YES | NULL |
+phone | varchar(50) | YES | NULL |
+contact_person | varchar(255) | YES | NULL |
+website | varchar(255) | YES | NULL |
+mobile | varchar(50) | YES | NULL |
+address | text | YES | NULL |
+vat_number | varchar(50) | YES | NULL |
+category | enum('meccanica','elettrica','carrozzeria','pneumatici','generale','Spondista','Teli','altro') | YES | generale |
+rating | decimal(3,2) | YES | 0.00 |
+active | tinyint(1) | YES | 1 |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+updated_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_suppliers_active` (`active`).
+- `idx_suppliers_specialization` (`category`).
+- `PRIMARY` UNIQUE (`id`).
 
 **Utilizzo nel progetto:**
 - **Pagine**: Sistema gestione fornitori
@@ -1440,19 +1732,26 @@ updated_at  timestamp    NO        current_timestamp()  on update current_timest
 - **Dashboard**: Statistiche fornitori attivi
 
 #### travel_images
-```sql
-Field         Type         Null  Key  Default                    Extra
-id            varchar(191) NO    PRI  NULL                       
-filename      varchar(191) NO         NULL                       
-url           varchar(191) NO         NULL                       
-type          varchar(191) NO         NULL                       
-size          int(11)      YES        NULL                       
-mimeType      varchar(191) YES        NULL                       
-createdAt     datetime(3)  NO         current_timestamp(3)       
-updatedAt     datetime(3)  NO         NULL                       
-travelId      varchar(191) NO    MUL  NULL                       
-nominativoId  varchar(191) YES        NULL                       
+```text
+Colonna | Tipo | Null | Default | Extra
+id | varchar(191) | NO | NULL |
+filename | varchar(191) | NO | NULL |
+url | varchar(191) | NO | NULL |
+type | varchar(191) | NO | NULL |
+size | int | YES | NULL |
+mimeType | varchar(191) | YES | NULL |
+createdAt | datetime(3) | NO | CURRENT_TIMESTAMP(3) | DEFAULT_GENERATED
+updatedAt | datetime(3) | NO | NULL |
+travelId | varchar(191) | NO | NULL |
+nominativoId | varchar(191) | YES | NULL |
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `PRIMARY` UNIQUE (`id`).
+- `travel_images_travelId_fkey` (`travelId`).
+
+**Chiavi esterne verificate:**
+- `travel_images_travelId_fkey`: `travelId` → `viaggi_db.travels.id` (UPDATE CASCADE, DELETE CASCADE).
 
 **Note sulla struttura REALE:**
 - `id` è varchar(191) PRIMARY KEY SENZA auto_increment
@@ -1462,31 +1761,49 @@ nominativoId  varchar(191) YES        NULL
 - Constraint: `FOREIGN KEY (travelId) REFERENCES travels(id) ON DELETE CASCADE`
 
 #### travels
-```sql
-Field                    Type         Null  Key  Default              Extra
-id                       varchar(191) NO    PRI  NULL                 
-deposito                 varchar(191) NO        NULL                 
-numeroViaggio            varchar(191) NO        NULL                 
-data_viaggio             date         YES       NULL                 STORED GENERATED
-nominativoId             varchar(191) YES   MUL NULL                 
-affiancatoDaId           varchar(191) YES   MUL NULL                 
-totaleColli              int(11)      YES       NULL                 
-dataOraInizioViaggio     datetime     YES       NULL                 
-dataOraFineViaggio       datetime     YES       NULL                 
-targaMezzoId             varchar(191) YES   MUL NULL                 
-kmIniziali               int(11)      YES       NULL                 
-kmFinali                 int(11)      YES       NULL                 
-kmAlRifornimento         int(11)      YES       NULL                 
-litriRiforniti           double       YES       NULL                 
-euroLitro                double       YES       NULL                 
-haiEffettuatoRitiri      tinyint(1)   YES       NULL                 
-exclude_from_pending     tinyint(1)   YES   MUL 0                   
-updatedAt                datetime(3)  YES       NULL                 
-createdAt                datetime(3)  YES       NULL                 
-kmEffettivi              int(11)      YES       NULL                 STORED GENERATED
-oreEffettive             double       YES       NULL                 STORED GENERATED
-mese                     tinyint(4)   YES       NULL                 STORED GENERATED                 
+```text
+Colonna | Tipo | Null | Default | Extra
+id | varchar(191) | NO | NULL |
+deposito | varchar(191) | NO | NULL |
+numeroViaggio | varchar(191) | NO | NULL |
+nominativoId | varchar(191) | YES | NULL |
+affiancatoDaId | varchar(191) | YES | NULL |
+totaleColli | int | YES | NULL |
+dataOraInizioViaggio | datetime | YES | NULL |
+dataOraFineViaggio | datetime | YES | NULL |
+targaMezzoId | varchar(191) | YES | NULL |
+kmIniziali | int | YES | NULL |
+kmFinali | int | YES | NULL |
+kmAlRifornimento | int | YES | NULL |
+litriRiforniti | double | YES | NULL |
+euroLitro | double | YES | NULL |
+haiEffettuatoRitiri | tinyint(1) | YES | NULL |
+updatedAt | datetime(3) | YES | NULL |
+createdAt | datetime(3) | YES | NULL |
+exclude_from_pending | tinyint(1) | YES | 0 |
+data_viaggio | date | YES | NULL | STORED GENERATED
+kmEffettivi | int | YES | NULL | STORED GENERATED
+oreEffettive | double | YES | NULL | STORED GENERATED
+mese | tinyint | YES | NULL | STORED GENERATED
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_exclude_from_pending` (`exclude_from_pending`).
+- `PRIMARY` UNIQUE (`id`).
+- `travels_affiancatoDaId_fkey` (`affiancatoDaId`).
+- `travels_nominativoId_fkey` (`nominativoId`).
+- `travels_targaMezzoId_fkey` (`targaMezzoId`).
+
+**Chiavi esterne verificate:**
+- `travels_affiancatoDaId_fkey`: `affiancatoDaId` → `viaggi_db.employees.id` (UPDATE NO ACTION, DELETE NO ACTION).
+- `travels_nominativoId_fkey`: `nominativoId` → `viaggi_db.employees.id` (UPDATE NO ACTION, DELETE NO ACTION).
+- `travels_targaMezzoId_fkey`: `targaMezzoId` → `viaggi_db.vehicles.id` (UPDATE CASCADE, DELETE SET NULL).
+
+**Espressioni generate rilevate:**
+- `data_viaggio`: ``cast(`dataOraInizioViaggio` as date)``.
+- `kmEffettivi`: ``(case when ((`kmFinali` is not null) and (`kmIniziali` is not null)) then (`kmFinali` - `kmIniziali`) else NULL end)``.
+- `oreEffettive`: ``(case when ((`dataOraFineViaggio` is not null) and (`dataOraInizioViaggio` is not null)) then round((timestampdiff(MINUTE,`dataOraInizioViaggio`,`dataOraFineViaggio`) / 60.0),2) else NULL end)``.
+- `mese`: ``(case when (`data_viaggio` is not null) then month(`data_viaggio`) else NULL end)``.
 
 **Note sul campo `exclude_from_pending`:**
 - **Tipo**: `TINYINT(1)` (booleano)
@@ -1510,19 +1827,28 @@ mese                     tinyint(4)   YES       NULL                 STORED GENE
 Gestisce i documenti dei veicoli con supporto per diversi tipi di documento.
 
 **Struttura aggiornata (v2.43.2):**
-```sql
-Field         Type                                                                                      Null  Key  Default              Extra
-id            int(11)                                                                                   NO    PRI  NULL                 auto_increment
-vehicle_id    varchar(191)                                                                              NO    MUL  NULL                 
-document_type varchar(255)                                                                               NO        NULL                                   
-file_name     varchar(255)                                                                              NO        NULL                 
-file_path     varchar(500)                                                                              NO        NULL                 
-file_size     int(11)                                                                                   YES        NULL                 
-expiry_date   date                                                                                      YES  MUL  NULL                 
-uploaded_at   timestamp                                                                                 NO        current_timestamp()  
-notes         text                                                                                      YES        NULL                 
-is_archived   tinyint(1)                                                                                NO    MUL  0                   
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+vehicle_id | varchar(191) | NO | NULL |
+document_type | varchar(255) | NO | NULL |
+file_name | varchar(255) | NO | NULL |
+file_path | varchar(500) | NO | NULL |
+file_size | int | YES | NULL |
+expiry_date | date | YES | NULL |
+uploaded_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+notes | text | YES | NULL |
+is_archived | tinyint(1) | NO | 0 |
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_vehicle_documents_expiry` (`expiry_date`).
+- `idx_vehicle_documents_is_archived` (`is_archived`).
+- `idx_vehicle_documents_vehicle_id` (`vehicle_id`).
+- `PRIMARY` UNIQUE (`id`).
+
+**Chiavi esterne verificate:**
+- `vehicle_documents_ibfk_1`: `vehicle_id` → `viaggi_db.vehicles.id` (UPDATE NO ACTION, DELETE CASCADE).
 
 **Campi:**
 - `id` (INT, PRIMARY KEY): Identificativo univoco documento
@@ -1551,24 +1877,36 @@ is_archived   tinyint(1)                                                        
 - `altro`: Altro
 
 #### vehicle_schedules
-```sql
-Field              Type                                                                                           Null  Key  Default              Extra
-id                 int(11)                                                                                        NO    PRI  NULL                 auto_increment
-vehicle_id         varchar(191)                                                                                   NO    MUL  NULL                 
-schedule_type      enum('altro','manutenzione','Manutenzione Ordinaria','Manutenzione Straordinaria','revisione','assicurazione','bollo','patente_conducente','tagliando') YES  MUL  NULL                 
-data_scadenza      date                                                                                           YES  MUL  NULL                 
-completed_date     date                                                                                           YES        NULL                 
-booking_date       date                                                                                           YES        NULL                 
-provider           varchar(255)                                                                                   YES        NULL                 
-cost               decimal(10,2)                                                                                  YES        NULL                 
-priority           enum('low','medium','high')                                                                    YES        medium               
-reminder_days      int(11)                                                                                        YES        30                   
-notes              text                                                                                           YES        NULL                 
-created_at         timestamp                                                                                      NO        current_timestamp()  
-updated_at         timestamp                                                                                      NO        current_timestamp()  on update current_timestamp()
-quote_number       varchar(50)                                                                                    YES        NULL                 
-quote_date         date                                                                                           YES        NULL                 
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+vehicle_id | varchar(191) | NO | NULL |
+schedule_type | enum('altro','manutenzione','Manutenzione Ordinaria','Manutenzione Straordinaria','revisione','revisione tachigrafo','assicurazione','bollo','patente_conducente','tagliando') | YES | NULL |
+data_scadenza | date | YES | NULL |
+completed_date | date | YES | NULL |
+booking_date | date | YES | NULL |
+description | text | YES | NULL |
+cost | decimal(10,2) | YES | NULL |
+provider | varchar(255) | YES | NULL |
+status | enum('pending','completed','overdue','cancelled') | YES | pending |
+priority | enum('high','medium','low') | YES | medium |
+reminder_days | int | YES | 30 |
+notes | text | YES | NULL |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+updated_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
+quote_number | varchar(50) | YES | NULL |
+quote_date | date | YES | NULL |
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_vehicle_schedules_due_date` (`data_scadenza`).
+- `idx_vehicle_schedules_status` (`status`).
+- `idx_vehicle_schedules_type` (`schedule_type`).
+- `idx_vehicle_schedules_vehicle_id` (`vehicle_id`).
+- `PRIMARY` UNIQUE (`id`).
+
+**Chiavi esterne verificate:**
+- `vehicle_schedules_ibfk_1`: `vehicle_id` → `viaggi_db.vehicles.id` (UPDATE NO ACTION, DELETE CASCADE).
 
 **Utilizzo nel progetto:**
 - **Pagine**: `/vehicles` - Gestione scadenze veicoli, `/dashboard` - Visualizzazione alert scadenze
@@ -1587,26 +1925,32 @@ quote_date         date                                                         
 - **Dashboard**: Alert scadenze con layout responsivo Bootstrap
 
 #### vehicles
-```sql
-Field                 Type         Null  Key  Default                          Extra
-id                    varchar(191) NO    PRI  NULL                             
-targa                 varchar(191) NO    UNI  NULL                             
-marca                 varchar(191) NO    MUL  NULL                             
-modello               varchar(191) NO        NULL                             
-proprieta             varchar(255) YES       NULL                             
-km_ultimo_tagliando   int(11)      YES       NULL                             
-data_ultimo_tagliando date         YES       NULL                             
-data_ultima_revisione date         YES       NULL                             
-data_revisione_tachigrafo date     YES       NULL                             
-portata               int(11)      YES       NULL                             
-n_palt                int(11)      YES       NULL                             
-tipo_patente          varchar(10)  YES       NULL                             
-pallet_kg             int(11)      YES       NULL                             
-active                tinyint(1)   NO    MUL  1                                
-createdAt             datetime(3)  NO        current_timestamp(3)             
-updatedAt             datetime(3)  NO        current_timestamp(3)             on update current_timestamp(3)
-note                  text         YES       NULL                             
+```text
+Colonna | Tipo | Null | Default | Extra
+id | varchar(191) | NO | NULL |
+targa | varchar(191) | NO | NULL |
+marca | varchar(191) | NO | NULL |
+modello | varchar(191) | NO | NULL |
+proprieta | varchar(255) | YES | NULL |
+km_ultimo_tagliando | int | YES | NULL |
+data_ultimo_tagliando | date | YES | NULL |
+data_ultima_revisione | date | YES | NULL |
+data_revisione_tachigrafo | date | YES | NULL |
+portata | int | YES | NULL |
+n_palt | int | YES | NULL |
+tipo_patente | varchar(10) | YES | NULL |
+pallet_kg | int | YES | NULL |
+active | tinyint(1) | NO | 1 |
+createdAt | datetime(3) | NO | CURRENT_TIMESTAMP(3) | DEFAULT_GENERATED
+updatedAt | datetime(3) | NO | CURRENT_TIMESTAMP(3) | DEFAULT_GENERATED on update CURRENT_TIMESTAMP(3)
+note | text | YES | NULL |
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_vehicles_active` (`active`).
+- `idx_vehicles_marca` (`marca`).
+- `PRIMARY` UNIQUE (`id`).
+- `targa` UNIQUE (`targa`).
 
 **Chiave primaria `id` e colonna `targa`:**
 
@@ -1623,14 +1967,42 @@ note                  text         YES       NULL
 - **Campo data_revisione_tachigrafo**: Utilizzato per calcolare scadenze revisioni tachigrafo, automazione CRON, filtri veicoli con patente diversa da B
 
 #### viaggi_pod
-```sql
-Field       Type         Null  Key  Default              Extra
-id          int(11)      NO    PRI  NULL                 auto_increment
-travel_id   varchar(191) NO    MUL  NULL                 
-pod_data    json         NO        NULL                 
-created_at  timestamp    NO        current_timestamp()  
-updated_at  timestamp    NO        current_timestamp()  on update current_timestamp()
+```text
+Colonna | Tipo | Null | Default | Extra
+ID | varchar(191) | YES | NULL |
+Viaggio | varchar(191) | NO | NULL |
+Magazzino di partenza | varchar(191) | YES | NULL |
+Data Inizio | datetime | YES | NULL |
+Data Fine | datetime | YES | NULL |
+Nome Trasportatore | varchar(191) | YES | NULL |
+Colli | int | YES | NULL |
+Peso (Kg) | decimal(12,3) | YES | NULL |
+Km | decimal(12,2) | YES | NULL |
+Toccate | int | YES | NULL |
+Ordini | int | YES | NULL |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+session_id | varchar(255) | YES | NULL |
+Ore_Pod | decimal(8,2) | YES | NULL | STORED GENERATED
+Data | date | YES | NULL | STORED GENERATED
+Mese | tinyint | YES | NULL | STORED GENERATED
+Giorno | varchar(11) | YES | NULL | STORED GENERATED
+Sett | tinyint | YES | NULL | STORED GENERATED
+Trimestre | tinyint | YES | NULL | STORED GENERATED
+anno | smallint | YES | NULL | STORED GENERATED
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_magazzino` (`Magazzino di partenza` prefix 64).
+- `PRIMARY` UNIQUE (`Viaggio`).
+
+**Espressioni generate rilevate:**
+- `Ore_Pod`: ``(case when ((`Data Inizio` is null) or (`Data Fine` is null)) then NULL else round((timestampdiff(MINUTE,`Data Inizio`,`Data Fine`) / 60),2) end)``.
+- `Data`: ``cast(`Data Inizio` as date)``.
+- `Mese`: ``month(`Data`)``.
+- `Giorno`: ``(case weekday(`Data`) when 0 then _utf8mb4\'LunedÃ¬\' when 1 then _utf8mb4\'MartedÃ¬\' when 2 then _utf8mb4\'MercoledÃ¬\' when 3 then _utf8mb4\'GiovedÃ¬\' when 4 then _utf8mb4\'VenerdÃ¬\' when 5 then _utf8mb4\'Sabato\' when 6 then _utf8mb4\'Domenica\' end)``.
+- `Sett`: ``week(`Data`,3)``.
+- `Trimestre`: ``quarter(`Data`)``.
+- `anno`: ``year(`Data Inizio`)``.
 
 ## Database: backup_management
 
@@ -1647,47 +2019,73 @@ updated_at  timestamp    NO        current_timestamp()  on update current_timest
 ### Tabelle
 
 #### backup_activity_log
-```sql
-Field         Type                                                                                                                                                                     Null  Key  Default              Extra
-id            int(11)                                                                                                                                                                  NO    PRI  NULL                 auto_increment
-job_id        int(11)                                                                                                                                                                  YES   MUL  NULL                 
-activity_type enum('job_started','job_completed','job_failed','job_cancelled','job_deleted','schedule_created','schedule_updated','schedule_deleted','alert_created','alert_resolved') NO    MUL  NULL                 
-user_id       varchar(100)                                                                                                                                                             NO    MUL  NULL                 
-details       text                                                                                                                                                                     YES        NULL                 
-created_at    timestamp                                                                                                                                                                NO    MUL  current_timestamp()  
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+job_id | int | YES | NULL |
+activity_type | enum('job_started','job_completed','job_failed','job_cancelled','job_deleted','schedule_created','schedule_updated','schedule_deleted','alert_created','alert_resolved') | NO | NULL |
+user_id | varchar(100) | NO | NULL |
+details | text | YES | NULL |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_activity_type` (`activity_type`).
+- `idx_created_at` (`created_at`).
+- `idx_job_id` (`job_id`).
+- `idx_user_id` (`user_id`).
+- `PRIMARY` UNIQUE (`id`).
+
+**Chiavi esterne verificate:**
+- `backup_activity_log_ibfk_1`: `job_id` → `backup_management.backup_jobs.id` (UPDATE NO ACTION, DELETE SET NULL).
 
 #### backup_alerts
-```sql
-Field            Type                                                         Null  Key  Default              Extra
-id               int(11)                                                      NO    PRI  NULL                 auto_increment
-alert_type       enum('error','warning','info','success')                     NO    MUL  NULL                 
-title            varchar(200)                                                 NO        NULL                 
-message          text                                                         NO        NULL                 
-source           enum('backup_job','schedule','system','storage','database') NO    MUL  NULL                 
-source_id        int(11)                                                      YES        NULL                 
-is_read          tinyint(1)                                                   YES   MUL  0                    
-is_resolved      tinyint(1)                                                   YES   MUL  0                    
-resolved_by      varchar(100)                                                 YES        NULL                 
-resolved_at      datetime                                                     YES        NULL                 
-resolution_notes text                                                         YES        NULL                 
-metadata         text                                                         YES        NULL                 
-created_at       timestamp                                                    NO    MUL  current_timestamp()  
-updated_at       timestamp                                                    NO        current_timestamp()  on update current_timestamp()
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+alert_type | enum('error','warning','info','success') | NO | NULL |
+severity | enum('low','medium','high','critical') | NO | NULL |
+title | varchar(200) | NO | NULL |
+message | text | NO | NULL |
+source | enum('backup_job','schedule','system','storage','database') | NO | NULL |
+source_id | int | YES | NULL |
+is_read | tinyint(1) | YES | 0 |
+is_resolved | tinyint(1) | YES | 0 |
+resolved_by | varchar(100) | YES | NULL |
+resolved_at | datetime | YES | NULL |
+resolution_notes | text | YES | NULL |
+metadata | text | YES | NULL |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+updated_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
 ```
 
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_alert_type` (`alert_type`).
+- `idx_created_at` (`created_at`).
+- `idx_is_read` (`is_read`).
+- `idx_is_resolved` (`is_resolved`).
+- `idx_severity` (`severity`).
+- `idx_source` (`source`).
+- `PRIMARY` UNIQUE (`id`).
+
 #### backup_configs
-```sql
-Field        Type                                      Null  Key  Default              Extra
-id           int(11)                                   NO    PRI  NULL                 auto_increment
-config_key   varchar(100)                              NO    UNI  NULL                 
-config_value text                                      NO        NULL                 
-description  text                                      YES        NULL                 
-config_type  enum('string','integer','boolean','json') YES        string               
-is_system    tinyint(1)                                YES   MUL  0                    
-created_at   timestamp                                 NO        current_timestamp()  
-updated_at   timestamp                                 NO        current_timestamp()  on update current_timestamp()
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+config_key | varchar(100) | NO | NULL |
+config_value | text | NO | NULL |
+description | text | YES | NULL |
+config_type | enum('string','integer','boolean','json') | YES | string |
+is_system | tinyint(1) | YES | 0 |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+updated_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `config_key` UNIQUE (`config_key`).
+- `idx_config_key` (`config_key`).
+- `idx_is_system` (`is_system`).
+- `PRIMARY` UNIQUE (`id`).
 
 **Utilizzo nel progetto:**
 - **Pagine**: `/backup-dashboard` - Gestione configurazioni backup
@@ -1697,24 +2095,33 @@ updated_at   timestamp                                 NO        current_timesta
 - **Dashboard**: Controllo configurazioni backup
 
 #### backup_files
-```sql
-Field                  Type                                                    Null  Key  Default              Extra
-id                     int(11)                                                 NO    PRI  NULL                 auto_increment
-job_id                 int(11)                                                 NO    MUL  NULL                 
-file_path              varchar(500)                                            NO        NULL                 
-file_name              varchar(255)                                            NO    MUL  NULL                 
-file_size_bytes        bigint(20)                                              NO        NULL                 
-checksum               varchar(64)                                             YES        NULL                 
-compression_type       enum('none','gzip','bzip2','xz')                        YES        gzip                 
-backup_type            enum('full','incremental','differential','manual')      YES        manual               
-created_at             timestamp                                               NO    MUL  current_timestamp()  
-execution_time_seconds int(11)                                                 YES        NULL                 
-compressed_size        bigint(20)                                              YES        NULL                 
-compression_ratio      decimal(5,2)                                            YES        NULL                 
-file_hash              varchar(64)                                             YES        NULL                 
-verification_status    enum('pending','verified','failed','skipped')           YES        pending              
-last_verified_at       timestamp                                               YES        NULL                 
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+job_id | int | NO | NULL |
+file_path | varchar(500) | NO | NULL |
+file_name | varchar(255) | NO | NULL |
+file_size_bytes | bigint | NO | NULL |
+checksum | varchar(64) | YES | NULL |
+compression_type | enum('none','gzip','bzip2','xz') | YES | gzip |
+backup_type | enum('full','incremental','differential','manual') | YES | manual |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+execution_time_seconds | int | YES | NULL |
+compressed_size | bigint | YES | NULL |
+compression_ratio | decimal(5,2) | YES | NULL |
+file_hash | varchar(64) | YES | NULL |
+verification_status | enum('pending','verified','failed','skipped') | YES | pending |
+last_verified_at | timestamp | YES | NULL |
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_created_at` (`created_at`).
+- `idx_file_name` (`file_name`).
+- `idx_job_id` (`job_id`).
+- `PRIMARY` UNIQUE (`id`).
+
+**Chiavi esterne verificate:**
+- `backup_files_ibfk_1`: `job_id` → `backup_management.backup_jobs.id` (UPDATE NO ACTION, DELETE CASCADE).
 
 **Utilizzo nel progetto:**
 - **Pagine**: `/backup-dashboard` - Gestione file backup
@@ -1724,27 +2131,35 @@ last_verified_at       timestamp                                               Y
 - **Dashboard**: Statistiche file backup, controllo spazio
 
 #### backup_jobs
-```sql
-Field                  Type                                     Null  Key  Default              Extra
-id                     int(11)                                  NO    PRI  NULL                 auto_increment
-name                   varchar(100)                             NO    UNI  NULL                 
-description            text                                     YES        NULL                 
-backup_type            enum('full','incremental','differential') NO        full                 
-status                 enum('pending','running','completed','failed','cancelled') NO MUL NULL
-start_time             datetime                                 YES        NULL                 
-end_time               datetime                                 YES        NULL                 
-duration_seconds       int(11)                                  YES        NULL                 
-database_list          text                                     NO        NULL                 
-backup_path            varchar(500)                             NO        NULL                 
-file_size_bytes        bigint(20)                               YES        NULL                 
-triggered_by           enum('manual','schedule','api')          YES   MUL  manual               
-triggered_by_user      varchar(100)                             NO        NULL                 
-retention_until        date                                     NO    MUL  NULL                 
-error_message          text                                     YES        NULL                 
-progress_percentage    tinyint(4)                               YES        0                    
-created_at             timestamp                                NO        current_timestamp()  
-updated_at             timestamp                                NO        current_timestamp()  on update current_timestamp()
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+job_uuid | varchar(36) | NO | NULL |
+backup_type | enum('full','incremental','differential','manual') | NO | NULL |
+status | enum('pending','running','completed','failed','cancelled') | YES | pending |
+start_time | datetime | NO | NULL |
+end_time | datetime | YES | NULL |
+duration_seconds | int | YES | NULL |
+database_list | text | NO | NULL |
+backup_path | varchar(500) | NO | NULL |
+file_size_bytes | bigint | YES | NULL |
+triggered_by | enum('manual','schedule','api') | YES | manual |
+triggered_by_user | varchar(100) | NO | NULL |
+retention_until | date | NO | NULL |
+error_message | text | YES | NULL |
+progress_percentage | tinyint | YES | 0 |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+updated_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_backup_type` (`backup_type`).
+- `idx_retention_until` (`retention_until`).
+- `idx_start_time` (`start_time`).
+- `idx_status` (`status`).
+- `idx_triggered_by` (`triggered_by`).
+- `job_uuid` UNIQUE (`job_uuid`).
+- `PRIMARY` UNIQUE (`id`).
 
 **Utilizzo nel progetto:**
 - **Pagine**: `/backup-dashboard` - Dashboard gestione backup
@@ -1754,41 +2169,57 @@ updated_at             timestamp                                NO        curren
 - **Dashboard**: Statistiche backup, controllo stato job
 
 #### backup_logs
-```sql
-Field          Type                                              Null  Key  Default              Extra
-id             int(11)                                           NO    PRI  NULL                 auto_increment
-backup_file_id int(11)                                           YES   MUL  NULL                 
-schedule_id    int(11)                                           YES   MUL  NULL                 
-log_level      enum('debug','info','warning','error','critical') NO    MUL  NULL                 
-message        text                                              NO        NULL                 
-details        longtext                                          YES        NULL                 
-created_at     timestamp                                         NO    MUL  current_timestamp()  
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+backup_file_id | int | YES | NULL |
+schedule_id | int | YES | NULL |
+log_level | enum('debug','info','warning','error','critical') | NO | NULL |
+message | text | NO | NULL |
+details | longtext | YES | NULL |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
 ```
 
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_backup_file_id` (`backup_file_id`).
+- `idx_created_at` (`created_at`).
+- `idx_log_level` (`log_level`).
+- `idx_schedule_id` (`schedule_id`).
+- `PRIMARY` UNIQUE (`id`).
+
+**Chiavi esterne verificate:**
+- `backup_logs_ibfk_1`: `backup_file_id` → `backup_management.backup_files.id` (UPDATE NO ACTION, DELETE SET NULL).
+- `backup_logs_ibfk_2`: `schedule_id` → `backup_management.backup_schedules.id` (UPDATE NO ACTION, DELETE SET NULL).
+
 #### backup_schedules
-```sql
-Field                  Type                         Null  Key  Default              Extra
-id                     int(11)                      NO    PRI  NULL                 auto_increment
-name                   varchar(100)                 NO    UNI  NULL                 
-description            text                         YES        NULL                 
-cron_expression        varchar(100)                 NO        NULL                 
-backup_type            enum('full','incremental')   NO        full                 
-database_list          text                         NO        NULL                 
-backup_path            varchar(500)                 NO        NULL                 
-is_active              tinyint(1)                   YES   MUL  1                    
-retention_days         int(11)                      YES        30                   
-max_parallel_jobs      int(11)                      YES        1                    
-priority               enum('low','normal','high')  YES        normal               
-notification_emails    text                         YES        NULL                 
-created_by             varchar(100)                 NO        NULL                 
-last_run               datetime                     YES        NULL                 
-next_run               datetime                     YES   MUL  NULL                 
-created_at             timestamp                    NO        current_timestamp()  
-updated_at             timestamp                    NO        current_timestamp()  on update current_timestamp()
-max_retries            int(11)                      YES        3                    
-retry_interval_minutes int(11)                      YES        30                   
-email_notifications    tinyint(1)                   YES        0                    
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+schedule_name | varchar(100) | NO | NULL |
+backup_type | enum('full','incremental','differential') | NO | NULL |
+cron_expression | varchar(100) | NO | NULL |
+database_list | text | NO | NULL |
+is_active | tinyint(1) | YES | 1 |
+retention_days | int | YES | 30 |
+max_parallel_jobs | int | YES | 1 |
+priority | enum('low','normal','high') | YES | normal |
+notification_emails | text | YES | NULL |
+created_by | varchar(100) | NO | NULL |
+last_run | datetime | YES | NULL |
+next_run | datetime | YES | NULL |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+updated_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
+max_retries | int | YES | 3 |
+retry_interval_minutes | int | YES | 30 |
+email_notifications | tinyint(1) | YES | 0 |
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_backup_type` (`backup_type`).
+- `idx_is_active` (`is_active`).
+- `idx_next_run` (`next_run`).
+- `PRIMARY` UNIQUE (`id`).
+- `schedule_name` UNIQUE (`schedule_name`).
 
 **Utilizzo nel progetto:**
 - **Pagine**: `/backup-dashboard` - Gestione schedule backup
@@ -1798,29 +2229,41 @@ email_notifications    tinyint(1)                   YES        0
 - **Dashboard**: Controllo schedule attive, prossime esecuzioni
 
 #### system_config
-```sql
-Field       Type                                                 Null  Key  Default              Extra
-id          int(11)                                              NO    PRI  NULL                 auto_increment
-category    enum('general','backup','notifications','security')  NO    MUL  NULL                 
-key         varchar(100)                                         NO        NULL                 
-value       text                                                 NO        NULL                 
-description text                                                 YES        NULL                 
-updated_by  varchar(100)                                         YES        NULL                 
-updated_at  datetime                                             NO        current_timestamp()  on update current_timestamp()
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+category | enum('general','backup','notifications','security') | NO | NULL |
+key | varchar(100) | NO | NULL |
+value | text | NO | NULL |
+description | text | YES | NULL |
+updated_by | varchar(100) | YES | NULL |
+updated_at | datetime | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
 ```
 
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_category` (`category`).
+- `PRIMARY` UNIQUE (`id`).
+- `unique_config` UNIQUE (`category`, `key`).
+
 #### system_logs
-```sql
-Field      Type                                   Null  Key  Default              Extra
-id         int(11)                                NO    PRI  NULL                 auto_increment
-timestamp  datetime                               NO    MUL  current_timestamp()  
-type       enum('access','backup','error','import','system') NO MUL NULL
-user       varchar(100)                           NO    MUL  NULL                 
-action     varchar(255)                           NO        NULL                 
-details    text                                   YES        NULL                 
-ip_address varchar(45)                            YES        NULL                 
-status     enum('success','error','warning')      NO    MUL  success              
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+timestamp | datetime | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+type | enum('access','backup','error','import','system') | NO | NULL |
+user | varchar(100) | NO | NULL |
+action | varchar(255) | NO | NULL |
+details | text | YES | NULL |
+ip_address | varchar(45) | YES | NULL |
+status | enum('success','error','warning') | NO | success |
 ```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_status` (`status`).
+- `idx_timestamp` (`timestamp`).
+- `idx_type` (`type`).
+- `idx_user` (`user`).
+- `PRIMARY` UNIQUE (`id`).
 
 ---
 
@@ -3002,3 +3445,182 @@ const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '
 ---
 
 *Ultimo aggiornamento: Gennaio 2025 - Correzione modal richieste ferie e miglioramenti navigazione*
+
+## Strutture aggiuntive verificate sul server
+
+### gestionelogistica.resi_vuoti_non_fatturati
+
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+Deposito | varchar(100) | YES | NULL |
+Riferimento | varchar(50) | YES | NULL |
+Data_rif_ddt | date | NO | NULL |
+ddt | varchar(4) | YES | NULL |
+Cod_Cliente | varchar(10) | NO | NULL |
+ragione_sociale | varchar(255) | YES | NULL |
+VETTORE | varchar(12) | YES | NULL |
+Cod_Prod | varchar(10) | NO | NULL |
+descr_articolo | varchar(255) | YES | NULL |
+Colli | int | NO | NULL |
+Data_Ritiro | date | YES | NULL |
+ID_TARIFFA | varchar(50) | YES | NULL |
+Tariffa | decimal(10,2) | YES | NULL |
+Totale_compenso | decimal(10,2) | YES | NULL |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+updated_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
+```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_cod_cliente` (`Cod_Cliente`).
+- `idx_cod_prod` (`Cod_Prod`).
+- `idx_data_rif_ddt` (`Data_rif_ddt`).
+- `idx_data_ritiro` (`Data_Ritiro`).
+- `idx_id_tariffa` (`ID_TARIFFA`).
+- `idx_vettore` (`VETTORE`).
+- `PRIMARY` UNIQUE (`id`).
+
+### viaggi_db.companies
+
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+name | varchar(255) | NO | NULL |
+code | varchar(50) | NO | NULL |
+address | text | YES | NULL |
+phone | varchar(20) | YES | NULL |
+email | varchar(255) | YES | NULL |
+vat_number | varchar(50) | YES | NULL |
+fiscal_code | varchar(50) | YES | NULL |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+updated_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
+```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `code` UNIQUE (`code`).
+- `idx_companies_code` (`code`).
+- `idx_companies_name` (`name`).
+- `PRIMARY` UNIQUE (`id`).
+
+### viaggi_db.maintenance_thresholds
+
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+threshold_type | varchar(20) | NO | NULL |
+km_value | int | NO | NULL |
+description | varchar(255) | NO | NULL |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+updated_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
+```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `PRIMARY` UNIQUE (`id`).
+- `unique_threshold_type` UNIQUE (`threshold_type`).
+
+### viaggi_db.part_categories
+
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+name | varchar(100) | NO | NULL |
+description | text | YES | NULL |
+parent_id | int | YES | NULL |
+is_active | tinyint(1) | NO | 1 |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+updated_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
+```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_part_categories_active` (`is_active`).
+- `parent_id` (`parent_id`).
+- `PRIMARY` UNIQUE (`id`).
+- `uk_part_category_name` UNIQUE (`name`).
+
+**Chiavi esterne verificate:**
+- `part_categories_ibfk_1`: `parent_id` → `viaggi_db.part_categories.id` (UPDATE NO ACTION, DELETE SET NULL).
+
+### viaggi_db.parts_catalog
+
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+codice | varchar(50) | YES | NULL |
+descrizione | varchar(255) | NO | NULL |
+categoria | varchar(100) | YES | NULL |
+tipo | enum('Ricambio','Servizio','Manodopera') | NO | Ricambio |
+um | varchar(10) | NO | NR |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+updated_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
+```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_parts_categoria` (`categoria`).
+- `idx_parts_codice` (`codice`).
+- `idx_parts_descrizione_search` (`descrizione`).
+- `idx_parts_tipo` (`tipo`).
+- `PRIMARY` UNIQUE (`id`).
+- `uk_parts_descrizione` UNIQUE (`descrizione`).
+
+### viaggi_db.vehicle_part_history
+
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+vehicle_id | varchar(191) | NO | NULL |
+part_id | int | NO | NULL |
+quote_item_id | int | YES | NULL |
+installation_date | date | NO | NULL |
+installation_km | int | YES | NULL |
+removal_date | date | YES | NULL |
+removal_km | int | YES | NULL |
+removal_reason | varchar(255) | YES | NULL |
+supplier_id | int | YES | NULL |
+price_paid | decimal(10,2) | YES | NULL |
+notes | text | YES | NULL |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+updated_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
+```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `idx_part_history_installation_date` (`installation_date`).
+- `idx_part_history_installation_km` (`installation_km`).
+- `idx_part_history_part` (`part_id`).
+- `idx_part_history_vehicle` (`vehicle_id`).
+- `PRIMARY` UNIQUE (`id`).
+- `supplier_id` (`supplier_id`).
+
+**Chiavi esterne verificate:**
+- `vehicle_part_history_ibfk_1`: `vehicle_id` → `viaggi_db.vehicles.id` (UPDATE NO ACTION, DELETE CASCADE).
+- `vehicle_part_history_ibfk_2`: `part_id` → `viaggi_db.vehicle_parts.id` (UPDATE NO ACTION, DELETE CASCADE).
+- `vehicle_part_history_ibfk_3`: `supplier_id` → `viaggi_db.suppliers.id` (UPDATE NO ACTION, DELETE SET NULL).
+
+### viaggi_db.vehicle_parts
+
+```text
+Colonna | Tipo | Null | Default | Extra
+id | int | NO | NULL | auto_increment
+name | varchar(255) | NO | NULL |
+code | varchar(50) | YES | NULL |
+category_id | int | YES | NULL |
+description | text | YES | NULL |
+typical_lifespan_km | int | YES | NULL |
+typical_lifespan_months | int | YES | NULL |
+default_supplier_id | int | YES | NULL |
+is_active | tinyint(1) | NO | 1 |
+created_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+updated_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
+```
+
+**Indici verificati sul server (1 novembre 2026):**
+- `default_supplier_id` (`default_supplier_id`).
+- `idx_vehicle_parts_active` (`is_active`).
+- `idx_vehicle_parts_category` (`category_id`).
+- `idx_vehicle_parts_name` (`name`).
+- `PRIMARY` UNIQUE (`id`).
+- `uk_part_code` UNIQUE (`code`).
+- `uk_part_name` UNIQUE (`name`).
+
+**Chiavi esterne verificate:**
+- `vehicle_parts_ibfk_1`: `category_id` → `viaggi_db.part_categories.id` (UPDATE NO ACTION, DELETE SET NULL).
+- `vehicle_parts_ibfk_2`: `default_supplier_id` → `viaggi_db.suppliers.id` (UPDATE NO ACTION, DELETE SET NULL).

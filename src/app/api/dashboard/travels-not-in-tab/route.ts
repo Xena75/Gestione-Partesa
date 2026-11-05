@@ -23,9 +23,10 @@ interface PaginationInfo {
 }
 
 // GET - Recupera viaggi presenti in travels ma non in tab_viaggi
+// Default: solo quelli conteggiati in "Monitoraggi Pending" (exclude_from_pending = 0).
+// ?includeExcluded=1: include anche quelli esclusi dal conteggio.
 export async function GET(request: NextRequest) {
   try {
-    // Verifica accesso utente
     const userCheck = await verifyUserAccess(request);
     if (!userCheck.success) {
       return NextResponse.json(
@@ -37,45 +38,44 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '10', 10);
+    const includeExcluded = searchParams.get('includeExcluded') === '1';
     const safeLimit = Math.max(1, Math.min(500, Math.trunc(Number(limit)) || 10));
     const safePage = Math.max(1, Math.trunc(Number(page)) || 1);
     const safeOffset = Math.min(50_000_000, Math.max(0, (safePage - 1) * safeLimit));
 
-    // Prima otteniamo tutti i numeroViaggio presenti in tab_viaggi (gestionelogistica)
-    const [tabViaggiResult] = await gestionePool.execute(
-      'SELECT DISTINCT `Viaggio` FROM tab_viaggi WHERE `Viaggio` IS NOT NULL AND `Viaggio` != \'\''
-    );
-    
-    const viaggiInTab = (tabViaggiResult as any[]).map(row => row.Viaggio);
-    console.log('📊 Viaggi trovati in tab_viaggi:', viaggiInTab.length);
+    const excludeClause = includeExcluded
+      ? ''
+      : ' AND (t.exclude_from_pending IS NULL OR t.exclude_from_pending = 0)';
 
-    // Costruiamo la condizione WHERE per escludere i viaggi già presenti in tab_viaggi
-    // NOTA: Mostriamo TUTTI i viaggi non sincronizzati (anche quelli esclusi) per permettere di modificarli
-    let whereCondition = 'WHERE t.numeroViaggio IS NOT NULL AND t.numeroViaggio != \'\'';
-    const queryParams: any[] = [];
-    
-    if (viaggiInTab.length > 0) {
-      const placeholders = viaggiInTab.map(() => '?').join(',');
-      whereCondition += ` AND t.numeroViaggio NOT IN (${placeholders})`;
-      queryParams.push(...viaggiInTab);
-    }
-
-    // Query per contare il totale dei viaggi non presenti in tab_viaggi (esclusi quelli con exclude_from_pending = 1 per le statistiche)
-    const countQuery = `
-      SELECT COUNT(*) as total 
-      FROM travels t
-      WHERE t.numeroViaggio IS NOT NULL AND t.numeroViaggio != '' 
-        AND (t.exclude_from_pending IS NULL OR t.exclude_from_pending = 0)
-        ${viaggiInTab.length > 0 ? `AND t.numeroViaggio NOT IN (${viaggiInTab.map(() => '?').join(',')})` : ''}
+    const notInTabClause = `
+      LEFT JOIN gestionelogistica.tab_viaggi tv ON t.numeroViaggio = tv.\`Viaggio\`
+      WHERE tv.\`Viaggio\` IS NULL
+        AND t.numeroViaggio IS NOT NULL AND t.numeroViaggio != ''
+        ${excludeClause}
     `;
-    
-    const [countResult] = await poolViaggi.execute(countQuery, viaggiInTab.length > 0 ? [...viaggiInTab] : []);
-    const totalItems = (countResult as any[])[0]?.total || 0;
-    const totalPages = Math.ceil(totalItems / safeLimit);
 
-    // Query per recuperare i viaggi non presenti in tab_viaggi con paginazione
-    // Include join per ottenere nominativo e targa
-    // NOTA: Mostriamo TUTTI i viaggi non sincronizzati (anche quelli esclusi) per permettere di modificarli
+    const [countResult] = await poolViaggi.execute(
+      `SELECT COUNT(*) as total FROM travels t ${notInTabClause}`
+    );
+    const totalItems = (countResult as { total: number }[])[0]?.total || 0;
+    const totalPages = Math.max(1, Math.ceil(totalItems / safeLimit));
+
+    // Conteggio allineato alla dashboard (sempre senza esclusi)
+    const [pendingCountResult] = await poolViaggi.execute(`
+      SELECT COUNT(*) as total
+      FROM travels t
+      LEFT JOIN gestionelogistica.tab_viaggi tv ON t.numeroViaggio = tv.\`Viaggio\`
+      WHERE tv.\`Viaggio\` IS NULL
+        AND t.numeroViaggio IS NOT NULL AND t.numeroViaggio != ''
+        AND (t.exclude_from_pending IS NULL OR t.exclude_from_pending = 0)
+    `);
+    const pendingCount = (pendingCountResult as { total: number }[])[0]?.total || 0;
+
+    const [tabCountResult] = await gestionePool.execute(
+      'SELECT COUNT(DISTINCT `Viaggio`) as total FROM tab_viaggi WHERE `Viaggio` IS NOT NULL AND `Viaggio` != \'\''
+    );
+    const synchronizedCount = (tabCountResult as { total: number }[])[0]?.total || 0;
+
     const dataQuery = `
       SELECT 
         t.id,
@@ -94,13 +94,12 @@ export async function GET(request: NextRequest) {
       FROM travels t
       LEFT JOIN employees e ON t.nominativoId = e.id
       LEFT JOIN vehicles v ON t.targaMezzoId = v.id
-      ${whereCondition}
+      ${notInTabClause}
       ORDER BY t.dataOraInizioViaggio DESC, t.numeroViaggio DESC
       LIMIT ${safeLimit} OFFSET ${safeOffset}
     `;
 
-    const [travelsResult] = await poolViaggi.execute(dataQuery, queryParams);
-
+    const [travelsResult] = await poolViaggi.execute(dataQuery);
     const travels = travelsResult as TravelNotInTab[];
 
     const pagination: PaginationInfo = {
@@ -110,27 +109,25 @@ export async function GET(request: NextRequest) {
       itemsPerPage: safeLimit
     };
 
-    console.log(`📊 Trovati ${totalItems} viaggi in travels non presenti in tab_viaggi`);
-
-    // Calcola le statistiche per il frontend
-    const totalTravels = totalItems + viaggiInTab.length;
-    const synchronizationPercentage = totalTravels > 0 ? (viaggiInTab.length / totalTravels) * 100 : 100;
+    const totalTravels = pendingCount + synchronizedCount;
+    const synchronizationPercentage =
+      totalTravels > 0 ? (synchronizedCount / totalTravels) * 100 : 100;
 
     return NextResponse.json({
       success: true,
       travels,
       pagination,
+      includeExcluded,
       stats: {
-        totalUnsynchronized: totalItems,
-        totalSynchronized: viaggiInTab.length,
-        synchronizationPercentage: synchronizationPercentage
+        totalUnsynchronized: pendingCount,
+        totalSynchronized: synchronizedCount,
+        synchronizationPercentage
       }
     });
-
   } catch (error) {
     console.error('Errore nel recupero viaggi non presenti in tab_viaggi:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Errore interno del server nel recupero viaggi',
         details: error instanceof Error ? error.message : 'Errore sconosciuto'
       },

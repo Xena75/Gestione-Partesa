@@ -36,6 +36,8 @@ Non committare `.env.local` / `.env.production`.
 |-----|-----------|
 | [`docs/funzionalita_aggiornate.md`](docs/funzionalita_aggiornate.md) | Changelog / funzionalità per versione |
 | [`docs/database-reference.md`](docs/database-reference.md) | Struttura DB (fonte allineata al DB reale) |
+| [`docs/database-schema-verificato-2026-11-01.json`](docs/database-schema-verificato-2026-11-01.json) | Snapshot metadati MySQL (1 nov 2026) |
+| [`docs/accesso-database-audit.md`](docs/accesso-database-audit.md) | Account audit read-only (opzionale) |
 | [`docs/backup-sistema-e-client-mysql.md`](docs/backup-sistema-e-client-mysql.md) | Backup e client MySQL |
 | [`docs/spec-delivery-analytics.md`](docs/spec-delivery-analytics.md) | Spec Delivery Analytics |
 

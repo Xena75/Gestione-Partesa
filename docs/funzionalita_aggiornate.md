@@ -19,6 +19,32 @@ Il dropdown **Targa** (e gli altri distinct di `/api/viaggi/filters`) usava `get
 
 ---
 
+## Fix - Dashboard “Monitoraggi Pending”: lista allineata al conteggio
+
+**Data**: Novembre 2026  
+**Stato**: ✅ Applicato
+
+### Problema
+Il conteggio dashboard includeva solo `travels` non in `tab_viaggi` con `exclude_from_pending = 0`, ma il modale elencava anche gli esclusi (ordinati per data): in prima pagina comparivano viaggi esclusi recenti, non i pending contati.
+
+### Correzione
+- **`/api/dashboard/travels-not-in-tab`**: default = solo pending (`exclude_from_pending = 0`), stessa logica JOIN della dashboard; `?includeExcluded=1` per includere gli esclusi.
+- **`TravelsNotInTabModal`**: toggle “Mostra esclusi dal conteggio”.
+
+---
+
+## Docs - Schema DB verificato + procedura audit read-only
+
+**Data**: Novembre 2026  
+**Stato**: ✅ Documentazione
+
+- `docs/database-reference.md` allineato a MySQL Proxmox (metadati 1 nov 2026).
+- Snapshot: `docs/database-schema-verificato-2026-11-01.json`.
+- Procedura account audit: `docs/accesso-database-audit.md` + `.env.audit.example`.
+- `docs/revisione-progetto-2026-10-30.md` aggiornata (path locali rimossi).
+
+---
+
 ## v2.43.19 - Delivery Analytics: pivot dinamica su `fatt_delivery` + drill-down dettaglio
 
 **Data implementazione**: Giugno 2026  

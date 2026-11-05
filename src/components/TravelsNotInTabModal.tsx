@@ -41,14 +41,20 @@ const TravelsNotInTabModal: React.FC<TravelsNotInTabModalProps> = ({ isOpen, onC
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [includeExcluded, setIncludeExcluded] = useState(false);
   const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set());
   const router = useRouter();
 
-  const fetchData = async (page: number = 1) => {
+  const fetchData = async (page: number = 1, showExcluded: boolean = includeExcluded) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/dashboard/travels-not-in-tab?page=${page}&limit=10`);
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: '10',
+      });
+      if (showExcluded) params.set('includeExcluded', '1');
+      const response = await fetch(`/api/dashboard/travels-not-in-tab?${params}`);
       if (!response.ok) {
         throw new Error(`Errore HTTP: ${response.status}`);
       }
@@ -65,12 +71,19 @@ const TravelsNotInTabModal: React.FC<TravelsNotInTabModalProps> = ({ isOpen, onC
 
   useEffect(() => {
     if (isOpen) {
-      fetchData(1);
+      setIncludeExcluded(false);
+      fetchData(1, false);
     }
   }, [isOpen]);
 
   const handlePageChange = (page: number) => {
-    fetchData(page);
+    fetchData(page, includeExcluded);
+  };
+
+  const handleToggleIncludeExcluded = () => {
+    const next = !includeExcluded;
+    setIncludeExcluded(next);
+    fetchData(1, next);
   };
 
   const handleViewFullPage = () => {
@@ -99,7 +112,7 @@ const TravelsNotInTabModal: React.FC<TravelsNotInTabModalProps> = ({ isOpen, onC
       }
 
       // Ricarica i dati per aggiornare la lista
-      await fetchData(currentPage);
+      await fetchData(currentPage, includeExcluded);
     } catch (err) {
       console.error('Errore nel toggle exclude_from_pending:', err);
       alert('Errore nell\'aggiornamento. Riprova.');
@@ -179,6 +192,27 @@ const TravelsNotInTabModal: React.FC<TravelsNotInTabModalProps> = ({ isOpen, onC
                       </div>
                     </div>
                   </div>
+                </div>
+
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <div className="form-check form-switch mb-0">
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      role="switch"
+                      id="includeExcludedSwitch"
+                      checked={includeExcluded}
+                      onChange={handleToggleIncludeExcluded}
+                    />
+                    <label className="form-check-label" htmlFor="includeExcludedSwitch">
+                      Mostra esclusi dal conteggio
+                    </label>
+                  </div>
+                  <small className="text-muted">
+                    {includeExcluded
+                      ? `Lista: pending + esclusi (${data.pagination?.totalItems ?? 0})`
+                      : `Allineato a Monitoraggi Pending (${data.stats?.totalUnsynchronized ?? 0})`}
+                  </small>
                 </div>
 
                 {/* Tabella */}
