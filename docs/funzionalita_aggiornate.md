@@ -1,7 +1,21 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
 **Versione corrente**: v2.43.19  
-**Ultimo aggiornamento**: Giugno 2026
+**Ultimo aggiornamento**: Novembre 2026
+
+---
+
+## Fix - Filtri `/viaggi`: opzioni select su tutto lo storico
+
+**Data**: Novembre 2026  
+**Stato**: ✅ Applicato
+
+### Problema
+Il dropdown **Targa** (e gli altri distinct di `/api/viaggi/filters`) usava `getDefaultTabViaggiMinData(3)`. Targhe senza viaggi negli ultimi 3 mesi (es. `EP736BZ`, ultimo viaggio luglio 2026) non comparivano nel select, anche impostando date più ampie nel form (le date non ricaricavano le opzioni).
+
+### Correzione
+- **`src/app/api/viaggi/filters/route.ts`**: `getDistinctValues` **senza** limite 3 mesi (tutto lo storico su `tab_viaggi`).
+- La **lista** `/viaggi` resta sugli ultimi 3 mesi se non ci sono filtri data/altri criteri nell’URL.
 
 ---
 
@@ -139,7 +153,7 @@
 **Stato**: Build e deploy verificati in sessione di release
 
 ### 🚚 Pagina `/viaggi` (`tab_viaggi` in `gestionelogistica`)
-- **Filtro predefinito ultimi 3 mesi** sulla colonna `Data` quando non ci sono parametri di filtro nell’URL: riduce lo scan su liste, statistiche e `SELECT DISTINCT` per i dropdown (`getDefaultTabViaggiMinData`, `minData` in `getViaggiData`, `getViaggiStats`, `getDistinctValues`).
+- **Filtro predefinito ultimi 3 mesi** sulla colonna `Data` quando non ci sono parametri di filtro nell’URL: riduce lo scan su **liste e statistiche** (`getDefaultTabViaggiMinData`, `minData` in `getViaggiData` / `getViaggiStats`). I **dropdown** di `/api/viaggi/filters` usano tutto lo storico (nov 2026).
 - **Banner** informativo se la vista è senza filtri (spiegazione + uso di Data da / Data a per lo storico completo).
 - **Caricamento dati**: `useEffect` con dipendenza `searchParams.toString()`; **AbortController** sulle fetch parallele per evitare race (tabella vs card statistiche).
 - **Export Excel**: `GET /api/viaggi/export` (stessi criteri della lista; max 100k righe); componente `ExportViaggiTabButton`; uso di `getTabViaggiRowsForExport` e helper condivisi (`buildTabViaggiWhereFromFilters`, normalizzazione ordinamento) in `src/lib/data-viaggi-tab.ts`.
