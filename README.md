@@ -1,7 +1,7 @@
 # Gestione Partesa
 
 Sistema di gestione logistica (viaggi, delivery/handling, veicoli, dipendenti, Extra/cad-hoc, backup)  
-**v2.44.1** — Next.js 15, TypeScript, Bootstrap, MySQL 8.
+**v2.44.2** — Next.js 15, TypeScript, Bootstrap, MySQL 8.
 
 ## Stack
 

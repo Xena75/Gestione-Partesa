@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Archive, ClipboardList, Ticket, Truck } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 
 type TabKey = 'trips' | 'receipts' | 'cadhoc' | 'anagrafiche';
 
@@ -88,6 +89,8 @@ const emptyComp = (): CompensationForm => ({
 });
 
 export default function ExtraPage() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const [tab, setTab] = useState<TabKey>('trips');
   const [rows, setRows] = useState<TripRow[]>([]);
   const [total, setTotal] = useState(0);
@@ -1066,10 +1069,10 @@ export default function ExtraPage() {
                     </td>
                     <td className="text-nowrap">
                       <button type="button" className="btn btn-sm btn-outline-primary me-1" onClick={() => openEdit(r)}>Modifica</button>
-                      {r.is_extra && !r.archived ? (
+                      {r.is_extra && !r.archived && isAdmin ? (
                         <button type="button" className="btn btn-sm btn-success me-1" onClick={() => archiveTrip(r, true)}>Archivia</button>
                       ) : null}
-                      {r.archived ? (
+                      {r.archived && isAdmin ? (
                         <button type="button" className="btn btn-sm btn-outline-secondary me-1" onClick={() => archiveTrip(r, false)}>Ripristina</button>
                       ) : null}
                       <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => askDeleteTrip(r)}>Elimina</button>

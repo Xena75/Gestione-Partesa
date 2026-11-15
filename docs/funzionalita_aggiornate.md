@@ -1,7 +1,16 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-**Versione corrente**: v2.44.1  
+**Versione corrente**: v2.44.2  
 **Ultimo aggiornamento**: 15 novembre 2026
+
+---
+
+## v2.44.2 — Extra: Archivia/Ripristina solo Admin (15 novembre 2026)
+
+**Stato**: ✅ Applicato
+
+- In `/extra` i pulsanti **Archivia** e **Ripristina** sono visibili solo se `user.role === 'admin'` (`useAuth`)
+- Modifica / Elimina restano disponibili agli utenti autenticati della pagina
 
 ---
 
@@ -53,7 +62,7 @@ Lib: `src/lib/data-extra.ts`, `src/lib/extra-import.ts`
 - Filtri trips (una riga): ricerca, **mese**, date, archivia, extra, **cad-hoc sì/no**, importo
 - Colonne: colli (intero), note servizio, note fatturazione; sort su data/viaggio/note/vettore
 - KPI colorati (aperti / archiviati / cad-hoc / terzisti)
-- CRUD + Archivia + Elimina (modal conferma); validazione campi obbligatori in modal
+- CRUD + Elimina (modal conferma); **Archivia/Ripristina solo Admin**; validazione campi obbligatori in modal
 - Cad-hoc: filtri beneficiario/date/archivia; dettaglio viaggi **inline** nella tab
 - Anagrafiche: filtri tipo/stato/ricerca; sola lettura
 - Link Navbar + Dashboard (Fatturazione); middleware `/extra`
