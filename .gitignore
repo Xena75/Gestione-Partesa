@@ -50,6 +50,7 @@ backup-system/
 *.sql
 !migrations/2026-11-15_extra_module.sql
 !migrations/2026-11-15_extra_beneficiaries_company_id.sql
+!migrations/2026-11-15_tab_vettori_attivo.sql
 *_clean.sql
 *.dbml
 *.log

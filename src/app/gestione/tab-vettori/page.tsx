@@ -15,6 +15,7 @@ interface TabVettore {
   Data_Modifica: string | null;
   Targa_Mezzo: string | null;
   Id_Tariffa: string | null;
+  Attivo: number;
 }
 
 const emptyForm: Record<string, string> = {
@@ -28,6 +29,7 @@ const emptyForm: Record<string, string> = {
   Email_Vettore: '',
   Targa_Mezzo: '',
   Id_Tariffa: '2',
+  Attivo: '1',
 };
 
 function TabVettoriContent() {
@@ -37,6 +39,7 @@ function TabVettoriContent() {
   const [pageSize] = useState(25);
   const [search, setSearch] = useState('');
   const [searchDebounced, setSearchDebounced] = useState('');
+  const [attivoFilter, setAttivoFilter] = useState<'all' | '0' | '1'>('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,6 +55,7 @@ function TabVettoriContent() {
       const params = new URLSearchParams();
       params.set('page', String(page));
       params.set('pageSize', String(pageSize));
+      params.set('attivo', attivoFilter);
       if (searchDebounced.trim()) params.set('search', searchDebounced.trim());
       const res = await fetch(`/api/gestione/tab-vettori?${params.toString()}`);
       const json = await res.json();
@@ -66,7 +70,7 @@ function TabVettoriContent() {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, searchDebounced]);
+  }, [page, pageSize, searchDebounced, attivoFilter]);
 
   useEffect(() => {
     const t = setTimeout(() => setSearchDebounced(search), 350);
@@ -75,7 +79,7 @@ function TabVettoriContent() {
 
   useEffect(() => {
     setPage(1);
-  }, [searchDebounced]);
+  }, [searchDebounced, attivoFilter]);
 
   useEffect(() => {
     load();
@@ -100,6 +104,7 @@ function TabVettoriContent() {
       Email_Vettore: r.Email_Vettore ?? '',
       Targa_Mezzo: r.Targa_Mezzo ?? '',
       Id_Tariffa: r.Id_Tariffa ?? '2',
+      Attivo: Number(r.Attivo) === 0 ? '0' : '1',
     });
     setShowModal(true);
   };
@@ -124,6 +129,7 @@ function TabVettoriContent() {
         Email_Vettore: form.Email_Vettore || null,
         Targa_Mezzo: form.Targa_Mezzo || null,
         Id_Tariffa: form.Id_Tariffa || '2',
+        Attivo: form.Attivo === '0' ? 0 : 1,
       };
 
       if (editingCod === null) {
@@ -186,7 +192,7 @@ function TabVettoriContent() {
       <div className="card shadow-sm mb-3">
         <div className="card-body">
           <div className="row g-2 align-items-end">
-            <div className="col-md-6">
+            <div className="col-md-5">
               <label className="form-label mb-1">Cerca (codice, descrizione, nome, azienda…)</label>
               <input
                 type="search"
@@ -196,7 +202,19 @@ function TabVettoriContent() {
                 placeholder="Filtra…"
               />
             </div>
-            <div className="col-md-6 text-md-end small text-muted">
+            <div className="col-md-3">
+              <label className="form-label mb-1">Stato</label>
+              <select
+                className="form-select"
+                value={attivoFilter}
+                onChange={(e) => setAttivoFilter(e.target.value as 'all' | '0' | '1')}
+              >
+                <option value="all">Tutti</option>
+                <option value="1">Attivi</option>
+                <option value="0">Non attivi</option>
+              </select>
+            </div>
+            <div className="col-md-4 text-md-end small text-muted">
               {total > 0 && (
                 <>
                   Record: <strong>{total}</strong> — Pagina {page} / {totalPages}
@@ -229,6 +247,7 @@ function TabVettoriContent() {
                 <th>Cell.</th>
                 <th>Targa</th>
                 <th>Tariffa</th>
+                <th>Stato</th>
                 <th />
               </tr>
             </thead>
@@ -244,6 +263,13 @@ function TabVettoriContent() {
                   <td>{r.Cellulare_Vettore}</td>
                   <td>{r.Targa_Mezzo}</td>
                   <td>{r.Id_Tariffa}</td>
+                  <td>
+                    {Number(r.Attivo) === 0 ? (
+                      <span className="badge text-bg-secondary">Non attivo</span>
+                    ) : (
+                      <span className="badge text-bg-success">Attivo</span>
+                    )}
+                  </td>
                   <td>
                     <button
                       type="button"
@@ -394,6 +420,17 @@ function TabVettoriContent() {
                       value={form.Id_Tariffa}
                       onChange={(e) => setForm((f) => ({ ...f, Id_Tariffa: e.target.value }))}
                     />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Stato</label>
+                    <select
+                      className="form-select"
+                      value={form.Attivo}
+                      onChange={(e) => setForm((f) => ({ ...f, Attivo: e.target.value }))}
+                    >
+                      <option value="1">Attivo</option>
+                      <option value="0">Non attivo</option>
+                    </select>
                   </div>
                 </div>
               </div>

@@ -959,24 +959,21 @@ Email_Vettore | varchar(100) | YES | NULL |
 Data_Modifica | datetime | YES | NULL |
 Targa_Mezzo | varchar(191) | YES | NULL |
 Id_Tariffa | varchar(10) | YES | 2 |
+Attivo | tinyint(1) | NO | 1 | 1=attivo, 0=non attivo
 ```
 
-**Indici verificati sul server (1 novembre 2026):**
+**Indici verificati sul server (15 novembre 2026):**
 - `PRIMARY` UNIQUE (`Cod_Vettore`).
 
-Email_Vettore     varchar(100) YES        NULL     
-Data_Modifica     datetime     YES        NULL     
-Targa_Mezzo       varchar(191) YES        NULL     
-Id_Tariffa        varchar(10)  YES        2        
-```
-
 **Utilizzo nel progetto:**
-- **Pagine**: `/gestione/tab-vettori` — gestione amministrativa record (ricerca, creazione, modifica codice e anagrafica); sincronizzazioni viaggi leggono da questa tabella (`/api/viaggi/sync-tab-viaggi`, `/api/viaggi/sync-tab-terzisti`)
-- **API**: `GET`/`POST` `/api/gestione/tab-vettori`, `GET`/`PUT` `/api/gestione/tab-vettori/[codVettore]`; libreria `src/lib/data-tab-vettori.ts` (pool `db-gestione`)
+- **Pagine**: `/gestione/tab-vettori` — gestione amministrativa record (ricerca, creazione, modifica codice/anagrafica/attivo); sincronizzazioni viaggi leggono da questa tabella (`/api/viaggi/sync-tab-viaggi`, `/api/viaggi/sync-tab-terzisti`)
+- **API**: `GET`/`POST` `/api/gestione/tab-vettori` (query `attivo=all|0|1`), `GET`/`PUT` `/api/gestione/tab-vettori/[codVettore]`; libreria `src/lib/data-tab-vettori.ts` (pool `db-gestione`)
 - **API**: `/api/terzisti/import` per gestione fatturazione terzisti (JOIN su `Descr_Vettore`)
+- **Extra**: select vettori con `attivo=1`; se un viaggio ha già un vettore disattivato resta selezionabile
 - **Componenti**: Gestione anagrafica vettori
-- **Funzionalità**: Gestione trasportatori, fatturazione terzisti, assegnazione **Cod_Vettore** a descrizioni/nominativi
+- **Funzionalità**: Gestione trasportatori, fatturazione terzisti, assegnazione **Cod_Vettore** a descrizioni/nominativi, flag attivo/non attivo
 - **Dashboard**: Link rapido “Anagrafica vettori (tab_vettori)” nella sezione Viaggi
+- **Migrazione**: `migrations/2026-11-15_tab_vettori_attivo.sql`
 
 ### Modulo Extra / cad-hoc / terzisti (15 novembre 2026)
 

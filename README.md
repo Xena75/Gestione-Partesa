@@ -1,7 +1,7 @@
 # Gestione Partesa
 
 Sistema di gestione logistica (viaggi, delivery/handling, veicoli, dipendenti, Extra/cad-hoc, backup)  
-**v2.44.0** — Next.js 15, TypeScript, Bootstrap, MySQL 8.
+**v2.44.1** — Next.js 15, TypeScript, Bootstrap, MySQL 8.
 
 ## Stack
 
@@ -21,9 +21,11 @@ Comandi utili: `npm run build` · `npm run lint`
 
 ## Modulo Extra
 
-- UI autenticata: [`/extra`](http://localhost:3001/extra) (Navbar / Dashboard)
+- UI autenticata: [`/extra`](http://localhost:3001/extra) (Navbar / Dashboard Fatturazione)
 - Tabelle `extra_*` in `gestionelogistica`; anagrafiche ibride su `viaggi_db.employees` / `companies`
-- Migrazioni in `migrations/2026-11-15_extra_*.sql`
+- Filtri: mese (`trip_date`), date, archivia, extra, cad-hoc, importo
+- Vettori in Extra: solo `tab_vettori.Attivo=1` (flag in `/gestione/tab-vettori`)
+- Migrazioni: `migrations/2026-11-15_extra_*.sql`, `migrations/2026-11-15_tab_vettori_attivo.sql`
 - Dettaglio: [`docs/funzionalita_aggiornate.md`](docs/funzionalita_aggiornate.md) · [`docs/database-reference.md`](docs/database-reference.md)
 
 ## Database / env

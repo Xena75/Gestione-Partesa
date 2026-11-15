@@ -63,6 +63,10 @@ export async function PUT(
         body.Targa_Mezzo !== undefined ? (body.Targa_Mezzo as string | null) : existing.Targa_Mezzo,
       Id_Tariffa:
         body.Id_Tariffa !== undefined ? (body.Id_Tariffa as string | null) : existing.Id_Tariffa,
+      Attivo:
+        body.Attivo !== undefined
+          ? (body.Attivo as number | boolean)
+          : existing.Attivo,
     };
 
     const result = await updateTabVettore(codVettore, merged);

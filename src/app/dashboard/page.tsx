@@ -2578,12 +2578,6 @@ export default function ModernDashboard() {
                     </Link>
                   </div>
                   <div className="col-12">
-                    <Link href="/extra" className="btn btn-outline-primary btn-action btn-sm w-100">
-                      <Package size={16} className="me-1" />
-                      Extra / cad-hoc
-                    </Link>
-                  </div>
-                  <div className="col-12">
                     <Link href="/gestione/tab-vettori" className="btn btn-outline-secondary btn-action btn-sm w-100">
                       <Truck size={16} className="me-1" />
                       Anagrafica vettori (tab_vettori)

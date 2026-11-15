@@ -1,7 +1,29 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-**Versione corrente**: v2.44.0  
+**Versione corrente**: v2.44.1  
 **Ultimo aggiornamento**: 15 novembre 2026
+
+---
+
+## v2.44.1 — Extra filtri mese, vettori Attivo, pool MySQL (15 novembre 2026)
+
+**Stato**: ✅ Applicato
+
+### Extra `/extra`
+- Filtro **Mese** (`type=month`) su `trip_date`: imposta `dataDa`/`dataA` al primo/ultimo giorno del mese (tab Viaggi, Incassi, Cad-hoc)
+- Select vettori: solo `tab_vettori.Attivo=1`; se il viaggio ha già un vettore disattivato resta in elenco come “(non attivo)”
+
+### Anagrafica vettori
+- Colonna `Attivo` (`TINYINT(1)`, default 1) su `gestionelogistica.tab_vettori`
+- Migrazione: `migrations/2026-11-15_tab_vettori_attivo.sql`
+- UI `/gestione/tab-vettori`: filtro Stato + campo Attivo/Non attivo in create/edit; badge in tabella
+- API `GET /api/gestione/tab-vettori?attivo=all|0|1`
+
+### Dashboard
+- Rimosso link **Extra / cad-hoc** dalla card Viaggi (resta in Fatturazione + Navbar)
+
+### Stabilità MySQL
+- Pool ridotti (`DB_POOL_LIMIT` / limiti bassi) e `enableKeepAlive: false` su `db-auth`, `db-gestione`, `db-employees`, `db-viaggi` per evitare `Too many connections` (login “Accesso richiesto” / Errore interno)
 
 ---
 
@@ -28,13 +50,13 @@ Lib: `src/lib/data-extra.ts`, `src/lib/extra-import.ts`
 
 ### UI `/extra`
 - Tab: Extra/viaggi, Controllo incassi, Riepilogo cad-hoc, Anagrafiche
-- Filtri trips (una riga): ricerca, date, archivia, extra, **cad-hoc sì/no**, importo
+- Filtri trips (una riga): ricerca, **mese**, date, archivia, extra, **cad-hoc sì/no**, importo
 - Colonne: colli (intero), note servizio, note fatturazione; sort su data/viaggio/note/vettore
 - KPI colorati (aperti / archiviati / cad-hoc / terzisti)
 - CRUD + Archivia + Elimina (modal conferma); validazione campi obbligatori in modal
 - Cad-hoc: filtri beneficiario/date/archivia; dettaglio viaggi **inline** nella tab
 - Anagrafiche: filtri tipo/stato/ricerca; sola lettura
-- Link Navbar + Dashboard (Fatturazione e Viaggi); middleware `/extra`
+- Link Navbar + Dashboard (Fatturazione); middleware `/extra`
 
 ### Anagrafiche ibride
 - Select cad-hoc da `viaggi_db.employees` (solo `active=1`); terzisti da `viaggi_db.companies`
@@ -42,8 +64,7 @@ Lib: `src/lib/data-extra.ts`, `src/lib/extra-import.ts`
 - Cleanup: delete DATI A Lainate / Fabio Potenza; Boadu alias; Gamma → Servizi; 6 companies inserite
 
 ### Stabilita connessioni
-- `db-employees`: pool + `release()` (fix ETIMEDOUT createConnection)
-- `db-auth` / `db-gestione`: keep-alive + connectTimeout; Extra carica lookup anagrafiche on-demand
+- Pool piccoli + `enableKeepAlive: false` (vedi v2.44.1); Extra carica lookup anagrafiche on-demand
 
 ### Import
 - Script: `npx tsx scripts/import-extra-onedrive.ts` [`--dry-run`]
@@ -249,9 +270,10 @@ Il conteggio dashboard includeva solo `travels` non in `tab_viaggi` con `exclude
 - **Config unica**: `next.config.js` (rimosso il duplicato `next.config.ts`, non caricato da Next). Gli import pesanti non sono più in questa app; non si espongono limiti body da 50 MB.
 
 ### 👷 Anagrafica vettori (`gestionelogistica.tab_vettori`)
-- **Pagina** `/gestione/tab-vettori`: elenco con ricerca e paginazione, creazione e modifica (incluso aggiornamento **Cod_Vettore** con controllo unicità).
-- **API**: `GET`/`POST` `/api/gestione/tab-vettori`, `GET`/`PUT` `/api/gestione/tab-vettori/[codVettore]`; logica in `src/lib/data-tab-vettori.ts` (pool `db-gestione`).
+- **Pagina** `/gestione/tab-vettori`: elenco con ricerca, filtro **Attivo/Non attivo**, paginazione, creazione e modifica (incluso **Cod_Vettore** e flag `Attivo`).
+- **API**: `GET`/`POST` `/api/gestione/tab-vettori` (`attivo=all|0|1`), `GET`/`PUT` `/api/gestione/tab-vettori/[codVettore]`; logica in `src/lib/data-tab-vettori.ts` (pool `db-gestione`).
 - **Dashboard**: link nella card Viaggi verso l’anagrafica vettori.
+- **Migrazione Attivo**: `migrations/2026-11-15_tab_vettori_attivo.sql` (v2.44.1).
 
 ### Documentazione
 - Aggiornati **`docs/database-reference.md`** (`tab_vettori`, `tab_viaggi`, `fatt_handling`, `travels`, `tab_delivery_terzisti` dove applicabile), **`README.md`**, questo file.

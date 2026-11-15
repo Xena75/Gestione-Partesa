@@ -11,8 +11,11 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') ?? undefined;
     const page = Number(searchParams.get('page')) || 1;
     const pageSize = Number(searchParams.get('pageSize')) || 25;
+    const attivoRaw = searchParams.get('attivo');
+    const attivo =
+      attivoRaw === '0' || attivoRaw === '1' || attivoRaw === 'all' ? attivoRaw : 'all';
 
-    const { rows, total } = await listTabVettori({ search, page, pageSize });
+    const { rows, total } = await listTabVettori({ search, page, pageSize, attivo });
 
     return NextResponse.json({
       success: true,

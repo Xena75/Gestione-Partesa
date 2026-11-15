@@ -62,6 +62,7 @@ interface ViaggiCompany {
 interface Carrier {
   Cod_Vettore: number;
   Descr_Vettore: string | null;
+  Attivo?: number;
 }
 
 function money(v: number | null | undefined) {
@@ -102,6 +103,7 @@ export default function ExtraPage() {
   const [carriers, setCarriers] = useState<Carrier[]>([]);
 
   const [search, setSearch] = useState('');
+  const [month, setMonth] = useState('');
   const [dataDa, setDataDa] = useState('');
   const [dataA, setDataA] = useState('');
   const [archived, setArchived] = useState<'all' | '0' | '1'>('all');
@@ -198,6 +200,20 @@ export default function ExtraPage() {
     setPage(1);
   };
 
+  const applyMonth = (value: string) => {
+    setMonth(value);
+    if (!value) {
+      setDataDa('');
+      setDataA('');
+      return;
+    }
+    const [y, m] = value.split('-').map(Number);
+    const last = new Date(y, m, 0).getDate();
+    const mm = String(m).padStart(2, '0');
+    setDataDa(`${y}-${mm}-01`);
+    setDataA(`${y}-${mm}-${String(last).padStart(2, '0')}`);
+  };
+
   const buildTripParams = useCallback(() => {
     const params = new URLSearchParams();
     params.set('page', String(page));
@@ -283,7 +299,7 @@ export default function ExtraPage() {
   }, []);
 
   const loadCarriers = useCallback(async () => {
-    const res = await fetch('/api/gestione/tab-vettori?page=1&pageSize=100');
+    const res = await fetch('/api/gestione/tab-vettori?page=1&pageSize=100&attivo=1');
     const json = await res.json();
     if (res.ok && json.success) setCarriers(json.data || []);
   }, []);
@@ -624,12 +640,32 @@ export default function ExtraPage() {
             ) : tab === 'cadhoc' ? (
               <>
                 <div className="col-md-2">
+                  <label className="form-label mb-1">Mese</label>
+                  <input type="month" className="form-control form-control-sm" value={month} onChange={(e) => applyMonth(e.target.value)} />
+                </div>
+                <div className="col-md-2">
                   <label className="form-label mb-1">Data da</label>
-                  <input type="date" className="form-control form-control-sm" value={dataDa} onChange={(e) => setDataDa(e.target.value)} />
+                  <input
+                    type="date"
+                    className="form-control form-control-sm"
+                    value={dataDa}
+                    onChange={(e) => {
+                      setMonth('');
+                      setDataDa(e.target.value);
+                    }}
+                  />
                 </div>
                 <div className="col-md-2">
                   <label className="form-label mb-1">Data a</label>
-                  <input type="date" className="form-control form-control-sm" value={dataA} onChange={(e) => setDataA(e.target.value)} />
+                  <input
+                    type="date"
+                    className="form-control form-control-sm"
+                    value={dataA}
+                    onChange={(e) => {
+                      setMonth('');
+                      setDataA(e.target.value);
+                    }}
+                  />
                 </div>
                 <div className="col-md-2">
                   <label className="form-label mb-1">Archivia</label>
@@ -643,12 +679,32 @@ export default function ExtraPage() {
             ) : (
               <>
                 <div className="col" style={{ minWidth: 0 }}>
+                  <label className="form-label mb-1">Mese</label>
+                  <input type="month" className="form-control form-control-sm" value={month} onChange={(e) => applyMonth(e.target.value)} />
+                </div>
+                <div className="col" style={{ minWidth: 0 }}>
                   <label className="form-label mb-1">Data da</label>
-                  <input type="date" className="form-control form-control-sm" value={dataDa} onChange={(e) => setDataDa(e.target.value)} />
+                  <input
+                    type="date"
+                    className="form-control form-control-sm"
+                    value={dataDa}
+                    onChange={(e) => {
+                      setMonth('');
+                      setDataDa(e.target.value);
+                    }}
+                  />
                 </div>
                 <div className="col" style={{ minWidth: 0 }}>
                   <label className="form-label mb-1">Data a</label>
-                  <input type="date" className="form-control form-control-sm" value={dataA} onChange={(e) => setDataA(e.target.value)} />
+                  <input
+                    type="date"
+                    className="form-control form-control-sm"
+                    value={dataA}
+                    onChange={(e) => {
+                      setMonth('');
+                      setDataA(e.target.value);
+                    }}
+                  />
                 </div>
                 {tab === 'trips' && (
                   <>
@@ -1117,6 +1173,12 @@ export default function ExtraPage() {
                       }}
                     >
                       <option value="">—</option>
+                      {form.carrier_cod_vettore &&
+                        !carriers.some((c) => String(c.Cod_Vettore) === form.carrier_cod_vettore) && (
+                          <option value={form.carrier_cod_vettore}>
+                            {form.carrier_description || form.carrier_cod_vettore} (non attivo)
+                          </option>
+                        )}
                       {carriers.map((c) => (
                         <option key={c.Cod_Vettore} value={c.Cod_Vettore}>{c.Descr_Vettore}</option>
                       ))}
