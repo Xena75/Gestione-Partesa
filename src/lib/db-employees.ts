@@ -10,12 +10,15 @@ const dbConfig = {
   database: process.env.DB_VIAGGI_NAME || 'viaggi_db'
 };
 
-// Pool di connessioni
+// Pool di connessioni (evitare createConnection per-request → ETIMEDOUT sotto carico)
 const pool = mysql.createPool({
   ...dbConfig,
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  connectTimeout: 15000,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 10000,
 });
 
 export default pool;
@@ -131,11 +134,10 @@ export interface LeaveBalance {
   created_at: string;
 }
 
-// Database connection
+// Database connection (dal pool; in finally usare release(), non end())
 export async function getConnection() {
   try {
-    const connection = await mysql.createConnection(dbConfig);
-    return connection;
+    return await pool.getConnection();
   } catch (error) {
     console.error('Errore connessione database:', error);
     throw error;
@@ -155,7 +157,7 @@ export async function getAllEmployees(): Promise<Employee[]> {
     );
     return rows as Employee[];
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -186,7 +188,7 @@ export async function getEmployeeById(id: string): Promise<Employee | null> {
     console.error('Errore nella query getEmployeeById:', error);
     throw error;
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -246,7 +248,7 @@ export async function getEmployeeByUsername(username: string): Promise<Employee 
     console.log('getEmployeeByUsername - Nessun dipendente trovato per:', username);
     return null;
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -340,7 +342,7 @@ export async function createEmployee(employee: Omit<Employee, 'id' | 'createdAt'
     
     return employeeId;
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -411,7 +413,7 @@ export async function updateEmployee(id: string, employee: Partial<Employee & { 
     }
     throw error;
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -426,7 +428,7 @@ export async function deleteEmployee(id: string): Promise<boolean> {
     
     return (result as any).affectedRows > 0;
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -438,7 +440,7 @@ export async function getDrivers(): Promise<Employee[]> {
     );
     return rows as Employee[];
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -453,7 +455,7 @@ export async function getEmployeeDocuments(employeeId: string): Promise<Employee
     );
     return rows as EmployeeDocument[];
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -474,7 +476,7 @@ export async function createEmployeeDocument(document: Omit<EmployeeDocument, 'i
     
     return (result as any).insertId;
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -495,7 +497,7 @@ export async function updateEmployeeDocument(id: number, document: Partial<Emplo
     
     return (result as any).affectedRows > 0;
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -509,7 +511,7 @@ export async function deleteEmployeeDocument(id: number): Promise<boolean> {
     
     return (result as any).affectedRows > 0;
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -523,7 +525,7 @@ export async function getEmployeeDocumentById(id: number): Promise<EmployeeDocum
     const documents = rows as EmployeeDocument[];
     return documents.length > 0 ? documents[0] : null;
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -564,7 +566,7 @@ export async function getExpiringDocuments(days: number = 30): Promise<(Employee
     );
     return rows as (EmployeeDocument & { nome: string; cognome: string; employee_name: string; days_until_expiry: number })[];
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -640,7 +642,7 @@ export async function getDocumentStats(): Promise<DocumentStats> {
       by_type: byType
     };
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -720,7 +722,7 @@ export async function getExpiredDocuments(sortBy: string = 'days_overdue', limit
       critical_count: criticalCount
     };
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -740,7 +742,7 @@ export async function updateDocumentStatus(): Promise<void> {
       WHERE employee_id IN (SELECT id FROM employees WHERE active = 1)
     `);
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -809,7 +811,7 @@ export async function getEmployeeLeaveRequests(employeeId: string, status?: stri
     
     return requests;
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -902,7 +904,7 @@ export async function createLeaveRequest(request: Omit<LeaveRequest, 'id' | 'cre
     console.error('createLeaveRequest - Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
     throw error;
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -940,7 +942,7 @@ export async function updateLeaveRequestStatus(
     
     return (result as any).affectedRows > 0;
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -1014,7 +1016,7 @@ export async function getEmployeeLeaveBalance(employeeId: string, year?: number)
     const balances = rows as LeaveBalance[];
     return balances.length > 0 ? balances[0] : null;
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -1046,7 +1048,7 @@ export async function createOrUpdateLeaveBalance(balance: Omit<LeaveBalance, 'id
     
     return (result as any).affectedRows > 0;
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -1179,7 +1181,7 @@ export async function getAllLeaveBalances(year?: number): Promise<(LeaveBalance 
     console.log(`[getAllLeaveBalances] Restituiti ${result.length} bilanci per l'anno ${currentYear}`);
     return result;
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -1227,7 +1229,7 @@ export async function getPendingLeaveRequests(): Promise<LeaveRequest[]> {
     
     return results;
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -1272,7 +1274,7 @@ export async function getAllLeaveRequests(): Promise<LeaveRequest[]> {
     );
     return rows as (LeaveRequest & { nome: string; cognome: string })[];
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -1360,7 +1362,7 @@ export async function updateLeaveRequest(
     return (result as any).affectedRows > 0;
     
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -1386,7 +1388,7 @@ export async function deleteLeaveRequest(id: number): Promise<boolean> {
     return (result as any).affectedRows > 0;
     
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -1402,7 +1404,7 @@ export async function getAllCompanies(): Promise<Company[]> {
     );
     return rows as Company[];
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -1415,7 +1417,7 @@ export async function getDistinctQualifiche(): Promise<string[]> {
     );
     return (rows as any[]).map(row => row.qualifica).filter(Boolean);
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -1428,7 +1430,7 @@ export async function getDistinctCdc(): Promise<string[]> {
     );
     return (rows as any[]).map(row => row.cdc).filter(Boolean);
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -1441,7 +1443,7 @@ export async function getDistinctCitta(): Promise<string[]> {
     );
     return (rows as any[]).map(row => row.citta).filter(Boolean);
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -1454,7 +1456,7 @@ export async function getDistinctTipoContratto(): Promise<string[]> {
     );
     return (rows as any[]).map(row => row.tipo_contratto).filter(Boolean);
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -1467,7 +1469,7 @@ export async function getDistinctCcnl(): Promise<string[]> {
     );
     return (rows as any[]).map(row => row.ccnl).filter(Boolean);
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -1480,7 +1482,7 @@ export async function getDistinctLivello(): Promise<string[]> {
     );
     return (rows as any[]).map(row => row.livello).filter(Boolean);
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -1493,7 +1495,7 @@ export async function getDistinctOrarioLavoro(): Promise<string[]> {
     );
     return (rows as any[]).map(row => row.orario_lavoro).filter(Boolean);
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -1506,7 +1508,7 @@ export async function getDistinctCittadinanza(): Promise<string[]> {
     );
     return (rows as any[]).map(row => row.cittadinanza).filter(Boolean);
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -1518,7 +1520,7 @@ export async function getDistinctLeaveTypes(): Promise<string[]> {
     );
     return (rows as any[]).map(row => row.leave_type).filter(Boolean);
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -1530,7 +1532,7 @@ export async function getDistinctPatente(): Promise<string[]> {
     );
     return (rows as any[]).map(row => row.patente).filter(Boolean);
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -1542,7 +1544,7 @@ export async function getDistinctDocumentTypes(): Promise<string[]> {
     );
     return (rows as any[]).map(row => row.document_type).filter(Boolean);
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -1556,7 +1558,7 @@ export async function getCompanyById(id: number): Promise<Company | null> {
     const companies = rows as Company[];
     return companies.length > 0 ? companies[0] : null;
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -1578,7 +1580,7 @@ export async function createCompany(company: Omit<Company, 'id' | 'created_at' |
     );
     return (result as any).insertId;
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -1609,7 +1611,7 @@ export async function updateCompany(id: number, company: Partial<Company>): Prom
     );
     return (result as any).affectedRows > 0;
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -1633,7 +1635,7 @@ export async function deleteCompany(id: number): Promise<boolean> {
     );
     return (result as any).affectedRows > 0;
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -1650,7 +1652,7 @@ export async function getEmployeesByCompany(companyId: number): Promise<Employee
     );
     return rows as Employee[];
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }
 
@@ -1918,6 +1920,6 @@ export async function importLeaveBalanceFromExcel(fileBuffer: Buffer): Promise<I
     result.errors.push(`Errore generale: ${errorMessage}`);
     return result;
   } finally {
-    await connection.end();
+    await connection.release();
   }
 }

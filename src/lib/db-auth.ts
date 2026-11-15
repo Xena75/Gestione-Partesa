@@ -9,10 +9,13 @@ const pool = mysql.createPool({
   password: process.env.DB_GESTIONE_PASS || '',
   database: process.env.DB_GESTIONE_NAME || 'viaggi_db',
   waitForConnections: true,
-  connectionLimit: 10,
+  connectionLimit: 8,
   queueLimit: 0,
+  connectTimeout: 15000,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 10000,
   dateStrings: true,
-  multipleStatements: false
+  multipleStatements: false,
 });
 
 export default pool;

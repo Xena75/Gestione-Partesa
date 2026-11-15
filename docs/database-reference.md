@@ -1,10 +1,8 @@
 # Database Reference
 
-**Verifica diretta: 1 novembre 2026 — MySQL 8.4.13, 59 tabelle (22 gestionelogistica, 28 viaggi_db, 9 backup_management), 756 colonne, 24 colonne generate, 27 relazioni FK, 12 trigger e 2 routine visibili.**
+**Verifica diretta: 1 novembre 2026 — MySQL 8.4.13.** Aggiornamento schema **15 novembre 2026**: aggiunte 4 tabelle modulo Extra in `gestionelogistica` (`extra_import_batches`, `extra_beneficiaries`, `extra_trips`, `extra_compensations`) — migrazione `migrations/2026-11-15_extra_module.sql`.
 
-Lettura dei soli metadati tramite account applicativo esistente, in sessione/transazione READ ONLY; nessun record aziendale esportato. I blocchi struttura e gli indici verificati riportano il server corrente. Dettaglio completo, inclusi nullability, default, tipi, charset/collation, generazione, indici, vincoli CHECK, regole FK e corpi dei trigger: [snapshot metadati senza dati](database-schema-verificato-2026-11-01.json). Le routine sono censite per nome/tipo, non per definizione. Lo snapshot non è una migration DDL eseguibile.
-
-Le note di evoluzione e gli esempi applicativi mantengono il contesto storico: per lo schema corrente prevalgono i blocchi verificati e lo snapshot. Nessuna operazione sullo schema è stata eseguita.
+Snapshot metadati precedente (1 nov): [database-schema-verificato-2026-11-01.json](database-schema-verificato-2026-11-01.json) (non include ancora le tabelle Extra).
 
 Questo documento contiene la documentazione completa delle tre basi di dati utilizzate nel progetto gestione-partesa.
 
@@ -16,7 +14,7 @@ Sullo stesso MySQL convivono tre database logici:
 
 | Database | Variabili | Uso principale |
 |----------|-----------|----------------|
-| `gestionelogistica` | `DB_GESTIONE_*` | Delivery, handling, terzisti, `tab_viaggi`, resi-vuoti, fatturazione |
+| `gestionelogistica` | `DB_GESTIONE_*` | Delivery, handling, terzisti, `tab_viaggi`, resi-vuoti, fatturazione, **modulo Extra/cad-hoc** |
 | `viaggi_db` | `DB_VIAGGI_*` | Monitoraggio travels, dipendenti, veicoli, preventivi, import PoD |
 | `backup_management` | `MYSQL_*` (host/user allineati al server) | Job/schedulazioni backup |
 
@@ -979,6 +977,93 @@ Id_Tariffa        varchar(10)  YES        2
 - **Componenti**: Gestione anagrafica vettori
 - **Funzionalità**: Gestione trasportatori, fatturazione terzisti, assegnazione **Cod_Vettore** a descrizioni/nominativi
 - **Dashboard**: Link rapido “Anagrafica vettori (tab_vettori)” nella sezione Viaggi
+
+### Modulo Extra / cad-hoc / terzisti (15 novembre 2026)
+
+Archivio condiviso per l’app Extra Partesa (ex Excel/Power Apps). Perimetro: viaggi/extra, cad-hoc, extra terzisti, incassi (Archivia), anagrafiche beneficiari. **Addebiti esclusi** (fase successiva).
+
+Riuso: `tab_vettori` (descrizioni vettore già allineate all’Excel), `users` (JWT), link opzionale testo a `viaggi_db.employees.id`.  
+DDL: `migrations/2026-11-15_extra_module.sql`.  
+API: `/api/extra/beneficiaries`, `/api/extra/trips`, `/api/extra/trips/[id]/archive`, `/api/extra/summary` (JWT). Lib: `src/lib/data-extra.ts`.
+
+#### extra_import_batches
+```text
+Colonna | Tipo | Null | Default | Extra
+id | char(36) | NO | uuid() | DEFAULT_GENERATED
+source_filename | varchar(255) | NO | NULL |
+source_sha256 | char(64) | YES | NULL |
+imported_at | timestamp | NO | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+imported_by | varchar(36) | YES | NULL |
+row_count | int | NO | 0 |
+trip_count | int | NO | 0 |
+compensation_count | int | NO | 0 |
+beneficiary_count | int | NO | 0 |
+notes | text | YES | NULL |
+```
+
+**Chiavi:** PK `id`; FK `imported_by` → `users.id` (SET NULL).
+
+#### extra_beneficiaries
+```text
+Colonna | Tipo | Null | Default | Extra
+id | char(36) | NO | uuid() | DEFAULT_GENERATED
+name | varchar(200) | NO | NULL |
+kind | enum('employee','company') | NO | NULL |
+cdc | varchar(100) | YES | NULL |
+active | tinyint(1) | NO | 1 |
+employee_id | varchar(36) | YES | NULL | link opzionale viaggi_db.employees.id
+company_id | int | YES | NULL | link opzionale viaggi_db.companies.id (aggiunto 15/11/2026)
+created_at / updated_at | timestamp | NO | CURRENT_TIMESTAMP |
+created_by / updated_by | varchar(36) | YES | NULL |
+version | int | NO | 1 | optimistic lock
+```
+
+**Chiavi:** PK `id`; UNIQUE (`name`,`kind`); FK audit → `users.id`. Soft-delete via `active=0`.  
+**Ibrido Extra:** select UI da `viaggi_db.employees` (solo `active=1`) e `viaggi_db.companies`; alla scelta upsert su `extra_beneficiaries` con `employee_id`/`company_id`. Nessuna FK cross-database. Migrazione: `migrations/2026-11-15_extra_beneficiaries_company_id.sql`.
+
+#### extra_trips
+```text
+Colonna | Tipo | Null | Default | Extra
+id | char(36) | NO | uuid() | DEFAULT_GENERATED
+trip_number | varchar(100) | YES | NULL | testo, NON unique
+order_ref | varchar(200) | YES | NULL | ordine/DDT testo
+trip_date | date | NO | NULL |
+carrier_cod_vettore | double | YES | NULL | FK tab_vettori
+carrier_description | varchar(200) | YES | NULL | copia storica descrizione
+packages | decimal(12,2) | YES | NULL |
+service_notes | text | YES | NULL |
+is_extra | tinyint(1) | NO | 0 |
+client_amount | decimal(12,2) | YES | NULL | NULL≠0
+archived | tinyint(1) | NO | 0 | = incasso effettivo
+billing_notes | text | YES | NULL |
+import_batch_id | char(36) | YES | NULL |
+import_source_row | int | YES | NULL |
+created_at / updated_at | timestamp | NO | CURRENT_TIMESTAMP |
+created_by / updated_by | varchar(36) | YES | NULL |
+version | int | NO | 1 |
+```
+
+**Chiavi:** PK `id`; FK `carrier_cod_vettore` → `tab_vettori.Cod_Vettore`; FK `import_batch_id` → `extra_import_batches.id`; FK audit → `users.id`.  
+Indici: `trip_date`, `trip_number`, (`archived`,`is_extra`), carrier, batch.
+
+#### extra_compensations
+```text
+Colonna | Tipo | Null | Default | Extra
+id | char(36) | NO | uuid() | DEFAULT_GENERATED
+trip_id | char(36) | NO | NULL |
+cost_type | enum('cad_hoc','terzista') | NO | NULL |
+beneficiary_id | char(36) | YES | NULL |
+booklet_ref | varchar(100) | YES | NULL | riferimento, non quantità
+vouchers_count | int | YES | NULL |
+voucher_unit_value | decimal(12,2) | YES | NULL | storico tariffa buono
+terzista_amount | decimal(12,2) | YES | NULL |
+created_at / updated_at | timestamp | NO | CURRENT_TIMESTAMP |
+created_by / updated_by | varchar(36) | YES | NULL |
+version | int | NO | 1 |
+```
+
+**Chiavi:** PK `id`; FK `trip_id` → `extra_trips.id` (CASCADE); FK `beneficiary_id` → `extra_beneficiaries.id`; FK audit → `users.id`.  
+Un viaggio può avere 0..N compensi (storico con entrambi i tipi ammesso).
 
 #### tab_viaggi
 ```text

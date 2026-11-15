@@ -87,6 +87,12 @@ export default function Navbar() {
                   >
                     📋 Monitoraggio
                   </Link>
+                  <Link
+                    className={`nav-link ${pathname?.startsWith('/extra') ? 'active' : ''}`}
+                    href="/extra"
+                  >
+                    Extra
+                  </Link>
                   <Link 
                     className={`nav-link ${pathname === '/vehicles/schedules/calendar' ? 'active' : ''}`} 
                     href="/vehicles/schedules/calendar"

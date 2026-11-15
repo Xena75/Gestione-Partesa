@@ -13,10 +13,13 @@ const pool = mysql.createPool({
   // evitare 20 × N istanze; pool riutilizza connessioni per route migrate da createConnection.
   connectionLimit: 12,
   queueLimit: 0,
+  connectTimeout: 15000,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 10000,
   dateStrings: true, // Mantiene le date come stringhe
   // 🚀 NUOVE OPZIONI PER PERFORMANCE E STABILITÀ
   multipleStatements: false, // Sicurezza
-  charset: 'utf8mb4'
+  charset: 'utf8mb4',
 });
 
 export default pool;

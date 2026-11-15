@@ -2246,6 +2246,12 @@ export default function ModernDashboard() {
                       Resi e Vuoti non fatturati
                     </Link>
                   </div>
+                  <div className="col-12">
+                    <Link href="/extra" className="btn btn-outline-primary btn-action btn-sm w-100">
+                      <Package size={16} className="me-1" />
+                      Extra / cad-hoc
+                    </Link>
+                  </div>
                 </div>
                 {toggleStates.fatturazione && <hr />}
                 <div className={`stats-container ${toggleStates.fatturazione ? 'stats-expanded' : 'stats-collapsed'}`}>
@@ -2569,6 +2575,12 @@ export default function ModernDashboard() {
                     <Link href="/viaggi-pod" className="btn btn-outline-primary btn-action btn-sm w-100">
                       <Package size={16} className="me-1" />
                       Viaggi POD
+                    </Link>
+                  </div>
+                  <div className="col-12">
+                    <Link href="/extra" className="btn btn-outline-primary btn-action btn-sm w-100">
+                      <Package size={16} className="me-1" />
+                      Extra / cad-hoc
                     </Link>
                   </div>
                   <div className="col-12">

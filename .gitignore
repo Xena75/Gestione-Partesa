@@ -48,6 +48,8 @@ next-env.d.ts
 backups/
 backup-system/
 *.sql
+!migrations/2026-11-15_extra_module.sql
+!migrations/2026-11-15_extra_beneficiaries_company_id.sql
 *_clean.sql
 *.dbml
 *.log
@@ -66,9 +68,11 @@ import x test/
 .cache/
 temp/
 tmp/
+extra-import-report.json
+extra-import-dry-run-report.json
 
-# Archivio file obsoleti
-archive/
+# Archivio file obsoleti (solo cartella root)
+/archive/
 
 # Documentazione IDE Trae (obsoleta)
 .trae/

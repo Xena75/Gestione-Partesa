@@ -1,7 +1,53 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-**Versione corrente**: v2.43.19  
-**Ultimo aggiornamento**: Novembre 2026
+**Versione corrente**: v2.44.0  
+**Ultimo aggiornamento**: 15 novembre 2026
+
+---
+
+## Modulo Extra `/extra` — release UI + anagrafiche ibride (15 novembre 2026)
+
+**Stato**: ✅ DDL · ✅ Import · ✅ UI Bootstrap · ✅ Anagrafiche ibride
+
+### Schema
+Tabelle: `extra_import_batches`, `extra_beneficiaries`, `extra_trips`, `extra_compensations`  
+Migrazioni: `migrations/2026-11-15_extra_module.sql`, `migrations/2026-11-15_extra_beneficiaries_company_id.sql`  
+Lib: `src/lib/data-extra.ts`, `src/lib/extra-import.ts`
+
+### API (JWT)
+| Metodo | Path | Note |
+|--------|------|------|
+| GET/POST | `/api/extra/beneficiaries` | lista / crea |
+| GET/PUT | `/api/extra/beneficiaries/[id]` | update con `version` (409) |
+| GET/POST | `/api/extra/trips` | filtri + `hasCadHoc` + `beneficiaryId` + sort |
+| GET/PUT/DELETE | `/api/extra/trips/[id]` | dettaglio / update / elimina |
+| PATCH | `/api/extra/trips/[id]/archive` | `{ archived, version }` |
+| GET | `/api/extra/summary` | KPI allineati ai filtri |
+| GET | `/api/extra/cad-hoc-summary` | riepilogo per beneficiario |
+| POST | `/api/extra/import` | import Excel idempotente SHA-256 |
+
+### UI `/extra`
+- Tab: Extra/viaggi, Controllo incassi, Riepilogo cad-hoc, Anagrafiche
+- Filtri trips (una riga): ricerca, date, archivia, extra, **cad-hoc sì/no**, importo
+- Colonne: colli (intero), note servizio, note fatturazione; sort su data/viaggio/note/vettore
+- KPI colorati (aperti / archiviati / cad-hoc / terzisti)
+- CRUD + Archivia + Elimina (modal conferma); validazione campi obbligatori in modal
+- Cad-hoc: filtri beneficiario/date/archivia; dettaglio viaggi **inline** nella tab
+- Anagrafiche: filtri tipo/stato/ricerca; sola lettura
+- Link Navbar + Dashboard (Fatturazione e Viaggi); middleware `/extra`
+
+### Anagrafiche ibride
+- Select cad-hoc da `viaggi_db.employees` (solo `active=1`); terzisti da `viaggi_db.companies`
+- Upsert `extra_beneficiaries` con `employee_id` / `company_id`
+- Cleanup: delete DATI A Lainate / Fabio Potenza; Boadu alias; Gamma → Servizi; 6 companies inserite
+
+### Stabilita connessioni
+- `db-employees`: pool + `release()` (fix ETIMEDOUT createConnection)
+- `db-auth` / `db-gestione`: keep-alive + connectTimeout; Extra carica lookup anagrafiche on-demand
+
+### Import
+- Script: `npx tsx scripts/import-extra-onedrive.ts` [`--dry-run`]
+- Import 15/11/2026: 700 viaggi, 32 beneficiari → poi allineati a 21 employee + 9 company linkati
 
 ---
 
