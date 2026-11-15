@@ -11,11 +11,10 @@ const pool = mysql.createPool({
   waitForConnections: true,
   // Limite conservativo: su DB gestito (es. DO ~75 conn. totali) con Vercel multi-istanza
   // evitare 20 × N istanze; pool riutilizza connessioni per route migrate da createConnection.
-  connectionLimit: 12,
+  connectionLimit: Number(process.env.DB_POOL_LIMIT || 5),
   queueLimit: 0,
   connectTimeout: 15000,
-  enableKeepAlive: true,
-  keepAliveInitialDelay: 10000,
+  enableKeepAlive: false,
   dateStrings: true, // Mantiene le date come stringhe
   // 🚀 NUOVE OPZIONI PER PERFORMANCE E STABILITÀ
   multipleStatements: false, // Sicurezza

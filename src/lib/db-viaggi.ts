@@ -29,8 +29,10 @@ const pool = mysql.createPool({
   ssl: buildSsl(),
   dateStrings: true, // <-- Forza mysql2 a restituire le date come stringhe
   waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
+  connectionLimit: Number(process.env.DB_POOL_LIMIT || 5),
+  queueLimit: 0,
+  connectTimeout: 15000,
+  enableKeepAlive: false,
 });
 
 export default pool;
