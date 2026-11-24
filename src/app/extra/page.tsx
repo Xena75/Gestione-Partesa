@@ -574,9 +574,10 @@ export default function ExtraPage() {
         if (isExtra !== 'all') params.set('isExtra', isExtra);
         if (hasCadHoc !== 'all') params.set('hasCadHoc', hasCadHoc);
         if (amountPresence !== 'all') params.set('amountPresence', amountPresence);
-        params.set('sortBy', sortBy);
-        params.set('sortOrder', sortOrder);
       }
+      
+      params.set('sortBy', sortBy);
+      params.set('sortOrder', sortOrder);
 
       const res = await fetch(`/api/extra/export?${params}`);
       if (!res.ok) throw new Error('Errore nell\'esportazione');
@@ -587,7 +588,7 @@ export default function ExtraPage() {
       a.href = url;
       a.download = type === 'trips' 
         ? `extra-viaggi-${new Date().toISOString().slice(0, 10)}.xlsx`
-        : `extra-cadhoc-${new Date().toISOString().slice(0, 10)}.xlsx`;
+        : `extra-cadhoc-dettaglio-${new Date().toISOString().slice(0, 10)}.xlsx`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

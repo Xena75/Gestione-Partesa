@@ -593,6 +593,58 @@ export async function getCadHocByBeneficiary(filters: ExtraTripFilters = {}) {
   return rows;
 }
 
+export async function getCadHocDetailedTrips(filters: ExtraTripFilters = {}) {
+  const { where, params } = buildTripWhere({
+    dataDa: filters.dataDa,
+    dataA: filters.dataA,
+    archived: filters.archived,
+  });
+  const tripFilter = where ? where.replace(/^WHERE/, 'AND') : '';
+  const benFilters: string[] = [];
+  const benParams: (string | number)[] = [];
+  if (filters.search?.trim()) {
+    const q = `%${filters.search.trim()}%`;
+    benFilters.push(`(IFNULL(b.name,'') LIKE ? OR IFNULL(b.cdc,'') LIKE ?)`);
+    benParams.push(q, q);
+  }
+  if (filters.beneficiaryId?.trim()) {
+    benFilters.push('b.id = ?');
+    benParams.push(filters.beneficiaryId.trim());
+  }
+  const benFilterSql = benFilters.length ? `AND ${benFilters.join(' AND ')}` : '';
+  
+  const sortBy = filters.sortBy || 'trip_date';
+  const sortOrder = filters.sortOrder === 'ASC' ? 'ASC' : 'DESC';
+  
+  const [rows] = await pool.query<RowDataPacket[]>(
+    `SELECT
+       t.trip_date,
+       t.trip_number,
+       t.order_ref,
+       t.carrier_description,
+       t.packages,
+       t.service_notes,
+       t.is_extra,
+       t.client_amount,
+       t.billing_notes,
+       t.archived,
+       COALESCE(b.name, 'Beneficiario da completare') AS beneficiary_name,
+       c.vouchers_count,
+       c.booklet_ref,
+       c.voucher_unit_value,
+       (IFNULL(c.vouchers_count, 0) * IFNULL(c.voucher_unit_value, 0)) AS cad_amount
+     FROM extra_compensations c
+     INNER JOIN extra_trips t ON t.id = c.trip_id
+     LEFT JOIN extra_beneficiaries b ON b.id = c.beneficiary_id
+     WHERE c.cost_type = 'cad_hoc'
+     ${tripFilter}
+     ${benFilterSql}
+     ORDER BY t.\`${sortBy}\` ${sortOrder}, b.name ASC`,
+    [...params, ...benParams]
+  );
+  return rows;
+}
+
 export async function getTripSummary(filters: ExtraTripFilters = {}) {
   const { where, params } = buildTripWhere(filters);
   const [rows] = await pool.query<RowDataPacket[]>(
