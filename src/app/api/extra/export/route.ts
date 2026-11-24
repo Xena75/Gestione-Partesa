@@ -40,9 +40,6 @@ export async function GET(request: NextRequest) {
         'Note servizio': r.service_notes || '',
         Extra: r.is_extra ? 'Sì' : 'No',
         Importo: r.client_amount != null ? Number(r.client_amount) : '',
-        'Importo Cad-hoc': r.cad_amount != null && Number(r.cad_amount) > 0 ? Number(r.cad_amount) : '',
-        'Importo Terzisti': r.sub_amount != null && Number(r.sub_amount) > 0 ? Number(r.sub_amount) : '',
-        Beneficiari: r.payee_names || '',
         'Note fatturazione': r.billing_notes || '',
         Stato: r.archived ? (r.is_extra ? 'Incassato' : 'Archiviato') : (r.is_extra ? 'Da incassare' : 'Servizio/costo'),
       }));
@@ -59,9 +56,6 @@ export async function GET(request: NextRequest) {
         { wch: 30 },
         { wch: 8 },
         { wch: 12 },
-        { wch: 12 },
-        { wch: 12 },
-        { wch: 25 },
         { wch: 25 },
         { wch: 15 },
       ];
