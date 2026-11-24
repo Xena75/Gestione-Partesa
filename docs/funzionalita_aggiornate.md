@@ -5,40 +5,45 @@
 
 ---
 
-## v2.44.3 — Esportazione Excel per Riepilogo cad-hoc (24 novembre 2026)
+## v2.44.3 — Esportazione Excel per Extra/cad-hoc (24 novembre 2026)
 
 **Stato**: ✅ Applicato
 
 ### Funzionalità
-- Aggiunta **esportazione in Excel** nella sezione **Riepilogo cad-hoc** (`/extra`)
-- Pulsante **"Esporta in Excel"** (verde) disponibile in:
-  - Vista principale del riepilogo cad-hoc
-  - Vista dettaglio di un singolo beneficiario
-- L'esportazione rispetta tutti i filtri attivi:
-  - Periodo (Data da/Data a o Mese)
-  - Ricerca per beneficiario/CDC
-  - Stato archiviazione
-  - Filtro beneficiario specifico
+- Aggiunta **esportazione in Excel** in tutte le sezioni di `/extra`:
+  - **Tab Extra e viaggi**: esporta lista completa viaggi con tutti i dettagli
+  - **Tab Controllo incassi**: esporta viaggi extra da incassare
+  - **Tab Riepilogo cad-hoc**: esporta riepilogo per beneficiario
+- Pulsante **"Esporta in Excel"** (verde) in alto a destra di ogni tab
+- L'esportazione rispetta tutti i filtri attivi della tab corrente
 
 ### API
-- **GET** `/api/extra/export`
-  - Parametri: `dataDa`, `dataA`, `archived`, `search`, `beneficiaryId`
-  - Utilizza `getCadHocByBeneficiary()` per estrarre i dati
-  - Genera file Excel con libreria `xlsx`
-  - Restituisce file con nome: `extra-cadhoc-YYYY-MM-DD.xlsx`
+- **GET** `/api/extra/export?type=trips|cadhoc`
+  - **type=trips**: esporta viaggi con filtri completi
+    - Parametri: `dataDa`, `dataA`, `archived`, `isExtra`, `hasCadHoc`, `amountPresence`, `search`, `beneficiaryId`, `sortBy`, `sortOrder`
+    - Limite: 10.000 righe
+    - File: `extra-viaggi-YYYY-MM-DD.xlsx`
+  - **type=cadhoc**: esporta riepilogo beneficiari
+    - Parametri: `dataDa`, `dataA`, `archived`, `search`, `beneficiaryId`
+    - File: `extra-cadhoc-YYYY-MM-DD.xlsx`
 
-### Struttura Excel
-Colonne esportate:
-- **Beneficiario**: nome del beneficiario
-- **Viaggi**: numero totale di viaggi
-- **Buoni**: totale buoni utilizzati
-- **Importo**: importo totale calcolato
+### Struttura Excel - Viaggi
+Colonne esportate (tab Extra e viaggi / Controllo incassi):
+- Data, Viaggio, Ordine/DDT, Vettore, Colli
+- Note servizio, Extra (Sì/No), Importo
+- Importo Cad-hoc, Importo Terzisti, Beneficiari
+- Note fatturazione, Stato
+
+### Struttura Excel - Cad-hoc
+Colonne esportate (tab Riepilogo cad-hoc):
+- Beneficiario, Viaggi, Buoni, Importo
 
 ### Tecnico
 - Utilizzo libreria `xlsx` già presente in `package.json`
 - Larghezza colonne ottimizzata per leggibilità
 - Gestione errori con feedback utente
 - Pulsante disabilitato durante l'esportazione
+- Date formattate in italiano (gg/mm/aaaa)
 
 ---
 
