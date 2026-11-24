@@ -148,6 +148,7 @@ export default function ExtraPage() {
   const [cadDetailRows, setCadDetailRows] = useState<TripRow[]>([]);
   const [cadDetailLoading, setCadDetailLoading] = useState(false);
   const [formErrors, setFormErrors] = useState<string[]>([]);
+  const [exporting, setExporting] = useState(false);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
@@ -557,6 +558,37 @@ export default function ExtraPage() {
     }
   };
 
+  const exportToExcel = async () => {
+    setExporting(true);
+    try {
+      const params = new URLSearchParams();
+      if (dataDa) params.set('dataDa', dataDa);
+      if (dataA) params.set('dataA', dataA);
+      if (search.trim()) params.set('search', search.trim());
+      if (archived !== 'all') params.set('archived', archived);
+      if (beneficiaryId) params.set('beneficiaryId', beneficiaryId);
+
+      const res = await fetch(`/api/extra/export?${params}`);
+      if (!res.ok) throw new Error('Errore nell\'esportazione');
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `extra-cadhoc-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      showToast('File Excel esportato con successo');
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Errore esportazione');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="container-fluid py-4">
       <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
@@ -850,13 +882,23 @@ export default function ExtraPage() {
                 </button>
                 <strong>Viaggi cad-hoc · {cadDetail.name}</strong>
               </div>
-              <button
-                type="button"
-                className="btn btn-sm btn-outline-primary"
-                onClick={() => viewBeneficiaryTrips(cadDetail.id, cadDetail.name)}
-              >
-                Apri in Extra e viaggi
-              </button>
+              <div className="d-flex gap-2">
+                <button
+                  type="button"
+                  className="btn btn-sm btn-success"
+                  onClick={exportToExcel}
+                  disabled={exporting}
+                >
+                  {exporting ? 'Esportazione...' : 'Esporta in Excel'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-primary"
+                  onClick={() => viewBeneficiaryTrips(cadDetail.id, cadDetail.name)}
+                >
+                  Apri in Extra e viaggi
+                </button>
+              </div>
             </div>
             {cadDetailLoading ? (
               <div className="text-center py-4">Caricamento...</div>
@@ -916,9 +958,20 @@ export default function ExtraPage() {
             )}
           </div>
         ) : (
-          <div className="table-responsive">
-            <table className="table table-sm table-striped align-middle">
-              <thead><tr><th>Beneficiario</th><th>Viaggi</th><th>Buoni</th><th>Importo</th><th></th></tr></thead>
+          <>
+            <div className="d-flex justify-content-end mb-3">
+              <button
+                type="button"
+                className="btn btn-sm btn-success"
+                onClick={exportToExcel}
+                disabled={exporting || loading}
+              >
+                {exporting ? 'Esportazione...' : 'Esporta in Excel'}
+              </button>
+            </div>
+            <div className="table-responsive">
+              <table className="table table-sm table-striped align-middle">
+                <thead><tr><th>Beneficiario</th><th>Viaggi</th><th>Buoni</th><th>Importo</th><th></th></tr></thead>
               <tbody>
                 {cadRows.map((r) => (
                   <tr key={r.beneficiary_id || r.beneficiary_name}>
@@ -941,7 +994,8 @@ export default function ExtraPage() {
                 {!cadRows.length && <tr><td colSpan={5} className="text-muted">Nessun dato</td></tr>}
               </tbody>
             </table>
-          </div>
+            </div>
+          </>
         )
       ) : tab === 'anagrafiche' ? (
         <div className="row g-3">
