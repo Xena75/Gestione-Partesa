@@ -1,7 +1,44 @@
 # 📋 Funzionalità Aggiornate - Gestione Partesa
 
-**Versione corrente**: v2.44.2  
-**Ultimo aggiornamento**: 15 novembre 2026
+**Versione corrente**: v2.44.3  
+**Ultimo aggiornamento**: 24 novembre 2026
+
+---
+
+## v2.44.3 — Esportazione Excel per Riepilogo cad-hoc (24 novembre 2026)
+
+**Stato**: ✅ Applicato
+
+### Funzionalità
+- Aggiunta **esportazione in Excel** nella sezione **Riepilogo cad-hoc** (`/extra`)
+- Pulsante **"Esporta in Excel"** (verde) disponibile in:
+  - Vista principale del riepilogo cad-hoc
+  - Vista dettaglio di un singolo beneficiario
+- L'esportazione rispetta tutti i filtri attivi:
+  - Periodo (Data da/Data a o Mese)
+  - Ricerca per beneficiario/CDC
+  - Stato archiviazione
+  - Filtro beneficiario specifico
+
+### API
+- **GET** `/api/extra/export`
+  - Parametri: `dataDa`, `dataA`, `archived`, `search`, `beneficiaryId`
+  - Utilizza `getCadHocByBeneficiary()` per estrarre i dati
+  - Genera file Excel con libreria `xlsx`
+  - Restituisce file con nome: `extra-cadhoc-YYYY-MM-DD.xlsx`
+
+### Struttura Excel
+Colonne esportate:
+- **Beneficiario**: nome del beneficiario
+- **Viaggi**: numero totale di viaggi
+- **Buoni**: totale buoni utilizzati
+- **Importo**: importo totale calcolato
+
+### Tecnico
+- Utilizzo libreria `xlsx` già presente in `package.json`
+- Larghezza colonne ottimizzata per leggibilità
+- Gestione errori con feedback utente
+- Pulsante disabilitato durante l'esportazione
 
 ---
 
