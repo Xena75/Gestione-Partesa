@@ -558,15 +558,25 @@ export default function ExtraPage() {
     }
   };
 
-  const exportToExcel = async () => {
+  const exportToExcel = async (type: 'trips' | 'cadhoc' = 'cadhoc') => {
     setExporting(true);
     try {
       const params = new URLSearchParams();
+      params.set('type', type);
+      
       if (dataDa) params.set('dataDa', dataDa);
       if (dataA) params.set('dataA', dataA);
       if (search.trim()) params.set('search', search.trim());
       if (archived !== 'all') params.set('archived', archived);
       if (beneficiaryId) params.set('beneficiaryId', beneficiaryId);
+      
+      if (type === 'trips') {
+        if (isExtra !== 'all') params.set('isExtra', isExtra);
+        if (hasCadHoc !== 'all') params.set('hasCadHoc', hasCadHoc);
+        if (amountPresence !== 'all') params.set('amountPresence', amountPresence);
+        params.set('sortBy', sortBy);
+        params.set('sortOrder', sortOrder);
+      }
 
       const res = await fetch(`/api/extra/export?${params}`);
       if (!res.ok) throw new Error('Errore nell\'esportazione');
@@ -575,7 +585,9 @@ export default function ExtraPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `extra-cadhoc-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.download = type === 'trips' 
+        ? `extra-viaggi-${new Date().toISOString().slice(0, 10)}.xlsx`
+        : `extra-cadhoc-${new Date().toISOString().slice(0, 10)}.xlsx`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -886,7 +898,7 @@ export default function ExtraPage() {
                 <button
                   type="button"
                   className="btn btn-sm btn-success"
-                  onClick={exportToExcel}
+                  onClick={() => exportToExcel('cadhoc')}
                   disabled={exporting}
                 >
                   {exporting ? 'Esportazione...' : 'Esporta in Excel'}
@@ -963,7 +975,7 @@ export default function ExtraPage() {
               <button
                 type="button"
                 className="btn btn-sm btn-success"
-                onClick={exportToExcel}
+                onClick={() => exportToExcel('cadhoc')}
                 disabled={exporting || loading}
               >
                 {exporting ? 'Esportazione...' : 'Esporta in Excel'}
@@ -1056,6 +1068,16 @@ export default function ExtraPage() {
         </div>
       ) : (
         <>
+          <div className="d-flex justify-content-end mb-3">
+            <button
+              type="button"
+              className="btn btn-sm btn-success"
+              onClick={() => exportToExcel('trips')}
+              disabled={exporting || loading}
+            >
+              {exporting ? 'Esportazione...' : 'Esporta in Excel'}
+            </button>
+          </div>
           <div className="table-responsive">
             <table className="table table-sm table-hover align-middle">
               <thead>
