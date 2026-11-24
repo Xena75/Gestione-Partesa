@@ -31,7 +31,6 @@
 Colonne esportate (tab Extra e viaggi / Controllo incassi):
 - Data, Viaggio, Ordine/DDT, Vettore, Colli
 - Note servizio, Extra (Sì/No), Importo
-- Importo Cad-hoc, Importo Terzisti, Beneficiari
 - Note fatturazione, Stato
 
 ### Struttura Excel - Cad-hoc
