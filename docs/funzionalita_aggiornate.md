@@ -33,9 +33,14 @@ Colonne esportate (tab Extra e viaggi / Controllo incassi):
 - Note servizio, Extra (Sì/No), Importo
 - Note fatturazione, Stato
 
-### Struttura Excel - Cad-hoc
+### Struttura Excel - Cad-hoc (Dettagliato)
 Colonne esportate (tab Riepilogo cad-hoc):
-- Beneficiario, Viaggi, Buoni, Importo
+- Data, Viaggio, Ordine/DDT, Vettore, Colli
+- Note servizio, Beneficiario, Blocchetto
+- **Numero Buoni**, €/Buono, Importo Cad-hoc
+- Extra (Sì/No), Importo, Note fatturazione, Stato
+
+**Nota**: Ogni riga rappresenta un viaggio con compenso cad-hoc. Se un viaggio ha più beneficiari, viene esportato su righe separate.
 
 ### Tecnico
 - Utilizzo libreria `xlsx` già presente in `package.json`
